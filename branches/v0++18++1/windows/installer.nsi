@@ -3,7 +3,7 @@
 ;
 ; Modified to work with NSIS v2.0b1
 !define MUI_PRODUCT "POPFile" 
-!define MUI_VERSION "0.18.2"
+!define MUI_VERSION "0.18.3"
 !include "MUI.nsh"
 ;--------------------------------
 ;Configuration
@@ -137,7 +137,7 @@ Section "POPFile" SecPOPFile
   ; Install the POPFile Core files
 
   SetOutPath $INSTDIR
-  File "..\engine\v0.18.2.change"
+  File "..\engine\v0.18.3.change"
   File "..\engine\*.pl"
   File "..\engine\pix.gif"
   File "..\engine\black.gif"
