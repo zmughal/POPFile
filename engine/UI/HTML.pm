@@ -3144,12 +3144,13 @@ sub parse_form
     while ( $arguments =~ m/\G(.*?)=(.*?)(&|\r|\n|$)/g ) {
         my $arg = $1;
         $self->{form}{$arg} = $2;
+        
+        
+        $self->{form}{$arg} =~ s/\+/ /g;
 
         # Expand %7E (hex) escapes in the form data
 
         $self->{form}{$arg} =~ s/%([0-9A-F][0-9A-F])/chr hex $1/gie;
-
-        $self->{form}{$arg} =~ s/\+/ /g;
 
         # Push the value onto an array to allow for multiple values of the same name
 
