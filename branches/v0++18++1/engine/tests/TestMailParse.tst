@@ -143,3 +143,49 @@ test_assert_equal( $1, 'bugtracker@relativity.com' );
 $cl->parse_stream( 'tests/TestMailParse021.msg' );
 test_assert_equal( $cl->{to},      'dsmith@ctaz.com, dsmith@dol.net, dsmith@dirtur.com, dsmith@dialpoint.net, dsmith@crosscountybank.com, <dsmith@cybersurf.net>, <dsmith@dotnet.com>, <dsmith@db.com>, <dsmith@cs.com>, <dsmith@crossville.com>, <dsmith@dreamscape.com>, <dsmith@cvnc.net>, <dsmith@dmrtc.net>, <dsmith@datarecall.net>, <dsmith@dasia.net>' );
 test_assert_equal( $cl->{cc},      'dsmith@dmi.net, dsmith@datamine.net, dsmith@crusader.com, dsmith@datasync.com, <dsmith@doorpi.net>, <dsmith@dnet.net>, <dsmith@cybcon.com>, <dsmith@csonline.net>, <dsmith@directlink.net>, <dsmith@cvip.net>, <dsmith@dragonbbs.com>, <dsmith@crosslinkinc.com>, <dsmith@dccnet.com>, <dsmith@dakotacom.net>' );
+
+
+#Test colorized output
+
+# glob the tests directory for files called TestMailParse\d+.msg which consist of messages 
+# to be sent through parse_stream
+
+
+use Classifier::Bayes;
+
+$cl->{bayes} = new Classifier::Bayes;
+#$cl->{bayes}->initialize();
+
+$cl->{color} = 1;
+$cl->{debug} = 0;
+
+my @color_tests = sort glob 'tests/TestMailParse*.msg';
+
+for my $input_file (@color_tests) {
+    if ( open OUTPUT, ">tests/temp.out" ) {        
+	    my $output = $cl->parse_stream($input_file);
+	    
+	    
+	    print OUTPUT $output;	    	    
+		close OUTPUT;
+
+		my $output_file = $input_file;
+		$output_file    =~ s/msg/col/;
+
+		open COL, "<$output_file";
+		open OUTPUT, "<tests/temp.out";
+		while ( <OUTPUT> ) {
+		    my $output_line = $_;
+			my $col_line    = <COL>;
+			$output_line =~ s/[\r\n]//g;
+			$col_line =~ s/[\r\n]//g;
+			test_assert_equal( $col_line, $output_line, $input_file );
+		}
+		
+		close COL;
+		close OUTPUT;
+#		rename( 'tests/temp.out', $output_file );
+		unlink( 'tests/temp.out' );
+		
+    }
+}
