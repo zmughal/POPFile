@@ -141,7 +141,7 @@ sub child__
         # will pull email from.  Doing this means we can act as a proxy for multiple mail clients
         # and mail accounts
 	my $user_command = 'USER (.+)(:(\d+))?' . $self->config_( 'separator' ) . '(.+)';
-        if ( $command =~ /$user_command/i ) { 
+        if ( $command =~ /$user_command/i ) {
             if ( $1 ne '' )  {
                 if ( $mail = $self->verify_connected_( $mail, $client, $1, $3 || 110 ) )  {
                     # Pass through the USER command with the actual user name for this server,
@@ -273,7 +273,7 @@ sub child__
                         # and without over-writing any files ($mcount overriden to 0)
 
                         my $class = $self->{classifier__}->classify_and_modify( $mail, undef, $download_count, 0, 1, '', 0 );
-                        $self->flush_extra( $mail, $client, 0 );
+                        $self->flush_extra_( $mail, $client, 0 );
 
                         if ( $self->echo_response_($mail, $client, $command ) ) {
 
