@@ -1,0 +1,123 @@
+<tt>From <b><font color="black">rrr@nnnnnnnnn.com</font></b> Mon Jan 06 05:00:37 2003<br />
+
+Received: from <b><font color="black">palm.<b><font color="black">lyris.net</font></b></font></b> [<b><font color="black">216.91.57.210</font></b>] by <b><font color="black">ajw.com</font></b> [<b><font color="black">127.0.0.1</font></b>] with SMTP (<b><font color="black">MDaemon</font></b>.v2.7.SP4.R) for <br />
+
+&lt;<b><font color="black">Archive@ajw.com</font></b>&gt;; Mon, 06 Jan 2003 05:00:43 -0500<br />
+
+Mime-Version: 1.0<br />
+
+X-Sender: rRR@<b><font color="black">pop.<b><font color="black">rrrrr.net</font></b></font></b><br />
+
+Message-Id: &lt;LYRIS-57933-146278-2003.01.06-02.00.42--alan#ajw.com@news.palmos.com&gt;<br />
+
+In-Reply-To: <br />
+
+ &lt;LYRIS-54343-146225-2003.01.06-00.00.02--rrr#nnnnnnnnn.com@news.palmos.com<br />
+
+ &gt;<br />
+
+Date: Mon, 6 Jan 2003 02:00:37 -0800<br />
+
+To: "<b><font color="black">Armlet</font></b> <b><font color="black">Forum</font></b>" &lt;<b><font color="black">armlet-forum@<b><font color="black">news.<b><font color="black">palmos.com</font></b></font></b></font></b>&gt;<br />
+
+From: RN &lt;<b><font color="black">rrr@<b><font color="black">nnnnnnnnn.com</font></b></font></b>&gt;<br />
+
+Subject: (<b><font color="black">Archive</font></b> <b><font color="black">Copy</font></b>) RE: CW v9 and <b><font color="black">armlets</font></b>...<br />
+
+Content-Type: text/plain; charset="<b><font color="black">us-ascii</font></b>" ; format="flowed"<br />
+
+List-Unsubscribe: &lt;mailto:<b><font color="black">leave-armlet-forum-55555S@news.<b><font color="black">palmos.com</font></b></font></b>&gt;<br />
+
+List-Owner: &lt;mailto:<b><font color="black">owner-armlet-forum@news.<b><font color="black">palmos.com</font></b></font></b>&gt;<br />
+
+Reply-To: "<b><font color="black">Armlet</font></b> <b><font color="black">Forum</font></b>" &lt;<b><font color="black">armlet-forum@<b><font color="black">news.<b><font color="black">palmos.com</font></b></font></b></font></b>&gt;<br />
+
+X-Message-Id: &lt;p05111a00ba3efa6a0686@[<b><font color="black">192.168.1.100</font></b>]&gt;<br />
+
+Sender: <b><font color="black">bounce</font></b>-<b><font color="black">armlet</font></b>-<b><font color="black">forum</font></b>-55555@<b><font color="black">news.<b><font color="black">palmos.com</font></b></font></b><br />
+
+X-Palm-Dev-Forum: <b><font color="black">armlet</font></b>-<b><font color="black">forum</font></b><br />
+
+X-MDArchive-Copy: 1<br />
+
+X-MDaemon-Deliver-To: Archive@<b><font color="black">ajw.com</font></b><br />
+
+X-Return-Path: <b><font color="black">bounce</font></b>-<b><font color="black">armlet</font></b>-<b><font color="black">forum</font></b>-55555@<b><font color="black">news.<b><font color="black">palmos.com</font></b></font></b><br />
+
+X-<b><font color="black">MBF</font></b>-FILE: <b><font color="black">MDaemon</font></b> <b><font color="black">Gateway</font></b> to RFC822 (RFC822.MBF v1.0)<br />
+
+<br />
+
+On Sun, 5 Jan 2003 22:46:10 -0800,<br />
+
+"BF" &lt;bfffffffff@sss.rr.com&gt; <b><font color="black">wrote</font></b>:<br />
+
+&gt;I <b><font color="black">tried</font></b> <b><font color="black">many</font></b> <b><font color="black">variations</font></b> of your code to <b><font color="black">setup</font></b> r10 for <b><font color="black">writable</font></b> <b><font color="black">global</font></b><br />
+
+&gt;<b><font color="black">variables</font></b>.  <b><font color="black">Unfortunately</font></b> I <b><font color="black">can't</font></b> <b><font color="black">get</font></b> it to <b><font color="black">compile</font></b> <b><font color="black">under</font></b> CW9.  <b><font color="black">Here</font></b> are<br />
+
+&gt;the <b><font color="black">errors</font></b>, <b><font color="black">followed</font></b> by the code.  Of <b><font color="black">course</font></b> the code <b><font color="black">below</font></b> <b><font color="black">won't</font></b> <b><font color="black">run</font></b>,<br />
+
+&gt;but I <b><font color="black">don't</font></b> <b><font color="black">understand</font></b> <b><font color="black">why</font></b> I <b><font color="black">can't</font></b> <b><font color="black">get</font></b> your <b><font color="black">sample</font></b> to <b><font color="black">build</font></b>:<br />
+
+&gt;  ... [ <b><font color="black">examples</font></b> and <b><font color="black">errors</font></b> deleted] ...<br />
+
+<br />
+
+<b><font color="black">Maybe</font></b> the  "<b><font color="black">asm</font></b> { <b><font color="black">mov</font></b> r10, r4; }"  is <b><font color="black">required</font></b> <b><font color="black">before</font></b> the return<br />
+
+to <b><font color="black">balance</font></b> the <b><font color="black">register</font></b> <b><font color="black">usage</font></b>?<br />
+
+<br />
+
+I can <b><font color="black">only</font></b> <b><font color="black">get</font></b> the code to <b><font color="black">compile</font></b> with <b><font color="black">thumb</font></b> <b><font color="black">mode</font></b> on (<b><font color="black">default</font></b>) and<br />
+
+<b><font color="black">optimizations</font></b> off.  <b><font color="black">When</font></b> it does <b><font color="black">compile</font></b>, it <b><font color="black">seems</font></b> to <b><font color="black">work</font></b> <b><font color="black">just</font></b> <b><font color="black">fine</font></b><br />
+
+(e.g. a 40k <b><font color="black">armlet</font></b> <b><font color="black">functions</font></b> <b><font color="black">correctly</font></b> <b><font color="black">while</font></b> <b><font color="black">using</font></b> <b><font color="black">lots</font></b> of <b><font color="black">read</font></b>/<b><font color="black">write</font></b><br />
+
+<b><font color="black">global</font></b> <b><font color="black">variables</font></b> and <b><font color="black">callbacks</font></b>...)<br />
+
+<br />
+
+&gt;It <b><font color="black">looks</font></b> <b><font color="black">like</font></b> the <b><font color="black">variable</font></b> R5 and the <b><font color="black">register</font></b> r5 <b><font color="black">aren't</font></b> <b><font color="black">related</font></b>.<br />
+
+<br />
+
+( <b><font color="black">Heh</font></b>!  :-)  I <b><font color="black">just</font></b> <b><font color="black">kept</font></b> <b><font color="black">renaming</font></b> the <b><font color="black">variable</font></b> <b><font color="black">until</font></b> it <b><font color="black">matched</font></b> the<br />
+
+<b><font color="black">register</font></b> that the <b><font color="black">disassembly</font></b> <b><font color="black">said</font></b> the <b><font color="black">compiler</font></b> was <b><font color="black">actually</font></b> <b><font color="black">using</font></b><br />
+
+(for my <b><font color="black">sanity</font></b>).   But I would <b><font color="black">like</font></b> to <b><font color="black">find</font></b> <b><font color="black">some</font></b> <b><font color="black">clean</font></b> <b><font color="black">syntax</font></b> that<br />
+
+will <b><font color="black">safely</font></b> <b><font color="black">survive</font></b> <b><font color="black">compiler</font></b> <b><font color="black">optimizations</font></b> (the code I <b><font color="black">posted</font></b><br />
+
+<b><font color="black">obviously</font></b> <b><font color="black">won't</font></b>!).<br />
+
+<br />
+
+<b><font color="black">I'm</font></b> <b><font color="black">almost</font></b> <b><font color="black">ready</font></b> to <b><font color="black">try</font></b> <b><font color="black">using</font></b> <b><font color="black">gcc</font></b>-<b><font color="black">arm</font></b>-<b><font color="black">elf</font></b> to <b><font color="black">build</font></b> my <b><font color="black">armlet</font></b><br />
+
+<b><font color="black">entry</font></b> <b><font color="black">point</font></b> and <b><font color="black">concatenate</font></b> that in <b><font color="black">front</font></b> of the CW v9 <b><font color="black">output</font></b>.<br />
+
+<b><font color="black">Messy</font></b>...<br />
+
+<br />
+
+RN<br />
+
+<b><font color="black">HHHHHH</font></b><br />
+
+    &lt;http://www.hhhhhh.com/rrr/hhhhhh&gt;<br />
+
+<br />
+
+-- <br />
+
+For <b><font color="black">information</font></b> on <b><font color="black">using</font></b> the <b><font color="black">Palm</font></b> <b><font color="black">Developer</font></b> <b><font color="black">Forums</font></b>, or to <b><font color="black">unsubscribe</font></b>, <b><font color="black">please</font></b> <b><font color="black">see</font></b> http://<b><font color="black">www.<b><font color="black">palmos.com</font></b></font></b>/<b><font color="black">dev</font></b>/<b><font color="black">support</font></b>/<b><font color="black">forums</font></b>/<br />
+
+<br />
+
+<br />
+
+</tt>
