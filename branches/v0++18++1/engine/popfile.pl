@@ -284,7 +284,7 @@ load_modules( 'Proxy',      'proxy'      );
 
 $components{core}{config}->{major_version} = 0;
 $components{core}{config}->{minor_version} = 18;
-$components{core}{config}->{build_version} = 1;
+$components{core}{config}->{build_version} = 2;
 
 print "\nPOPFile Engine v$components{core}{config}->{major_version}.$components{core}{config}->{minor_version}.$components{core}{config}->{build_version} starting";
 
