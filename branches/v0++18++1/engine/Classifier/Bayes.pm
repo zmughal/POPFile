@@ -759,6 +759,10 @@ sub classify_and_modify
     my $last_timeout   = time;
     my $timeout_count  = 0;
 
+    #prevent any translation of printed eol's
+
+    binmode $client;
+
     # Indicates whether the first time through the receive loop we got the full body, this
     # will happen on small emails
     my $got_full_body  = 0;
