@@ -2113,7 +2113,7 @@ sub sort_filter_history
     # field we ignore all punctuation characters so that "John and 'John and John
     # all sort next to each other
 
-    if ( $sort ne '' ) {
+    if ( $sort ne ''  && defined(@{$self->{history_keys_}})) {
         @{$self->{history_keys_}} = sort { 
                                             my ($a1,$b1) = ($self->{history_}{$a}{$sort}, 
                                               $self->{history_}{$b}{$sort}); 
@@ -3402,7 +3402,7 @@ sub remove_mail_files
         foreach my $mail_file (@mail_files) {
             my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,$atime,$mtime,$ctime,$blksize,$blocks) = stat($mail_file);
 
-            if ( $ctime < (time - $self->{configuration}->{configuration}{history_days} * $seconds_per_day) )  {
+            if ( $ctime < (time - ( $self->{configuration}->{configuration}{history_days} * $seconds_per_day )) )  {
                 $self->history_delete_file( $mail_file, $self->{configuration}->{configuration}{archive} );
             }
         }
