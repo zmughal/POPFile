@@ -273,6 +273,7 @@ sub child__
                         # and without over-writing any files ($mcount overriden to 0)
 
                         my $class = $self->{classifier__}->classify_and_modify( $mail, undef, $download_count, 0, 1, '', 0 );
+                        $self->flush_extra( $mail, $client, 0 );
 
                         if ( $self->echo_response_($mail, $client, $command ) ) {
 

@@ -1027,13 +1027,15 @@ sub classify_and_modify
          } else {
             $self->echo_to_dot_( $mail, undef );
          }
-    } else {
-        if ( $classification ne 'unclassified' ) {
-            if ( ( $self->{parameters__}{$classification}{quarantine} == 1 ) && $echo ) {
-                print $client "$eol--$temp_file$eol";
-	        }
-        }
+    }
 
+    if ( $classification ne 'unclassified' ) {
+        if ( ( $self->{parameters__}{$classification}{quarantine} == 1 ) && $echo ) {
+            print $client "$eol--$temp_file--$eol";
+	}
+    }
+
+    if ( $got_full_body == 1 )    {
         print $client ".$eol" if ( $echo );
     }
 

@@ -129,7 +129,7 @@ sub service
 
                     while ( <$client> )  {
                         $content_length = $1 if ( /Content-Length: (\d+)/i );
-                        last                 if ( !/[A-Z]/i );
+                        last                 if ( !/:/i );
                     }
 
                     if ( $content_length > 0 ) {
