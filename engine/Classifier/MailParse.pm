@@ -378,23 +378,23 @@ sub update_tag
         }
         
         # Tags with href attributes
-
+        
         if ( $attribute =~ /^href$/i && $tag =~ /^(a|link|base|area)$/i )  {
 
-            # ftp, http, https
+            # Look for mailto:'s
 
-            if ( $value =~ /^(ftp|http|https):\/\//i ) {
-                add_url($self, $value, $encoded, $quote, $end_quote, '');
-                next;
+            if ($value =~ /^mailto:/i) {
+                if ( $tag =~ /^a$/ && $value =~ /^mailto:([[:alpha:]0-9\-_\.]+?@([[:alpha:]0-9\-_\.]+?))([>\&\?\:\/]|$)/i )  {
+                   update_word( $self, $1, $encoded, 'mailto:', ($3?'[\\\>\&\?\:\/]':$end_quote), '' );
+                   add_url( $self, $2, $encoded, '@', ($3?'[\\\&\?\:\/]':$end_quote), '' );
+                }
+            } else {
+                # Anything that isn't a mailto is probably an URL
+                
+                $self->add_url($value, $encoded, $quote, $end_quote, '');
             }
-    
-            # The less common mailto: goes second, and we only care if this is in an anchor
 
-            if ( $tag =~ /^a$/ && $value =~ /^mailto:([[:alpha:]0-9\-_\.]+?@([[:alpha:]0-9\-_\.]+?))([>\&\?\:\/]|$)/i )  {
-               update_word( $self, $1, $encoded, 'mailto:', ($3?'[\\\>\&\?\:\/]':$end_quote), '' );
-               add_url( $self, $2, $encoded, '@', ($3?'[\\\&\?\:\/]':$end_quote), '' );
-            }
-            next;
+            next;            
         }
         
         # Tags with alt attributes
