@@ -2697,6 +2697,21 @@ sub history_page
     $self->{form}{sort}   = '' if ( !defined( $self->{form}{sort}   ) );
     $self->{form}{search} = '' if ( !defined( $self->{form}{search} ) );
     $self->{form}{filter} = '' if ( !defined( $self->{form}{filter} ) );
+   
+    # Information from submit buttons isn't always preserved if the buttons aren't
+    # pressed. This compares values in some fields and sets the button-values as
+    # though they had been pressed
+
+    
+    # Information from submit buttons isn't always preserved if the buttons aren't
+    # pressed. This compares values in some fields and sets the button-values as
+    # though they had been pressed
+    
+    # Set setsearch if search changed and setsearch is undefined    
+    $self->{form}{setsearch} = 'on' if ( ( ( !defined($self->{old_search}) && ($self->{form}{search} ne '') ) || ( defined($self->{old_search}) && ( $self->{old_search} ne $self->{form}{search} ) ) ) && !defined($self->{form}{setsearch} ) );
+    $self->{old_search} = $self->{form}{search};
+
+
     
     # If the user is asking for a new sort option then it needs to get
     # stored in the sort form variable so that it can be used for subsequent
