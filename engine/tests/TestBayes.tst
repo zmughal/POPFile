@@ -60,6 +60,7 @@ my @modify_tests = sort glob 'tests/TestMailParse*.msg';
 
 for my $modify_file (@modify_tests) {
     if ( ( open MSG, "<$modify_file" ) && ( open OUTPUT, ">tests/temp.out" ) ) {
+        binmode OUTPUT;
 	    $b->classify_and_modify( \*MSG, \*OUTPUT, 0, 0, 0, '' );
 	    close MSG;
 		close OUTPUT;
