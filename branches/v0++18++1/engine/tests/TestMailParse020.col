@@ -2,7 +2,7 @@
 
 Received: from <b><font color="black">mail.<b><font color="black"><b><font color="black">gentoo.org</font></b></font></b></font></b> (HELO gentoo.org) (<b><font color="black">204.126.2.42</font></b>)<br />
 
-  by 192.168.0.30 with SMTP; 13 Feb 2003 20:05:08 -0000<br />
+  by <b><font color="black">192.168.0.30</font></b> with SMTP; 13 Feb 2003 20:05:08 -0000<br />
 
 Received: (<b><font color="black">qmail</font></b> 13859 <b><font color="black">invoked</font></b> by <b><font color="black">uid</font></b> 1002); 13 Feb 2003 20:10:36 -0000<br />
 
@@ -44,6 +44,8 @@ Mime-Version: 1.0<br />
 
 Content-Type: multipart/signed; protocol="application/pgp-signature";<br />
 
+ micalg="pgp-sha1"; boundary="=.P.GDOi)uP6IbU+"<br />
+
 X-Sender: 320021892970-0001@<b><font color="black">t-dialin.net</font></b><br />
 
 <br />
@@ -51,6 +53,8 @@ X-Sender: 320021892970-0001@<b><font color="black">t-dialin.net</font></b><br />
 --=.P.GDOi)uP6IbU+<br />
 
 Content-Type: multipart/mixed;<br />
+
+ boundary="Multipart_Thu__13_Feb_2003_20:58:33_+0100_103356a0"<br />
 
 <br />
 
@@ -126,7 +130,7 @@ Content-Type: application/pgp-signature;<br />
 
 Content-Disposition: <b><font color="black">attachment</font></b>;<br />
 
- filename="00000000.mimetmp"<br />
+ filename="00000000.<b><font color="black">mimetmp</font></b>"<br />
 
 Content-Transfer-Encoding: base64<br />
 

@@ -1,32 +1,30 @@
-<tt>From <b><font color="black">bugs@drunin.net</font></b>  Wed Jan 29 20:28:35 2003<br />
-
-Return-Path: &lt;<b><font color="black">bugs@drunin.net</font></b>&gt;<br />
+<tt>Return-Path: &lt;<b><font color="black">bugs@drunin.net</font></b>&gt;<br />
 
 Delivered-To: run@mail.<b><font color="black">tepkom</font></b>.ru<br />
 
 Received: by mail.<b><font color="black">tepkom</font></b>.ru (<b><font color="black">Postfix</font></b>)<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;id 70071971F2; Wed, 29 Jan 2003 20:30:49 +0300 (MSK)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;id 70071971F2; Wed, 29 Jan 2003 20:30:49 +0300 (<b><font color="black">MSK</font></b>)<br />
 
 Delivered-To: rescuebre@<b><font color="black">tepkom</font></b>.ru<br />
 
 Received: from localhost (localhost [<b><font color="black">127.0.0.1</font></b>])<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;by mail.tepkom.ru (Postfix) with SMTP<br />
+&nbsp;&nbsp;&nbsp;&nbsp;by mail.<b><font color="black">tepkom</font></b>.ru (<b><font color="black">Postfix</font></b>) with SMTP<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;id 6474D971FA; Wed, 29 Jan 2003 20:30:49 +0300 (MSK)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;id 6474D971FA; Wed, 29 Jan 2003 20:30:49 +0300 (<b><font color="black">MSK</font></b>)<br />
 
 Received: from <b><font color="black">keymaster.<b><font color="black">relativity.com</font></b></font></b> (<b><font color="black">keymaster.<b><font color="black">relativity.com</font></b></font></b> [<b><font color="black">12.146.171.10</font></b>])<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;by mail.tepkom.ru (Postfix) with ESMTP<br />
+&nbsp;&nbsp;&nbsp;&nbsp;by mail.<b><font color="black">tepkom</font></b>.ru (<b><font color="black">Postfix</font></b>) with ESMTP<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;id 93510971F2; Wed, 29 Jan 2003 20:30:47 +0300 (MSK)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;id 93510971F2; Wed, 29 Jan 2003 20:30:47 +0300 (<b><font color="black">MSK</font></b>)<br />
 
 Received: from <b><font color="black">rtfm</font></b> (<b><font color="black">rtfm.<b><font color="black">relativity.com</font></b></font></b> [<b><font color="black">63.100.138.144</font></b>]) by <b><font color="black">keymaster.<b><font color="black">relativity.com</font></b></font></b> with SMTP (<b><font color="black">Microsoft</font></b> <b><font color="black">Exchange</font></b> <br />
 
 <b><font color="black">Internet</font></b> Mail <b><font color="black">Service</font></b> <b><font color="black">Version</font></b> 5.5.2653.13)<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;id D4Z7ASMC; Wed, 29 Jan 2003 12:28:21 -0500<br />
+&nbsp;&nbsp;&nbsp;&nbsp;id D4Z7<b><font color="black">ASMC</font></b>; Wed, 29 Jan 2003 12:28:21 -0500<br />
 
 To: <b><font color="black">elia@<b><font color="black">tepkom.ru</font></b></font></b>, <b><font color="black">rescuebre@<b><font color="black">tepkom.ru</font></b></font></b>, <b><font color="black">kcruz@<b><font color="black">relativity.com</font></b></font></b>, <b><font color="black">bugtracker@<b><font color="black">relativity.com</font></b></font></b><br />
 
@@ -34,7 +32,7 @@ Date: Wed, 29 Jan 03 12:28:29<br />
 
 From: &lt;<b><font color="black">bugs@<b><font color="black">drunin.net</font></b></font></b>&gt;<br />
 
-Subject:  VI ID: 24149  Status: <b><font color="black">Dev</font></b> <b><font color="black">Confirmed</font></b> <b><font color="black">Fix</font></b>  <b><font color="black">Sev</font></b>: 1<br />
+Subject: VI ID: 24149  Status: <b><font color="black">Dev</font></b> <b><font color="black">Confirmed</font></b> <b><font color="black">Fix</font></b>  <b><font color="black">Sev</font></b>: 1<br />
 
 MIME-Version: 1.0<br />
 
