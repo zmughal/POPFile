@@ -763,9 +763,7 @@ sub classify_and_modify
     my ( $self, $mail, $client, $dcount, $mcount, $nosave, $class, $echo ) = @_;
 
     $echo = 1 unless (defined $echo);
-    
-    Proxy::POP3::debug( $self,"\$dcount: $dcount, \$mcount: $mcount, \$nosave: $nosave, \$class: $class, \$echo: $echo ");
-
+        
     my $msg_subject     = '';     # The message subject
     my $msg_head_before = '';     # Store the message headers that come before Subject here
     my $msg_head_after  = '';     # Store the message headers that come after Subject here
@@ -886,9 +884,7 @@ sub classify_and_modify
     # Do the text classification and update the counter for that bucket that we just downloaded
     # an email of that type
     $classification = ($class ne '')?$class:$self->classify_file($temp_file);
-    
-    Proxy::POP3::debug( $self, "classification: $classification size: $message_size");
-
+        
     # Add the Subject line modification or the original line back again
     if ( $classification ne 'unclassified' ) {
         if ( $self->{configuration}->{configuration}{subject} ) {
