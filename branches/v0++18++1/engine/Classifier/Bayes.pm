@@ -214,11 +214,12 @@ sub write_parameters
     my ($self) = @_;
 
     for my $bucket (keys %{$self->{total}})  {
-        open PARAMS, ">$self->{configuration}->{configuration}{corpus}/$bucket/params";
-        for my $param (keys %{$self->{parameters}{$bucket}}) {
-            print PARAMS "$param $self->{parameters}{$bucket}{$param}\n";
+        if (open PARAMS, ">$self->{configuration}->{configuration}{corpus}/$bucket/params") {
+            for my $param (keys %{$self->{parameters}{$bucket}}) {
+                print PARAMS "$param $self->{parameters}{$bucket}{$param}\n";
+            }
+            close PARAMS;
         }
-        close PARAMS;
     }
 }
 
@@ -388,6 +389,14 @@ sub load_word_matrix
     # actually a bucket 
     
     $self->{colors}{unclassified} = 'black';
+
+    # SLM for unclassified "bucket" will always match the global setting
+
+    $self->{parameters}{unclassified}{subject} = $self->{configuration}->{configuration}{subject};
+
+    # Quarantine for unclassified will be off:
+
+    $self->{parameters}{unclassified}{quarantine} = 0;
     
     print "Corpus loaded with $self->{full_total} entries\n" if $self->{debug};
 }
@@ -427,7 +436,10 @@ sub load_bucket
             }
         }
         close PARAMS;
+    } else {
+        write_parameters();
     }
+    
 
     # See if there are magnets defined
     if ( open MAGNETS, "<$self->{configuration}->{configuration}{corpus}/$bucket/magnets" ) {
