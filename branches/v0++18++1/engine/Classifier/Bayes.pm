@@ -753,13 +753,16 @@ sub classify_file
 # $mcount   - the message count for this message
 # $nosave   - indicates that the message downloaded should not be saved in the history
 # $class    - if we already know the classification
+# $echo     - 1 to echo to the client, 0 to supress, defaults to 1
 #
 # Returns a classification if it worked, otherwise returns an empty string
 #
 # ---------------------------------------------------------------------------------------------
 sub classify_and_modify
 {
-    my ( $self, $mail, $client, $dcount, $mcount, $nosave, $class ) = @_;
+    my ( $self, $mail, $client, $dcount, $mcount, $nosave, $class, $echo ) = @_;
+
+    $echo = 1 unless (defined $echo);
 
     my $msg_subject     = '';     # The message subject
     my $msg_head_before = '';     # Store the message headers that come before Subject here
@@ -828,19 +831,23 @@ sub classify_and_modify
             if ( !( $line =~ /^(\r\n|\r|\n)$/i ) )  {
                 $message_size += length $line;
                 print TEMP $fileline;
+                
+                # If there is no echoing occuring, it doesn't matter what we do to these 
 
-                if ( $line =~ /^Subject:(.*)/i )  {
-                    $msg_subject = $1;
-                    $msg_subject =~ s/(\012|\015)//g;
-                    next;
-                }
+                if ($echo) { 
+                    if ( $line =~ /^Subject:(.*)/i )  {
+                        $msg_subject = $1;
+                        $msg_subject =~ s/(\012|\015)//g;
+                        next;
+                    }
 
-                # Strip out the X-Text-Classification header that is in an incoming message
-                if ( ( $line =~ /^X-Text-Classification:/i ) == 0 ) {
-                    if ( $msg_subject eq '' )  {
-                        $msg_head_before .= $line;
-                    } else {
-                        $msg_head_after  .= $line;
+                    # Strip out the X-Text-Classification header that is in an incoming message
+                    if ( ( $line =~ /^X-Text-Classification:/i ) == 0 ) {
+                        if ( $msg_subject eq '' )  {
+                            $msg_head_before .= $line;
+                        } else {
+                            $msg_head_after  .= $line;
+                        }
                     }
                 }
             } else {
@@ -856,7 +863,7 @@ sub classify_and_modify
 
         # Check to see if too much time has passed and we need to keep the mail client happy
         if ( time > ( $last_timeout + 2 ) ) {
-            print $client "X-POPFile-TimeoutPrevention: $timeout_count$eol" if ( !$nosave );
+            print $client "X-POPFile-TimeoutPrevention: $timeout_count$eol" if ( $echo );
             $timeout_count += 1;
             $last_timeout = time;
         }
@@ -910,7 +917,7 @@ sub classify_and_modify
 
     # Echo the text of the message to the client
 
-    if ( !$nosave ) {
+    if ( $echo ) {
 
         # If the bucket is quarantined then we'll treat it specially by changing the message header to contain
         # information from POPFile and wrapping the original message in a MIME encoding
@@ -946,12 +953,12 @@ sub classify_and_modify
         print $client $msg_head_before;
         print $client $msg_head_after;
         print $client $msg_body;
-    }
 
-    if ( $got_full_body == 0 )    {
-        echo_to_dot( $self, $mail, $client ) if ( !$nosave );
-    } else {
-        print $client ".$eol" if ( !$nosave );
+        if ( $got_full_body == 0 )    {
+            echo_to_dot( $self, $mail, $client );
+        } else {
+            print $client ".$eol";
+        }
     }
 
     if ( !$nosave ) {
