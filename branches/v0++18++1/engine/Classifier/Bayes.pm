@@ -349,14 +349,14 @@ sub load_word_matrix
         # See if there's a color file specified
         if ( open COLOR, "<$bucket/color" ) {
             $color = <COLOR>;
-            
+
             # Someone (who shall remain nameless) went in an manually created
             # empty color files in their corpus directories which would cause
             # $color at this point to be undefined and hence you'd get warnings
             # about undefined variables below.  So this little test is to deal
             # with that user and to make POPFile a little safer which is always
             # a good thing
-            
+
             if ( !defined( $color ) ) {
                 $color = '';
             } else {
@@ -386,8 +386,8 @@ sub load_word_matrix
     update_constants($self);
 
     # unclassified will always have the color black, note that unclassified is not
-    # actually a bucket 
-    
+    # actually a bucket
+
     $self->{colors}{unclassified} = 'black';
 
     # SLM for unclassified "bucket" will always match the global setting
@@ -397,7 +397,7 @@ sub load_word_matrix
     # Quarantine for unclassified will be off:
 
     $self->{parameters}{unclassified}{quarantine} = 0;
-    
+
     print "Corpus loaded with $self->{full_total} entries\n" if $self->{debug};
 }
 
@@ -439,7 +439,7 @@ sub load_bucket
     } else {
         $self->write_parameters();
     }
-    
+
 
     # See if there are magnets defined
     if ( open MAGNETS, "<$self->{configuration}->{configuration}{corpus}/$bucket/magnets" ) {
@@ -763,7 +763,7 @@ sub classify_and_modify
     my ( $self, $mail, $client, $dcount, $mcount, $nosave, $class, $echo ) = @_;
 
     $echo = 1 unless (defined $echo);
-        
+
     my $msg_subject     = '';     # The message subject
     my $msg_head_before = '';     # Store the message headers that come before Subject here
     my $msg_head_after  = '';     # Store the message headers that come after Subject here
@@ -803,10 +803,10 @@ sub classify_and_modify
 
         $line = $_;
 
-        # This is done so that we remove the network style end of line CR LF 
+        # This is done so that we remove the network style end of line CR LF
         # and allow Perl to decide on the local system EOL which it will expand
         # out of \n when this gets written to the temp file
-        
+
         $fileline = $line;
         $fileline =~ s/[\r\n]//g;
         $fileline .= "\n";
@@ -827,15 +827,15 @@ sub classify_and_modify
 
             # Kill header lines containing only whitespace (Exim does this)
 
-            next if ( $line =~ /^[ \t]+(\r\n|\r|\n)$/i ); 
+            next if ( $line =~ /^[ \t]+(\r\n|\r|\n)$/i );
 
             if ( !( $line =~ /^(\r\n|\r|\n)$/i ) )  {
                 $message_size += length $line;
                 print TEMP $fileline;
-                
-                # If there is no echoing occuring, it doesn't matter what we do to these 
 
-                if ($echo) { 
+                # If there is no echoing occuring, it doesn't matter what we do to these
+
+                if ($echo) {
                     if ( $line =~ /^Subject:(.*)/i )  {
                         $msg_subject = $1;
                         $msg_subject =~ s/(\012|\015)//g;
@@ -844,7 +844,7 @@ sub classify_and_modify
 
                     # Strip out the X-Text-Classification header that is in an incoming message
                     next if ( $line =~ /^X-Text-Classification:/i );
-                    
+
                     if ( $line =~ /(^[ \t])|([:])/ ) {
                         if ( $msg_subject eq '' )  {
                             $msg_head_before .= $msg_head_q . $line;
@@ -856,7 +856,7 @@ sub classify_and_modify
                         # Gather up any lines that are questionable
 
                         $msg_head_q .= $line;
-                    }                    
+                    }
                 }
             } else {
                 print TEMP "\n";
@@ -884,12 +884,12 @@ sub classify_and_modify
     # Do the text classification and update the counter for that bucket that we just downloaded
     # an email of that type
     $classification = ($class ne '')?$class:$self->classify_file($temp_file);
-        
+
     # Add the Subject line modification or the original line back again
     if ( $classification ne 'unclassified' ) {
         if ( $self->{configuration}->{configuration}{subject} ) {
             # Don't add the classification unless it is not present
-            if ( !( $msg_subject =~ /\[\Q$classification\E\]/ ) && 
+            if ( !( $msg_subject =~ /\[\Q$classification\E\]/ ) &&
                  ( $self->{parameters}{$classification}{subject} == 1 ) &&
                  ( $self->{parameters}{$classification}{quarantine} == 0 ) )  {
                 $msg_subject = " [$classification]$msg_subject";
@@ -937,7 +937,7 @@ sub classify_and_modify
                 print $client "Date: $self->{parser}->{date}$eol";
                 if ( $self->{configuration}->{configuration}{subject} ) {
                     # Don't add the classification unless it is not present
-                    if ( !( $msg_subject =~ /\[\Q$classification\E\]/ ) && 
+                    if ( !( $msg_subject =~ /\[\Q$classification\E\]/ ) &&
                          ( $self->{parameters}{$classification}{subject} == 1 ) ) {
                         $msg_subject = " [$classification]$msg_subject";
                     }
@@ -960,19 +960,19 @@ sub classify_and_modify
 
         print $client $msg_head_before;
         print $client $msg_head_after;
-        print $client $msg_body;        
+        print $client $msg_body;
     }
 
     if ( $got_full_body == 0 )    {
         if ($echo) {
             $self->echo_to_dot( $mail, $client );
-        } else { 
+        } else {
             $self->echo_to_dot( $mail, undef);
         }
     } else {
-        print $client ".$eol" if ( $echo );
+        print $client "$eol.$eol" if ( $echo );
     }
-    
+
 
     if ( !$nosave ) {
         open CLASS, ">$class_file";
