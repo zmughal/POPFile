@@ -3206,30 +3206,6 @@ sub handle_url
         $self->parse_form( $content );
     }
 
-    if ( $url eq '/jump_to_message' )  {
-        my $found = 0;
-        my $file = $self->{form}{view};
-        foreach my $akey ( keys %{ $self->{history_} } ) {
-            if ($akey eq $file) {
-                $found = 1;
-                last;
-            }
-        }
-        
-        #Reset any filters
-        $self->{form}{filter}    = '';
-        $self->{form}{search}    = '';
-        $self->{form}{setsearch} = 1;        
-
-        # Force a history_reload if we did not find this file in the history cache
-        # but we do find it on disk using perl's -e file test operator (returns
-        # true if the file exists).
-
-        $self->invalidate_history_cache() if ( !$found && ( -e ("$self->{configuration}->{configuration}{msgdir}$file") ) );
-        $self->http_redirect( $client, "/history?session=$self->{session_key}&start_message=0&view=$self->{form}{view}#$self->{form}{view}" );
-        return 1;
-    }
-
     if ( $url =~ /\/(.+\.gif)/ ) {
         http_file( $self,  $client, $1, 'image/gif' );
         return 1;
@@ -3266,6 +3242,30 @@ sub handle_url
     # session key, if they don't then drop to the password screen
     if ( ( (!defined($self->{form}{session})) || ($self->{form}{session} eq '' ) || ( $self->{form}{session} ne $self->{session_key} ) ) && ( $self->{configuration}->{configuration}{password} ne '' ) ) {
         password_page( $self, $client, 0, $url );
+        return 1;
+    }
+    
+    if ( $url eq '/jump_to_message' )  {
+        my $found = 0;
+        my $file = $self->{form}{view};
+        foreach my $akey ( keys %{ $self->{history_} } ) {
+            if ($akey eq $file) {
+                $found = 1;
+                last;
+            }
+        }
+        
+        #Reset any filters
+        $self->{form}{filter}    = '';
+        $self->{form}{search}    = '';
+        $self->{form}{setsearch} = 1;        
+
+        # Force a history_reload if we did not find this file in the history cache
+        # but we do find it on disk using perl's -e file test operator (returns
+        # true if the file exists).
+
+        $self->invalidate_history_cache() if ( !$found && ( -e ("$self->{configuration}->{configuration}{msgdir}$file") ) );
+        $self->http_redirect( $client, "/history?session=$self->{session_key}&start_message=0&view=$self->{form}{view}#$self->{form}{view}" );
         return 1;
     }
 
