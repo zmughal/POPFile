@@ -263,10 +263,10 @@ sub set_value_
 
     if ( $word ne '' ) {
         $word =~ /^(.)/;
-        my $i = ord($1);        
+        my $i = ord($1);
 
         $self->{matrix__}{$bucket}[$i] = '' if ( !defined($self->{matrix__}{$bucket}[$i]) );
-        $self->{matrix__}{$bucket}[$i] .= "|$word $value|" if ( ( $self->{matrix__}{$bucket}[$i] =~ s/\|\Q$word\E [\-\.\d]+\|/\|$word $value\|/ ) == 0 );        
+        $self->{matrix__}{$bucket}[$i] .= "|$word $value|" if ( ( $self->{matrix__}{$bucket}[$i] =~ s/\|\Q$word\E [\-\.\d]+\|/\|$word $value\|/ ) == 0 );
     }
 }
 
@@ -678,37 +678,37 @@ sub classify_file
             $self->{scores__} .= "<input type=\"hidden\" name=\"session\" value=\"$session_key\" />";
             $self->{scores__} .= "<input type=\"hidden\" name=\"count\" value=\"" . ($mlen + 1) . "\" />";
             $self->{scores__} .= "<hr><b>$language{QuickMagnets}</b><p>\n<table class=\"top20Words\">\n<tr>\n<th scope=\"col\">$language{Magnet}</th>\n<th>$language{Magnet_Always}</th>\n";
-            
+
             my %types = get_magnet_types();
-           
+
             foreach my $type ( keys %types ) {
 
                 if (defined $qm{$type})
                 {
                     $i += 1;
-    
-                    
+
+
                     $self->{scores__} .= "<tr><td scope=\"col\">$type: ";
                     $self->{scores__} .= "<select name=\"text$i\" id=\"\">\n";
-                    
+
                     foreach my $magnet ( 0 .. $#{$qm{$type}} ) {
                         $self->{scores__} .= "<option>" . Classifier::MailParse::splitline(@{$qm{$type}}[$magnet], 0) . "</option>\n";
                     }
-                    $self->{scores__} .= "</select>\n";                
+                    $self->{scores__} .= "</select>\n";
                     $self->{scores__} .= "</td><td>";
-                    $self->{scores__} .= "<input type=\"hidden\" name=\"type$i\" id=\"magnetsAddType\" value=\"$type\"/>";                
+                    $self->{scores__} .= "<input type=\"hidden\" name=\"type$i\" id=\"magnetsAddType\" value=\"$type\"/>";
                     $self->{scores__} .= "<select name=\"bucket$i\" id=\"magnetsAddBucket\">\n<option value=\"\"></option>\n";
-    
+
                     foreach my $bucket (@buckets) {
                         $self->{scores__} .= "<option value=\"$bucket\">$bucket</option>\n";
                     }
-    
+
                     $self->{scores__} .= "</select></td></tr>";
-                }                
-	    }
+                }
+            }
 
             $self->{scores__} .= "<tr><td></td><td><input type=\"submit\" class=\"submit\" name=\"create\" value=\"$language{Create}\" /></td></tr></table></form>";
-	}
+        }
 
         $self->{scores__} .= "<hr><b>$language{Scores}</b><p>\n<table class=\"top20Words\">\n<tr>\n<th scope=\"col\">$language{Bucket}</th>\n<th>&nbsp;</th>\n";
         $self->{scores__} .= "<th scope=\"col\">$language{Count}&nbsp;&nbsp;</th><th scope=\"col\">$language{Probability}</th></tr>\n";
@@ -898,18 +898,18 @@ sub classify_and_modify
 
                     if ( $line =~ /(^[ \t])|([:])/ ) {
                         if ( $msg_subject eq '' )  {
-                            $msg_head_before .= $msg_head_q . $line;                            
+                            $msg_head_before .= $msg_head_q . $line;
                         } else {
                             $msg_head_after  .= $msg_head_q . $line;
                         }
                         $msg_head_q = '';
                     } else {
                         # Gather up any lines that are questionable
-                        
-                        $msg_head_q .= $line;                        
+
+                        $msg_head_q .= $line;
                     }
-                    
-                    
+
+
                 }
             } else {
                 print TEMP "\n";
@@ -1032,11 +1032,11 @@ sub classify_and_modify
     if ( $classification ne 'unclassified' ) {
         if ( ( $self->{parameters__}{$classification}{quarantine} == 1 ) && $echo ) {
             print $client "$eol--$temp_file--$eol";
-	}
+        }
     }
 
     if ( $got_full_body == 1 )    {
-        print $client ".$eol" if ( $echo );
+        print $client "$eol.$eol" if ( $echo );
     }
 
     if ( !$nosave ) {
@@ -1137,7 +1137,7 @@ sub get_count_for_word
     my ( $self, $bucket, $word ) = @_;
 
     my $value = $self->get_value_( $bucket, $word );
- 
+
     return int( exp( $value ) * $self->get_bucket_word_count( $bucket ) + 0.5 );
 }
 
@@ -1467,7 +1467,7 @@ sub echo_to_dot_
     while ( <$mail> ) {
         # Check for an abort
         last if ( $self->{alive_} == 0 );
-        
+
         print $client $_ if ( defined( $client ) );
 
         # The termination has to be a single line with exactly a dot on it and nothing
