@@ -437,7 +437,7 @@ sub load_bucket
         }
         close PARAMS;
     } else {
-        write_parameters();
+        $self->write_parameters();
     }
     
 
@@ -595,7 +595,7 @@ sub classify_file
     }
 
     # If the user has not defined any buckets then we escape here return unclassified
-    return "unclassified " if ( $#buckets == -1 );
+    return "unclassified" if ( $#buckets == -1 );
 
     # The score hash will contain the likelihood that the given message is in each
     # bucket, the buckets are the keys for score
