@@ -798,9 +798,18 @@ sub parse_stream
                     
                     $self->{ut} = '';
                 }
+                
+                #Escape some HTML characters to ensure display in HTML UI
 
                 $splitline =~ s/</&lt;/g;
                 $splitline =~ s/>/&gt;/g;
+                
+                if ( $encoding =~ /quoted\-printable/i ) {
+                    $splitline =~ s/=3C/&lt;/g;
+                    $splitline =~ s/=3E/&gt;/g;
+                }
+                
+                
                 $splitline =~ s/\t/&nbsp;&nbsp;&nbsp;&nbsp;/g;
                 $self->{ut} .= $splitline;
             }
@@ -1056,7 +1065,7 @@ sub parse_stream
         $colorized .= "</tt>";
         $colorized =~ s/(\r\n\r\n|\r\r|\n\n)/__BREAK____BREAK__/g;
         $colorized =~ s/[\r\n]+/__BREAK__/g;
-        $colorized =~ s/__BREAK__/<br \/>/g;
+        $colorized =~ s/__BREAK__/<br \/>\r\n/g;
         
         return $colorized;
     }
