@@ -264,7 +264,7 @@ sub reaper
                 close $self->{children}{$kid};
                 delete $self->{children}{$kid};
                 
-                debug( $self, "Done with $kid (" . (length(keys %{$self->{children}})-1) . " to go)" ); 
+                debug( $self, "Done with $kid (" . scalar( keys %{$self->{children}} ) . " to go)" ); 
             }
         }
     }
