@@ -170,9 +170,6 @@ sub initialize
     # Calculate a session key
     change_session_key($self);
 
-    $self->remove_mail_files();
-    $self->calculate_today();
-
     return 1;
 }
 
@@ -186,6 +183,11 @@ sub initialize
 sub start
 {
     my ( $self ) = @_;
+
+    # This needs to happen after the configuration is loaded to avoid using only defaults
+
+    $self->remove_mail_files();
+    $self->calculate_today();
 
     # Load the current configuration from disk and then load up the
     # appropriate language, note that we always load English first
