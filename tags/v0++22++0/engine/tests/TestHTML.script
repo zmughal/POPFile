@@ -1,0 +1,1282 @@
+# ---------------------------------------------------------------------------------------------
+#
+# Test script for the HTML interface, loaded by TestHTML.tst
+#
+# Copyright (c) 2003 John Graham-Cumming
+#
+#   This file is part of POPFile
+#
+#   POPFile is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   POPFile is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with POPFile; if not, write to the Free Software
+#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+# ---------------------------------------------------------------------------------------------
+
+# To simplify testing the POPFile HTML UI this file contains a script
+# that is read by TestHTML.tst and executed.  The script consists of instructions
+# for specific URLs that are to be hit and instructions for how to match the
+# result that comes back
+#
+# The commands are as follows
+#
+# GET <url>         Get the URL (note the host and port will be added for you)
+# MATCH <data>      Match the return from last URL fetch against the data
+# NOTMATCH <data>   Must not match the return from last URL fetch against the data
+# MATCH/ENDMATCH    Encloses a block of test to find in the return from the last URL fetch
+# CODE/ENDCODE      Arbitrary code that should be executed
+# INPUTIS a b       Assert that form item a has value b
+# SETINPUT a b      Sets the form item a to value b
+# SETINPUTN a b c   Sets the bth input named a to c
+# SUBMIT a          Finds the form with input a and submits it
+# SETSUBMIT a b     Just like doing SETINPUT a b followed by SUBMIT a
+# CONFIGIS a b      Verify that config item a has value b
+# SETCONFIG a b     Set config item a to b
+# MAGNETIS a b c    Checks that magnet c exists in bucket a with type b
+# PARAMETERIS a b c Check that parameter b in bucket a has value c
+# CLICK a           Click the button called a
+# SENDMSG a b       Send a message through the POPFile MQ (message a with parameter b)
+# STOP              Terminate the script, used for debugging
+# HIDDEN a          If a is 1 then allow matching on hidden form elements
+#                   (by default this is 0)
+#
+# Expect that the following are available to you within the MATCH/ENDMATCH block
+#
+# $port             The port on which the HTML interface is running
+# $url              URL object for the last URL specified
+# $content          String containing the return from the last URL fetch
+# $sk               The current HTML UI session key
+# $version          Same as $h->version()
+
+# Test the simplest functionality of the HTML interface
+
+# Look for elements that should appear at the TOP and BOTTOM
+# of every page
+
+GET /
+
+# Common TOP parts
+
+MATCH <title>POPFile Control Center</title>
+MATCH <html lang="en">
+MATCH <link rel="stylesheet" type="text/css" href="skins/default/style.css" title="POPFile-Style">
+MATCH <link rel="icon" href="favicon.ico">
+
+# Common MIDDLE parts (i.e. the tabs)
+
+MATCH <a class="menuLink" href="/history?session=$sk">
+MATCH History</a>
+MATCH <a class="menuLink" href="/buckets?session=$sk">
+MATCH Buckets</a>
+MATCH <a class="menuLink" href="/magnets?session=$sk&amp;start_magnet=0">
+MATCH Magnets</a>
+MATCH <a class="menuLink" href="/configuration?session=$sk">
+MATCH Configuration</a>
+MATCH <a class="menuLink" href="/security?session=$sk">
+MATCH Security</a>
+MATCH <a class="menuLink" href="/advanced?session=$sk">
+MATCH Advanced</a>
+
+# Common BOTTOM parts
+
+MATCH <a class="bottomLink" href="http://popfile.sourceforge.net/manual/en/manual.html">
+MATCH $version
+
+# Verify that each of the pages highlights the correct item on
+# the tab bar and hence the simplest level of page serving is working
+# correctly
+
+GET /history
+MATCH
+<td class="menuSelected" align="center">
+                <a class="menuLink" href="/history?session=$sk">
+ENDMATCH
+
+GET /buckets
+MATCH
+<td class="menuSelected" align="center">
+                <a class="menuLink" href="/buckets?session=$sk">
+ENDMATCH
+
+GET /magnets
+MATCH
+<td class="menuSelected" align="center">
+                <a class="menuLink" href="/magnets?session=$sk&amp;start_magnet=0">
+ENDMATCH
+
+GET /configuration
+MATCH
+<td class="menuSelected" align="center">
+                <a class="menuLink" href="/configuration?session=$sk">
+ENDMATCH
+
+GET /security
+MATCH
+<td class="menuSelected" align="center">
+                <a class="menuLink" href="/security?session=$sk">
+ENDMATCH
+
+GET /advanced
+MATCH
+<td class="menuSelected" align="center">
+                <a class="menuLink" href="/advanced?session=$sk">
+ENDMATCH
+
+# History Page
+
+GET /history
+
+# Check for existence of messages, check that there
+# are links from the bucket names, check that the basic
+# sort options are present
+
+MATCH &lt;subject header missing&gt;
+MATCH from: Leandro
+MATCH jI775QsT823y17g\@aol.com
+MATCH Re: screename change again lol
+MATCH &lt;from header missing&gt;
+MATCH &lt;to header missing&gt;
+MATCH <a href="/buckets?session=$sk&amp;showbucket=spam">
+MATCH
+<span style="color:blue">
+spam
+</span>
+ENDMATCH
+MATCH &lt;&nbsp;Arrived
+MATCH
+<a href="/history?session=$sk&amp;setsort=from">
+From
+</a>
+ENDMATCH
+
+# Check the page navigator
+
+MATCH
+Jump to page: 
+<b>1</b>
+[<a href="/history?start_message=20&amp;session=$sk&amp;sort=-inserted">2</a>]
+[<a href="/history?start_message=20&amp;session=$sk&amp;sort=-inserted">Next &gt;</a>]
+ENDMATCH
+MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
+MATCH XoSeXyGoDdEsSm\@hotmail.com
+MATCH from: Leandro
+GET /history?start_message=20&amp;session=$sk&amp;sort=-inserted
+MATCH
+Jump to page:
+[<a href="/history?start_message=0&amp;session=$sk&amp;sort=-inserted">&lt; Previous</a>]
+[<a href="/history?start_message=0&amp;session=$sk&amp;sort=-inserted">1</a>]
+<b>2</b>
+ENDMATCH
+NOTMATCH XoSeXyGoDdEsSm\@hotmail.com
+NOTMATCH from: Leandro
+NOTMATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
+GET /history
+
+# Check refresh
+
+NOTMATCH Testing Refresh
+MATCH (<a class="history" href="/history?session=$sk">Refresh</a>)
+NEWMSG 1
+GET /history?session=$sk
+MATCH John
+MATCH Testing Refresh
+MATCH personal
+
+# Check magnet classified mails
+
+NOTMATCH Magnetic Attraction for Ferrous Females
+MATCH (<a class="history" href="/history?session=$sk">Refresh</a>)
+NEWMSG 2
+GET /history?session=$sk&amp;setfilter=
+MATCH foo-magnet\@magnetmania.com
+MATCH Magnetic Attraction for Ferrous Females
+MATCH personal
+MATCH <img title="foo" alt="foo" src="/skins/default/magnet.png">
+
+GET /view?view=32&amp;start_message=0&amp;session=$sk
+MATCH Single Message View
+MATCH foo-magnet\@magnetmania.com
+MATCH Magnetic Attraction for Ferrous Females
+MATCH
+<b>
+Magnet used:
+</b>
+</font>
+<font size="+1">
+foo
+</font>
+ENDMATCH
+
+# Check search
+
+GET /history
+SETSUBMIT search isnotpresent
+MATCH No messages.
+NOTMATCH Jump to page
+CLICK reset_filter_search
+NOTMATCH searched for from/subject
+NOTMATCH No messages.
+MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
+MATCH Jump to page
+
+SETSUBMIT search test.com
+MATCH test\@test.com
+NOTMATCH Enlarge your package Doctor ApprovedNHOB...
+NOTMATCH Jump to page
+CLICK reset_filter_search
+NOTMATCH searched for from/subject
+NOTMATCH No messages.
+MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
+MATCH Jump to page
+
+SETSUBMIT search Doctor
+NOTMATCH test\@test.com
+MATCH Enlarge your package Doctor ApprovedNHOB...
+NOTMATCH Jump to page
+CLICK reset_filter_search
+NOTMATCH No messages.
+MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
+MATCH Jump to page
+
+# Check filter
+
+SETINPUT filter personal 
+CLICK setfilter
+MATCH <option value="personal" selected style="color: green">
+NOTMATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
+MATCH Testing Refresh
+CLICK reset_filter_search
+SETINPUT filter spam
+CLICK setfilter
+MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
+NOTMATCH Testing Refresh
+MATCH
+Jump to page:
+<b>1</b>
+[<a href="/history?start_message=20&amp;session=$sk&amp;filter=spam&amp;sort=-inserted">2</a>]
+[<a href="/history?start_message=20&amp;session=$sk&amp;filter=spam&amp;sort=-inserted">Next &gt;</a>]
+ENDMATCH
+GET /history?start_message=20&amp;session=$sk&amp;filter=spam
+NOTMATCH Testing Refresh
+SETINPUT filter other 
+CLICK setfilter
+MATCH No messages.
+SETINPUT filter __filter__magnet
+CLICK setfilter
+MATCH Magnetic Attraction for Ferrous Females
+NOTMATCH Testing Refresh
+HIDDEN 0
+SETINPUTN negate 2 on
+CLICK setfilter
+NOTMATCH Magnetic Attraction for Ferrous Females
+MATCH Testing Refresh
+SETINPUTN negate 2 off
+CLICK setfilter
+MATCH Magnetic Attraction for Ferrous Females
+NOTMATCH Testing Refresh
+CLICK setfilter
+MATCH Magnetic Attraction for Ferrous Females
+NOTMATCH Testing Refresh
+CLICK reset_filter_search
+
+# Check that reclassification doesn't clear the negate
+# flag
+
+HIDDEN 0
+SETINPUT filter __filter__magnet
+SETINPUTN negate 2 on
+CLICK setfilter
+NOTMATCH Magnetic Attraction for Ferrous Females
+MATCH Testing Refresh
+CLICK change
+NOTMATCH Magnetic Attraction for Ferrous Females
+MATCH Testing Refresh
+CLICK reset_filter_search
+
+# Check sorting
+
+MATCH
+<a href="/history?session=$sk&amp;setsort=bucket">
+Bucket
+</a>
+ENDMATCH
+GET /history?session=$sk&amp;setsort=bucket
+MATCH
+<td>
+<a href="/buckets?session=$sk&amp;showbucket=personal">
+<span style="color:green">
+personal
+</span>
+</a>
+</td>
+ENDMATCH
+MATCH
+<th class="historyLabel" scope="col" align="left">
+<a href="/history?session=$sk&amp;setsort=-bucket">
+<em class="historyLabelSort">
+&gt;&nbsp;Bucket
+</em>
+</a>
+</th>
+ENDMATCH
+GET /history?session=$sk&amp;setsort=-bucket
+MATCH
+<th class="historyLabel" scope="col" align="left">
+<a href="/history?session=$sk&amp;setsort=bucket">
+<em class="historyLabelSort">
+&lt;&nbsp;Bucket
+</em>
+</a>
+</th>
+ENDMATCH
+GET /history?session=$sk&amp;setsort=
+
+# Check reclassification
+
+GET /history
+MATCH Testing Refresh
+SETINPUT reclassify_31 spam
+CLICK change
+MATCH Changed to <font color="blue">spam</font>
+MATCH Reclassified
+
+# Check undo
+
+CLICK undo_31
+MATCH
+<td>
+<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0&amp;session=$sk&amp;sort=-inserted">
+Testing Refresh
+</a>
+</td>
+<td>
+<a href="/buckets?session=$sk&amp;showbucket=personal">
+<span style="color:green">
+personal
+</span>
+</a>
+</td>
+ENDMATCH
+
+# Check click through from bucket name
+
+MATCH
+<td>
+<a href="/buckets?session=$sk&amp;showbucket=spam">
+<span style="color:blue">
+spam
+</span>
+</a>
+</td>
+ENDMATCH
+GET /buckets?session=$sk&showbucket=spam
+MATCH Detail for <font color="blue">spam</font>
+GET /history
+
+# Single message view for accuracy
+
+MATCH
+<td>
+<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0&amp;session=$sk&amp;sort=-inserted">
+Testing Refresh
+</a>
+</td>
+ENDMATCH
+GET /view?view=31&amp;start_message=0&amp;session=$sk
+MATCH Single Message View
+MATCH Testing Refresh
+MATCH John
+MATCH
+<td>
+<font size="+1">
+<b>
+Bucket:
+</b>
+</font>
+</td>
+<td>
+<font size="+1">
+<span style="color:green">
+personal
+</span>
+</font>
+</td>
+ENDMATCH
+MATCH Scores
+MATCH 0.769209
+MATCH 0.230763
+MATCH 2.829186e-05
+MATCH <font color="red">here</font>
+NOTMATCH 0.3289
+NOTMATCH 0.6697
+MATCH <font color="black">John</font>
+MATCH <font color="red">here</font>
+MATCH Body would
+GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=prob
+MATCH showing word probabilities
+MATCH 0.7692
+MATCH 0.2308
+GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=freq
+MATCH showing word frequencies
+MATCH 0.00165
+MATCH 0.00336
+GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=score
+MATCH showing word scores
+MATCH 2.3639
+MATCH 2.6727
+
+# Jump to message
+
+GET /jump_to_message?view=31
+MATCH Single Message View
+MATCH Testing Refresh
+MATCH John
+MATCH
+<td>
+<font size="+1">
+<span style="color:green">
+personal
+</span>
+</font>
+</td>
+ENDMATCH
+MATCH Scores
+MATCH 0.769209
+MATCH 0.230763
+MATCH 2.829186e-05
+MATCH <font color="red">here</font>
+NOTMATCH 0.3289
+NOTMATCH 0.6697
+MATCH <font color="black">John</font>
+MATCH <font color="red">here</font>
+# MATCH Body would
+
+GET /jump_to_message?view=40
+NOTMATCH Single Message View
+MATCH Recent Messages
+
+# jump_to_message and a password
+
+#GET /security
+#INPUTIS password
+#CONFIGIS html_password
+#SETSUBMIT password secret
+#GET /jump_to_message?view=popfile10000=1.msg
+#MATCH Enter password:
+#SETSUBMIT password secret
+#MATCH Single Message View
+#MATCH Testing Refresh
+#SETCONFIG html_password
+#GET /security
+#SETSUBMIT password
+#MATCH Updated password to
+
+# Quick Magnets
+
+GET /jump_to_message?view=31
+MATCH Single Message View
+MATCH
+<option value="Testing">
+Testing
+</option>
+ENDMATCH
+MATCH
+<option value="Refresh">
+Refresh
+</option>
+ENDMATCH
+MATCH
+<option value="John">
+John
+</option>
+ENDMATCH
+SETINPUT text1 John
+SETINPUT bucket1 other
+CLICK create
+MATCH Current Magnets
+MATCH <input type="text" name="text1" value="John" size="50" />
+SETINPUT remove1 on
+CLICK delete
+
+# Reclassify from single message view
+
+GET /view?view=31&amp;start_message=0&amp;session=$sk
+MATCH Single Message View
+MATCH Testing Refresh
+SETINPUT reclassify_31 spam
+CLICK change
+MATCH Changed to <font color="blue">spam</font>
+
+# Undo on single message view
+
+GET /view?view=31&amp;start_message=0&amp;session=$sk
+MATCH Single Message View
+CLICK undo_31
+MATCH
+<td>
+<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0&amp;session=$sk">
+Testing Refresh
+</a>
+</td>
+<td>
+<a href="/buckets?session=$sk&amp;showbucket=personal">
+<span style="color:green">
+personal
+</span>
+</a>
+</td>
+ENDMATCH
+
+# Check delete one message
+
+GET /history
+MATCH Testing Refresh
+SETINPUT remove_31 on
+CLICK clearchecked
+MATCH Recent Messages
+NOTMATCH Testing Refresh
+
+# Check delete some messages
+
+MATCH from: Leandro
+MATCH spamaddy
+SETINPUT remove_20 on
+SETINPUT remove_28 on
+CLICK clearchecked
+NOTMATCH from: Leandro
+NOTMATCH spamaddy
+
+# Check delete page of messages
+
+GET /history
+CLICK clearpage
+NOTMATCH Jump to message
+MATCH Recent Messages (9)
+MATCH ADV: Turn Back the Hands of Time
+
+# Check delete all messages
+
+CLICK clearall
+MATCH No messages.
+
+# Magnets Page
+
+GET /magnets
+
+# Check that predefined magnets are present
+
+INPUTIS text1 foo
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 oldstyle
+INPUTIS bucket2 personal
+INPUTIS type2 from
+INPUTIS text3 bar
+INPUTIS bucket3 personal
+INPUTIS type3 subject
+INPUTIS text4 baz\@baz.com
+INPUTIS bucket4 personal
+INPUTIS type4 to
+
+# Check magnet creation
+
+SETINPUT  text0 newmagnet
+SETINPUT  type0 subject
+SETSUBMIT bucket0 spam
+INPUTIS   text5 newmagnet
+INPUTIS   type5 subject
+INPUTIS   bucket5 spam
+MAGNETIS  spam subject newmagnet
+
+SETINPUT text0 foo
+SETINPUT type0 from
+SETSUBMIT bucket0 personal
+MATCH Magnet 'from: foo' already exists in bucket 'personal' 
+
+SETINPUT text0 fo
+SETINPUT type0 from
+SETSUBMIT bucket0 personal
+MATCH New magnet 'from: fo' clashes with magnet 'from: foo' in bucket 'personal' and could cause ambiguous results.
+
+# Check magnet change value
+
+SETSUBMIT text5 newmagnetvalue
+INPUTIS   text5 newmagnetvalue
+INPUTIS   type5 subject
+INPUTIS   bucket5 spam
+MAGNETIS  spam subject newmagnetvalue
+INPUTIS text1 foo
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 oldstyle
+INPUTIS bucket2 personal
+INPUTIS type2 from
+INPUTIS text3 bar
+INPUTIS bucket3 personal
+INPUTIS type3 subject
+INPUTIS text4 baz\@baz.com
+INPUTIS bucket4 personal
+INPUTIS type4 to
+
+# Check magnet change type
+
+SETSUBMIT type5 to
+INPUTIS   type5 to
+INPUTIS   text5 newmagnetvalue
+INPUTIS   bucket5 spam
+MAGNETIS  spam to newmagnetvalue
+INPUTIS text1 foo
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 oldstyle
+INPUTIS bucket2 personal
+INPUTIS type2 from
+INPUTIS text3 bar
+INPUTIS bucket3 personal
+INPUTIS type3 subject
+INPUTIS text4 baz\@baz.com
+INPUTIS bucket4 personal
+INPUTIS type4 to
+
+# Check magnet change bucket
+
+SETSUBMIT bucket5 personal
+INPUTIS   bucket5 personal
+INPUTIS   text5 newmagnetvalue
+INPUTIS   type5 to
+MAGNETIS  personal to newmagnetvalue
+INPUTIS text1 foo
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 oldstyle
+INPUTIS bucket2 personal
+INPUTIS type2 from
+INPUTIS text3 bar
+INPUTIS bucket3 personal
+INPUTIS type3 subject
+INPUTIS text4 baz\@baz.com
+INPUTIS bucket4 personal
+INPUTIS type4 to
+
+# Check the magnet navigator
+
+GET /configuration
+SETSUBMIT page_size 3
+GET /magnets
+MATCH
+Jump to magnet page:
+<b>1</b>
+[<a href="/magnets?start_magnet=3&amp;session=$sk">2]
+[<a href="/magnets?start_magnet=3&amp;session=$sk">Next</a>]
+ENDMATCH
+GET /magnets?start_magnet=3&amp;session=$sk
+MATCH
+Jump to magnet page:
+[<a href="/magnets?start_magnet=0&amp;session=$sk">Previous</a>]
+[<a href="/magnets?start_magnet=0&amp;session=$sk">1]
+<b>2</b>
+ENDMATCH
+GET /configuration
+SETSUBMIT page_size 20
+
+# Check magnet deletion
+
+GET /magnets
+SETINPUT remove5 on
+CLICK delete
+NOTMATCH newmagnetvalue
+NOTMATCH type5
+
+SETINPUT remove1 on
+SETINPUT remove3 on
+CLICK delete
+NOTMATCH "foo"
+NOTMATCH bar
+INPUTIS text1 oldstyle
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 baz\@baz.com
+INPUTIS bucket2 personal
+INPUTIS type2 to
+NOTMATCH type3
+
+# Configuration Page
+
+GET /configuration
+
+# Check skin change
+
+MATCH <link rel="stylesheet" type="text/css" href="skins/default/style.css" title="POPFile-Style">
+CONFIGIS html_skin default
+SETSUBMIT skin oceanblue
+MATCH <link rel="stylesheet" type="text/css" href="skins/oceanblue/style.css" title="POPFile-Style">
+CONFIGIS html_skin oceanblue
+SETSUBMIT skin default
+CONFIGIS html_skin default
+
+# Check language change
+
+MATCH <html lang="en">
+CONFIGIS html_language English
+SETSUBMIT language Francais
+MATCH <html lang="fr">
+CONFIGIS html_language Francais
+SETSUBMIT language English
+MATCH <html lang="en">
+CONFIGIS html_language English
+
+# Check logger change
+
+INPUTIS   debug 2
+CONFIGIS  GLOBAL_debug 1
+SETSUBMIT debug 3
+INPUTIS   debug 3
+CONFIGIS  GLOBAL_debug 2
+SETSUBMIT debug 4
+INPUTIS   debug 4
+CONFIGIS  GLOBAL_debug 3
+SETSUBMIT debug 1
+INPUTIS   debug 1
+CONFIGIS  GLOBAL_debug 0
+
+# Check history lines change
+
+INPUTIS   page_size 20
+CONFIGIS  html_page_size 20
+SETSUBMIT page_size 30
+INPUTIS   page_size 30
+CONFIGIS  html_page_size 30
+MATCH Updated number of messages per page to 30
+SETSUBMIT page_size 0
+MATCH The page size must be a number between 1 and 1000
+INPUTIS   page_size 30
+
+# Check history days change
+
+INPUTIS   history_days 2
+CONFIGIS  history_history_days 2
+SETSUBMIT history_days 3
+INPUTIS   history_days 3
+CONFIGIS  history_history_days 3
+MATCH Updated number of days of history to 3
+SETSUBMIT history_days 0
+MATCH The number of days in the history must be a number between 1 and 366
+INPUTIS   history_days 3
+
+# Check change timeout
+
+INPUTIS   timeout 60
+CONFIGIS  GLOBAL_timeout 60
+SETSUBMIT timeout 61
+INPUTIS   timeout 61
+CONFIGIS  GLOBAL_timeout 61
+MATCH Updated connection timeout to 61
+SETSUBMIT timeout 0
+MATCH The TCP timeout must be a number between 10 and 300
+INPUTIS   timeout 61
+
+# Check change POP3 port
+
+INPUTIS   pop3_port 9110
+CONFIGIS  pop3_port 9110
+SETSUBMIT pop3_port 111
+INPUTIS   pop3_port 111
+CONFIGIS  pop3_port 111
+MATCH Updated POP3 port to 111; this change will not take affect until you restart POPFile
+SETSUBMIT pop3_port 0
+MATCH The POP3 listen port must be a number between 1 and 65535
+INPUTIS   pop3_port 111
+
+# Check change separator
+
+INPUTIS   pop3_separator :
+CONFIGIS  pop3_separator :
+SETSUBMIT pop3_separator ;
+INPUTIS   pop3_separator ;
+CONFIGIS  pop3_separator ;
+MATCH Updated POP3 separator to ;
+SETSUBMIT pop3_separator gg
+MATCH The separator character must be a single character
+INPUTIS   pop3_separator ;
+
+# Check fork for POP3
+
+HIDDEN 1
+INPUTIS   pop3_force_fork 1
+CONFIGIS  pop3_force_fork 0
+SETSUBMIT pop3_force_fork 0
+INPUTIS   pop3_force_fork 1
+CONFIGIS  pop3_force_fork 0
+SETSUBMIT pop3_force_fork 1
+INPUTIS   pop3_force_fork 0
+HIDDEN 0
+
+# Check UI port
+
+INPUTIS   ui_port $port
+CONFIGIS  html_port $port
+SETSUBMIT ui_port 8082
+INPUTIS   ui_port 8082
+CONFIGIS  html_port 8082
+MATCH Updated user interface web port to 8082; this change will not take affect until you restart POPFile
+SETSUBMIT ui_port 0
+MATCH The user interface port must be a number between 1 and 65535
+INPUTIS   ui_port 8082
+
+# Security Page
+
+GET /security
+
+# Check POP3 stealth
+
+HIDDEN 1
+INPUTIS pop3_local 1
+CONFIGIS pop3_local 1
+SETSUBMIT pop3_local 1
+INPUTIS pop3_local 2
+CONFIGIS pop3_local 0
+SETSUBMIT pop3_local 2
+INPUTIS pop3_local 1
+CONFIGIS pop3_local 1
+HIDDEN 0
+
+# Check UI stealth
+
+HIDDEN 1
+INPUTIS localui 1
+CONFIGIS html_local 1
+SETSUBMIT localui 1
+INPUTIS localui 2
+CONFIGIS html_local 0
+SETSUBMIT localui 2
+INPUTIS localui 1
+CONFIGIS html_local 1
+HIDDEN 0
+
+# Check POP3 AUTH options
+
+INPUTIS   server
+CONFIGIS  pop3_secure_server
+SETSUBMIT server secure.com
+INPUTIS   server secure.com
+CONFIGIS  pop3_secure_server secure.com
+MATCH Updated remote POP3 server to secure.com
+
+INPUTIS   sport 110
+CONFIGIS  pop3_secure_port 110
+SETSUBMIT sport 111
+INPUTIS   sport 111
+CONFIGIS  pop3_secure_port 111
+MATCH Updated remote POP3 server port to 111
+SETSUBMIT sport 0
+INPUTIS   sport 111
+CONFIGIS  pop3_secure_port 111
+MATCH The port must be a number between 1 and 65535
+
+# Check autoupdate
+
+HIDDEN 1
+INPUTIS update_check 2
+CONFIGIS html_update_check 0
+SETSUBMIT update_check 1
+INPUTIS update_check 2
+CONFIGIS html_update_check 0
+SETSUBMIT update_check 2
+INPUTIS update_check 1
+CONFIGIS html_update_check 1
+HIDDEN 0
+
+# Check statistics sending
+
+HIDDEN 1
+INPUTIS send_stats 2
+CONFIGIS html_send_stats 0
+SETSUBMIT send_stats 1
+INPUTIS send_stats 2
+CONFIGIS html_send_stats 0
+SETSUBMIT send_stats 2
+INPUTIS send_stats 1
+CONFIGIS html_send_stats 1
+HIDDEN 0
+
+# Check password
+
+INPUTIS password
+CONFIGIS html_password b61124a488acc5f4406e74272629ee86
+SETSUBMIT password secret
+CONFIGIS html_password d5a642c75542722fd0e20993ee36765d
+MATCH Updated password
+SETSUBMIT password
+INPUTIS password
+CONFIGIS html_password b61124a488acc5f4406e74272629ee86
+MATCH Updated password 
+
+# Advanced Page
+
+GET /advanced
+
+# Check presence of ignore words
+
+MATCH address
+MATCH localhost
+MATCH smtp
+
+# Check add ignore word
+
+INPUTIS newword
+SETSUBMIT newword four11@.-_
+MATCH four11@.-_
+SETSUBMIT newword ba"d
+MATCH Ignored words can only contain alphanumeric, ., _, -, or @ characters
+
+# Check remove ignore word
+
+INPUTIS word
+SETSUBMIT word four11@.-_
+NOTMATCH four11@.-_
+SETSUBMIT word ba"d
+MATCH Ignored words can only contain alphanumeric, ., _, -, or @ characters
+
+# TODO Write better tests for stop words in Japanese
+# and Korean
+
+GET /configuration
+SETSUBMIT language Nihongo
+GET /advanced
+MATCH address
+MATCH localhost
+MATCH smtp
+
+GET /configuration
+SETSUBMIT language Korean
+GET /advanced
+MATCH address
+MATCH localhost
+MATCH smtp
+
+GET /configuration
+SETSUBMIT language English
+
+# Check change arbitrary parameter
+
+GET /advanced
+SETSUBMIT parameter_bayes_hostname testhostname
+CONFIGIS bayes_hostname testhostname
+INPUTIS parameter_bayes_hostname testhostname
+
+# Buckets Page
+
+GET /buckets
+
+# Basic bucket test to verify that the buckets in the test corpus
+# are present on the bucket page with the right numbers
+#
+#     Checks bucket names are present and the word and unique word
+#     counts
+
+MATCH spam
+MATCH personal
+MATCH other
+
+MATCH <a href="/buckets?session=$sk&amp;showbucket=spam">
+MATCH <a href="/buckets?session=$sk&amp;showbucket=personal">
+MATCH <a href="/buckets?session=$sk&amp;showbucket=other">
+
+MATCH
+<td align="right">
+656
+</td>
+ENDMATCH
+MATCH
+<td align="right">
+3
+</td>
+ENDMATCH
+MATCH
+<td align="right">
+3,353
+</td>
+ENDMATCH
+
+# Check statistics displayed correctly
+
+MATCH >1,785 (12.74%)<
+MATCH >103 (0.73%)<
+MATCH >12,114 (86.51%)<
+
+MATCH <td bgcolor="red" title="other (12.74%)" width="12%"><img src="pix.gif" alt="" height="20" width="1" /></td>
+MATCH <td bgcolor="green" title="personal (0.73%)" width="1%"><img src="pix.gif" alt="" height="20" width="1" /></td>
+MATCH <td bgcolor="blue" title="spam (86.51%)" width="86%"><img src="pix.gif" alt="" height="20" width="1" /></td>
+
+# Check Reset Statistics
+
+MATCH
+<td align="right">
+134
+</td>
+ENDMATCH
+MATCH
+<td align="right">
+1
+</td>
+ENDMATCH
+MATCH
+<td align="right">
+99.25%
+</td>
+ENDMATCH
+CLICK reset_stats
+MATCH
+<td align="right">
+Not enough data
+</td>
+ENDMATCH
+MATCH >0 (  0.00%)<
+
+# Check bucket creation
+
+NOTMATCH newbucket0-_
+SETSUBMIT cname newbucket0-_
+MATCH newbucket0-_
+MATCH Created bucket named newbucket0-_
+MATCH
+<td>
+<a href="/buckets?session=$sk&amp;showbucket=newbucket0-_">
+<span style="color:black">
+newbucket0-_
+</span>
+</a>
+</td>
+ENDMATCH
+
+SETSUBMIT cname bu%cket
+MATCH Bucket names can only contain the letters a to z in lower case
+SETSUBMIT cname BUCKET
+MATCH Bucket names can only contain the letters a to z in lower case
+
+SETSUBMIT cname spam
+MATCH Bucket named spam already exists
+
+MATCH spam
+MATCH personal
+MATCH other
+
+# Check set bucket color
+
+GET /buckets?color=blue&bucket=newbucket0-_&session=$sk
+MATCH
+<td>
+<a href="/buckets?session=$sk&amp;showbucket=newbucket0-_">
+<span style="color:blue">
+newbucket0-_
+</span>
+</a>
+</td>
+ENDMATCH
+
+# Check bucket rename
+
+SETINPUT oname newbucket0-_
+SETSUBMIT newname sens%ible
+MATCH Bucket names can only contain the letters a to z in lower case
+SETINPUT oname newbucket0-_
+SETSUBMIT newname sensible
+MATCH Renamed bucket newbucket0-_ to sensible
+MATCH
+<td>
+<a href="/buckets?session=$sk&amp;showbucket=sensible">
+<span style="color:blue">
+sensible
+</span>
+</a>
+</td>
+ENDMATCH
+
+MATCH spam
+MATCH personal
+MATCH other
+
+# TODO Check bucket delete
+
+SETSUBMIT name sensible
+MATCH Deleted bucket sensible
+
+GET /buckets
+
+NOTMATCH sensible
+MATCH spam
+MATCH personal
+MATCH other
+
+# Check word lookup
+
+SETSUBMIT word xxxxxx
+MATCH <b>xxxxxx</b> does not appear in any of the buckets 
+SETSUBMIT word used
+MATCH <b>used</b> is most likely to appear in <font color="red">other</font>
+MATCH 0.0005602241
+MATCH 0.6873803233
+MATCH 1.8945518529
+MATCH Frequency
+
+# Check operation of Subject Modification
+
+SETSUBMIT name personal
+MATCH Deleted bucket personal
+SETSUBMIT name other
+MATCH Deleted bucket other
+
+HIDDEN 1
+INPUTIS subject 1
+PARAMETERIS spam subject 1
+SETSUBMIT subject 1
+INPUTIS subject 2
+PARAMETERIS spam subject 0
+SETSUBMIT subject 2
+INPUTIS subject 1
+PARAMETERIS spam subject 1
+HIDDEN 0
+
+# Check operation of Quarantine
+
+HIDDEN 1
+INPUTIS quarantine 2
+PARAMETERIS spam quarantine 0
+SETSUBMIT quarantine 2
+INPUTIS quarantine 1
+PARAMETERIS spam quarantine 1
+SETSUBMIT quarantine 1
+INPUTIS quarantine 2
+PARAMETERIS spam quarantine 0
+HIDDEN 0
+
+# Check operation of color change
+
+GET /buckets?color=feldspar&amp;bucket=spam&amp;session=$sk
+MATCH <option value="feldspar"  selected style="color: feldspar">
+
+# Check individual bucket page for accuracy
+
+MATCH /buckets?session=$sk&amp;showbucket=spam
+GET /buckets?session=$sk&amp;showbucket=spam
+MATCH Detail for <font color="feldspar">spam</font>
+MATCH 12,114
+MATCH (3,353 distinct)
+MATCH
+<td>
+100.00%
+</td>
+ENDMATCH
+MATCH <a class="bucketLetter" href="/buckets?session=$sk&amp;showbucket=spam&amp;showletter=m">
+
+GET /buckets?session=$sk&amp;showbucket=spam&amp;showletter=m
+MATCH <a class="wordListLink" href="/buckets?session=$sk&amp;lookup=Lookup&amp;word=missouri#Lookup">
+
+# Check clearing of individual bucket
+
+CLICK clearbucket
+MATCH 
+<th scope="row" class="bucketsLabel">
+Total word count
+</th>
+<td>
+&nbsp;
+</td>
+<td>
+0
+</td>
+ENDMATCH
+
+# Check bad session key
+
+GET /history?session=123456
+MATCH POPFile Session Expired
+
+# Get ICO, GIF, CSS, PNG, LOG and HTML file
+
+CODE
+open TEMP, ">../temp.ico";
+print TEMP "10 GOTO 10\n";
+close TEMP;
+ENDCODE
+
+GET /temp.ico
+MATCH 10 GOTO 10
+
+CODE
+rename '../temp.ico', '../temp.gif';
+ENDCODE
+
+GET /temp.gif
+MATCH 10 GOTO 10
+
+CODE
+rename '../temp.gif', '../temp.png';
+ENDCODE
+
+GET /temp.png
+MATCH 10 GOTO 10
+
+CODE
+mkdir '../manual';
+open TEMP, ">../manual/temp.html";
+print TEMP "10 GOTO 10\n";
+close TEMP;
+ENDCODE
+
+GET /manual/temp.html
+MATCH 10 GOTO 10
+
+GET /skins/default/style.css
+MATCH .menuSelected
+
+# Get a page that does not exist
+
+GET /foo
+
+# Check update checking
+
+SETCONFIG html_update_check 1
+SETCONFIG html_send_stats 1
+SETCONFIG html_last_update_check 0
+SETCONFIG GLOBAL_ecount 1
+GET /
+MATCH popfile_update.pl
+MATCH popfile_stats.pl
+
+# Check the operation of passwords
+
+GET /security
+INPUTIS password
+CONFIGIS html_password b61124a488acc5f4406e74272629ee86
+SETSUBMIT password secret
+GET /advanced?session=123456
+MATCH Enter password:
+SETSUBMIT password wrong
+MATCH Enter password:
+MATCH Incorrect password
+GET /?session=123456
+MATCH Enter password:
+SETSUBMIT password secret
+MATCH Recent Messages
+GET /advanced?session=123456&dummy=foo&dummy=bar
+MATCH Enter password:
+SETSUBMIT password secret
+MATCH All POPFile Parameters
+GET /security
+
+# Check shutdown operation
+
+GET /shutdown
+MATCH Enter password:
+SETSUBMIT password secret
+MATCH POPFile has shut down  
