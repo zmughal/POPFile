@@ -1,0 +1,345 @@
+body {
+  margin: 1%;
+  color: #FFFFFF;
+  font-family: sans-serif;
+  background-color: #7988A5;
+  text-align: center;
+}
+
+.shell, .shellTop {
+  background-color: #424d63;
+  color: #FFFFFF;
+  border-collapse: collapse;
+}
+
+.naked {
+  font-size: 8pt;
+  font-family: sans-serif;
+  padding: 5px;
+}
+
+table.head {
+  width: 100%;
+  font-family: sans-serif;
+  text-align: left;
+}
+
+td.head {
+  font-weight: bold;
+  font-size: 12pt;
+  font-family: arial, sans-serif;
+}
+
+select, input {
+  border: 1px outset #000000;
+  background-color: #BAB8C6;
+  color: black;
+  font-size: 8pt;
+  font-weight: normal;
+  margin: 0px 0px 0px 0px;
+  padding: 0px 0px 0px 0px;
+}
+
+.submit {
+  border: none;
+  background-color: transparent;
+  height: 22px;
+  width: 99px;
+  font-size: 8pt;
+  font-weight: bold;
+  color: #FFFFFF;
+  margin: 0px 0px 0px 0px;
+  padding: 0px 0px 0px 0px;
+  background-image: url(sleetImages/button.gif);
+  cursor: pointer;
+}
+
+.shellTopCenter {
+  background-image: url(sleetImages/top.gif);
+  background-repeat: repeat-x;
+  height: 21px;
+  padding: 0px;
+  margin: 0px;
+  border: none;
+}
+
+.shellTopLeft {
+  height: 21px;
+  width: 27px;
+  padding: 0px;
+  margin: 0px;
+  border: none;
+  background-image: url(sleetImages/topLeft.gif);
+  background-repeat: no-repeat;
+}
+
+.shellTopRight {
+  height: 21px;
+  width: 25px;
+  padding: 0px;
+  margin: 0px;
+  border: none;
+  background-image: url(sleetImages/topRight.gif);
+  background-repeat: no-repeat;
+}
+
+.shellLeft {
+  padding: 0px;
+  margin: 0px;
+  border: none;
+  width: 27px;
+  background-image: url(sleetImages/left.gif);
+  background-repeat: repeat-y;
+}
+
+.shellRight {
+  padding: 0px;
+  margin: 0px;
+  border: none;
+  background-image: url(sleetImages/right.gif);
+  width: 25px;
+  background-repeat: repeat-y;
+}
+
+.shellBottomCenter {
+  padding: 0px;
+  margin: 0px;
+  border: none;
+  background-image: url(sleetImages/bottom.gif);
+  background-repeat: repeat-x;
+  height: 22px;
+}
+
+.shellBottomLeft {
+  padding: 0px;
+  margin: 0px;
+  border: none;
+  background-image: url(sleetImages/bottomLeft.gif);
+  width: 27px;
+  height: 22px;
+  background-repeat: no-repeat;
+}
+
+.shellBottomRight {
+  padding: 0px;
+  margin: 0px;
+  border: none;
+  background-image: url(sleetImages/bottomRight.gif);
+  width: 25px;
+  background-repeat: no-repeat;
+  height: 22px;
+}
+
+.menu {
+  background-image: url(sleetImages/menu.gif);
+  font-weight: normal;
+  font-size: 10pt;
+  width: 100%;
+}
+
+.menuLink {
+  color: #ffffff;
+  background-color: transparent;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 8pt;
+}
+
+.menuLink:hover {
+  border: none;
+  cursor: pointer;
+}
+
+
+.menuSelected {
+  background-image: url(sleetImages/menuButton.gif);
+  width: 109px;
+  height: 21px;
+  background-repeat: no-repeat;
+}
+
+.menuStandard {
+  background-image: url(sleetImages/menuButton.gif);
+  width: 109px;
+  height: 21px;
+  background-repeat: no-repeat;
+
+}
+
+.menuIndent {
+  background-image: none;
+  color: #FFFFFF;
+  background-color: #7988a5;
+  padding: 0px;
+  margin: 0px;
+  width: 0px;
+}
+
+.rowEven, .rowEven a {
+  font-size: 8pt;
+  color: #FFFFFF;
+  background-color: transparent;
+}
+
+.rowOdd {
+  color: #AAAAAA;
+  background-color: #545F74;
+}
+
+.rowOdd a {
+  font-size: 8pt;
+  color: #AAAAAA;
+  background-color: transparent;
+}
+
+.rowOdd td {
+  border-top: 1px #888888 solid;
+  border-bottom: 1px #888888 solid;
+}
+
+tr.rowHighlighted {
+  color: #EEEEEE;
+  background-color: #545f74;
+}
+
+td.openMessageCloser {
+  text-align: right;
+}
+
+td.openMessageBody {
+  text-align: left;
+}
+
+td.accuracy0to49 {
+  color: black;
+  background-color: red;
+}
+
+td.accuracy50to93 {
+  color: black;
+  background-color: yellow;
+}
+
+td.accuracy94to100 {
+  color: black;
+  background-color: green;
+}
+
+div.error01 {
+  font-size: larger;
+  color: red;
+  background-color: transparent;
+}
+
+div.error02 {
+  color: red;
+  background-color: transparent;
+}
+
+span.graphfont {
+  font-size: x-small;
+}
+
+h2 {
+  font-weight: bold;
+  font-size: 12pt;
+}
+
+.historyLabel {
+  font-weight: normal;
+}
+
+.historyLabel em {
+  font-weight: bold;
+  font-style: normal;
+}
+
+.bucketsLabel {
+  font-weight: bold;
+}
+
+.magnetsLabel {
+  font-weight: bold;
+}
+
+.securityLabel {
+  font-weight: bold;
+}
+
+.configurationLabel {
+  font-weight: bold;
+}
+
+.advancedLabel {
+  font-weight: bold;
+}
+
+.passwordLabel {
+  font-weight: bold;
+}
+
+.sessionLabel {
+  font-weight: bold;
+}
+
+td.logo2menuspace {
+  height: 1.0em;
+}
+
+a {
+  font-size: 10pt;
+  color: #FFFFFF;
+  text-decoration: underline;
+  background-color: transparent;
+}
+
+a:hover {
+  border: 1px #FFFFFF solid;
+}
+
+hr {
+  color: #888888;
+  background-color: transparent;
+  height: 1px;
+}
+
+.menuSpacer {
+  padding-right: 0px;
+  padding-left: 0px;
+  padding-bottom: 0px;
+  margin: 0px;
+  width: 0px;
+  padding-top: 0px
+}
+
+
+.settingsTable, .settingsPanel {
+  border: 1px solid #888888;
+  color: #FFFFFF;
+  background-color: #545F74;
+}
+
+.openMessageTable, .lookupResultsTable {
+  border: 1px solid #888888;
+  color: #FFFFFF;
+  background-color: #545F74;
+}
+
+.footer {
+  background-image: url(sleetImages/menu.gif);
+  margin-top: 10px;
+  margin-left: 10%;
+  margin-right: 10%;
+  height: 22px;
+  width: 80%;
+  font-size: 8pt;
+  background-color: transparent;
+  color: #000000;
+}
+
+.bottomLink {
+  font-size: 8pt;
+  color: #000000;
+  background-color: transparent;
+}
+
