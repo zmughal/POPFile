@@ -524,9 +524,17 @@ sub child
             if ( $2 ne '99999999' )  {                    
                 if ( $self->{configuration}->{configuration}{toptoo} ) {
                     if ( echo_response( $self, $mail, $client, "RETR $1" ) ) {
-                        my $class = $self->{classifier}->classify_and_modify( $mail, $client, $download_count, $count, 1, '' );
+
+                        # Classify without echoing to client, without saving 
+                        # and without over-writing any files ($mcount overriden to 0) 
+
+                        my $class = $self->{classifier}->classify_and_modify( $mail, $client, $download_count, 0, 1, '', 0 );
+
                         if ( echo_response( $self, $mail, $client, $command ) ) {
-                            $self->{classifier}->classify_and_modify( $mail, $client, $download_count, $count, 0, $class );
+
+                            # Classify with pre-defined class, without saving, echoing to client
+
+                            $self->{classifier}->classify_and_modify( $mail, $client, $download_count, 0, 1, $class, 1 );
 
                             # Tell the parent that we just handled a mail                            
                             print $pipe "$class$eol";
