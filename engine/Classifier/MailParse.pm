@@ -43,7 +43,7 @@ my %entityhash = ('aacute'  => 224,     'Aacute'  => 202,     'Acirc'   => 203, 
                   'Uacute'  => 217,     'uacute'  => 249,     'ucirc'   => 250,     'Ucirc'   => 218,
                   'ugrave'  => 248,     'Ugrave'  => 216,     'uml'     => 168,     'Uuml'    => 220,
                   'uuml'    => 252,     'Yacute'  => 220,     'yacute'  => 252,     'yen'     => 165,
-                  'yuml'    => 254); 
+                  'yuml'    => 254);
 
 #----------------------------------------------------------------------------
 # new
@@ -390,7 +390,7 @@ sub update_tag
         }
 
 	# If we hit a table tag then any font information is lost
-	
+
 	if ( $tag =~ /^(table|td|tr|th)$/i ) {
 	    $self->{htmlfontcolor__} = map_color( $self, 'black' );
 	    $self->{htmlbackcolor__} = $self->{htmlbodycolor__};
@@ -1152,15 +1152,15 @@ sub decode_string
 
     my $decode_it = '';
 
-    while ( $mystring =~ /=\?[\w-]+\?(B|Q)\?(.*)\?=/ig ) {
+    while ( $mystring =~ /=\?[\w-]+\?(B|Q)\?(.*?)\?=/ig ) {
         if ($1 eq "B") {
             $decode_it = decode_base64( $2 );
-            $mystring =~ s/=\?[\w-]+\?B\?(.*)\?=/$decode_it/i;
+            $mystring =~ s/=\?[\w-]+\?B\?(.*?)\?=/$decode_it/i;
         } elsif ($1 eq "Q") {
            $decode_it = $2;
            $decode_it =~ s/\_/=20/g;
            $decode_it = decode_qp( $decode_it );
-           $mystring =~ s/=\?[\w-]+\?Q\?(.*)\?=/$decode_it/i;
+           $mystring =~ s/=\?[\w-]+\?Q\?(.*?)\?=/$decode_it/i;
         }
     }
 
