@@ -141,9 +141,12 @@ test_assert_equal( $1, 'bugtracker@relativity.com' );
 
 # Check that multi-line To: and CC: headers get handled properly
 $cl->parse_stream( 'tests/TestMailParse021.msg' );
-test_assert_equal( $cl->{to},      'dsmith@ctaz.com, dsmith@dol.net, dsmith@dirtur.com, dsmith@dialpoint.net, dsmith@crosscountybank.com, <dsmith@cybersurf.net>, <dsmith@dotnet.com>, <dsmith@db.com>, <dsmith@cs.com>, <dsmith@crossville.com>, <dsmith@dreamscape.com>, <dsmith@cvnc.net>, <dsmith@dmrtc.net>, <dsmith@datarecall.net>, <dsmith@dasia.net>' );
-test_assert_equal( $cl->{cc},      'dsmith@dmi.net, dsmith@datamine.net, dsmith@crusader.com, dsmith@datasync.com, <dsmith@doorpi.net>, <dsmith@dnet.net>, <dsmith@cybcon.com>, <dsmith@csonline.net>, <dsmith@directlink.net>, <dsmith@cvip.net>, <dsmith@dragonbbs.com>, <dsmith@crosslinkinc.com>, <dsmith@dccnet.com>, <dsmith@dakotacom.net>' );
+test_assert_equal( $cl->{to},      "dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@dirtur.com, dsmith\@dialpoint.net, dsmith\@crosscountybank.com, \15\12\t<dsmith\@cybersurf.net>, <dsmith\@dotnet.com>, <dsmith\@db.com>, <dsmith\@cs.com>\15\12\t, <dsmith\@crossville.com>, \15\12\t<dsmith\@dreamscape.com>, <dsmith\@cvnc.net>, <dsmith\@dmrtc.net>, <dsmith\@datarecall.net>, \15\12\t<dsmith\@dasia.net>" );
+test_assert_equal( $cl->{cc},      "dsmith\@dmi.net, dsmith\@datamine.net, dsmith\@crusader.com, dsmith\@datasync.com, \15\12\t<dsmith\@doorpi.net>, <dsmith\@dnet.net>, <dsmith\@cybcon.com>, <dsmith\@csonline.net>, \15\12\t<dsmith\@directlink.net>, <dsmith\@cvip.net>, <dsmith\@dragonbbs.com>, <dsmith\@crosslinkinc.com>, \15\12\t<dsmith\@dccnet.com>, <dsmith\@dakotacom.net>" );
 
+open TEST, ">tests/temp.out1";
+print TEST "$cl->{to}\15\12\15\12\15\12";
+print TEST "dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@dirtur.com, dsmith\@dialpoint.net, dsmith\@crosscountybank.com, \15\12\t<dsmith\@cybersurf.net>, <dsmith\@dotnet.com>, <dsmith\@db.com>, <dsmith\@cs.com>\15\12\t, <dsmith\@crossville.com>, \15\12\t<dsmith\@dreamscape.com>, <dsmith\@cvnc.net>, <dsmith\@dmrtc.net>, <dsmith\@datarecall.net>, \15\12\t<dsmith\@dasia.net>";
 
 #Test colorized output
 
@@ -184,7 +187,7 @@ for my $input_file (@color_tests) {
 		
 		close COL;
 		close OUTPUT;
-#		rename( 'tests/temp.out', $output_file );
+#       rename( 'tests/temp.out', $output_file );
 		unlink( 'tests/temp.out' );
 		
     }

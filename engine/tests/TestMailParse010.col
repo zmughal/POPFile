@@ -4,13 +4,13 @@ Return-Path: &lt;<b><font color="black">csstxja@myrealbox.com</font></b>&gt;<br 
 
 Received: from <b><font color="black">digitalme.com</font></b> not <b><font color="black">authenticated</font></b> [<b><font color="black">193.97.97.75</font></b>]<br />
 
-        by smtp-send.myrealbox.com with NetMail SMTP Agent $Revision$ on Novell NetWare;<br />
+        by <b><font color="black">smtp-send.<b><font color="black">myrealbox.com</font></b></font></b> with <b><font color="black">NetMail</font></b> SMTP <b><font color="black">Agent</font></b> $<b><font color="black">Revision</font></b>: 1.1 $ on <b><font color="black">Novell</font></b> <b><font color="black">NetWare</font></b>;<br />
 
         Sat, 11 Jan 2003 22:03:10 -0700<br />
 
 Received: from <b><font color="black"><b><font color="black">65.100.247.142</font></b></font></b> not <b><font color="black">authenticated</font></b> [65.100.247.142]<br />
 
-        by digitalme.com with Novell NIMS $Revision$ on Novell NetWare;<br />
+        by <b><font color="black">digitalme.com</font></b> with <b><font color="black">Novell</font></b> <b><font color="black">NIMS</font></b> $<b><font color="black">Revision</font></b>: 1.1 $ on <b><font color="black">Novell</font></b> <b><font color="black">NetWare</font></b>;<br />
 
         Sat, 11 Jan 2003 21:03:05 -0800<br />
 
@@ -28,7 +28,7 @@ MIME-Version: 1.0<br />
 
 Content-Type: text/plain;<br />
 
-        charset="windows-1252"<br />
+        charset="<b><font color="black">windows-1252</font></b>"<br />
 
 Content-Transfer-Encoding: base64<br />
 

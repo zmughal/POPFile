@@ -8,7 +8,7 @@ From: <b><font color="black">wendyoufp@<b><font color="black">msn.com</font></b>
 
 Received: from <b><font color="black">msn.com</font></b> (nnpxa@adsl-66-125-127-84.dsl.pltn13.pacbell.net [<b><font color="black">66.125.127.84</font></b>])<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;by vanyel.herald.co.uk (8.9.3/8.9.3/Debian/GNU) with SMTP id QAA05835<br />
+&nbsp;&nbsp;&nbsp;&nbsp;by <b><font color="black">vanyel</font></b>.<b><font color="black">herald</font></b>.co.uk (8.9.3/8.9.3/<b><font color="black">Debian</font></b>/<b><font color="black">GNU</font></b>) with SMTP id QAA05835<br />
 
 X-Authentication-Warning: <b><font color="black">vanyel</font></b>.<b><font color="black">herald</font></b>.co.uk: <b><font color="black">Host</font></b> nnpxa@adsl-66-125-127-84.dsl.pltn13.pacbell.net [<b><font color="black">66.125.127.84</font></b>] <br />
 
@@ -24,6 +24,8 @@ MIME-Version: 1.0<br />
 
 Content-Type: multipart/mixed;<br />
 
+&nbsp;&nbsp;&nbsp;&nbsp;boundary="----=_NextPart_000_00C3_68A82A2C.D7041A60"<br />
+
 X-Priority: 3<br />
 
 X-Mailer: <b><font color="black">AOL</font></b> 7.0 for <b><font color="black">Windows</font></b> US sub 118<br />
@@ -38,7 +40,7 @@ X-UIDL: &Tb"!2d_!!]9M!!OK]!!<br />
 
 Content-Type: text/html;<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;charset="iso-8859-1"<br />
+&nbsp;&nbsp;&nbsp;&nbsp;charset="<b><font color="black">iso-8859-1</font></b>"<br />
 
 Content-Transfer-Encoding: base64<br />
 

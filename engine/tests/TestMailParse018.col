@@ -4,19 +4,19 @@ Delivered-To: run@<b><font color="black">tepkom</font></b>.ru<br />
 
 Received: from localhost (localhost [<b><font color="black">127.0.0.1</font></b>])<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;by mail.tepkom.ru (Postfix) with SMTP id 1D8F4971EC<br />
+&nbsp;&nbsp;&nbsp;&nbsp;by mail.<b><font color="black">tepkom</font></b>.ru (<b><font color="black">Postfix</font></b>) with SMTP id 1D8F4971EC<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;for &lt;run@tepkom.ru&gt;; Tue, 21 Jan 2003 01:01:30 +0300 (MSK)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;for &lt;<b><font color="black">run@tepkom.ru</font></b>&gt;; Tue, 21 Jan 2003 01:01:30 +0300 (<b><font color="black">MSK</font></b>)<br />
 
 Received: from <b><font color="black">mta1.<b><font color="black">wss.<b><font color="black">scd.<b><font color="black">yahoo.com</font></b></font></b></font></b></font></b> (<b><font color="black">mta1.<b><font color="black">wss.<b><font color="black">scd.<b><font color="black">yahoo.com</font></b></font></b></font></b></font></b> [<b><font color="black">66.218.85.32</font></b>])<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;by mail.tepkom.ru (Postfix) with ESMTP id 91A4B971E8<br />
+&nbsp;&nbsp;&nbsp;&nbsp;by mail.<b><font color="black">tepkom</font></b>.ru (<b><font color="black">Postfix</font></b>) with ESMTP id 91A4B971E8<br />
 
-&nbsp;&nbsp;&nbsp;&nbsp;for &lt;run@tepkom.ru&gt;; Tue, 21 Jan 2003 01:01:28 +0300 (MSK)<br />
+&nbsp;&nbsp;&nbsp;&nbsp;for &lt;<b><font color="black">run@tepkom.ru</font></b>&gt;; Tue, 21 Jan 2003 01:01:28 +0300 (<b><font color="black">MSK</font></b>)<br />
 
 Received: from <b><font color="black">keymaster.<b><font color="black">relativity.com</font></b></font></b> (<b><font color="black">12.146.171.10</font></b>) by <b><font color="black">mta1.<b><font color="black">wss.<b><font color="black">scd.<b><font color="black">yahoo.com</font></b></font></b></font></b></font></b> (6.5.032.1)<br />
 
-        id 3E270D860018BFCC for bugs@drunin.net; Mon, 20 Jan 2003 13:59:26 -0800<br />
+        id 3E270D860018<b><font color="black">BFCC</font></b> for <b><font color="black">bugs@drunin.net</font></b>; Mon, 20 Jan 2003 13:59:26 -0800<br />
 
 Message-ID: &lt;3E270D860018BFCC@mta1.wss.scd.yahoo.com&gt; (added by postmaster@mail.san.yahoo.com)<br />
 
