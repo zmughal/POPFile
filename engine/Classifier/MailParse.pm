@@ -1013,8 +1013,6 @@ sub parse_header
         }
 
         if ( $header =~ /^From$/i )  {
-            $encoding     = '';
-            $self->{content_type} = '';            
             $self->{from} = $argument if ( $self->{from} eq '' ) ;
             $prefix = 'from';
         }
