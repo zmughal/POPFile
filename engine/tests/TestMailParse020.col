@@ -1,0 +1,86 @@
+<tt>Received: (<b><font color="black">qmail</font></b> 14017 <b><font color="black">invoked</font></b> by <b><font color="black">uid</font></b> 417); 13 Feb 2003 20:05:08 -0000<br />
+Received: from <b><font color="black">mail.<b><font color="black"><b><font color="black">gentoo.org</font></b></font></b></font></b> (HELO gentoo.org) (<b><font color="black">204.126.2.42</font></b>)<br />
+  by 192.168.0.30 with SMTP; 13 Feb 2003 20:05:08 -0000<br />
+Received: (<b><font color="black">qmail</font></b> 13859 <b><font color="black">invoked</font></b> by <b><font color="black">uid</font></b> 1002); 13 Feb 2003 20:10:36 -0000<br />
+Mailing-List: <b><font color="black">contact</font></b> <b><font color="black">gentoo-announce-help@gentoo.org</font></b>; <b><font color="black">run</font></b> by <b><font color="black">ezmlm</font></b><br />
+Precedence: <b><font color="black">bulk</font></b><br />
+List-Post: &lt;mailto:<b><font color="black">gentoo-announce@gentoo.org</font></b>&gt;<br />
+List-Help: &lt;mailto:<b><font color="black">gentoo-announce-help@gentoo.org</font></b>&gt;<br />
+List-Unsubscribe: &lt;mailto:<b><font color="black">gentoo-announce-unsubscribe@gentoo.org</font></b>&gt;<br />
+List-Subscribe: &lt;mailto:<b><font color="black">gentoo-announce-subscribe@gentoo.org</font></b>&gt;<br />
+List-Id: <b><font color="black">Gentoo</font></b> <b><font color="black">Linux</font></b> mail &lt;<b><font color="black">gentoo-announce.<b><font color="black">gentoo.org</font></b></font></b>&gt;<br />
+X-BeenThere: <b><font color="black">gentoo</font></b>-announce@<b><font color="black">gentoo.org</font></b><br />
+Delivered-To: <b><font color="black">mailing</font></b> <b><font color="black">list</font></b> <b><font color="black">gentoo</font></b>-announce@<b><font color="black">gentoo.org</font></b><br />
+Delivered-To: <b><font color="black">moderator</font></b> for <b><font color="black">gentoo</font></b>-announce@<b><font color="black">gentoo.org</font></b><br />
+Received: (<b><font color="black">qmail</font></b> 24610 <b><font color="black">invoked</font></b> from <b><font color="black">network</font></b>); 13 Feb 2003 20:08:14 -0000<br />
+Date: Thu, 13 Feb 2003 20:58:33 +0100<br />
+From: <b><font color="black">Sascha</font></b> <b><font color="black">Schwabbauer</font></b> &lt;<b><font color="black">cybersystem@<b><font color="black">gentoo.org</font></b></font></b>&gt;<br />
+To: <b><font color="black">gentoo-announce@<b><font color="black">gentoo.org</font></b></font></b><br />
+Subject: <b><font color="black">Fix</font></b> for <b><font color="black">kde</font></b> 3.1+3.0.x <b><font color="black">installs</font></b> (x86) (<b><font color="black">bug</font></b> #15593) - <b><font color="black">please</font></b> <b><font color="black">read</font></b><br />
+Message-Id: &lt;20030213205833.74db6ea3.cybersystem@gentoo.org&gt;<br />
+X-Mailer: <b><font color="black">Sylpheed</font></b> <b><font color="black">version</font></b> 0.8.9<b><font color="black">claws</font></b> (GTK+ 1.2.10; <b><font color="black">powerpc</font></b>-<b><font color="black">unknown</font></b>-<b><font color="black">linux</font></b>-<b><font color="black">gnu</font></b>)<br />
+Mime-Version: 1.0<br />
+Content-Type: multipart/signed; protocol="application/pgp-signature";<br />
+X-Sender: 320021892970-0001@<b><font color="black">t-dialin.net</font></b><br />
+<br />
+--=.P.GDOi)uP6IbU+<br />
+Content-Type: multipart/mixed;<br />
+<br />
+<br />
+--Multipart_Thu__13_Feb_2003_20:58:33_+0100_103356a0<br />
+Content-Type: text/plain; charset=<b><font color="black">US-ASCII</font></b><br />
+Content-Transfer-Encoding: 7bit<br />
+<br />
+<b><font color="black">Hello</font></b> <b><font color="black">everyone</font></b>,<br />
+<br />
+<b><font color="black">Lots</font></b> of <b><font color="black">people</font></b> have <b><font color="black">complained</font></b> that the <b><font color="black">new</font></b> <b><font color="black">kdelibs</font></b>-3.1-r1 and <b><font color="black">kdebase</font></b>-3.1-r1 <b><font color="black">don't</font></b> <b><font color="black">work</font></b> for <b><font color="black">them</font></b> <b><font color="black">when</font></b> <b><font color="black">kde</font></b> 3.0.x is <br />
+<b><font color="black">installed</font></b> as <b><font color="black">well</font></b>: <b><font color="black">kde</font></b> 3.1 <b><font color="black">shows</font></b> the <b><font color="black">kde</font></b> 3.0.x <b><font color="black">splashscreen</font></b> and <b><font color="black">then</font></b> <b><font color="black">hangs</font></b>.<br />
+<br />
+This is <b><font color="black">due</font></b> to a <b><font color="black">misunderstanding</font></b>: for <b><font color="black">things</font></b> to <b><font color="black">work</font></b>, you <b><font color="black">need</font></b> to <b><font color="black">install</font></b> the <b><font color="black">latest</font></b> 3.0.5a <b><font color="black">revisions</font></b> as <b><font color="black">well</font></b>, <b><font color="black">namely</font></b> <br />
+<b><font color="black">kdelibs</font></b>-3.0.5a-r2 and <b><font color="black">kdebase</font></b>-3.0.5a-r1. <b><font color="black">Unfortunately</font></b> <b><font color="black">portage</font></b> <b><font color="black">isn't</font></b> <b><font color="black">smart</font></b> <b><font color="black">enough</font></b> to <b><font color="black">include</font></b> <b><font color="black">upgrades</font></b> of <b><font color="black">older</font></b> <b><font color="black">slots</font></b> in <br />
+the <b><font color="black">world</font></b> <b><font color="black">update</font></b> <b><font color="black">list</font></b>. So <b><font color="black">kde</font></b> 3.0.x <b><font color="black">must</font></b> be <b><font color="black">upgraded</font></b> <b><font color="black">manually</font></b> to <b><font color="black">these</font></b> <b><font color="black">newer</font></b> <b><font color="black">revisions</font></b>, or <b><font color="black">things</font></b> will <br />
+<b><font color="black">break</font></b>.<br />
+<br />
+A <b><font color="black">quick</font></b> <b><font color="black">fix</font></b> for the <b><font color="black">problem</font></b> if you <b><font color="black">don't</font></b> <b><font color="black">want</font></b> to <b><font color="black">spend</font></b> <b><font color="black">hours</font></b> <b><font color="black">compiling</font></b> <b><font color="black">right</font></b> <b><font color="black">now</font></b> is to <b><font color="black">edit</font></b> /etc/<b><font color="black">env</font></b>.d/65<b><font color="black">kdelibs</font></b>-3.0.5a <br />
+(or 65<b><font color="black">kdelibs</font></b>-$<b><font color="black">ver</font></b> for any <b><font color="black">older</font></b> 3.0.x <b><font color="black">version</font></b> $<b><font color="black">ver</font></b>). <b><font color="black">Remove</font></b> the <b><font color="black">line</font></b> that <b><font color="black">says</font></b> KDEDIRS=/<b><font color="black">usr</font></b>/<b><font color="black">kde</font></b>/3. <b><font color="black">Run</font></b> <b><font color="black">env</font></b>-<b><font color="black">update</font></b> and <br />
+<b><font color="black">restart</font></b> <b><font color="black">kdm</font></b>.<br />
+<br />
+I <b><font color="black">apologize</font></b> for the <b><font color="black">problems</font></b> this <b><font color="black">must</font></b> have <b><font color="black">caused</font></b>. I <b><font color="black">hope</font></b> this will be<br />
+a <b><font color="black">swift</font></b> <b><font color="black">fix</font></b>.<br />
+<br />
+-- <br />
+<b><font color="black">Sascha</font></b> <b><font color="black">Schwabbauer</font></b><br />
+<b><font color="black">Developer</font></b> / <b><font color="black">Mailadmin</font></b><br />
+<b><font color="black">Gentoo</font></b> <b><font color="black">Linux</font></b><br />
+http://<b><font color="black">www.<b><font color="black">gentoo.org</font></b></font></b>/~<b><font color="black">cybersystem</font></b><br />
+<br />
+<b><font color="black">PGP</font></b> <b><font color="black">Key</font></b>:<br />
+http://<b><font color="black">pgp.<b><font color="black">mit.edu</font></b></font></b>:11371/<b><font color="black">pks</font></b>/<b><font color="black">lookup</font></b>?op=<b><font color="black">get</font></b>&search=0x84EA0C8F<br />
+<b><font color="black">Key</font></b> <b><font color="black">fingerprint</font></b> = 4<b><font color="black">BDD</font></b> CC71 <b><font color="black">DBDB</font></b> 58A5 78D0  3382 1EF6 2E96 84EA 0C8F<br />
+<br />
+--Multipart_Thu__13_Feb_2003_20:58:33_+0100_103356a0<br />
+Content-Type: application/pgp-signature;<br />
+ name="00000000.mimetmp"<br />
+Content-Disposition: <b><font color="black">attachment</font></b>;<br />
+ filename="00000000.mimetmp"<br />
+Content-Transfer-Encoding: base64<br />
+<br />
+LS0tLS1CRUdJTiBQR1AgU0lHTkFUVVJFLS0tLS0KVmVyc2lvbjogR251UEcgdjEuMi4xIChHTlUv<br />
+TGludXgpCgppRDhEQlFFK1M5d1hIdll1bG9UcURJOFJBc1dXQUtDREVScGxBSVpiYjZqOCtLa2pG<br />
+VlFQOTJFUGxnQ2ZYZ0NRCk43Vy9DdllLTWlremhHRXBnMlZKeWVVPQo9WUJYTgotLS0tLUVORCBQ<br />
+R1AgU0lHTkFUVVJFLS0tLS0KCg==<br />
+<br />
+--Multipart_Thu__13_Feb_2003_20:58:33_+0100_103356a0--<br />
+<br />
+--=.P.GDOi)uP6IbU+<br />
+Content-Type: application/pgp-signature<br />
+<br />
+-----<b><font color="black">BEGIN</font></b> <b><font color="black">PGP</font></b> <b><font color="black">SIGNATURE</font></b>-----<br />
+<b><font color="black">Version</font></b>: <b><font color="black">GnuPG</font></b> v1.2.1 (<b><font color="black">GNU</font></b>/<b><font color="black">Linux</font></b>)<br />
+<br />
+iD8DBQE+S/jsHvYuloTqDI8RAruvAJ9WJYyAj7TJS+VcoHpzzxunA2FvAwCgou52<br />
+PGRJS7+9aI7Uu4FDeZX5c3I=<br />
+=<b><font color="black">hVlT</font></b><br />
+-----<b><font color="black">END</font></b> <b><font color="black">PGP</font></b> <b><font color="black">SIGNATURE</font></b>-----<br />
+<br />
+<b>Found in encoded data:</b> <font color="black">BEGIN</font> <font color="black">PGP</font> <font color="black">SIGNATURE</font> <font color="black">Version</font> <font color="black">GnuPG</font> <font color="black">GNU</font> <font color="black">Linux</font> <font color="black">DBQE</font> <font color="black">wXHvYuloTqDI</font> <font color="black">RAsWWAKCDERplAIZbb</font> <font color="black">KkjFVQP</font> <font color="black">EPlgCfXgCQ</font> <font color="black">CvYKMikzhGEpg</font> <font color="black">VJyeU</font> <font color="black">YBXN</font> <font color="black">END</font> <font color="black">PGP</font> <font color="black">SIGNATURE</font> </tt>
