@@ -962,10 +962,15 @@ sub classify_and_modify
         print $client $msg_head_after;
         print $client $msg_body;
 
-        if ( $got_full_body == 0 )    {
-            echo_to_dot( $self, $mail, $client );
-        } else {
-            print $client ".$eol";
+        
+        print $client ".$eol";
+    }
+
+    if ( $got_full_body == 0 )    {
+        if ($echo) {
+            $self->echo_to_dot( $mail, $client );
+        } else { 
+            $self->echo_to_dot( $mail, undef);
         }
     }
 
@@ -1000,7 +1005,7 @@ sub echo_to_dot
         # Check for an abort
         last if ( $self->{alive} == 0 );
 
-        print $client $_;
+        print $client $_ if ( defined($client) );
 
         # The termination has to be a single line with exactly a dot on it and nothing
         # else other than line termination characters.  This is vital so that we do
