@@ -19,7 +19,7 @@
 #
 #                       (1) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2005 John Graham-Cumming
+# Copyright (c) 2002-2004 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -290,6 +290,40 @@
   !include "WinMessages.nsh"
 
 #--------------------------------------------------------------------------
+# Version Information settings (for the installer EXE and uninstaller EXE)
+#--------------------------------------------------------------------------
+
+  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; representing the following values: Major.Minor.Release.Build
+
+  VIProductVersion "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.0"
+
+  VIAddVersionKey "ProductName"      "${C_PFI_PRODUCT}"
+  VIAddVersionKey "Comments"         "POPFile Homepage: http://getpopfile.org"
+  VIAddVersionKey "CompanyName"      "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"   "Copyright (c) 2004  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"  "POPFile Automatic email classification"
+  VIAddVersionKey "FileVersion"      "${C_PFI_VERSION}"
+  VIAddVersionKey "OriginalFilename" "${C_OUTFILE}"
+
+  !ifndef ENGLISH_MODE
+    !ifndef NO_KAKASI
+      VIAddVersionKey "Build"        "Multi-Language installer (with Kakasi)"
+    !else
+      VIAddVersionKey "Build"        "Multi-Language installer (without Kakasi)"
+    !endif
+  !else
+    !ifndef NO_KAKASI
+      VIAddVersionKey "Build"        "English-Mode installer (with Kakasi)"
+    !else
+      VIAddVersionKey "Build"        "English-Mode installer (without Kakasi)"
+    !endif
+  !endif
+
+  VIAddVersionKey "Build Date/Time"  "${__DATE__} @ ${__TIME__}"
+  VIAddVersionKey "Build Script"     "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
+
+#--------------------------------------------------------------------------
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
@@ -299,43 +333,6 @@
 
   !include "pfi-library.nsh"
   !include "WriteEnvStr.nsh"
-
-#--------------------------------------------------------------------------
-# Version Information settings (for the installer EXE and uninstaller EXE)
-#--------------------------------------------------------------------------
-
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
-  ; representing the following values: Major.Minor.Release.Build
-
-  VIProductVersion "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.0"
-
-  VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
-  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
-  VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
-  VIAddVersionKey "FileDescription"         "POPFile Automatic email classification"
-  VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
-  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
-
-  !ifndef ENGLISH_MODE
-    !ifndef NO_KAKASI
-      VIAddVersionKey "Build"               "Multi-Language installer (with Kakasi)"
-    !else
-      VIAddVersionKey "Build"               "Multi-Language installer (without Kakasi)"
-    !endif
-  !else
-    !ifndef NO_KAKASI
-      VIAddVersionKey "Build"               "English-Mode installer (with Kakasi)"
-    !else
-      VIAddVersionKey "Build"               "English-Mode installer (without Kakasi)"
-    !endif
-  !endif
-
-  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
-  !ifdef C_PFI_LIBRARY_VERSION
-    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
-  !endif
-  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 #--------------------------------------------------------------------------
 # Configure the MUI pages
@@ -574,25 +571,7 @@
 # Default Destination Folder
 #--------------------------------------------------------------------------
 
-  ; Note that the 'InstallDir' value has a trailing slash (to override the default behaviour)
-  ;
-  ; By default, NSIS will append '\${C_PFI_PRODUCT}' to the path selected using the 'Browse'
-  ; button if the path does not already end with '\${C_PFI_PRODUCT}'. If the 'Browse' button
-  ; is used to select 'C:\Program Files\POPFile Test' the installer will install the program
-  ; in the 'C:\Program Files\POPFile Test\POPFile' folder and although this location is shown
-  ; on the DIRECTORY page before the user clicks the 'Next' button most users will not notice
-  ; that '\POPFile' has been appended to the location they selected. This problem will be made
-  ; worse if there is an existing version of POPFile in the 'C:\Program Files\POPFile Test'
-  ; folder since there will already be a 'C:\Program Files\POPFile Test\POPFile' folder holding
-  ; Configuration.pm, History.pm, etc
-  ;
-  ; By adding a trailing slash we ensure that if the user selects a folder using the 'Browse'
-  ; button then that is what the installer will use. One side effect of this change is that it
-  ; is now easier for users to select a folder such as 'C:\Program Files' for the installation
-  ; (which is not a good choice - so we refuse to accept any path matching the target system's
-  ; "program files" folder; see the 'CheckExistingProgDir' function)
-
-  InstallDir "$PROGRAMFILES\${C_PFI_PRODUCT}\"
+  InstallDir "$PROGRAMFILES\${C_PFI_PRODUCT}"
   InstallDirRegKey HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
 
 #--------------------------------------------------------------------------
@@ -605,10 +584,6 @@
 
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
-  ReserveFile "${NSISDIR}\Plugins\Banner.dll"
-  ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
-  ReserveFile "${NSISDIR}\Plugins\System.dll"
-  ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "ioG.ini"
   ReserveFile "${C_RELEASE_NOTES}"
 
@@ -720,7 +695,7 @@ notes_ignored:
 
   StrCpy $G_PFIFLAG "banner displayed"
 
-  Call ShowPleaseWaitBanner
+  Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_BE_PATIENT)" "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
 
 continue:
 
@@ -851,9 +826,8 @@ Section "POPFile" SecPOPFile
   ; For increased flexibility, some global user variables are used in addition to $INSTDIR
   ; (this makes it easier to change the folder structure used by the installer).
 
-  ; $G_ROOTDIR is initialised by 'CheckExistingProgDir' (the DIRECTORY page's "leave" function)
-
-  StrCpy $G_MPLIBDIR  "$G_ROOTDIR\lib"
+  StrCpy $G_ROOTDIR   "$INSTDIR"
+  StrCpy $G_MPLIBDIR  "$INSTDIR\lib"
 
   IfFileExists "$G_ROOTDIR\*.*" rootdir_exists
   ClearErrors
@@ -900,7 +874,7 @@ continue:
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${C_POPFILE_MINOR_VERSION}"
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision" "${C_POPFILE_REVISION}"
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile RevStatus" "${C_POPFILE_RC}"
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$G_ROOTDIR"
+  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$INSTDIR"
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Author" "setup.exe"
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN" "$G_ROOTDIR"
   StrCmp $G_SFN_DISABLED "0" find_HKLM_root_sfn
@@ -919,7 +893,7 @@ current_user_root:
   WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${C_POPFILE_MINOR_VERSION}"
   WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision" "${C_POPFILE_REVISION}"
   WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile RevStatus" "${C_POPFILE_RC}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$G_ROOTDIR"
+  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$INSTDIR"
   WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Author" "setup.exe"
   WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN" "$G_ROOTDIR"
   StrCmp $G_SFN_DISABLED "0" find_HKCU_root_sfn
@@ -987,7 +961,11 @@ app_paths:
   File "..\engine\bayes.pl"
   File "..\engine\pipe.pl"
 
+  File "..\engine\pix.gif"
   File "..\engine\favicon.ico"
+  File "..\engine\black.gif"
+  File "..\engine\otto.gif"
+  File "..\engine\otto.png"
 
   SetOutPath "$G_ROOTDIR\Classifier"
   File "..\engine\Classifier\Bayes.pm"
@@ -1024,7 +1002,6 @@ install_schema:
 
   SetOutPath "$G_ROOTDIR\POPFile"
   File "..\engine\POPFile\MQ.pm"
-  File "..\engine\POPFile\Database.pm"
   File "..\engine\POPFile\History.pm"
   File "..\engine\POPFile\Loader.pm"
   File "..\engine\POPFile\Logger.pm"
@@ -1532,13 +1509,13 @@ SectionEnd
       ; Install Kakasi package
       ;--------------------------------------------------------------------------
 
-      SetOutPath "$G_ROOTDIR"
+      SetOutPath "$INSTDIR"
       File /r "${C_KAKASI_DIR}\kakasi"
 
       ; Add Environment Variables for Kakasi
 
       Push "ITAIJIDICTPATH"
-      Push "$G_ROOTDIR\kakasi\share\kakasi\itaijidict"
+      Push "$INSTDIR\kakasi\share\kakasi\itaijidict"
 
       StrCmp $G_WINUSERTYPE "Admin" all_users_1
       Call WriteEnvStr
@@ -1549,7 +1526,7 @@ SectionEnd
 
     next_var:
       Push "KANWADICTPATH"
-      Push "$G_ROOTDIR\kakasi\share\kakasi\kanwadict"
+      Push "$INSTDIR\kakasi\share\kakasi\kanwadict"
 
       StrCmp $G_WINUSERTYPE "Admin" all_users_2
       Call WriteEnvStr
@@ -1573,13 +1550,13 @@ SectionEnd
 
     set_vars_now:
       System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
-                    i("ITAIJIDICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\itaijidict").r0'
+                    i("ITAIJIDICTPATH", "$INSTDIR\kakasi\share\kakasi\itaijidict").r0'
       StrCmp ${L_RESERVED} 0 0 itaiji_set_ok
       MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (ITAIJIDICTPATH)"
 
     itaiji_set_ok:
       System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
-                    i("KANWADICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\kanwadict").r0'
+                    i("KANWADICTPATH", "$INSTDIR\kakasi\share\kakasi\kanwadict").r0'
       StrCmp ${L_RESERVED} 0 0 continue
       MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (KANWADICTPATH)"
 
@@ -2133,24 +2110,15 @@ FunctionEnd
 
 Function MinPerlRestructure
 
-  ; Since the 0.18.0 release (February 2003), the minimal Perl has used perl58.dll. Earlier
-  ; versions of POPFile used earlier versions of Perl (e.g. the 0.17.8 release (December 2002)
-  ; used perl56.dll)
-
-  Delete "$G_ROOTDIR\perl56.dll"
-
-  ; If the minimal Perl folder used by 0.21.0 or later exists and has some Perl files in it,
-  ; assume there are no pre-0.21.0 minimal Perl files to be moved out of the way.
-
   IfFileExists "$G_MPLIBDIR\*.pm" exit
+
+  IfFileExists "$G_ROOTDIR\*.pm" 0 exit
 
   CreateDirectory "$G_MPLIBDIR"
 
-  IfFileExists "$G_ROOTDIR\*.pm" 0 move_folders
   CopyFiles /SILENT /FILESONLY "$G_ROOTDIR\*.pm" "$G_MPLIBDIR\"
   Delete "$G_ROOTDIR\*.pm"
 
-move_folders:
   !insertmacro MinPerlMove "auto"
   !insertmacro MinPerlMove "Carp"
   !insertmacro MinPerlMove "DBD"
@@ -2168,7 +2136,7 @@ move_folders:
 
   ; Delete redundant minimal Perl files from earlier installations
 
-  IfFileExists "$G_ROOTDIR\Win32\*.*" 0 exit
+  IfFileExists "$G_ROOTDIR\Win32\API.pm" 0 exit
   Delete "$G_ROOTDIR\Win32\API\Callback.pm"
   Delete "$G_ROOTDIR\Win32\API\Struct.pm"
   Delete "$G_ROOTDIR\Win32\API\Type.pm"
@@ -2326,68 +2294,44 @@ FunctionEnd
 # Installer Function: CheckExistingProgDir
 # (the "leave" function for the POPFile PROGRAM DIRECTORY selection page)
 #
-# Now that we are overriding the default InstallDir behaviour, we really need to check
-# that the main 'Program Files' folder has not been selected for the installation.
-#
 # This function is used to check if a previous POPFile installation exists in the directory
-# chosen for this installation's POPFile PROGRAM files (popfile.pl, etc). If we find one,
-# we check if it contains any of the optional components and remind the user if it seems that
-# they have forgotten to 'upgrade' them.
+# chosen for this installation's POPFile PROGRAM files (popfile.pl, etc)
 #--------------------------------------------------------------------------
 
 Function CheckExistingProgDir
 
   !define L_RESULT  $R9
 
-  Push ${L_RESULT}
-  
-  ; Strip trailing slashes (if any) from the path selected by the user
-  
-  Push $INSTDIR
-  Pop $INSTDIR
-
-  ; We do not permit POPFile to be installed in the target system's 'Program Files' folder
-  ; (i.e. we do not allow 'popfile.pl' etc to be stored there)
-
-  StrCmp $INSTDIR "$PROGRAMFILES" return_to_directory_selection
-
   ; If short file names are not supported on this system,
   ; we cannot accept any path containing spaces.
 
-  StrCmp $G_SFN_DISABLED "0" check_SFN_PROGRAMFILES
+  StrCmp $G_SFN_DISABLED "0" check_locn
+
+  Push ${L_RESULT}
 
   Push $INSTDIR
   Push ' '
   Call StrStr
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" check_locn
+  StrCmp ${L_RESULT} "" no_spaces
   MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "Please select a folder location which does not contain spaces"
+      "Current configuration does not support short file names!\
+      ${MB_NL}${MB_NL}\
+      Please select a folder location which does not contain spaces"
 
   ; Return to the POPFile PROGRAM DIRECTORY selection page
 
-return_to_directory_selection:
   Pop ${L_RESULT}
   Abort
 
-check_SFN_PROGRAMFILES:
-  GetFullPathName /SHORT ${L_RESULT} "$PROGRAMFILES"
-  StrCmp $INSTDIR ${L_RESULT} return_to_directory_selection
+no_spaces:
+  Pop ${L_RESULT}
 
 check_locn:
 
   ; Initialise the global user variable used for the POPFile PROGRAM files location
-  ; (we always try to use the LFN format, even if the user has entered a SFN format path)
 
   StrCpy $G_ROOTDIR "$INSTDIR"
-  Push $G_ROOTDIR
-  Call GetCompleteFPN
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" got_path
-  StrCpy $G_ROOTDIR ${L_RESULT}
-
-got_path:
-  Pop ${L_RESULT}
 
   ; Warn the user if we are about to upgrade an existing installation
   ; and allow user to select a different directory if they wish
@@ -2398,7 +2342,7 @@ got_path:
 warning:
   MessageBox MB_YESNO|MB_ICONQUESTION "$(PFI_LANG_DIRSELECT_MBWARN_1)\
       ${MB_NL}${MB_NL}\
-      $G_ROOTDIR\
+      $INSTDIR\
       ${MB_NL}${MB_NL}${MB_NL}\
       $(PFI_LANG_DIRSELECT_MBWARN_2)" IDYES check_options
 
@@ -3003,7 +2947,6 @@ continue:
   Delete "$G_ROOTDIR\pfi-data.ini"
 
   Delete "$G_ROOTDIR\popfile.pl"
-  Delete "$G_ROOTDIR\popfile.pck"
   Delete "$G_ROOTDIR\*.pm"
 
   Delete "$G_ROOTDIR\bayes.pl"
@@ -3334,71 +3277,6 @@ Section "un.Uninstall End" UnSecEnd
 exit:
   SetDetailsPrint both
 SectionEnd
-
-#--------------------------------------------------------------------------
-# Macro-based Functions make it easier to maintain identical functions
-# which are (or might be) used in the installer and in the uninstaller.
-#--------------------------------------------------------------------------
-
-!macro ShowPleaseWaitBanner UN
-  Function ${UN}ShowPleaseWaitBanner
-
-    !ifndef ENGLISH_MODE
-
-      ; The Banner plug-in uses the "MS Shell Dlg" font to display the banner text but
-      ; East Asian versions of Windows 9x do not support this so in these cases we use
-      ; "English" text for the banner (otherwise the text would be unreadable garbage).
-
-      !define L_RESULT    $R9   ; The 'IsNT' function returns 0 if Win9x was detected
-
-      Push ${L_RESULT}
-
-      Call IsNT
-      Pop ${L_RESULT}
-      StrCmp ${L_RESULT} "1" show_banner
-
-      ; Windows 9x has been detected
-
-      StrCmp $LANGUAGE ${LANG_SIMPCHINESE} use_ENGLISH_banner
-      StrCmp $LANGUAGE ${LANG_TRADCHINESE} use_ENGLISH_banner
-      StrCmp $LANGUAGE ${LANG_JAPANESE} use_ENGLISH_banner
-      StrCmp $LANGUAGE ${LANG_KOREAN} use_ENGLISH_banner
-      Goto show_banner
-
-    use_ENGLISH_banner:
-      Banner::show /NOUNLOAD /set 76 "Please be patient." "This may take a few seconds..."
-      Goto continue
-
-      show_banner:
-    !endif
-
-    Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_BE_PATIENT)" "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-
-    !ifndef ENGLISH_MODE
-      continue:
-        Pop ${L_RESULT}
-
-        !undef L_RESULT
-    !endif
-
-  FunctionEnd
-!macroend
-
-#--------------------------------------------------------------------------
-# Installer Function: ShowPleaseWaitBanner
-#
-# This function is used during the installation process
-#--------------------------------------------------------------------------
-
-!insertmacro ShowPleaseWaitBanner ""
-
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.ShowPleaseWaitBanner
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
-
-;!insertmacro ShowPleaseWaitBanner "un."
 
 #--------------------------------------------------------------------------
 # End of 'installer.nsi'

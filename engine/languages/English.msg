@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2005 John Graham-Cumming
+# Copyright (c) 2001-2003 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -30,7 +30,6 @@ FAQLink                                 FrequentlyAskedQuestions
 
 # Common words that are used on their own all over the interface
 Apply                                   Apply
-ApplyChanges                            Apply Changes
 On                                      On
 Off                                     Off
 TurnOn                                  Turn On
@@ -75,9 +74,6 @@ ID                                      ID
 Date                                    Date
 Arrived                                 Arrived
 Size                                    Size
-Up                                      Up
-Down                                    Down
-Go                                      Go
 
 # This is a regular expression pattern that is used to convert
 # a number into a friendly looking number (for the US and UK this
@@ -104,7 +100,6 @@ Header_Buckets                          Buckets
 Header_Configuration                    Configuration
 Header_Advanced                         Advanced
 Header_Security                         Security
-Header_Administration                   Administration
 Header_Magnets                          Magnets
 
 Footer_HomePage                         POPFile Home Page
@@ -140,15 +135,15 @@ Configuration_POP3SepUpdate             Updated POP3 separator to %s
 Configuration_NNTPSepUpdate             Updated NNTP separator to %s
 Configuration_UI                        User interface web port
 Configuration_UIUpdate                  Updated user interface web port to %s; this change will not take affect until you restart POPFile
-Configuration_History                   Messages per page
+Configuration_History                   Number of messages per page
 Configuration_HistoryUpdate             Updated number of messages per page to %s
-Configuration_Days                      Days of history to keep
+Configuration_Days                      Number of days of history to keep
 Configuration_DaysUpdate                Updated number of days of history to %s
 Configuration_UserInterface             User Interface
 Configuration_Skins                     Skins
-Configuration_SkinsChoose               Skin
+Configuration_SkinsChoose               Choose skin
 Configuration_Language                  Language
-Configuration_LanguageChoose            Language
+Configuration_LanguageChoose            Choose language
 Configuration_ListenPorts               Module Options
 Configuration_HistoryView               History View
 Configuration_TCPTimeout                Connection Timeout
@@ -167,14 +162,12 @@ Configuration_LoggerOutput              Logger output
 Configuration_GeneralSkins              Skins
 Configuration_SmallSkins                Small Skins
 Configuration_TinySkins                 Tiny Skins
-Configuration_CurrentLogFile            &lt;current log file&gt;
+Configuration_CurrentLogFile            &lt;Download current log file&gt;
 Configuration_SOCKSServer               SOCKS V proxy host
 Configuration_SOCKSPort                 SOCKS V proxy port
 Configuration_SOCKSPortUpdate           Updated SOCKS V proxy port to %s
 Configuration_SOCKSServerUpdate         Updated SOCKS V proxy host to %s
-Configuration_Fields                    Add history columns
-Configuration_Hide_Bar                  Hide configuration bar
-Configuration_Show_Bar                  Show configuration bar
+Configuration_Fields                    History Columns
 
 Advanced_Error1                         '%s' already in the Ignored Words list
 Advanced_Error2                         Ignored words can only contain alphanumeric, ., _, -, or @ characters
@@ -201,9 +194,6 @@ History_ShouldBe                        Should be
 History_NoFrom                          no from line
 History_NoSubject                       no subject line
 History_ClassifyAs                      Classify as
-History_RemoveColumn                    Remove column
-History_MoveLeft                        Move left
-History_MoveRight                       Move right
 History_MagnetUsed                      Magnet used
 History_MagnetBecause                   <b>Magnet Used</b><p>Classified to <font color="%s">%s</font> because of magnet %s </p>
 History_ChangedTo                       Changed to <font color="%s">%s</font>
@@ -220,16 +210,15 @@ History_Magnet                          &nbsp;(just showing magnet classified me
 History_NoMagnet                        &nbsp;(just showing non-magnet classified messages)
 History_ResetSearch                     Reset
 History_ChangedClass                    Would now classify as
-History_Purge                           Expire Now
+History_Purge                           Delete Now
 History_Increase                        Increase
 History_Decrease                        Decrease
-History_Column_Characters               History column width
+History_Column_Characters               Change width of From, To, Cc and Subject columns
 History_Automatic                       Automatic
 History_Reclassified                    Reclassified
 History_Size_Bytes                      %d&nbsp;B
 History_Size_KiloBytes                  %.1f&nbsp;KB
 History_Size_MegaBytes                  %.1f&nbsp;MB
-History_Click_To_Sort                   Click to sort on this column
 
 Password_Title                          Password
 Password_Enter                          Enter password
@@ -270,7 +259,7 @@ Magnet_Error3                           Create new magnet '%s' in bucket '%s'
 Magnet_CurrentMagnets                   Current Magnets
 Magnet_Message1                         The following magnets cause mail to always be classified into the specified bucket.
 Magnet_CreateNew                        Create New Magnet
-Magnet_Explanation                      <b>These types of magnets are available:</b> <ul><li><b>From address or name:</b> For example: john@company.com to match a specific address, <br />company.com to match everyone who sends from company.com, <br />John Doe to match a specific person, John to match all Johns</li><li><b>To/Cc address or name:</b> Like a From: magnet but for the To:/Cc: address in a message</li> <li><b>Subject words:</b> For example: hello to match all messages with hello in the subject</li></ul>
+Magnet_Explanation                      These types of magnets are available:</b> <ul><li><b>From address or name:</b> For example: john@company.com to match a specific address, <br />company.com to match everyone who sends from company.com, <br />John Doe to match a specific person, John to match all Johns</li><li><b>To/Cc address or name:</b> Like a From: magnet but for the To:/Cc: address in a message</li> <li><b>Subject words:</b> For example: hello to match all messages with hello in the subject</li></ul>
 Magnet_MagnetType                       Magnet type
 Magnet_Value                            Values
 Magnet_Always                           Always goes to bucket
@@ -300,7 +289,6 @@ Bucket_ClassificationFP                 False Positives
 Bucket_ClassificationFN                 False Negatives
 Bucket_ResetStatistics                  Reset Statistics
 Bucket_LastReset                        Last Reset
-Bucket_MessagesPerDay                   Average Messages Per Day
 Bucket_CurrentColor                     %s current color is %s
 Bucket_SetColorTo                       Set %s color to %s
 Bucket_Maintenance                      Maintenance
@@ -344,13 +332,13 @@ Windows_NextTime                        <p><font color="red">This change will no
 
 Header_MenuSummary                      This table is the navigation menu which allows access to each of the different pages of the control center.
 History_MainTableSummary                This table shows the sender and subject of recently received messages and allows them to be reviewed and reclassified.  Clicking on the subject line will show the full message text, along with information about why it was classified as it was.  The 'Should be' column allows you to specify which bucket the message belongs in, or to undo that change.  The 'Delete' column allows you to delete specific messages from the history if you don't need them anymore.
-History_OpenMessageSummary              This table contains the full text of a message, with the words that are used for classification highlighted according to the bucket that was most relevant for each.
+History_OpenMessageSummary              This table contains the full text of a message message, with the words that are used for classification highlighted according to the bucket that was most relevant for each.
 Bucket_MainTableSummary                 This table provides an overview of the classification buckets.  Each row shows the bucket name, the word count total for that bucket, the actual number of individual words in each bucket, whether the message's subject line will be modified when it gets classified to that bucket, whether to quarantine the messages received in that bucket, and a table to pick the color used in displaying anything related to that bucket in the control center.
 Bucket_StatisticsTableSummary           This table provides three sets of statistics on the overall performance of POPFile.  The first is how accurate its classification is, the second is how many messages have been classified, and to which buckets, and the third is how many words are in each bucket, and what their relative percentages are.
 Bucket_MaintenanceTableSummary          This table contains forms that allow you to create, delete or rename buckets, and to lookup a word in all of the buckets to see its relative probabilities.
 Bucket_AccuracyChartSummary             This table graphically represents the accuracy of the message classification.
 Bucket_BarChartSummary                  This table graphically represents a percentage allocation for each of the different buckets.  It is used for both number of messages classified, and total word counts.
-Bucket_LookupResultsSummary             This table shows the probabilities associated with any given word of the corpus.  For each bucket, it shows the frequency with which that word occurs, the probability that it will occur in that bucket, and the overall effect on the score of the bucket if that word exists in a message.
+Bucket_LookupResultsSummary             This table shows the probabilities associated with any given word of the corpus.  For each bucket, it shows the frequency that that word occurs, the probability that it will occur in that bucket, and the overall effect on the score of the bucket if that word exists in a message.
 Bucket_WordListTableSummary             This table provides a listing of all the words for a particular bucket, organized by common first letter for each row.
 Magnet_MainTableSummary                 This table shows the list of magnets that are used to automatically classify message according to fixed rules.  Each row shows how the magnet is defined, what bucket it is intended for, and a button to delete the magnet.
 Configuration_MainTableSummary          This table contains a number of forms to allow you to control the configuration of POPFile.
@@ -385,5 +373,5 @@ Imap_WatchedFolder                      Watched folder no
 Shutdown_Message                        POPFile has shut down
 
 Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile missclassified to the correct bucket. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFile Documentation Project</a>.
-Help_Bucket_Setup                       POPFile requires at least two buckets in addition to the "unclassified" pseudo-bucket. What makes POPFile unique is that it can classify email more than that, you can have any number of buckets. A simple setup would be a "spam", "personal", and a "work" bucket.
+Help_Bucket_Setup                       POPFile requires at least two buckets in addition to the unclassified pseudo-bucket. What makes POPFile unique is that it can classify email more than that, you can have any number of buckets. A simple setup would be a "spam", "personal", and a "work" bucket.
 Help_No_More                            Don't show me this again

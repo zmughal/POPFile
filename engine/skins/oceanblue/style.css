@@ -74,10 +74,6 @@ input, select, textarea, .submit {
   background-color: #2175bc;
 }
 
-input:hover, select:hover, textarea:hover, .submit:hover {
-  background-color: #1165ac;
-}
-
 input {
   font-size: 1em;
 }
@@ -225,6 +221,11 @@ h2 {
 
 .rowOdd:hover, .rowEven:hover {
   background-color: #5ba3e0;
+}
+
+.rowEven td a, .rowOdd td a {
+  display: block;
+  width: 100%;
 }
 
 .footer {

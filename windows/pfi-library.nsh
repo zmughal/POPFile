@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2004 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -48,15 +48,6 @@
 !ifndef PFI_VERBOSE
   !verbose 3
 !endif
-
-#--------------------------------------------------------------------------
-# Since so many scripts rely upon this library file, provide an easy way
-# for the installers/uninstallers, wizards and other utilities to identify
-# the particular library file used by NSIS to compile the executable file
-# (by using this constant in the executable's "Version Information" data).
-#--------------------------------------------------------------------------
-
-  !define C_PFI_LIBRARY_VERSION     "0.1.3"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -275,19 +266,6 @@
 
   !macroend
 
-#--------------------------------------------------------------------------
-#
-# Macro used by 'adduser.nsi' to update HKCU registry data using HKLM data
-#
-#--------------------------------------------------------------------------
-
-  !macro Copy_HKLM_to_HKCU VAR NAME
-  
-    ReadRegStr ${VAR} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "${NAME}"
-    WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "${NAME}" ${VAR}
-
-  !macroend
-  
 #--------------------------------------------------------------------------
 #
 # Macro used to preserve up to 3 backup copies of a file
@@ -777,10 +755,6 @@
 #    Installer Function:   FindLockedPFE
 #    Uninstaller Function: un.FindLockedPFE
 #
-#    Macro:                GetCompleteFPN
-#    Installer Function:   GetCompleteFPN
-#    Uninstaller Function: un.GetCompleteFPN
-#
 #    Macro:                GetCorpusPath
 #    Installer Function:   GetCorpusPath
 #    Uninstaller Function: un.GetCorpusPath
@@ -1078,125 +1052,6 @@
 
 
 #--------------------------------------------------------------------------
-# Macro: GetCompleteFPN
-#
-# The installation process and the uninstall process may need a function which converts a path
-# into the full/long version (e.g. which converts 'C:\PROGRA~1' into 'C:\Program Files'). There
-# is a built-in NSIS command for this (GetFullPathName) but it only converts part of the path,
-# eg. it converts 'C:\PROGRA~1\PRE-RE~1' into 'C:\PROGRA~1\Pre-release POPFile' instead of the
-# expected 'C:\Program Files\Pre-release POPFile' string. This macro makes maintenance easier
-# by ensuring that both processes use identical functions, with the only difference being their
-# names.
-#
-# If the specified path does not exist, an empty string is returned
-#
-# NOTE:
-# The !insertmacro GetCompleteFPN "" and !insertmacro GetCompleteFPN "un." commands are
-# included in this file so the NSIS script and/or other library functions in 'pfi-library.nsh'
-# can use 'Call GetCompleteFPN' and 'Call un.GetCompleteFPN' without additional preparation.
-#
-# Inputs:
-#         (top of stack)     - path to be converted to long filename format
-# Outputs:
-#         (top of stack)     - full (long) path name or an empty string if path was not found
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Push "c:\progra~1"
-#         Call GetCompleteFPN
-#         Pop $R0
-#
-#         ($R0 now holds 'C:\Program Files')
-#
-#--------------------------------------------------------------------------
-
-!macro GetCompleteFPN UN
-    Function ${UN}GetCompleteFPN
-
-      Exch $0   ; the input path
-      Push $1   ; the result string (will be empty if the input path does not exist)
-      Exch
-      Push $2
-
-      ; 'GetLongPathNameA' is not available in Windows 95 systems (but it is in Windows 98)
-
-      ClearErrors
-      ReadRegStr $1 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-      IfErrors 0 use_system_plugin
-      ReadRegStr $1 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion" VersionNumber
-      StrCpy $2 $1 1
-      StrCmp $2 '4' 0 use_NSIS_code
-      StrCpy $2 $1 3
-      StrCmp $2 '4.0' use_NSIS_code use_system_plugin
-
-    use_NSIS_code:
-      Push $3
-
-      StrCpy $1 ""                ; used to hold the long filename format result
-      StrCpy $2 ""                ; holds a component part of the long filename
-
-      ; Convert the input path ($0) into a long path ($1) if possible
-
-    loop:
-      GetFullPathName $3 $0       ; Converts the last part of the path to long filename format
-      StrCmp $3 "" done           ; An empty string here means the path doesn't exist
-      StrCpy $2 $3 1 -1
-      StrCmp $2 '.' finished_unc  ; If last char of result is '.' then the path was a UNC one
-      StrCpy $0 $3                ; Set path we are working on to the 'GetFullPathName' result
-      Push $0
-      Call ${UN}GetParent
-      Pop $2
-      StrLen $3 $2
-      StrCpy $3 $0 "" $3          ; Get the last part of the path, including the leading '\'
-      StrCpy $1 "$3$1"            ; Update the long filename result
-      StrCpy $0 $2                ; Now prepare to convert the next part of the path
-      StrCpy $3 $2 1 -1
-      StrCmp $3 ':' done loop     ; We're done if all that is left is the drive letter part
-
-    finished_unc:
-      StrCpy $2 $0                ; $0 holds the '\\server\share' part of the UNC path
-
-    done:
-      StrCpy $1 "$2$1"            ; Assemble the last component of the long filename result
-
-      Pop $3
-      Goto exit
-
-    use_system_plugin:
-      StrCpy $1 ""
-
-      ; Convert the input path ($0) into a long path ($1) if possible
-
-      System::Call "Kernel32::GetLongPathNameA(t '$0', &t .r1, i ${NSIS_MAX_STRLEN})"
-
-    exit:
-      Pop $2
-      Pop $0
-      Exch $1
-
-    FunctionEnd
-!macroend
-
-!ifdef ADDUSER | INSTALLER
-    #--------------------------------------------------------------------------
-    # Installer Function: GetCompleteFPN
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
-
-    !insertmacro GetCompleteFPN ""
-!endif
-
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.GetCompleteFPN
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
-
-;!insertmacro GetCompleteFPN "un."
-
-
-#--------------------------------------------------------------------------
 # Macro: GetCorpusPath
 #
 # The installation process and the uninstall process may both use a function which finds the
@@ -1345,13 +1200,11 @@
 #--------------------------------------------------------------------------
 # Macro: GetDatabaseName
 #
-# The installation process and the uninstall process may both need a function which extracts
-# the name of the SQLite database file from the POPFile configuration file ('popfile.cfg').
-# The default filename is 'popfile.db' (which means it is stored in the 'User Data' folder).
-# POPFile releases 0.21.x and 0.22.x used the 'bayes_database' entry to hold the filename but
-# the 0.23.0 and later releases use the 'database_database' entry instead. This macro makes
-# maintenance easier by ensuring that both processes use identical functions, with the only
-# difference being their names.
+# The installation process and the uninstall process may both need a function which finds the
+# value of the 'bayes_database' entry in the POPFile configuration file ('popfile.cfg'). This
+# entry supplies the name of the SQLite database used by POPFile and has a default value of
+# 'popfile.db'. This macro makes maintenance easier by ensuring that both processes use
+# identical functions, with the only difference being their names.
 #
 # NOTE:
 # The !insertmacro GetDatabaseName "" and !insertmacro GetDatabaseName "un." commands
@@ -1359,13 +1212,12 @@
 # 'Call un.GetDatabaseName' without additional preparation.
 #
 # Inputs:
-#         (top of stack)       - the path where 'popfile.cfg' is to be found
+#         (top of stack)          - the path where 'popfile.cfg' is to be found
 #
 # Outputs:
-#         (top of stack)       - string with the current value of the 'database_database' or
-#                                the 'bayes_database' entry from the 'popfile.cfg' file
-#                                (if no entry is not found (perhaps because a "clean" install
-#                                is in progress), the default value for the entry is returned)
+#         (top of stack)          - string with the current value of the 'bayes_database' entry
+#                                   (if entry is not found (perhaps because a "clean" install is
+#                                   in progress), the default value for the entry is returned)
 #
 # Usage (after macro has been 'inserted'):
 #
@@ -1390,7 +1242,7 @@
     Push ${L_RESULT}
     Exch
     Push ${L_FILE_HANDLE}
-     Push ${L_PARAM}
+    Push ${L_PARAM}
     Push ${L_TEMP}
     Push ${L_TEXTEND}
 
@@ -1409,12 +1261,6 @@
     StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
     StrCmp ${L_PARAM} "$\n" loop
 
-    StrCpy ${L_TEMP} ${L_PARAM} 18
-    StrCmp ${L_TEMP} "database_database " 0 check_old_value
-    StrCpy ${L_RESULT} ${L_PARAM} "" 18
-    Goto check_eol
-
-  check_old_value:
     StrCpy ${L_TEMP} ${L_PARAM} 15
     StrCmp ${L_TEMP} "bayes_database " 0 check_eol
     StrCpy ${L_RESULT} ${L_PARAM} "" 15
@@ -2335,7 +2181,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: GetParent
     #
@@ -2550,31 +2396,18 @@
     StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
     StrCmp ${L_TEMP} "$\n" loop
 
-    StrCpy ${L_RESULT} ${L_TEMP} 18
-    StrCmp ${L_RESULT} "database_database " got_sql_corpus
-    StrCpy ${L_RESULT} ${L_TEMP} 19
-    StrCmp ${L_RESULT} "database_dbconnect " got_sql_connect
-
     StrCpy ${L_RESULT} ${L_TEMP} 15
-    StrCmp ${L_RESULT} "bayes_database " got_sql_old_corpus
+    StrCmp ${L_RESULT} "bayes_database " got_sql_corpus
     StrCpy ${L_RESULT} ${L_TEMP} 16
-    StrCmp ${L_RESULT} "bayes_dbconnect " got_sql_old_connect
-    Goto check_eol
-
-  got_sql_old_corpus:
-    StrCpy ${L_SQL_CORPUS} ${L_TEMP} "" 15
-    Goto check_eol
-
-  got_sql_old_connect:
-    StrCpy ${L_SQL_CONNECT} ${L_TEMP} "" 16
+    StrCmp ${L_RESULT} "bayes_dbconnect " got_sql_connect
     Goto check_eol
 
   got_sql_corpus:
-    StrCpy ${L_SQL_CORPUS} ${L_TEMP} "" 18
+    StrCpy ${L_SQL_CORPUS} ${L_TEMP} "" 15
     Goto check_eol
 
   got_sql_connect:
-    StrCpy ${L_SQL_CONNECT} ${L_TEMP} "" 19
+    StrCpy ${L_SQL_CONNECT} ${L_TEMP} "" 16
 
     ; Now read file until we get to end of the current line
     ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)

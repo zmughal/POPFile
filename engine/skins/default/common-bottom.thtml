@@ -1,3 +1,12 @@
+            </td>
+            <td class="shellRight"></td>
+        </tr>
+        <tr class="shellBottomRow">
+            <td class="shellBottomLeft"></td>
+            <td class="shellBottomCenter"></td>
+            <td class="shellBottomRight"></td>
+        </tr>
+    </table>
     <table class="footer" summary="">
     <tr>
         <td class="footerBody">
@@ -14,7 +23,7 @@
         </td>
         <td class="footerBody">
             <a class="bottomLink" href="http://popfile.sourceforge.net/">
-                <img src="<TMPL_VAR NAME="Skin_Root">otto.png" border="0" alt="" /></a>
+                <img src="otto.png" border="0" alt="" /></a>
             <br />
             <TMPL_VAR NAME="Common_Bottom_Version">
             <br />

@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for Bayes.pm
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -20,12 +20,12 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/CVS' );
+test_assert( rmtree( 'corpus/CVS' ) > 0 );
 
 unlink 'popfile.db';
 unlink 'stopwords';
@@ -33,35 +33,70 @@ test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
 mkdir 'messages';
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use Classifier::Bayes;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use Classifier::WordMangle;
+use POPFile::History;
 
-my %valid = ( 'POPFile/Database' => 1,
-              'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/History'     => 1,
-              'Classifier/Bayes'     => 1,
-              'Classifier/WordMangle'     => 1,
-              'POPFile/Configuration' => 1 );
+# Load the test corpus
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $b = new Classifier::Bayes;
+my $w = new Classifier::WordMangle;
+my $h = new POPFile::History;
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-my $b = $POPFile->get_module( 'Classifier/Bayes' );
-my $h = $POPFile->get_module( 'POPFile/History' );
-my $l = $POPFile->get_module( 'POPFile/Logger' );
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->start();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$h->configuration( $c );
+$h->mq( $mq );
+$h->logger( $l );
+
+$b->history( $h );
+$h->classifier( $b );
+
+$h->initialize();
+
+$b->module_config_( 'html', 'language', 'English' );
+$b->{parser__}->mangle( $w );
+$b->initialize();
+
+test_assert( $b->start() );
+test_assert( $h->start() );
 
 # Test the unclassified_probability parameter
 
 test_assert_equal( $b->{unclassified__}, log(100) );
-$b->user_config_( 1, 'unclassified_weight', 9 );
+$b->config_( 'unclassified_weight', 9 );
 test_assert( $b->start() );
 test_assert_equal( $b->{unclassified__}, log(9) );
-$b->user_config_( 1, 'unclassified_weight', 5 );
+$b->config_( 'unclassified_weight', 5 );
 test_assert( $b->start() );
 test_assert_equal( $b->{unclassified__}, log(5) );
 
@@ -418,65 +453,18 @@ test_assert_equal( $b->magnet_count( $session ), 4 );
 test_assert_equal( $#mags, 0 );
 test_assert_equal( $mags[0], 'personal' );
 
-# send a message through the mq (doesn't actually use the MQ???)
+# send a message through the mq
 
 test_assert_equal( $b->get_bucket_parameter(  $session, 'zeotrope', 'count' ), 0 );
 $b->classified( $session, 'zeotrope' );
-$POPFile->CORE_service(1);
+$mq->service();
 test_assert_equal( $b->get_bucket_parameter(  $session, 'zeotrope', 'count' ), 1 );
 
-# clear_bucket (Generates orphans !!!)
+# clear_bucket
 
 $b->clear_bucket( $session, 'zeotrope' );
 test_assert_equal( $b->get_bucket_word_count( $session, 'zeotrope' ), 0 );
-# At this point we have orphans
 
-my $orphan_query = $b->db_()->prepare( "select count(*) from words where words.id in (select id from words except select wordid from matrix);" );
-
-my $single_orphan_query = $b->db_()->prepare( "select count( * ) from words where words.word = 'srvexch.reichraming.helopal.com' AND words.id in (select id from words except select wordid from matrix);" );
-
-# Test the total number of orphans
-$orphan_query->execute();
-
-test_assert_equal( $orphan_query->fetchrow_arrayref->[0] , 160 );
-
-$orphan_query->finish;
-
-# Test a few specific orphaned words
-
-$single_orphan_query->execute();
-
-test_assert_equal( $single_orphan_query->fetchrow_arrayref->[0] , 1 );
-
-$single_orphan_query->finish;
-
-# Test clearing of orphans
-
-# This is not the usual delivery method of TICKD, but is better than
-# violating POPFile::Logger internals for a message anyone can send
-
-# THIS DOES NOT WORK, freezes.. calling cleanup directly
-
-# $b->mq_post_( 'TICKD' );
-
-# $POPFile->CORE_service();
-
-$b->cleanup_orphan_words__();
-
-# Test the total number of orphans
-$orphan_query->execute();
-
-test_assert_equal( $orphan_query->fetchrow_arrayref->[0] , 0 );
-
-$orphan_query->finish;
-
-# Test a few specific orphaned words
-
-$single_orphan_query->execute();
-
-test_assert_equal( $single_orphan_query->fetchrow_arrayref->[0] , 0 );
-
-$single_orphan_query->finish;
 # classify a message using a magnet
 
 $b->create_magnet( $session, 'zeotrope', 'from', 'cxcse231@yahoo.com' );
@@ -1017,6 +1005,6 @@ if ( $have_text_kakasi ) {
     print "\nWarning: Japanese tests skipped because Text::Kakasi was not found\n";
 }
 
-$POPFile->CORE_stop();
+$b->stop();
 
 1;

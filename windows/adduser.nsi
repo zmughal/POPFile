@@ -7,7 +7,7 @@
 #                 to run POPFile for the first time. Some simple "repair work" can also
 #                 be done using this wizard.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -180,7 +180,7 @@
 
   Name                   "POPFile User"
 
-  !define C_PFI_VERSION  "0.2.65"
+  !define C_PFI_VERSION  "0.2.56"
 
   ; Mention the wizard's version number in the titles of the installer & uninstaller windows
 
@@ -197,8 +197,6 @@
   ;       Active Desktop installed, otherwise $APPDATA will not be available. For
   ;       these cases, an alternative constant is used to define the default location.
   ;----------------------------------------------------------------------
-
-  ; Note: C_STD_DEFAULT_USERDATA and C_ALT_DEFAULT_USERDATA must not end with trailing slashes
 
   !define C_STD_DEFAULT_USERDATA  "$APPDATA\POPFile"
   !define C_ALT_DEFAULT_USERDATA  "$WINDIR\Application Data\POPFile"
@@ -259,7 +257,6 @@
   Var G_SFN_DISABLED       ; 1 = short file names not supported, 0 = short file names available
 
   Var G_PLS_FIELD_1        ; used to customize translated text strings
-  Var G_PLS_FIELD_2        ; used to customize translated text strings (used in 'CBP.nsh' file)
 
   ; NSIS provides 20 general purpose user registers:
   ; (a) $R0 to $R9   are used as local registers
@@ -282,44 +279,30 @@
   !include "WinMessages.nsh"
 
 #--------------------------------------------------------------------------
-# Include private library functions and macro definitions
-#--------------------------------------------------------------------------
-
-  ; Avoid compiler warnings by disabling the functions and definitions we do not use
-
-  !define ADDUSER
-
-  !include "pfi-library.nsh"
-  !include "WriteEnvStr.nsh"
-
-#--------------------------------------------------------------------------
 # Version Information settings (for the installer EXE and uninstaller EXE)
 #--------------------------------------------------------------------------
 
   ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
   ; representing the following values: Major.Minor.Release.Build
 
-  VIProductVersion                          "${C_PFI_VERSION}.0"
+  VIProductVersion                   "${C_PFI_VERSION}.0"
 
-  VIAddVersionKey "ProductName"             "POPFile User wizard"
-  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
-  VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
-  VIAddVersionKey "FileDescription"         "Add/Remove POPFile User wizard"
-  VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
-  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
+  VIAddVersionKey "ProductName"      "POPFile User wizard"
+  VIAddVersionKey "Comments"         "POPFile Homepage: http://getpopfile.org"
+  VIAddVersionKey "CompanyName"      "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"   "Copyright (c) 2004  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"  "Add/Remove POPFile User wizard"
+  VIAddVersionKey "FileVersion"       "${C_PFI_VERSION}"
+  VIAddVersionKey "OriginalFilename" "${C_OUTFILE}"
 
   !ifndef ENGLISH_MODE
-    VIAddVersionKey "Build"                 "Multi-Language"
+    VIAddVersionKey "Build"          "Multi-Language"
   !else
-    VIAddVersionKey "Build"                 "English-Mode"
+    VIAddVersionKey "Build"          "English-Mode"
   !endif
 
-  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
-  !ifdef C_PFI_LIBRARY_VERSION
-    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
-  !endif
-  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
+  VIAddVersionKey "Build Date/Time"  "${__DATE__} @ ${__TIME__}"
+  VIAddVersionKey "Build Script"     "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 #----------------------------------------------------------------------------------------
 # CBP Configuration Data (to override defaults, un-comment the lines below and modify them)
@@ -354,6 +337,17 @@
 #----------------------------------------------------------------------------------------
 
   !include CBP.nsh
+
+#--------------------------------------------------------------------------
+# Include private library functions and macro definitions
+#--------------------------------------------------------------------------
+
+  ; Avoid compiler warnings by disabling the functions and definitions we do not use
+
+  !define ADDUSER
+
+  !include "pfi-library.nsh"
+  !include "WriteEnvStr.nsh"
 
 #--------------------------------------------------------------------------
 # Configure the MUI pages
@@ -490,6 +484,8 @@
 
   ; This page is used to select the folder for the POPFile USER DATA files
 
+  !define MUI_DIRECTORYPAGE_VARIABLE          $G_USERDIR
+
   !define MUI_PAGE_HEADER_TEXT                "$(PFI_LANG_USERDIR_TITLE)"
   !define MUI_PAGE_HEADER_SUBTEXT             "$(PFI_LANG_USERDIR_SUBTITLE)"
   !define MUI_DIRECTORYPAGE_TEXT_TOP          "$(PFI_LANG_USERDIR_TEXT_TOP)"
@@ -586,11 +582,6 @@
   !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
   !define MUI_FINISHPAGE_SHOWREADME_FUNCTION  "ShowReadMe"
 
-  ; Provide a link to the POPFile Home Page
-
-  !define MUI_FINISHPAGE_LINK                 "$(PFI_LANG_FINISH_WEB_LINK_TEXT)"
-  !define MUI_FINISHPAGE_LINK_LOCATION        "http://getpopfile.org/"
-
   !insertmacro MUI_PAGE_FINISH
 
   ;---------------------------------------------------
@@ -648,22 +639,7 @@
 # Default Destination Folder
 #--------------------------------------------------------------------------
 
-  ; Note that the 'InstallDir' value has a trailing slash (to override the default behaviour)
-  ;
-  ; By default, NSIS will append '\POPFile' to the path selected using the 'Browse' button if
-  ; the path does not already end with '\POPFile'. If the 'Browse' button is used to select
-  ; 'C:\Application Data\POPFile Test' the wizard will install the 'User Data' in the folder
-  ; 'C:\Application Data\POPFile Test\POPFile' and although this location is displayed on the
-  ; DIRECTORY page before the user clicks the 'Next' button most users will not notice that
-  ; '\POPFile' has been appended to the location they selected.
-  ;
-  ; By adding a trailing slash we ensure that if the user selects a folder using the 'Browse'
-  ; button then that is what the wizard will use. One side effect of this change is that it
-  ; is now easier for users to select a folder such as 'C:\Program Files' for the 'User Data'
-  ; (which is not a good choice - so we refuse to accept any path matching the target system's
-  ; "program files" folder; see the 'CheckExistingDataDir' function)
-
-  InstallDir "${C_STD_DEFAULT_USERDATA}\"
+  InstallDir "${C_STD_DEFAULT_USERDATA}"
 
 #--------------------------------------------------------------------------
 # Reserve the files required by the installer (to improve performance)
@@ -675,11 +651,6 @@
 
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
-  ReserveFile "${NSISDIR}\Plugins\Banner.dll"
-  ReserveFile "${NSISDIR}\Plugins\nsExec.dll"
-  ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
-  ReserveFile "${NSISDIR}\Plugins\System.dll"
-  ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "ioA.ini"
   ReserveFile "ioB.ini"
   ReserveFile "ioC.ini"
@@ -841,6 +812,10 @@ Section "POPFile" SecPOPFile
   !define L_POPFILE_ROOT  $R8
   !define L_POPFILE_USER  $R7
   !define L_TEMP          $R6
+  !define L_TEMP_2        $R5
+  !define L_TEMP_3        $R4
+  !define L_TEMP_4        $R3
+  !define L_TEMP_5        $R2
 
   !define L_RESERVED      $0    ; used in system.dll calls
   Push ${L_RESERVED}
@@ -872,6 +847,10 @@ userdir_exists:
   Push ${L_POPFILE_ROOT}
   Push ${L_POPFILE_USER}
   Push ${L_TEMP}
+  Push ${L_TEMP_2}
+  Push ${L_TEMP_3}
+  Push ${L_TEMP_4}
+  Push ${L_TEMP_5}
 
   ; If the wizard is in the same folder as POPFile, check the HKLM data is still valid
 
@@ -886,14 +865,14 @@ userdir_exists:
   StrCmp ${L_TEMP} "$G_ROOTDIR" update_HKCU_data
   WriteRegStr HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN" "$G_ROOTDIR"
   StrCmp $G_SFN_DISABLED "0" find_HKLM_root_sfn
-  StrCpy ${L_TEMP} "Not supported"
+  StrCpy ${L_TEMP_2} "Not supported"
   Goto save_HKLM_root_sfn
 
 find_HKLM_root_sfn:
-  GetFullPathName /SHORT ${L_TEMP} "$G_ROOTDIR"
+  GetFullPathName /SHORT ${L_TEMP_2} "$G_ROOTDIR"
 
 save_HKLM_root_sfn:
-  WriteRegStr HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
+  WriteRegStr HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP_2}"
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" 0 update_HKCU_data
   IfFileExists "$G_ROOTDIR\uninstall.exe" 0 update_HKCU_data
@@ -911,36 +890,31 @@ update_HKCU_data:
 
   ; For flexibility, several global user variables are used to access installation folders
   ; (1) $G_ROOTDIR is initialized by the 'PFIGUIInit' function
-  ; (2) $G_USERDIR is normally initialized by the 'User Data' DIRECTORY page
+  ; (2) $G_USERDIR is initialized by the 'User Data' DIRECTORY page
 
-  ReadRegStr ${L_TEMP} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
-  Push ${L_TEMP}
-  Call GetCompleteFPN
-  Pop ${L_TEMP}
-  StrCmp $G_ROOTDIR ${L_TEMP} 0 update_author
+  ReadRegStr ${L_TEMP_2} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version"
+  ReadRegStr ${L_TEMP_3} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version"
+  ReadRegStr ${L_TEMP_4} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision"
+  ReadRegStr ${L_TEMP_5} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile RevStatus"
 
-  ; The version data in the registry applies to the POPFile programs we have found, so copy it
-
-  !insertmacro Copy_HKLM_to_HKCU "${L_TEMP}" "POPFile Major Version"
-  !insertmacro Copy_HKLM_to_HKCU "${L_TEMP}" "POPFile Minor Version"
-  !insertmacro Copy_HKLM_to_HKCU "${L_TEMP}" "POPFile Revision"
-  !insertmacro Copy_HKLM_to_HKCU "${L_TEMP}" "POPFile RevStatus"
-
-update_author:
+  WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version" "${L_TEMP_2}"
+  WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${L_TEMP_3}"
+  WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision" "${L_TEMP_4}"
+  WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile RevStatus" "${L_TEMP_5}"
   WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Author" "adduser.exe"
   WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Owner" "$G_WINUSERNAME"
 
   WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$G_ROOTDIR"
   WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN" "$G_ROOTDIR"
   StrCmp $G_SFN_DISABLED "0" find_root_sfn
-  StrCpy ${L_TEMP} "Not supported"
+  StrCpy ${L_TEMP_2} "Not supported"
   Goto save_root_sfn
 
 find_root_sfn:
-  GetFullPathName /SHORT ${L_TEMP} "$G_ROOTDIR"
+  GetFullPathName /SHORT ${L_TEMP_2} "$G_ROOTDIR"
 
 save_root_sfn:
-  WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
+  WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP_2}"
 
   WriteINIStr "$G_USERDIR\install.ini" "Settings" "Owner" "$G_WINUSERNAME"
   WriteINIStr "$G_USERDIR\install.ini" "Settings" "Class" "$G_WINUSERTYPE"
@@ -949,14 +923,14 @@ save_root_sfn:
   DeleteRegValue HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDataPath"
   WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN" "$G_USERDIR"
   StrCmp $G_SFN_DISABLED "0" find_user_sfn
-  StrCpy ${L_TEMP} "Not supported"
+  StrCpy ${L_TEMP_2} "Not supported"
   Goto save_user_sfn
 
 find_user_sfn:
-  GetFullPathName /SHORT ${L_TEMP} "$G_USERDIR"
+  GetFullPathName /SHORT ${L_TEMP_2} "$G_USERDIR"
 
 save_user_sfn:
-  WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_SFN" "${L_TEMP}"
+  WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_SFN" "${L_TEMP_2}"
 
   ; Now ensure the POPFILE_ROOT and POPFILE_USER environment variables have the correct data
 
@@ -1015,7 +989,7 @@ continue:
   ; Create a shortcut to make it easier to run the SQLite utility. There are two versions of
   ; the SQLite utility (one for SQlite 2.x format files and one for SQLite 3.x format files)
   ; so we use 'runsqlite.exe' which automatically selects and runs the appropriate version.
-
+  
   Push $G_USERDIR
   Call GetDatabaseName
   Pop ${L_TEMP}
@@ -1049,13 +1023,13 @@ stopwords:
   StrCmp ${L_TEMP} "same" copy_default_stopwords
 
   MessageBox MB_YESNO|MB_ICONQUESTION \
-      "$(PFI_LANG_MBSTPWDS_A)\
+      "POPFile 'stopwords' $(PFI_LANG_MBSTPWDS_1)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBSTPWDS_B)\
+      $(PFI_LANG_MBSTPWDS_2)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBSTPWDS_C)\
+      $(PFI_LANG_MBSTPWDS_3) 'stopwords.bak')\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBSTPWDS_D)" IDNO copy_default_stopwords
+      $(PFI_LANG_MBSTPWDS_4) 'stopwords.default')" IDNO copy_default_stopwords
   IfFileExists "$G_USERDIR\stopwords.bak" 0 make_backup
   SetFileAttributes "$G_USERDIR\stopwords.bak" NORMAL
 
@@ -1121,17 +1095,17 @@ update_config_ports:
 
   ; Use registry data to construct the name of the NOTEPAD-compatible release notes file
 
-  ReadRegStr ${L_RESERVED}  HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version"
-  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version"
-  StrCpy ${L_RESERVED} "v${L_RESERVED}.${L_TEMP}"
-  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision"
-  StrCpy ${L_RESERVED} "${L_RESERVED}.${L_TEMP}.change.txt"
-  IfFileExists "$G_ROOTDIR\${L_RESERVED}" 0 skip_rel_notes
+  ReadRegStr ${L_TEMP}  HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version"
+  ReadRegStr ${L_TEMP_2} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version"
+  StrCpy ${L_TEMP} "v${L_TEMP}.${L_TEMP_2}"
+  ReadRegStr ${L_TEMP_2} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision"
+  StrCpy ${L_TEMP} "${L_TEMP}.${L_TEMP_2}.change.txt"
+  IfFileExists "$G_ROOTDIR\${L_TEMP}" 0 skip_rel_notes
 
   SetOutPath "$G_ROOTDIR"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk" \
-                 "$G_ROOTDIR\${L_RESERVED}"
+                 "$G_ROOTDIR\${L_TEMP}"
 
 skip_rel_notes:
   SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}"
@@ -1247,6 +1221,10 @@ end_autostart_set:
   DetailPrint "$(PFI_LANG_BE_PATIENT)"
   SetDetailsPrint listonly
 
+  Pop ${L_TEMP_5}
+  Pop ${L_TEMP_4}
+  Pop ${L_TEMP_3}
+  Pop ${L_TEMP_2}
   Pop ${L_TEMP}
   Pop ${L_POPFILE_USER}
   Pop ${L_POPFILE_ROOT}
@@ -1259,6 +1237,10 @@ end_autostart_set:
   !undef L_POPFILE_ROOT
   !undef L_POPFILE_USER
   !undef L_TEMP
+  !undef L_TEMP_2
+  !undef L_TEMP_3
+  !undef L_TEMP_4
+  !undef L_TEMP_5
 
 SectionEnd
 
@@ -1808,23 +1790,25 @@ Function ChooseDefaultDataDir
 
   !define  L_RESULT    $R9
 
+  ; This function initialises the $G_USERDIR global user variable for use by the DIRECTORY page
+
   ; Starting with the 0.21.0 release, user-specific data is stored in the registry
 
-  ReadRegStr $INSTDIR HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
-  StrCmp $INSTDIR "" look_elsewhere
-  IfFileExists "$INSTDIR\*.*" exit
+  ReadRegStr $G_USERDIR HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
+  StrCmp $G_USERDIR "" look_elsewhere
+  IfFileExists "$G_USERDIR\*.*" exit
 
 look_elsewhere:
 
   ; All versions prior to 0.21.0 stored popfile.pl and popfile.cfg in the same folder
 
-  StrCpy $INSTDIR "$G_ROOTDIR"
-  IfFileExists "$INSTDIR\popfile.cfg" exit
+  StrCpy $G_USERDIR "$G_ROOTDIR"
+  IfFileExists "$G_USERDIR\popfile.cfg" exit
 
   ; Check if we are installing over a version which uses an early alternative folder structure
 
-  StrCpy $INSTDIR "$G_ROOTDIR\user"
-  IfFileExists "$INSTDIR\popfile.cfg" exit
+  StrCpy $G_USERDIR "$G_ROOTDIR\user"
+  IfFileExists "$G_USERDIR\popfile.cfg" exit
 
   ;----------------------------------------------------------------------
   ; Default location for POPFile User Data files (popfile.cfg and others)
@@ -1834,19 +1818,19 @@ look_elsewhere:
   ;----------------------------------------------------------------------
 
   StrCmp $APPDATA "" 0 appdata_valid
-  StrCpy $INSTDIR "${C_ALT_DEFAULT_USERDATA}\$G_WINUSERNAME"
+  StrCpy $G_USERDIR "${C_ALT_DEFAULT_USERDATA}\$G_WINUSERNAME"
   Goto exit
 
 appdata_valid:
   Push ${L_RESULT}
 
-  StrCpy $INSTDIR "${C_STD_DEFAULT_USERDATA}"
-  Push $INSTDIR
+  StrCpy $G_USERDIR "${C_STD_DEFAULT_USERDATA}"
+  Push $G_USERDIR
   Push $G_WINUSERNAME
   Call StrStr
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" 0 default_locn_ok
-  StrCpy $INSTDIR "$INSTDIR\$G_WINUSERNAME"
+  StrCpy $G_USERDIR "$G_USERDIR\$G_WINUSERNAME"
 
 default_locn_ok:
   Pop ${L_RESULT}
@@ -1885,7 +1869,7 @@ Function CheckUserDirStatus
   StrCmp ${L_RESULT} "/restore=" restore_install
   Pop ${L_RESULT}
 
-  IfFileExists "$INSTDIR\popfile.cfg" 0 exit
+  IfFileExists "$G_USERDIR\popfile.cfg" 0 exit
   StrCmp $G_PFISETUP "/install" upgrade_install
   StrCmp $G_PFISETUP "/installreboot" 0 exit
 
@@ -1897,10 +1881,9 @@ upgrade_install:
 
   MessageBox MB_YESNO|MB_ICONQUESTION "$(PFI_LANG_DIRSELECT_MBWARN_3)\
       ${MB_NL}${MB_NL}\
-      $INSTDIR\
+      $G_USERDIR\
       ${MB_NL}${MB_NL}${MB_NL}\
       $(PFI_LANG_DIRSELECT_MBWARN_2)" IDNO offer_default
-  StrCpy $G_USERDIR $INSTDIR
   Call CheckExistingConfigData
   Abort
 
@@ -1928,6 +1911,7 @@ check_config:
       ($G_USERDIR)\
       ${MB_NL}${MB_NL}${MB_NL}\
       $(PFI_LANG_DIRSELECT_MBWARN_5)" IDNO quit_wizard
+
   Call CheckExistingConfigData
   Abort
 
@@ -1941,19 +1925,19 @@ quit_wizard:
 
 offer_default:
   StrCmp $APPDATA "" 0 appdata_valid
-  StrCpy $INSTDIR "${C_ALT_DEFAULT_USERDATA}\$G_WINUSERNAME"
+  StrCpy $G_USERDIR "${C_ALT_DEFAULT_USERDATA}\$G_WINUSERNAME"
   Goto exit
 
 appdata_valid:
   Push ${L_RESULT}
 
-  StrCpy $INSTDIR "${C_STD_DEFAULT_USERDATA}"
-  Push $INSTDIR
+  StrCpy $G_USERDIR "${C_STD_DEFAULT_USERDATA}"
+  Push $G_USERDIR
   Push $G_WINUSERNAME
   Call StrStr
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" 0 default_locn_ok
-  StrCpy $INSTDIR "$INSTDIR\$G_WINUSERNAME"
+  StrCpy $G_USERDIR "$G_USERDIR\$G_WINUSERNAME"
 
 default_locn_ok:
   Pop ${L_RESULT}
@@ -1970,9 +1954,6 @@ FunctionEnd
 # Installer Function: CheckExistingDataDir
 # (the "leave" function for the DIRECTORY page)
 #
-# Now that we are overriding the default InstallDir behaviour, we really need to check
-# that the main 'Program Files' folder has not been selected for the 'User Data' folder.
-#
 # POPFile currently does not support paths containing spaces in POPFILE_ROOT and POPFILE_USER
 # so we use the short file name format for these two environment variables. However some
 # installations may not support short file names, so the wizard checks if the main installer
@@ -1984,52 +1965,29 @@ Function CheckExistingDataDir
 
   !define L_RESULT    $R9
 
-  Push ${L_RESULT}
-
-  ; Strip trailing slashes (if any) from the path selected by the user
-
-  Push $INSTDIR
-  Pop $INSTDIR
-  StrCpy $G_USERDIR "$INSTDIR"
-
-  ; We do not permit POPFile 'User Data' to be in the main 'Program Files' folder
-  ; (i.e. we do not allow 'popfile.cfg' etc to be stored there)
-
-  StrCmp $G_USERDIR "$PROGRAMFILES" return_to_directory_selection
-
   ; If short file names are not supported on this system,
   ; we cannot accept any path containing spaces.
 
-  StrCmp $G_SFN_DISABLED "0" check_SFN_PROGRAMFILES
+  StrCmp $G_SFN_DISABLED "0" upgrade_check
+
+  Push ${L_RESULT}
 
   Push $G_USERDIR
   Push ' '
   Call StrStr
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" check_locn
+  StrCmp ${L_RESULT} "" no_spaces
   MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "Please select a folder location which does not contain spaces"
-
-return_to_directory_selection:
+      "Current configuration does not support short file names\
+      ${MB_NL}${MB_NL}\
+      Please select a folder location which does not contain spaces"
   Pop ${L_RESULT}
   Abort
 
-check_SFN_PROGRAMFILES:
-  GetFullPathName /SHORT ${L_RESULT} "$PROGRAMFILES"
-  StrCmp $G_USERDIR "${L_RESULT}" return_to_directory_selection
-
-check_locn:
-
-  ; We always try to use the LFN format, even if the user has entered a SFN format path
-
-  Push $G_USERDIR
-  Call GetCompleteFPN
+no_spaces:
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" got_path
-  StrCpy $G_USERDIR ${L_RESULT}
 
-got_path:
-  Pop ${L_RESULT}
+upgrade_check:
 
   ; Warn the user if we are about to upgrade an existing installation
   ; and allow user to select a different directory if they wish
@@ -2486,7 +2444,7 @@ show_defaults:
   GetDlgItem $G_DLGITEM $G_HWND 1204            ; Field 5 = 'Run POPFile at startup' checkbox
   CreateFont $G_FONT "MS Shell Dlg" 10 700      ; use larger & bolder version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
-
+  
   !ifndef ENGLISH_MODE
     button_text:
   !endif
@@ -2568,11 +2526,11 @@ Function CheckPortOptions
 
 bad_pop3:
   MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "$(PFI_LANG_OPTIONS_MBPOP3_A)\
+      "$(PFI_LANG_OPTIONS_MBPOP3_1) $\"$G_POP3$\"'.\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_OPTIONS_MBPOP3_B)\
+      $(PFI_LANG_OPTIONS_MBPOP3_2)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_OPTIONS_MBPOP3_C)"
+      $(PFI_LANG_OPTIONS_MBPOP3_3)"
   Goto bad_exit
 
 pop3_ok:
@@ -2585,11 +2543,11 @@ pop3_ok:
 
 bad_gui:
   MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "$(PFI_LANG_OPTIONS_MBGUI_A)\
+      "$(PFI_LANG_OPTIONS_MBGUI_1) $\"$G_GUI$\".\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_OPTIONS_MBGUI_B)\
+      $(PFI_LANG_OPTIONS_MBGUI_2)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_OPTIONS_MBGUI_C)"
+      $(PFI_LANG_OPTIONS_MBGUI_3)"
   Goto bad_exit
 
 ports_must_differ:
@@ -2817,7 +2775,7 @@ Function SetEmailClientPage
   ; during which time the user may be tempted to click the 'Next' button. Display a banner to
   ; reassure the user (and hope they do NOT click any buttons)
 
-  Call ShowPleaseWaitBanner
+  Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_BE_PATIENT)" "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
 
   !insertmacro MUI_HEADER_TEXT "$(PFI_LANG_MAILCFG_TITLE)" "$(PFI_LANG_MAILCFG_SUBTITLE)"
 
@@ -3045,7 +3003,7 @@ open_logfiles:
 
   FileOpen  $G_OOECHANGES_HANDLE "$G_USERDIR\expchanges.txt" a
   FileSeek  $G_OOECHANGES_HANDLE 0 END
-  FileWrite $G_OOECHANGES_HANDLE "[$G_WINUSERNAME] $(PFI_LANG_EXPCFG_LOG_AFTER) (${L_TEMP})\
+  FileWrite $G_OOECHANGES_HANDLE "[$G_WINUSERNAME] $(PFI_LANG_ExpCFG_LOG_AFTER) (${L_TEMP})\
       ${MB_NL}${MB_NL}"
   !insertmacro OOECONFIG_CHANGES_LOG  "$(PFI_LANG_EXPCFG_LOG_IDENTITY)"   20
   !insertmacro OOECONFIG_CHANGES_LOG  "$(PFI_LANG_OOECFG_LOG_ACCOUNT)"    20
@@ -3391,7 +3349,7 @@ Function ConvertOOERegData
   Push ${L_UNDO}
   Push ${L_UNDOFILE}
 
-  Call ShowPleaseWaitBanner
+  Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_BE_PATIENT)" "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
 
   ; Original 'popfile.reg' format (2 values per entry, each using 3 lines) imported as 'IniV=1':
   ;
@@ -4061,7 +4019,7 @@ display_list:
     StrCmp $LANGUAGE ${LANG_JAPANESE} show_page
     StrCmp $LANGUAGE ${LANG_KOREAN} show_page
   !endif
-
+  
   ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
 
   GetDlgItem $G_DLGITEM $G_HWND 1200              ; Field 1 = IDENTITY label (above the box)
@@ -5229,30 +5187,6 @@ corpus_conv_check:
 
   StrCmp ${L_CONSOLE} "f" do_not_show_banner
 
-  !ifndef ENGLISH_MODE
-
-    ; The Banner plug-in uses the "MS Shell Dlg" font to display the banner text
-    ; but East Asian versions of Windows 9x do not support this so in these cases
-    ; we use "English" text for the banner (otherwise the text would be unreadable garbage).
-
-    Call IsNT
-    Pop ${L_TEMP}
-    StrCmp ${L_TEMP} "1" show_banner
-
-    ; Windows 9x has been detected
-
-    StrCmp $LANGUAGE ${LANG_SIMPCHINESE} use_ENGLISH_banner
-    StrCmp $LANGUAGE ${LANG_TRADCHINESE} use_ENGLISH_banner
-    StrCmp $LANGUAGE ${LANG_JAPANESE} use_ENGLISH_banner
-    StrCmp $LANGUAGE ${LANG_KOREAN} use_ENGLISH_banner
-    Goto show_banner
-
-  use_ENGLISH_banner:
-    Banner::show /NOUNLOAD /set 76 "Preparing to start POPFile." "This may take a few seconds..."
-    Goto do_not_show_banner   ; sic!
-
-    show_banner:
-  !endif
   Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_LAUNCH_BANNER_1)" "$(PFI_LANG_LAUNCH_BANNER_2)"
 
 do_not_show_banner:
@@ -6144,9 +6078,8 @@ uninstall_files:
 
   IfFileExists "$G_USERDIR\*.*" 0 tidy_up
   DetailPrint "$(PFI_LANG_UN_LOG_DELUSERERR)"
-  StrCpy $G_PLS_FIELD_1 $G_USERDIR
   MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "$(PFI_LANG_UN_MBREMERR_A))"
+      "$(PFI_LANG_UN_MBREMERR_1): $G_USERDIR $(PFI_LANG_UN_MBREMERR_2)"
 
 tidy_up:
   StrCmp $APPDATA "" 0 appdata_valid
@@ -6743,71 +6676,6 @@ exit_now:
   !undef L_ERRORLOG
 
 FunctionEnd
-
-#--------------------------------------------------------------------------
-# Macro-based Functions make it easier to maintain identical functions
-# which are (or might be) used in the installer and in the uninstaller.
-#--------------------------------------------------------------------------
-
-!macro ShowPleaseWaitBanner UN
-  Function ${UN}ShowPleaseWaitBanner
-
-    !ifndef ENGLISH_MODE
-
-      ; The Banner plug-in uses the "MS Shell Dlg" font to display the banner text but
-      ; East Asian versions of Windows 9x do not support this so in these cases we use
-      ; "English" text for the banner (otherwise the text would be unreadable garbage).
-
-      !define L_RESULT    $R9   ; The 'IsNT' function returns 0 if Win9x was detected
-
-      Push ${L_RESULT}
-
-      Call IsNT
-      Pop ${L_RESULT}
-      StrCmp ${L_RESULT} "1" show_banner
-
-      ; Windows 9x has been detected
-
-      StrCmp $LANGUAGE ${LANG_SIMPCHINESE} use_ENGLISH_banner
-      StrCmp $LANGUAGE ${LANG_TRADCHINESE} use_ENGLISH_banner
-      StrCmp $LANGUAGE ${LANG_JAPANESE} use_ENGLISH_banner
-      StrCmp $LANGUAGE ${LANG_KOREAN} use_ENGLISH_banner
-      Goto show_banner
-
-    use_ENGLISH_banner:
-      Banner::show /NOUNLOAD /set 76 "Please be patient." "This may take a few seconds..."
-      Goto continue
-
-      show_banner:
-    !endif
-
-    Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_BE_PATIENT)" "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-
-    !ifndef ENGLISH_MODE
-      continue:
-        Pop ${L_RESULT}
-
-        !undef L_RESULT
-    !endif
-
-  FunctionEnd
-!macroend
-
-#--------------------------------------------------------------------------
-# Installer Function: ShowPleaseWaitBanner
-#
-# This function is used during the installation process
-#--------------------------------------------------------------------------
-
-!insertmacro ShowPleaseWaitBanner ""
-
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.ShowPleaseWaitBanner
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
-
-;!insertmacro ShowPleaseWaitBanner "un."
 
 #--------------------------------------------------------------------------
 # End of 'adduser.nsi'

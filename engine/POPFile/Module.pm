@@ -43,8 +43,7 @@ use IO::Select;
 # start() - called once all configuration has been read and POPFile is
 # ready to start operating
 #
-# stop() - called when POPFile is shutting down.  If a child overrides
-# this then it must call the parent with a call to SUPER::stop()
+# stop()       - called when POPFile is shutting down
 #
 # service() - called by the main POPFile process to allow a submodule
 # to do its own work (this is optional for modules that do not need to
@@ -54,15 +53,10 @@ use IO::Select;
 # the fork happens
 #
 # forked() - called when a module has forked the process.  This is
-# called within the child process and should be used to clean up. Note
-# that any child that overrides this MUST call the parent forked()
-# with a call to SUPER::forked()
+# called within the child process and should be used to clean up
 #
 # postfork() - called in the parent process to tell it that the fork
-# has occurred.  This is like forked but in the parent.
-#
-# childexit() - called in a child process when the child is about
-# to exit.
+# has occurred.  This is like forked but in the parent
 #
 # reaper() - called when a process has terminated to give a module a
 # chance to do whatever clean up is needed
@@ -78,10 +72,6 @@ use IO::Select;
 # log_() - sends a string to the logger
 #
 # config_() - gets or sets a configuration parameter for this module
-# global_config_() - gets or sets a global configuration parameter
-# module_config_() - gets or sets a configuration parameter for a module
-# All of the above three may be prefixed by user_ and passed a database
-# user ID as the first parameter to get a user specific parameter
 #
 # mq_post_() - post a message to the central message queue
 #
@@ -133,6 +123,21 @@ sub new
     my $type = shift;
     my $self;
 
+    # A reference to the POPFile::Configuration module, every module is
+    # able to get configuration information through this, note that it
+    # is valid when initialize is called, however, the configuration is not
+    # read from disk until after initialize has been called
+
+    $self->{configuration__} = 0; # PRIVATE
+
+    # A reference to the POPFile::Logger module
+
+    $self->{logger__}        = 0; # PRIVATE
+
+    # A reference to the POPFile::MQ module
+
+    $self->{mq__}            = 0;
+
     # The name of this module
 
     $self->{name__}          = ''; # PRIVATE
@@ -147,24 +152,10 @@ sub new
 
     $self->{pipeready_}      = 0;
 
-    # Cached handles to other modules, see the get_module__ function
-    # for details
-
-    $self->{modules__}       = {};
-
-    # Reference to the POPFile::Loader module which is set by a 
-    # call to loader() and used by get_module__
-
-    $self->{loader__}        = {};
-
     # This is a reference to a function (forker) in popfile.pl that
     # performs a fork and informs modules that a fork has occurred
 
     $self->{forker_}         = 0;
-
-    # Handle to database set by (and returned by) a call to db_()
-
-    $self->{db_handle__}     = undef;
 
     return bless $self, $type;
 }
@@ -218,20 +209,13 @@ sub start
 # stop
 #
 # Called when POPFile is closing down, this is the last method that
-# will get called before the object is destroyed.  There is no return
+# will get called before the object is destroyed.  There is not return
 # value from stop().
 #
 # ----------------------------------------------------------------------------
 sub stop
 {
     my ( $self ) = @_;
-
-    # If the database handle had been cloned then we need to clean it
-    # up here
-
-    if ( $self->{db_handle__} ) {
-        $self->{db_handle__}->disconnect;
-    }
 }
 
 # ----------------------------------------------------------------------------
@@ -297,14 +281,11 @@ sub prefork
 #         the child
 #
 # There is no return value from this method
+#
 # ----------------------------------------------------------------------------
 sub forked
 {
     my ( $self, $writer ) = @_;
-
-    if ( $self->{db_handle__} ) {
-        undef $self->{db_handle__};
-    }
 }
 
 # ----------------------------------------------------------------------------
@@ -323,24 +304,6 @@ sub forked
 sub postfork
 {
     my ( $self, $pid, $reader ) = @_;
-}
-
-# ----------------------------------------------------------------------------
-#
-# childexit
-#
-# Called in a child process when the child is about to exit
-#
-# There is no return value from this method
-#
-# ----------------------------------------------------------------------------
-sub childexit
-{
-    my ( $self ) = @_;
-
-    if ( $self->{db_handle__} ) {
-        $self->{db_handle__}->disconnect;
-    }
 }
 
 # ----------------------------------------------------------------------------
@@ -375,7 +338,7 @@ sub log_
     my ( $self, $level, $message ) = @_;
 
     my ( $package, $file, $line ) = caller;
-    $self->logger_()->debug( $level, $self->{name__} . ": $line: " .
+    $self->{logger__}->debug( $level, $self->{name__} . ": $line: " .
         $message );
 }
 
@@ -401,28 +364,6 @@ sub config_
 
 # ----------------------------------------------------------------------------
 #
-# user_config_
-#
-# Called by a subclass to get or set a configuration parameter for a
-# specific user
-#
-# $user              Database user ID
-# $name              The name of the parameter (e.g. 'port')
-# $value             (optional) The value to set
-#
-# If called with just a $name then config_() will return the current value
-# of the configuration parameter.
-#
-# ----------------------------------------------------------------------------
-sub user_config_
-{
-    my ( $self, $user, $name, $value ) = @_;
-
-    return $self->user_module_config_( $user, $self->{name__}, $name, $value );
-}
-
-# ----------------------------------------------------------------------------
-#
 # mq_post_
 #
 # Called by a subclass to post a message to the message queue
@@ -435,7 +376,7 @@ sub mq_post_
 {
     my ( $self, $type, @message ) = @_;
 
-    return $self->mq_()->post( $type, @message );
+    return $self->{mq__}->post( $type, @message );
 }
 
 # ----------------------------------------------------------------------------
@@ -452,7 +393,7 @@ sub mq_register_
 {
     my ( $self, $type, $object ) = @_;
 
-    return $self->mq_()->register( $type, $object );
+    return $self->{mq__}->register( $type, $object );
 }
 
 # ----------------------------------------------------------------------------
@@ -478,28 +419,6 @@ sub global_config_
 
 # ----------------------------------------------------------------------------
 #
-# user_global_config_
-#
-# Called by a subclass to get or set a global (i.e. not module
-# specific) configuration parameter for a specific user
-#
-# $user              Database user ID
-# $name              The name of the parameter (e.g. 'port')
-# $value             (optional) The value to set
-#
-# If called with just a $name then global_config_() will return the
-# current value of the configuration parameter.
-#
-# ----------------------------------------------------------------------------
-sub user_global_config_
-{
-    my ( $self, $user, $name, $value ) = @_;
-
-    return $self->user_module_config_( $user, 'GLOBAL', $name, $value );
-}
-
-# ----------------------------------------------------------------------------
-#
 # module_config_
 #
 # Called by a subclass to get or set a module specific configuration parameter
@@ -516,36 +435,7 @@ sub module_config_
 {
     my ( $self, $module, $name, $value ) = @_;
 
-    return $self->configuration_()->parameter( $module . "_" . $name, $value );
-}
-
-# ----------------------------------------------------------------------------
-#
-# user_module_config_
-#
-# Called by a subclass to get or set a module specific configuration parameter
-# for a specific user
-#
-# $user   Database user ID
-# $module The name of the module that owns the parameter (e.g. 'pop3')
-# $name   The name of the parameter (e.g. 'port') $value (optional) The
-#         value to set
-#
-# If called with just a $module and $name then user_module_config_() will
-# return the current value of the configuration parameter.
-#
-# ----------------------------------------------------------------------------
-sub user_module_config_
-{
-    my ( $self, $user, $module, $name, $value ) = @_;
-
-    if ( defined( $value ) ) {
-        return $self->classifier_()->set_user_parameter_from_id( $user,
-                                        $module . "_" . $name, $value );
-    } else {
-        return $self->classifier_()->get_user_parameter_from_id( $user,
-                                        $module . "_" . $name );
-    }
+    return $self->{configuration__}->parameter( $module . "_" . $name, $value );
 }
 
 # ----------------------------------------------------------------------------
@@ -580,14 +470,14 @@ sub get_user_path_
 {
     my ( $self, $path, $sandbox ) = @_;
 
-    return $self->configuration_()->get_user_path( $path, $sandbox );
+    return $self->{configuration__}->get_user_path( $path, $sandbox );
 }
 
 sub get_root_path_
 {
     my ( $self, $path, $sandbox ) = @_;
 
-    return $self->configuration_()->get_root_path( $path, $sandbox );
+    return $self->{configuration__}->get_root_path( $path, $sandbox );
 }
 
 # ----------------------------------------------------------------------------
@@ -680,6 +570,7 @@ sub flush_slurp_data__
 # Returns the length of data currently buffered for the passed in handle
 #
 # ----------------------------------------------------------------------------
+
 sub slurp_data_size__
 {
     my ( $self, $handle ) = @_;
@@ -699,6 +590,7 @@ sub slurp_data_size__
 # will return undef
 #
 # ----------------------------------------------------------------------------
+
 sub slurp_buffer_
 {
     my ( $self, $handle, $length ) = @_;
@@ -795,6 +687,7 @@ sub slurp_
 # clean up temporary buffer space used by slurp_
 #
 # ----------------------------------------------------------------------------
+
 sub done_slurp_
 {
     my ( $self, $handle ) = @_;
@@ -874,87 +767,6 @@ sub flush_extra_
    return $full_buf;
 }
 
-# Functions used to get handles to other POPFile modules
-#
-# If a module needs to get access to the MQ (for example) then
-# they do $self->mq_() which will return a handle to POPFile::MQ
-# and will cache the handle for next time
-
-sub mq_
-{
-    my ( $self ) = @_;
-
-    return $self->get_module__( 'mq', 'POPFile::MQ' );
-}
-
-sub configuration_
-{
-    my ( $self ) = @_;
-
-    return $self->get_module__( 'config', 'POPFile::Configuration' );
-}
-
-sub logger_
-{
-    my ( $self ) = @_;
-
-    return $self->get_module__( 'logger', 'POPFile::Logger' );
-}
-
-sub classifier_
-{
-    my ( $self ) = @_;
-
-    return $self->get_module__( 'classifier', 'Classifier::Bayes' );
-}
-
-sub database_
-{
-    my ( $self ) = @_;
-
-    return $self->get_module__( 'database', 'POPFile::Database' );
-}
-
-# Returns a the database handle owned by the POPFile::Database object.
-# If this method is called then the caller must clean up the handle.
-
-sub db_
-{
-    my ( $self ) = @_;
-
-    if ( !defined( $self->{db_handle__} ) ) {
-        $self->{db_handle__} = $self->database_()->db();
-    }
-
-    return $self->{db_handle__};
-}
-
-sub history_
-{
-    my ( $self ) = @_;
-
-    return $self->get_module__( 'history', 'POPFile::History' );
-}
-
-sub mangle_
-{
-    my ( $self ) = @_;
-
-    return $self->get_module__( 'mangle', 'Classifier::WordMangle' );
-}
-
-sub get_module__
-{
-    my ( $self, $alias, $module ) = @_;
-
-    if ( !exists( $self->{modules__}{$alias} ) ) {
-        $self->{modules__}{$alias} = $self->{loader__}->get_module( $module );
-        $self->log_( 1, $self->{name__} . " needs module $module" );
-    }
-
-    return $self->{modules__}{$alias};
-}
-
 # GETTER/SETTER methods.  Note that I do not expect documentation of
 # these unless they are non-trivial since the documentation would be a
 # waste of space
@@ -976,6 +788,28 @@ sub get_module__
 # This method access the foo_ variable for reading or writing,
 # $c->foo() read foo_ and $c->foo( 'foo' ) writes foo_
 
+sub mq
+{
+    my ( $self, $value ) = @_;
+
+    if ( defined( $value ) ) {
+        $self->{mq__} = $value;
+    }
+
+    return $self->{mq__};
+}
+
+sub configuration
+{
+    my ( $self, $value ) = @_;
+
+    if ( defined( $value ) ) {
+        $self->{configuration__} = $value;
+    }
+
+    return $self->{configuration__};
+}
+
 sub forker
 {
     my ( $self, $value ) = @_;
@@ -987,15 +821,15 @@ sub forker
     return $self->{forker_};
 }
 
-sub setchildexit
+sub logger
 {
     my ( $self, $value ) = @_;
 
     if ( defined( $value ) ) {
-        $self->{childexit_} = $value;
+        $self->{logger__} = $value;
     }
 
-    return $self->{childexit_};
+    return $self->{logger__};
 }
 
 sub pipeready
@@ -1046,14 +880,7 @@ sub last_ten_log_entries
 {
     my ( $self ) = @_;
 
-    return $self->logger_()->last_ten();
-}
-
-sub loader
-{
-    my ( $self, $loader ) = @_;
-
-    $self->{loader__} = $loader;
+    return $self->{logger__}->last_ten();
 }
 
 1;

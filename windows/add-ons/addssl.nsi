@@ -9,7 +9,7 @@
 #                be backed up as Module.pm.bk1). The patch is only applied if v1.40 is found.
 #                A patch status message is always displayed.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -91,7 +91,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.0.12"
+  !define C_PFI_VERSION  "0.0.10"
 
   ; Mention the wizard's version number in the window title
 
@@ -150,6 +150,29 @@
 
 
 #--------------------------------------------------------------------------
+# Version Information settings (for the wizard's EXE file)
+#--------------------------------------------------------------------------
+
+  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; representing the following values: Major.Minor.Release.Build
+
+  VIProductVersion "${C_PFI_VERSION}.0"
+
+  VIAddVersionKey "ProductName"       "POPFile SSL Setup wizard"
+  VIAddVersionKey "Comments"          "POPFile Homepage: http://getpopfile.org"
+  VIAddVersionKey "CompanyName"       "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"    "Copyright (c) 2004  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"   "Installs SSL support for POPFile 0.22.x"
+  VIAddVersionKey "FileVersion"       "${C_PFI_VERSION}"
+  VIAddVersionKey "OriginalFilename"  "${C_OUTFILE}"
+
+  VIAddVersionKey "Build"             "English-Mode"
+
+  VIAddVersionKey "Build Date/Time"   "${__DATE__} @ ${__TIME__}"
+  VIAddVersionKey "Build Script"      "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
+
+
+#--------------------------------------------------------------------------
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
@@ -158,32 +181,6 @@
   !define ADDSSL
 
   !include "..\pfi-library.nsh"
-
-
-#--------------------------------------------------------------------------
-# Version Information settings (for the wizard's EXE file)
-#--------------------------------------------------------------------------
-
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
-  ; representing the following values: Major.Minor.Release.Build
-
-  VIProductVersion                          "${C_PFI_VERSION}.0"
-
-  VIAddVersionKey "ProductName"             "POPFile SSL Setup wizard"
-  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
-  VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
-  VIAddVersionKey "FileDescription"         "Installs SSL support for POPFile 0.22.x"
-  VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
-  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
-
-  VIAddVersionKey "Build"                   "English-Mode"
-
-  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
-  !ifdef C_PFI_LIBRARY_VERSION
-    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
-  !endif
-  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 
 #--------------------------------------------------------------------------
@@ -624,9 +621,8 @@ error_timestamp:
 
 check_bs_file:
 
-  ; 'untgz' versions earlier than 1.0.6 (released 28 November 2004) are unable to extract
-  ; empty files so this script creates the empty 'SSLeay.bs' file if necessary
-  ; (to ensure all of the $G_MPLIBDIR\auto\Net\SSLeay\SSLeay.* files exist)
+  ; The current 'untgz' plugin (v1.0.5) does not extract empty files (i.e. file size is 0 bytes)
+  ; so we cheat a little to ensure all $G_MPLIBDIR\auto\Net\SSLeay\SSLeay.* files are extracted
 
   IfFileExists "$G_PLS_FIELD_1\SSLeay.bs" done
   File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "zerobyte.file"

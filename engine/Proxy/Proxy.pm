@@ -49,6 +49,11 @@ sub new
     my $type = shift;
     my $self = POPFile::Module->new();
 
+    # A reference to the classifier and history
+
+    $self->{classifier__}     = 0;
+    $self->{history__}        = 0;
+
     # Reference to a child() method called to handle a proxy
     # connection
 
@@ -166,9 +171,8 @@ EOM
 #
 # stop
 #
-# Called when POPFile is closing down, this is the last method that
-# will get called before the object is destroyed.  There is no return
-# value from stop().
+# Called when POPFile is closing down, this is the last method that will get called before
+# the object is destroyed.  There is no return value from stop().
 #
 # ----------------------------------------------------------------------------
 sub stop
@@ -176,29 +180,24 @@ sub stop
     my ( $self ) = @_;
 
     if ( $self->{api_session__} ne '' ) {
-        $self->classifier_()->release_session_key( $self->{api_session__} );
+        $self->{classifier__}->release_session_key( $self->{api_session__} );
     }
 
-    # Need to close all the duplicated file handles, this include the
-    # POP3 listener and all the reading ends of pipes to active
-    # children
+    # Need to close all the duplicated file handles, this include the POP3 listener
+    # and all the reading ends of pipes to active children
 
     close $self->{server__} if ( defined( $self->{server__} ) );
-
-    $self->SUPER::stop();
 }
 
 # ----------------------------------------------------------------------------
 #
 # service
 #
-# service() is a called periodically to give the module a chance to do
-# housekeeping work.
+# service() is a called periodically to give the module a chance to do housekeeping work.
 #
-# If any problem occurs that requires POPFile to shutdown service()
-# should return 0 and the top level process will gracefully terminate
-# POPFile including calling all stop() methods.  In normal operation
-# return 1.
+# If any problem occurs that requires POPFile to shutdown service() should return 0 and
+# the top level process will gracefully terminate POPFile including calling all stop()
+# methods.  In normal operation return 1.
 #
 # ----------------------------------------------------------------------------
 sub service
@@ -221,8 +220,8 @@ sub service
 
             if ( $self->{api_session__} eq '' ) {
                 $self->{api_session__} =
-                    $self->classifier_()->get_session_key( 'admin', '' );
-   	        }
+                    $self->{classifier__}->get_session_key( 'admin', '' );
+	    }
 
             # Check that this is a connection from the local machine,
             # if it's not then we drop it immediately without any
@@ -251,9 +250,7 @@ sub service
                     if ( !defined( $pid ) || ( $pid == 0 ) ) {
                         $self->{child_}( $self, $client,
                             $self->{api_session__} );
-                        if ( defined( $pid ) ) {
-                            &{$self->{childexit_}}(0)
-                        }
+                        exit(0) if ( defined( $pid ) );
                     }
 	        } else {
                     pipe my $reader, my $writer;
@@ -274,18 +271,15 @@ sub service
 #
 # forked
 #
-# This is called when some module forks POPFile and is within the
-# context of the child process so that this module can close any
-# duplicated file handles that are not needed.
+# This is called when some module forks POPFile and is within the context of the child
+# process so that this module can close any duplicated file handles that are not needed.
 #
 # There is no return value from this method
 #
 # ----------------------------------------------------------------------------
 sub forked
 {
-    my ( $self, $writer ) = @_;
-
-    $self->SUPER::forked( $writer );
+    my ( $self ) = @_;
 
     close $self->{server__};
 }
@@ -626,6 +620,22 @@ sub validate_item
         $templ->param( 'Socks_Widget_If_Server_Updated' => 1 );
         $templ->param( 'Socks_Widget_Server_Updated' => sprintf( $$language{Configuration_SOCKSServerUpdate}, $self->config_( 'socks_server' ) ) );
     }
+}
+
+# SETTERS
+
+sub classifier
+{
+    my ( $self, $classifier ) = @_;
+
+    $self->{classifier__} = $classifier;
+}
+
+sub history
+{
+    my ( $self, $history ) = @_;
+
+    $self->{history__} = $history;
 }
 
 1;

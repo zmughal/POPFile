@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Proxy::NNTP;
 
 use Proxy::Proxy;
@@ -315,7 +315,7 @@ sub child__
                     $count += 1;
 
                     my ( $class, $history_file ) =
-                        $self->classifier_()->classify_and_modify( $session,
+                        $self->{classifier__}->classify_and_modify( $session,
                             $news, $client, 0, '', 0 );
                 }
 

@@ -45,7 +45,7 @@
                 :
                 <input type="text" name="text<TMPL_VAR NAME="Magnet_Row_ID">" value="<TMPL_VAR NAME="Magnet_Validating">" size="<TMPL_VAR NAME="Magnet_Size">" />
             </td>
-            <td align="center">
+            <td>
                 <select name="bucket<TMPL_VAR NAME="Magnet_Row_ID">" id="magnetsAddBucket">
 
                     <TMPL_LOOP NAME="Magnet_Loop_Loop_Buckets">
@@ -58,7 +58,7 @@
 
                 </select>
             </td>
-            <td align="center">
+            <td>
                 <input type="checkbox" class="checkbox" name="remove<TMPL_VAR NAME="Magnet_Row_ID">" />
                 <TMPL_VAR NAME="Localize_Remove">
                 <input name="otype<TMPL_VAR NAME="Magnet_Row_ID">" type="hidden" value="<TMPL_VAR NAME="Magnet_MType">" />
@@ -72,10 +72,10 @@
         <tr>
             <td>
             </td>
-            <td align="center">
+            <td>
                 <input type="submit" class="deleteButton" name="update" value="<TMPL_VAR NAME="Localize_Update">" />
             </td>
-            <td align="center">
+            <td>
                 <input type="submit" class="deleteButton" name="delete" value="<TMPL_VAR NAME="Localize_Remove">" />
             </td>
         </tr>
@@ -94,7 +94,8 @@
 <table cellspacing="0" summary="">
     <tr>
         <td>
-            <TMPL_VAR NAME="Localize_Magnet_Explanation">
+            <b>
+                <TMPL_VAR NAME="Localize_Magnet_Explanation">
         </td>
     </tr>
 </table>
@@ -162,7 +163,4 @@
     <br />
 </div>
 
-<TMPL_INCLUDE NAME="common-before-configuration.thtml">
-<TMPL_INCLUDE NAME="configuration-bar.thtml">
-<TMPL_INCLUDE NAME="common-after-configuration.thtml">
 <TMPL_INCLUDE NAME="common-bottom.thtml">

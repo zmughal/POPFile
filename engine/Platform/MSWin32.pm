@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Platform::MSWin32;
 
 use POPFile::Module;

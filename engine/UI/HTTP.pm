@@ -3,7 +3,7 @@
 # This package contains an HTTP server used as a base class for other
 # modules that service requests over HTTP (e.g. the UI)
 #
-# Copyright (c) 2001-2005 John Graham-Cumming
+# Copyright (c) 2001-2004 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -104,8 +104,6 @@ sub stop
     my ( $self ) = @_;
 
     close $self->{server_} if ( defined( $self->{server_} ) );
-
-    $self->SUPER::stop();
 }
 
 # ----------------------------------------------------------------------------
@@ -207,9 +205,7 @@ sub service
 # ----------------------------------------------------------------------------
 sub forked
 {
-    my ( $self, $writer ) = @_;
-
-    $self->SUPER::forked( $writer );
+    my ( $self ) = @_;
 
     close $self->{server_};
 }

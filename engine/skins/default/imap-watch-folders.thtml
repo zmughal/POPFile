@@ -2,7 +2,7 @@
 
 <TMPL_IF NAME="IMAP_if_mailboxes">
 
-<form action="<TMPL_VAR NAME="Configuration_Action">" method="post">
+<form action="/configuration" method="post">
 
     <TMPL_LOOP NAME="IMAP_loop_watched_folders">
 
@@ -22,9 +22,7 @@
 
     </TMPL_LOOP>
 
-    </select>
-    <input type="submit" class="submit" name="remove_imap_watched_folder_<TMPL_VAR NAME="IMAP_loop_counter">" value="<TMPL_VAR NAME="Localize_Remove">" />
-    <br />
+    </select><br />
 
     </TMPL_LOOP>
 

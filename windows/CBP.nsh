@@ -5,7 +5,7 @@
 #             buckets for use with a "clean" install of POPFile. Three built-in default values
 #             can be overridden by creating suitable "!define" statements in 'adduser.nsi'.
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2004 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -314,18 +314,12 @@ loop:
 
   StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 7
   StrCmp ${CBP_L_RESULT} "corpus " got_flat_corpus
-  
   StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 13
   StrCmp ${CBP_L_RESULT} "bayes_corpus " got_bdb_corpus
-  
-  StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 18
-  StrCmp ${CBP_L_RESULT} "database_database " got_sql_corpus
-  StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 19
-  StrCmp ${CBP_L_RESULT} "database_dbconnect " got_sql_connect
   StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 15
-  StrCmp ${CBP_L_RESULT} "bayes_database " got_sql_old_corpus
+  StrCmp ${CBP_L_RESULT} "bayes_database " got_sql_corpus
   StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 16
-  StrCmp ${CBP_L_RESULT} "bayes_dbconnect " got_sql_old_connect
+  StrCmp ${CBP_L_RESULT} "bayes_dbconnect " got_sql_connect
   Goto check_eol
 
 got_flat_corpus:
@@ -336,20 +330,12 @@ got_bdb_corpus:
   StrCpy ${CBP_L_NONSQL_CORPUS} ${CBP_L_TEMP} "" 13
   Goto check_eol
 
-got_sql_old_corpus:
+got_sql_corpus:
   StrCpy ${CBP_L_SQL_CORPUS} ${CBP_L_TEMP} "" 15
   Goto check_eol
 
-got_sql_old_connect:
-  StrCpy ${CBP_L_SQL_CONNECT} ${CBP_L_TEMP} "" 16
-  Goto check_eol
-
-got_sql_corpus:
-  StrCpy ${CBP_L_SQL_CORPUS} ${CBP_L_TEMP} "" 18
-  Goto check_eol
-
 got_sql_connect:
-  StrCpy ${CBP_L_SQL_CONNECT} ${CBP_L_TEMP} "" 19
+  StrCpy ${CBP_L_SQL_CONNECT} ${CBP_L_TEMP} "" 16
 
   ; Now read file until we get to end of the current line
   ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
@@ -1376,23 +1362,22 @@ input_loop:
   IntCmp ${CBP_L_COUNT} ${CBP_C_MAX_BNCOUNT} at_the_limit
 
   !insertmacro MUI_INSTALLOPTIONS_WRITE "${CBP_C_INIFILE}" "Field ${CBP_C_MESSAGE}" \
-      "Text" "$(PFI_LANG_CBP_IO_MSG_A)"
+      "Text" "$(PFI_LANG_CBP_IO_MSG_1)"
   goto update_lists
 
 zero_so_far:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "${CBP_C_INIFILE}" "Field ${CBP_C_MESSAGE}" \
-      "Text" "$(PFI_LANG_CBP_IO_MSG_B)"
+      "Text" "$(PFI_LANG_CBP_IO_MSG_2)"
   goto update_lists
 
 just_one:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "${CBP_C_INIFILE}" "Field ${CBP_C_MESSAGE}" \
-      "Text" "$(PFI_LANG_CBP_IO_MSG_C)"
+      "Text" "$(PFI_LANG_CBP_IO_MSG_3)"
   goto update_lists
 
 at_the_limit:
-  StrCpy $G_PLS_FIELD_1 "${CBP_C_MAX_BNCOUNT}"
   !insertmacro MUI_INSTALLOPTIONS_WRITE "${CBP_C_INIFILE}" "Field ${CBP_C_MESSAGE}" \
-      "Text" "$(PFI_LANG_CBP_IO_MSG_D)"
+      "Text" "$(PFI_LANG_CBP_IO_MSG_4) ${CBP_C_MAX_BNCOUNT} $(PFI_LANG_CBP_IO_MSG_5)"
 
 update_lists:
 
@@ -1578,41 +1563,37 @@ does_not_exist:
   goto get_next_bucket_cmd
 
 name_exists:
-  StrCpy $G_PLS_FIELD_1 "${CBP_L_CREATE_NAME}"
   MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "$(PFI_LANG_CBP_MBDUPERR_A)\
+      "$(PFI_LANG_CBP_MBDUPERR_1) $\"${CBP_L_CREATE_NAME}$\" $(PFI_LANG_CBP_MBDUPERR_2)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_CBP_MBDUPERR_B)"
+      $(PFI_LANG_CBP_MBDUPERR_3)"
   goto get_next_bucket_cmd
 
 too_many:
-  StrCpy $G_PLS_FIELD_1 "${CBP_C_MAX_BNCOUNT}"
   MessageBox MB_OK|MB_ICONINFORMATION \
-      "$(PFI_LANG_CBP_MBMAXERR_A)\
+      "$(PFI_LANG_CBP_MBMAXERR_1) ${CBP_C_MAX_BNCOUNT} $(PFI_LANG_CBP_MBMAXERR_2)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_CBP_MBMAXERR_B)"
+      $(PFI_LANG_CBP_MBMAXERR_3) ${CBP_C_MAX_BNCOUNT} $(PFI_LANG_CBP_MBMAXERR_2)"
   goto get_next_bucket_cmd
 
 bad_name:
-  StrCpy $G_PLS_FIELD_1 "${CBP_L_CREATE_NAME}"
   MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "$(PFI_LANG_CBP_MBNAMERR_A)\
+      "$(PFI_LANG_CBP_MBNAMERR_1) $\"${CBP_L_CREATE_NAME}$\" $(PFI_LANG_CBP_MBNAMERR_2)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_CBP_MBNAMERR_B)\
+      $(PFI_LANG_CBP_MBNAMERR_3)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_CBP_MBNAMERR_C)"
+      $(PFI_LANG_CBP_MBNAMERR_4)"
   goto get_next_bucket_cmd
 
 no_user_input:
   IntCmp ${CBP_L_COUNT} 0 need_buckets
   IntCmp ${CBP_L_COUNT} 1 too_few
-  StrCpy $G_PLS_FIELD_1 "${CBP_L_COUNT}"
   MessageBox MB_YESNO|MB_ICONQUESTION \
-      "$(PFI_LANG_CBP_MBDONE_A)\
+      "${CBP_L_COUNT} $(PFI_LANG_CBP_MBDONE_1)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_CBP_MBDONE_B)\
+      $(PFI_LANG_CBP_MBDONE_2)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_CBP_MBDONE_C)" IDYES finished_buckets
+      $(PFI_LANG_CBP_MBDONE_3)" IDYES finished_buckets
   goto get_next_bucket_cmd
 
 need_buckets:
@@ -1636,12 +1617,11 @@ finished_buckets:
   Call CBP_MakePOPFileBuckets
   Pop ${CBP_L_RESULT}
   StrCmp ${CBP_L_RESULT} "0" finished_now
-  StrCpy $G_PLS_FIELD_1 "${CBP_L_RESULT}"
-  StrCpy $G_PLS_FIELD_2 "${CBP_L_COUNT}"
   MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "$(PFI_LANG_CBP_MBMAKERR_A)\
+      "$(PFI_LANG_CBP_MBMAKERR_1) ${CBP_L_RESULT} $(PFI_LANG_CBP_MBMAKERR_2) ${CBP_L_COUNT} \
+      $(PFI_LANG_CBP_MBMAKERR_3)\
       ${MB_NL}${MB_NL}\
-      $(PFI_LANG_CBP_MBMAKERR_B)"
+      $(PFI_LANG_CBP_MBMAKERR_4)"
 
 finished_now:
   StrCpy ${CBP_L_RESULT} "completed"

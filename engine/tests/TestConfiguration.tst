@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for Configuration.pm
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -20,21 +20,19 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 unlink 'popfile.cfg';
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
 
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 
-$POPFile->CORE_load( 0, \%valid );
-my $c = $POPFile->get_module( 'POPFile/Configuration' );
+$c->configuration( $c );
 
 # Check that we can get and set a parameter
 $c->parameter( 'testparam', 'testvalue' );
@@ -45,9 +43,18 @@ my @all = $c->configuration_parameters();
 test_assert_equal( $#all, 0 );
 test_assert_equal( $all[0], 'testparam' );
 
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$c->mq( $mq );
+$c->logger( $l );
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
 
 # Basic tests
 test_assert_equal( $c->name(), 'config' );
@@ -294,7 +301,5 @@ test_assert_equal( $c->get_root_path( '/foo', 0 ), '/foo' );
 test_assert( !defined( $c->get_root_path( '/foo' ) ) );
 test_assert_equal( $c->get_root_path( 'foo/' ), './foo/' );
 $c->{popfile_root__} = '../';
-
-$POPFile->CORE_stop();
 
 1;

@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for Module.pm
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -20,25 +20,28 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
-
-my %valid = ( 'POPFile/Module' => 1,
-              'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
-
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+use POPFile::Module;
+use POPFile::MQ;
+use POPFile::Configuration;
+use POPFile::Logger;
 
 my $m = new POPFile::Module;
-$m->loader( $POPFile );
+my $l = new POPFile::Logger;
+my $mq = new POPFile::MQ;
+my $c = new POPFile::Configuration;
+
+$m->configuration( $c );
+$m->mq( $mq );
+$l->mq( $mq );
+$m->logger( $l );
+$l->logger( $l );
+$c->logger( $l );
+$mq->logger( $l );
+$l->configuration( $c );
+$l->initialize();
+$l->calculate_today__();
 
 # Check that base functions return good values
 
@@ -73,8 +76,6 @@ $m->deliver();
 $m->mq_register_( 'NOTYPE', $m );
 $m->mq_post_( 'NOTYPE', 'msg', 'param' );
 
-my $mq = $POPFile->get_module( 'POPFile/MQ' );
-
 test_assert_equal( $mq->{waiters__}{NOTYPE}[0], $m );
 test_assert_equal( $mq->{queue__}{NOTYPE}[0][0], 'msg' );
 test_assert_equal( $mq->{queue__}{NOTYPE}[0][1], 'param' );
@@ -83,9 +84,6 @@ test_assert_equal( $mq->{queue__}{NOTYPE}[0][1], 'param' );
 use Test::MQReceiver;
 my $r = new Test::MQReceiver;
 $m->mq_register_( 'UIREG', $r );
-
-my $c = $POPFile->get_module( 'POPFile/Configuration' );
-
 $m->register_configuration_item_( 'type', 'name', 'templ', $c );
 $mq->service();
 my @messages = $r->read();
@@ -102,18 +100,16 @@ $m->global_config_( 'debug', 1 );
 
 $m->log_( 0, 'logmsg' );
 
-my $l = $POPFile->get_module( 'POPFile/Logger' );
-
 test_assert( $l->{last_ten__}[0] =~ /logmsg/ );
 test_assert_equal( $l->last_ten(), $m->last_ten_log_entries() );
 
 # Check all the setter/getter functions
 
-test_assert_equal( $m->mq_(), $mq );
-test_assert_equal( $m->configuration_(), $c );
+test_assert_equal( $m->mq(), $mq );
+test_assert_equal( $m->configuration(), $c );
 $m->forker( 'forker' );
 test_assert_equal( $m->forker(), 'forker' );
-test_assert_equal( $m->logger_(), $l );
+test_assert_equal( $m->logger(), $l );
 $m->pipeready( 'pr' );
 test_assert_equal( $m->pipeready(), 'pr' );
 test_assert_equal( $m->alive(), 1 );
@@ -373,17 +369,17 @@ test_assert_equal( $m->get_user_path_( 'foo' ), '../tests/foo' );
 test_assert_equal( $m->get_user_path_( '/foo', 0 ), '/foo' );
 test_assert_equal( $m->get_user_path_( '/foo' ), undef );
 test_assert_equal( $m->get_user_path_( 'foo/' ), '../tests/foo/' );
-$c->{popfile_user__} = './';
+$m->{configuration__}->{popfile_user__} = './';
 test_assert_equal( $m->get_user_path_( 'foo' ), './foo' );
 test_assert_equal( $m->get_user_path_( '/foo', 0 ), '/foo' );
 test_assert_equal( $m->get_user_path_( '/foo' ), undef );
 test_assert_equal( $m->get_user_path_( 'foo/' ), './foo/' );
-$c->{popfile_user__} = '.';
+$m->{configuration__}->{popfile_user__} = '.';
 test_assert_equal( $m->get_user_path_( 'foo' ), './foo' );
 test_assert_equal( $m->get_user_path_( '/foo', 0 ), '/foo' );
 test_assert_equal( $m->get_user_path_( '/foo' ), undef );
 test_assert_equal( $m->get_user_path_( 'foo/' ), './foo/' );
-$c->{popfile_user__} = '../tests/';
+$m->{configuration__}->{popfile_user__} = '../tests/';
 
 # get_root_path_ (note Makefile sets POPFILE_ROOT to ../)
 
@@ -391,18 +387,16 @@ test_assert_equal( $m->get_root_path_( 'foo' ), '../foo' );
 test_assert_equal( $m->get_root_path_( '/foo', 0 ), '/foo' );
 test_assert_equal( $m->get_root_path_( '/foo' ), undef );
 test_assert_equal( $m->get_root_path_( 'foo/' ), '../foo/' );
-$c->{popfile_root__} = './';
+$m->{configuration__}->{popfile_root__} = './';
 test_assert_equal( $m->get_root_path_( 'foo' ), './foo' );
 test_assert_equal( $m->get_root_path_( '/foo', 0 ), '/foo' );
 test_assert_equal( $m->get_root_path_( '/foo' ), undef );
 test_assert_equal( $m->get_root_path_( 'foo/' ), './foo/' );
-$c->{popfile_root__} = '.';
+$m->{configuration__}->{popfile_root__} = '.';
 test_assert_equal( $m->get_root_path_( 'foo' ), './foo' );
 test_assert_equal( $m->get_root_path_( '/foo', 0 ), '/foo' );
 test_assert_equal( $m->get_root_path_( '/foo' ), undef );
 test_assert_equal( $m->get_root_path_( 'foo/' ), './foo/' );
-$c->{popfile_root__} = '../';
-
-$POPFile->CORE_stop();
+$m->{configuration__}->{popfile_root__} = '../';
 
 1;
