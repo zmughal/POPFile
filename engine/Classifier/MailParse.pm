@@ -974,11 +974,13 @@ sub parse_header
 
     print "Header ($header) ($argument)\n" if ($self->{debug});
     
-    # Remove over-reading
-    $self->{ut} = '';  
-    
-    # Qeueue just this header for colorization    
-    $self->{ut} = splitline("$header: $argument\015\012", $encoding);
+    if ($self->{color}) {
+        # Remove over-reading
+        $self->{ut} = '';  
+        
+        # Qeueue just this header for colorization    
+        $self->{ut} = splitline("$header: $argument\015\012", $encoding);
+    }    
 
     # Check the encoding type in all RFC 2047 encoded headers
     
