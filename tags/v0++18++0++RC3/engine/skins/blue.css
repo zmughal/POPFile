@@ -1,0 +1,234 @@
+body {
+  background-color: #919AC9;
+  border: none;
+  font-family: verdana, sans-serif;
+  color: white;
+}
+
+a {
+	color: white;
+	background-color: transparent;
+}
+
+input, select, submit {
+  color: white;
+  background-color: #363E68;
+  border: 1px #919AC9 solid;
+  font-weight: bold;
+  font-family: verdana, sans-serif;
+}
+
+.shell {
+   background-color: #4C558E;
+   border: 3px #363E68 solid;
+	color: white;
+}
+
+table.head {
+  width: 100%;
+  background-color : #4C558E;
+  color: white;
+}
+
+td.head {
+  font-weight: normal;
+  font-size: 22pt;
+  background-color : #4C558E;
+  color: white;
+}
+
+a.shutdownLink {
+	background-color : #4C558E;
+	color: white;
+	font-size: 12pt;
+}
+
+.menu {
+  font-size: 14pt;
+  font-weight: bold;
+  width: 100%;
+}
+
+.menu a {
+   color: white;
+	background-color: transparent;
+}
+
+.menuSelected {
+  background-color: #363E68;
+  width: 150px;
+  color: white;
+}
+
+.menuStandard {
+  background-color: #4C558E;
+  width: 150px;
+  color: white;
+}
+
+
+tr.rowEven {
+    background-color: #4C558E;
+	 color: white;
+}
+
+tr.rowOdd {
+    background-color: #363E68;
+	 color: white;
+}
+
+table.stabColor01 {
+	border: 1px solid Black;
+}
+
+table.stabColor03 {
+	border: 3px solid Black;
+}
+
+td.stabColor01 {
+	border: 1px solid Black;
+}
+
+td.naked {
+	padding: 0px; 
+	margin: 0px; 
+	border: none
+}
+
+a.bottomLink {
+	background-color : transparent;
+	color: white;
+}
+
+.menuIndent {
+	width: 8%;
+}
+
+table.historyWidgetsTop {
+	width: 100%;
+	margin-left: 1.5em;
+	margin-top: 0.6em;
+	margin-bottom: 1.0em;
+}
+
+td.historyNavigatorTop {
+	text-align: right;
+	padding-right: 0.5em;
+}
+
+td.historyNavigatorBottom {
+	text-align: right;
+	padding-right: 0.5em;
+	padding-bottom: 1.0em;
+}
+
+table.historyButtonsBottom {
+	width: 100%;
+	margin-left: 0.5em;
+	margin-top: 1.5em;
+}
+
+a.messageLink:link {
+	background-color : transparent;
+	color: white;
+}
+
+td.openMessageCloser {
+	text-align: right;
+}
+
+a.changeSettingLink {
+	background-color: transparent ;
+	color: #ddeeff ;
+}
+
+table.footer {
+	width: 100%;
+	margin-top: 1em;
+}
+
+td.footerBody { 
+	text-align: center;
+	padding-left: 5%;
+	padding-right: 5%;
+    background-color: #4C558E;
+    border: 3px #252A49 solid;
+	 color: white;
+}
+
+h2.security {
+	color: white;
+	background-color: transparent;
+}
+
+h2.advanced {
+	color: white;
+	background-color: transparent;
+}
+
+td.logo2menuSpace { 
+	height: 0.8em;
+}
+
+tr.rowHighlighted {
+	background-color: #000000;
+	color: #eeeeee;
+}
+
+span.graphFont {
+	font-size: x-small;
+}
+
+span.bucketsLabel {
+	font-weight: bold;
+}
+
+span.magnetsLabel {
+	font-weight: bold;
+}
+
+span.securityLabel {
+	font-weight: bold;
+}
+
+span.configurationLabel {
+	font-weight: bold;
+}
+		
+span.advancedLabel {
+	font-weight: bold;
+}
+		
+span.passwordLabel {
+	font-weight: bold;
+}
+
+span.sessionLabel {
+	font-weight: bold;
+}
+
+div.error01 {
+	background-color: transparent;
+	color: red;
+	font-size: larger;
+}
+
+div.error02 {
+	background-color: transparent;
+	color: red;
+}
+
+td.accuracy0to49 {
+	background-color: red;
+	color: black;
+}
+
+td.accuracy50to93 {
+	background-color: yellow;
+	color: black;
+}
+
+td.accuracy94to100 {
+	background-color: green;
+	color: black;
+}
