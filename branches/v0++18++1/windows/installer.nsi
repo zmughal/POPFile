@@ -3,7 +3,7 @@
 ;
 ; Modified to work with NSIS v2.0b1
 !define MUI_PRODUCT "POPFile" 
-!define MUI_VERSION "0.18.1"
+!define MUI_VERSION "0.18.2"
 !include "MUI.nsh"
 ;--------------------------------
 ;Configuration
@@ -137,7 +137,7 @@ Section "POPFile" SecPOPFile
   ; Install the POPFile Core files
 
   SetOutPath $INSTDIR
-  File "..\engine\v0.18.1.change"
+  File "..\engine\v0.18.2.change"
   File "..\engine\*.pl"
   File "..\engine\pix.gif"
   File "..\engine\black.gif"
@@ -171,76 +171,76 @@ Section "POPFile" SecPOPFile
   ; Install the Minimal Perl files
 
   SetOutPath $INSTDIR
-  File "C:\Perl58\bin\perl.exe"
-  File "C:\Perl58\bin\wperl.exe"
-  File "C:\Perl58\bin\perl58.dll"
-  File "C:\Perl58\lib\AutoLoader.pm"
-  File "C:\Perl58\lib\Carp.pm"
-  File "C:\Perl58\lib\Config.pm"
-  File "C:\Perl58\lib\DynaLoader.pm"
-  File "C:\Perl58\lib\Errno.pm"
-  File "C:\Perl58\lib\Exporter.pm"
-  File "C:\Perl58\lib\IO.pm"
-  File "C:\Perl58\lib\integer.pm"
-  File "C:\Perl58\lib\locale.pm"
-  File "C:\Perl58\lib\POSIX.pm"
-  File "C:\Perl58\lib\SelectSaver.pm"
-  File "C:\Perl58\lib\Socket.pm"
-  File "C:\Perl58\lib\strict.pm"
-  File "C:\Perl58\lib\Symbol.pm"
-  File "C:\Perl58\lib\vars.pm"
-  File "C:\Perl58\lib\warnings.pm"
-  File "C:\Perl58\lib\XSLoader.pm"
+  File "D:\perl\bin\perl.exe"
+  File "D:\perl\bin\wperl.exe"
+  File "D:\perl\bin\perl58.dll"
+  File "D:\perl\lib\AutoLoader.pm"
+  File "D:\perl\lib\Carp.pm"
+  File "D:\perl\lib\Config.pm"
+  File "D:\perl\lib\DynaLoader.pm"
+  File "D:\perl\lib\Errno.pm"
+  File "D:\perl\lib\Exporter.pm"
+  File "D:\perl\lib\IO.pm"
+  File "D:\perl\lib\integer.pm"
+  File "D:\perl\lib\locale.pm"
+  File "D:\perl\lib\POSIX.pm"
+  File "D:\perl\lib\SelectSaver.pm"
+  File "D:\perl\lib\Socket.pm"
+  File "D:\perl\lib\strict.pm"
+  File "D:\perl\lib\Symbol.pm"
+  File "D:\perl\lib\vars.pm"
+  File "D:\perl\lib\warnings.pm"
+  File "D:\perl\lib\XSLoader.pm"
 
   SetOutPath $INSTDIR\Carp
-  File "C:\Perl58\lib\Carp\*"
+  File "D:\perl\lib\Carp\*"
 
   SetOutPath $INSTDIR\Exporter
-  File "C:\Perl58\lib\Exporter\*"
+  File "D:\perl\lib\Exporter\*"
 
   SetOutPath $INSTDIR\MIME
-  File "C:\Perl58\lib\MIME\*"
+  File "D:\perl\lib\MIME\*"
 
   SetOutPath $INSTDIR\IO
-  File "C:\Perl58\lib\IO\*"
+  File "D:\perl\lib\IO\*"
 
   SetOutPath $INSTDIR\Sys
-  File "C:\Perl58\lib\Sys\*"
+  File "D:\perl\lib\Sys\*"
 
   SetOutPath $INSTDIR\Text
-  File "C:\Perl58\lib\Text\ParseWords.pm"
+  File "D:\perl\lib\Text\ParseWords.pm"
 
   SetOutPath $INSTDIR\IO\Socket
-  File "C:\Perl58\lib\IO\Socket\*"
+  File "D:\perl\lib\IO\Socket\*"
 
   SetOutPath $INSTDIR\auto\DynaLoader
-  File "C:\Perl58\lib\auto\DynaLoader\*"
+  File "D:\perl\lib\auto\DynaLoader\*"
   
   SetOutPath $INSTDIR\auto\File\Glob
-  File "C:\Perl58\lib\auto\File\Glob\*"
+  File "D:\perl\lib\auto\File\Glob\*"
 
   SetOutPath $INSTDIR\auto\MIME\Base64
-  File "C:\Perl58\lib\auto\MIME\Base64\*"
+  File "D:\perl\lib\auto\MIME\Base64\*"
 
   SetOutPath $INSTDIR\auto\IO
-  File "C:\Perl58\lib\auto\IO\*"
+  File "D:\perl\lib\auto\IO\*"
 
   SetOutPath $INSTDIR\auto\Socket
-  File "C:\Perl58\lib\auto\Socket\*"
+  File "D:\perl\lib\auto\Socket\*"
 
   SetOutPath $INSTDIR\auto\Sys\Hostname
-  File "C:\Perl58\lib\auto\Sys\Hostname\*"
+  File "D:\perl\lib\auto\Sys\Hostname\*"
 
   SetOutPath $INSTDIR\auto\POSIX
-  File "C:\Perl58\lib\auto\POSIX\POSIX.dll"
-  File "C:\Perl58\lib\auto\POSIX\autosplit.ix"
-  File "C:\Perl58\lib\auto\POSIX\load_imports.al"
+  File "D:\perl\lib\auto\POSIX\POSIX.dll"
+  File "D:\perl\lib\auto\POSIX\autosplit.ix"
+  File "D:\perl\lib\auto\POSIX\load_imports.al"
 
   SetOutPath $INSTDIR\File
-  File "C:\Perl58\lib\File\Glob.pm"
+  File "D:\perl\lib\File\Glob.pm"
 
   SetOutPath $INSTDIR\warnings
-  File "C:\Perl58\lib\warnings\register.pm"
+  File "D:\perl\lib\warnings\register.pm"
 
   ; Create the START MENU entries
 
