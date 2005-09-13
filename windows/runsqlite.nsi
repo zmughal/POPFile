@@ -9,7 +9,7 @@
 #                   and sqlite3.exe for 3.x format files. This utility ensures the appropriate
 #                   utility is used to access the specified SQLite database file.
 #
-# Copyright (c) 2004  John Graham-Cumming
+# Copyright (c) 2004-2005  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -39,8 +39,25 @@
 #
 #-------------------------------------------------------------------------------------------
 
-; This version of the script has been tested with the "NSIS 2" compiler (final),
-; released 7 February 2004, with no "official" NSIS patches/CVS updates applied.
+  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
+  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
+  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+
+  !define ${NSIS_VERSION}_found
+
+  !ifndef v2.0_found
+      !warning \
+          "$\r$\n\
+          $\r$\n***   NSIS COMPILER WARNING:\
+          $\r$\n***\
+          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\r$\n***\
+          $\r$\n***   The resulting 'installer' program should be tested carefully!\
+          $\r$\n$\r$\n"
+  !endif
+
+  !undef  ${NSIS_VERSION}_found
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -58,7 +75,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.1"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.0.4"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -77,26 +94,6 @@
   SilentInstall silent
 
 #--------------------------------------------------------------------------
-
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
-  ; representing the following values: Major.Minor.Release.Build
-
-  VIProductVersion                   "${C_VERSION}.1"
-
-  VIAddVersionKey "ProductName"      "Run SQLite 2.x/3.x utility to examine a POPFile database"
-  VIAddVersionKey "Comments"         "POPFile Homepage: http://getpopfile.org"
-  VIAddVersionKey "CompanyName"      "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"   "Copyright (c) 2004  John Graham-Cumming"
-  VIAddVersionKey "FileDescription"  "Run SQLite Utility for POPFile"
-  VIAddVersionKey "FileVersion"      "${C_VERSION}"
-  VIAddVersionKey "OriginalFilename" "${C_OUTFILE}"
-
-  VIAddVersionKey "Build Date/Time"  "${__DATE__} @ ${__TIME__}"
-  VIAddVersionKey "Build Script"     "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
-
-#----------------------------------------------------------------------------------------
-
-#--------------------------------------------------------------------------
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
@@ -105,6 +102,29 @@
   !define RUNSQLITE
 
   !include "pfi-library.nsh"
+
+#--------------------------------------------------------------------------
+
+  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; representing the following values: Major.Minor.Release.Build
+
+  VIProductVersion                          "${C_VERSION}.0"
+
+  VIAddVersionKey "ProductName"             "Run SQLite 2.x/3.x utility to examine a POPFile database"
+  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
+  VIAddVersionKey "CompanyName"             "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"         "Run SQLite Utility for POPFile"
+  VIAddVersionKey "FileVersion"             "${C_VERSION}"
+  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
+
+  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
+
+#----------------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
 # User Variables (Global)
@@ -135,7 +155,7 @@
   !insertmacro RSU_TEXT RSU_LANG_DBIDENTIFIED   "The '$G_DATABASE' file is a SQLite $G_DBFORMAT database"
   !insertmacro RSU_TEXT RSU_LANG_UTILNOTFOUND   "Unable to find the '$G_SQLITEUTIL' file (the SQLite $G_DBFORMAT utility)${MB_NL}${MB_NL}(looked in $EXEDIR folder)"
   !insertmacro RSU_TEXT RSU_LANG_STARTERROR     "Unable to start the '$G_SQLITEUTIL' utility"
-  !insertmacro RSU_TEXT RSU_LANG_UNKNOWNFORMAT  "Unable to tell if '$G_DATABASE' is a SQLite database file${MB_NL}${MB_NL}File format not known $G_DBFORMAT"
+  !insertmacro RSU_TEXT RSU_LANG_UNKNOWNFORMAT  "Unable to tell if '$G_DATABASE' is a SQLite database file${MB_NL}${MB_NL}File format not known $G_DBFORMAT${MB_NL}${MB_NL}Please shutdown POPFile before using this utility"
 
   ;--------------------------------------------------------------------------
 
@@ -152,7 +172,7 @@ Section RunSQLiteUtility
   GetFullPathName ${L_TEMP} ".\"
   SetOutPath "${L_TEMP}"
 
-  Call GetParameters
+  Call PFI_GetParameters
   Pop $G_DATABASE
   StrCmp $G_DATABASE "" no_file_supplied
 
@@ -166,7 +186,7 @@ no_file_supplied:
 
 continue:
   Push $G_DATABASE
-  Call GetSQLiteFormat
+  Call PFI_GetSQLiteFormat
   Pop $G_DBFORMAT
   StrCpy $G_SQLITEUTIL "sqlite.exe"
   StrCmp $G_DBFORMAT "2.x" run_sqlite

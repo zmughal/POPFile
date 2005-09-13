@@ -10,7 +10,7 @@
 #                    Capture utility (if it is available) whenever the 'windows-console'
 #                    mode is selected in 'popfile.cfg'.
 #
-# Copyright (c) 2004 John Graham-Cumming
+# Copyright (c) 2004-2005 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -28,10 +28,27 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
-#
-# This version of the script has been tested with the "NSIS 2" compiler (final),
-# released 7 February 2004, with no "official" NSIS patches/CVS updates applied.
-#
+
+  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
+  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
+  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+
+  !define ${NSIS_VERSION}_found
+
+  !ifndef v2.0_found
+      !warning \
+          "$\r$\n\
+          $\r$\n***   NSIS COMPILER WARNING:\
+          $\r$\n***\
+          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\r$\n***\
+          $\r$\n***   The resulting 'installer' program should be tested carefully!\
+          $\r$\n$\r$\n"
+  !endif
+
+  !undef  ${NSIS_VERSION}_found
+
 #--------------------------------------------------------------------------
 # Optional run-time command-line switches (used by 'runpopfile.exe')
 #--------------------------------------------------------------------------
@@ -78,21 +95,27 @@
   ;
   ; ${IO_NL} is used for InstallOptions-style 'new line' sequences.
   ; ${MB_NL} is used for MessageBox-style 'new line' sequences.
+  ;
+  ; (these two constants do not follow the 'C_' naming convention described below)
   ;--------------------------------------------------------------------------
 
-  !define IO_NL     "\r\n"
-  !define MB_NL     "$\r$\n"
+  !define IO_NL   "\r\n"
+  !define MB_NL   "$\r$\n"
 
   ;--------------------------------------------------------------------------
+  ; POPFile constants have been given names beginning with 'C_' (eg C_README)
+  ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   0.1.13
+  !define C_PFI_VERSION   "0.1.15"
+
+  !define C_OUTFILE       "runpopfile.exe"
 
   Name    "Run POPFile"
   Caption "Run POPFile (enhanced)"
 
   Icon "POPFileIcon\popfile.ico"
 
-  OutFile runpopfile.exe
+  OutFile "${C_OUTFILE}"
 
   ; 'Silent' installers run invisibly
 
@@ -109,25 +132,6 @@
   !include WinMessages.nsh
 
 #--------------------------------------------------------------------------
-# Version Information settings (for runpopfile.exe)
-#--------------------------------------------------------------------------
-
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
-  ; representing the following values: Major.Minor.Release.Build
-
-  VIProductVersion                  "${C_PFI_VERSION}.0"
-
-  VIAddVersionKey "ProductName"     "Run POPFile"
-  VIAddVersionKey "Comments"        "POPFile Homepage: http://getpopfile.org"
-  VIAddVersionKey "CompanyName"     "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"  "Copyright (c) 2004  John Graham-Cumming"
-  VIAddVersionKey "FileDescription" "Enhanced front-end for POPFile starter program"
-  VIAddVersionKey "FileVersion"     "${C_PFI_VERSION}"
-
-  VIAddVersionKey "Build Date/Time" "${__DATE__} @ ${__TIME__}"
-  VIAddVersionKey "Build Script"    "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
-
-#--------------------------------------------------------------------------
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
@@ -136,6 +140,29 @@
   !define RUNPOPFILE
 
   !include "pfi-library.nsh"
+
+#--------------------------------------------------------------------------
+# Version Information settings (for runpopfile.exe)
+#--------------------------------------------------------------------------
+
+  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; representing the following values: Major.Minor.Release.Build
+
+  VIProductVersion                          "${C_PFI_VERSION}.0"
+
+  VIAddVersionKey "ProductName"             "Run POPFile"
+  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
+  VIAddVersionKey "CompanyName"             "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"         "Enhanced front-end for POPFile starter program"
+  VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
+  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
+
+  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 #--------------------------------------------------------------------------
 # Language strings used by the POPFile Windows installer
@@ -186,7 +213,7 @@ not_compatible:
   Goto exit
 
 found_popfile:
-  Call GetParameters
+  Call PFI_GetParameters
   Pop ${L_PARAMS}
   StrCmp ${L_PARAMS} "" use_reg_dirdata
   StrCmp ${L_PARAMS} "/startup" use_reg_dirdata
@@ -219,7 +246,7 @@ check_config:
 
   Push ${L_EXEFILE}
   Push ${L_PARAMS}
-  Call GetDataPath
+  Call PFI_GetDataPath
   Pop ${L_PFI_USER}
   IfFileExists "${L_PFI_USER}\popfile.cfg" config_found
   MessageBox MB_OK|MB_ICONSTOP "Error: Unable to find popfile.cfg !\
@@ -260,7 +287,7 @@ get_temp_sfn:
 check_for_spaces:
   Push ${L_PFI_USER}
   Push ' '
-  Call StrStr
+  Call PFI_StrStr
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "" config_is_valid
   MessageBox MB_OK|MB_ICONEXCLAMATION \

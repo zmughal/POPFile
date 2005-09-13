@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2004 John Graham-Cumming
+# Copyright (c) 2003-2005 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -34,20 +34,30 @@
 #  (1) ADDSSL           defined in add-ons\addssl.nsi (POPFile 'SSL Setup' wizard)
 #  (2) ADDUSER          defined in adduser.nsi ('Add POPFile User' wizard)
 #  (3) BACKUP           defined in backup.nsi (POPFile 'User Data' Backup utility)
-#  (4) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
-#  (5) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
-#  (6) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-#  (7) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-#  (8) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-#  (9) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (10) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (11) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (12) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+#  (4) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
+#  (5) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
+#  (6) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
+#  (7) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
+#  (8) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+#  (9) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (10) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (11) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (12) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (13) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
   !verbose 3
 !endif
+
+#--------------------------------------------------------------------------
+# Since so many scripts rely upon this library file, provide an easy way
+# for the installers/uninstallers, wizards and other utilities to identify
+# the particular library file used by NSIS to compile the executable file
+# (by using this constant in the executable's "Version Information" data).
+#--------------------------------------------------------------------------
+
+  !define C_PFI_LIBRARY_VERSION     "0.1.9"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -132,7 +142,7 @@
   ; (1) The MUI_LANGUAGE macro loads the standard MUI text strings for a particular language
   ; (2) '*-pfi.nsh' contains the text strings used for pages, progress reports, logs etc
 
-!ifdef TRANSLATOR | TRANSLATOR_AUW
+!ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
         !macro PFI_LANG_LOAD LANG
             !insertmacro MUI_LANGUAGE "${LANG}"
             !include "..\languages\${LANG}-pfi.nsh"
@@ -144,131 +154,9 @@
         !macroend
 !endif
 
-  ;--------------------------------------------------------------------------
-  ; Used in 'adduser.nsi' to select the POPFile UI language according to the language used
-  ; for the installation process (NSIS language names differ from those used by POPFile's UI)
-  ;--------------------------------------------------------------------------
-
-  !macro UI_LANG_CONFIG PFI_SETTING UI_SETTING
-        !insertmacro PFI_UNIQUE_ID
-
-        StrCmp $LANGUAGE ${LANG_${PFI_SETTING}} 0 skip_${PFI_UNIQUE_ID}
-        IfFileExists "$G_ROOTDIR\languages\${UI_SETTING}.msg" 0 lang_done
-        StrCpy ${L_LANG} "${UI_SETTING}"
-        Goto lang_save
-
-      skip_${PFI_UNIQUE_ID}:
-  !macroend
-
 #--------------------------------------------------------------------------
 #
-# Macros used when writing log files during 'Outlook' and 'Outlook Express' account processing
-#
-#--------------------------------------------------------------------------
-
-  !macro OECONFIG_LOG_ENTRY LOGTYPE VALUE WIDTH
-      !insertmacro PFI_UNIQUE_ID
-
-      Push $R9
-      Push $R8
-
-      StrCpy $R9 "${VALUE}"
-      StrLen $R8 $R9
-      IntCmp $R8 ${WIDTH} copy_${PFI_UNIQUE_ID} 0 copy_${PFI_UNIQUE_ID}
-      StrCpy $R9 "$R9                              " ${WIDTH}
-
-    copy_${PFI_UNIQUE_ID}:
-      FileWrite $G_${LOGTYPE}_HANDLE "$R9  "
-
-      Pop $R8
-      Pop $R9
-  !macroend
-
-  !macro OOECONFIG_BEFORE_LOG VALUE WIDTH
-      !insertmacro OECONFIG_LOG_ENTRY "OOECONFIG" "${VALUE}" "${WIDTH}"
-  !macroend
-
-  !macro OOECONFIG_CHANGES_LOG VALUE WIDTH
-      !insertmacro OECONFIG_LOG_ENTRY "OOECHANGES" "${VALUE}" "${WIDTH}"
-  !macroend
-
-#--------------------------------------------------------------------------
-#
-# Macro used by 'installer.nsi' when rearranging existing minimal Perl system
-#
-#--------------------------------------------------------------------------
-
-  !macro MinPerlMove SUBFOLDER
-
-      !insertmacro PFI_UNIQUE_ID
-
-      IfFileExists "$G_ROOTDIR\${SUBFOLDER}\*.*" 0 skip_${PFI_UNIQUE_ID}
-      Rename "$G_ROOTDIR\${SUBFOLDER}" "$G_MPLIBDIR\${SUBFOLDER}"
-
-    skip_${PFI_UNIQUE_ID}:
-
-  !macroend
-
-#--------------------------------------------------------------------------
-#
-# Macro used by 'installer.nsi' when rearranging existing skins
-#
-#--------------------------------------------------------------------------
-
-  !macro SkinMove OLDNAME NEWNAME
-
-      !insertmacro PFI_UNIQUE_ID
-
-      IfFileExists "$G_ROOTDIR\skins\${OLDNAME}.css" 0 skip_${PFI_UNIQUE_ID}
-      CreateDirectory "$G_ROOTDIR\skins\${NEWNAME}"
-      Rename "$G_ROOTDIR\skins\${OLDNAME}.css" "$G_ROOTDIR\skins\${NEWNAME}\style.css"
-
-    skip_${PFI_UNIQUE_ID}:
-
-  !macroend
-
-#--------------------------------------------------------------------------
-#
-# Macro used by 'installer.nsi' when uninstalling the new style skins
-#
-#--------------------------------------------------------------------------
-
-  !macro DeleteSkin FOLDER
-
-      !insertmacro PFI_UNIQUE_ID
-
-      IfFileExists "${FOLDER}\*.*" 0 skip_${PFI_UNIQUE_ID}
-      Delete "${FOLDER}\*.css"
-      Delete "${FOLDER}\*.gif"
-      Delete "${FOLDER}\*.png"
-      Delete "${FOLDER}\*.thtml"
-      RMDir  "${FOLDER}"
-
-    skip_${PFI_UNIQUE_ID}:
-
-  !macroend
-
-#--------------------------------------------------------------------------
-#
-# Macro used by 'adduser.nsi' to ensure current skin selection uses lowercase
-#
-#--------------------------------------------------------------------------
-
-  !macro SkinCaseChange OLDNAME NEWNAME
-
-      !insertmacro PFI_UNIQUE_ID
-
-      StrCmp ${L_SKIN} "${OLDNAME}" 0 skip_${PFI_UNIQUE_ID}
-      StrCpy ${L_SKIN} "${NEWNAME}"
-      Goto save_skin_setting
-
-    skip_${PFI_UNIQUE_ID}:
-
-  !macroend
-
-#--------------------------------------------------------------------------
-#
-# Macro used to preserve up to 3 backup copies of a file
+# Macros used to preserve up to 3 backup copies of a file
 #
 # (Note: input file will be "removed" by renaming it)
 #--------------------------------------------------------------------------
@@ -277,7 +165,7 @@
   ; This version generates uses 'DetailsPrint' to generate more meaningful log entries
   ;--------------------------------------------------------------------------
 
-  !macro BACKUP_123_DP FOLDER FILE
+  !macro PFI_BACKUP_123_DP FOLDER FILE
 
       !insertmacro PFI_UNIQUE_ID
 
@@ -312,7 +200,7 @@
   ; This version does not include any 'DetailsPrint' instructions
   ;--------------------------------------------------------------------------
 
-  !macro BACKUP_123 FOLDER FILE
+  !macro PFI_BACKUP_123 FOLDER FILE
 
       !insertmacro PFI_UNIQUE_ID
 
@@ -334,22 +222,195 @@
     continue_${PFI_UNIQUE_ID}:
   !macroend
 
+
+#==============================================================================
+#
+# Macros used only by the 'installer.nsi' script (and/or its 'include' files):
+#
+#     PFI_MinPerlMove
+#     PFI_SkinMove
+#     PFI_DeleteSkin
+#     PFI_SectionNotSelected
+#
+# Note: The 'translator.nsi' script builds the utility which tests the translations.
+#==============================================================================
+
+!ifdef INSTALLER | TRANSLATOR
+
+  ;--------------------------------------------------------------------------
+  ; 'installer.nsi' macro used when rearranging existing minimal Perl system
+  ;--------------------------------------------------------------------------
+
+    !macro PFI_MinPerlMove SUBFOLDER
+
+        !insertmacro PFI_UNIQUE_ID
+
+        IfFileExists "$G_ROOTDIR\${SUBFOLDER}\*.*" 0 skip_${PFI_UNIQUE_ID}
+        Rename "$G_ROOTDIR\${SUBFOLDER}" "$G_MPLIBDIR\${SUBFOLDER}"
+
+      skip_${PFI_UNIQUE_ID}:
+
+    !macroend
+
+  ;--------------------------------------------------------------------------
+  ; 'installer.nsi' macro used when rearranging existing skins
+  ;--------------------------------------------------------------------------
+
+    !macro PFI_SkinMove OLDNAME NEWNAME
+
+        !insertmacro PFI_UNIQUE_ID
+
+        IfFileExists "$G_ROOTDIR\skins\${OLDNAME}.css" 0 skip_${PFI_UNIQUE_ID}
+        CreateDirectory "$G_ROOTDIR\skins\${NEWNAME}"
+        Rename "$G_ROOTDIR\skins\${OLDNAME}.css" "$G_ROOTDIR\skins\${NEWNAME}\style.css"
+
+      skip_${PFI_UNIQUE_ID}:
+
+    !macroend
+
+  ;--------------------------------------------------------------------------
+  ; 'installer.nsi' macro used when uninstalling the new style skins
+  ;--------------------------------------------------------------------------
+
+    !macro PFI_DeleteSkin FOLDER
+
+        !insertmacro PFI_UNIQUE_ID
+
+        IfFileExists "${FOLDER}\*.*" 0 skip_${PFI_UNIQUE_ID}
+        Delete "${FOLDER}\*.css"
+        Delete "${FOLDER}\*.gif"
+        Delete "${FOLDER}\*.png"
+        Delete "${FOLDER}\*.thtml"
+        RMDir  "${FOLDER}"
+
+      skip_${PFI_UNIQUE_ID}:
+
+    !macroend
+
+  ;--------------------------------------------------------------------------
+  ; 'installer.nsi' macro used when generating data for the "Setup Summary" page
+  ;--------------------------------------------------------------------------
+
+    !macro PFI_SectionNotSelected SECTION JUMPIFNOTSELECTED
+        !insertmacro PFI_UNIQUE_ID
+
+        !insertmacro SectionFlagIsSet "${SECTION}" "${SF_SELECTED}" "selected_${PFI_UNIQUE_ID}" "${JUMPIFNOTSELECTED}"
+
+      selected_${PFI_UNIQUE_ID}:
+    !macroend
+
+!endif
+
+
+#==============================================================================
+#
+# Macros used only by the 'adduser.nsi' script (and/or its 'include' files):
+#
+#     PFI_UI_LANG_CONFIG
+#     PFI_OECONFIG_LOG_ENTRY
+#     PFI_OOECONFIG_BEFORE_LOG
+#     PFI_OOECONFIG_CHANGES_LOG
+#     PFI_SkinCaseChange
+#     PFI_Copy_HKLM_to_HKCU
+#
+# Note: The 'transAUW.nsi' script builds the utility which tests the translations.
+#==============================================================================
+
+!ifdef ADDUSER | TRANSLATOR_AUW
+  ;--------------------------------------------------------------------------
+  ; 'adduser.nsi' macro used to select the POPFile UI language according to the language used
+  ; for the installation process (NSIS language names differ from those used by POPFile's UI)
+  ;--------------------------------------------------------------------------
+
+  !macro PFI_UI_LANG_CONFIG PFI_SETTING UI_SETTING
+        !insertmacro PFI_UNIQUE_ID
+
+        StrCmp $LANGUAGE ${LANG_${PFI_SETTING}} 0 skip_${PFI_UNIQUE_ID}
+        IfFileExists "$G_ROOTDIR\languages\${UI_SETTING}.msg" 0 lang_done
+        StrCpy ${L_LANG} "${UI_SETTING}"
+        Goto lang_save
+
+      skip_${PFI_UNIQUE_ID}:
+  !macroend
+
+  ;--------------------------------------------------------------------------
+  ; 'adduser.nsi' macros used to make 'Outlook' & 'Outlook Express' account log files
+  ;--------------------------------------------------------------------------
+
+  !macro PFI_OECONFIG_LOG_ENTRY LOGTYPE VALUE WIDTH
+      !insertmacro PFI_UNIQUE_ID
+
+      Push $R9
+      Push $R8
+
+      StrCpy $R9 "${VALUE}"
+      StrLen $R8 $R9
+      IntCmp $R8 ${WIDTH} copy_${PFI_UNIQUE_ID} 0 copy_${PFI_UNIQUE_ID}
+      StrCpy $R9 "$R9                              " ${WIDTH}
+
+    copy_${PFI_UNIQUE_ID}:
+      FileWrite $G_${LOGTYPE}_HANDLE "$R9  "
+
+      Pop $R8
+      Pop $R9
+  !macroend
+
+  !macro PFI_OOECONFIG_BEFORE_LOG VALUE WIDTH
+      !insertmacro PFI_OECONFIG_LOG_ENTRY "OOECONFIG" "${VALUE}" "${WIDTH}"
+  !macroend
+
+  !macro PFI_OOECONFIG_CHANGES_LOG VALUE WIDTH
+      !insertmacro PFI_OECONFIG_LOG_ENTRY "OOECHANGES" "${VALUE}" "${WIDTH}"
+  !macroend
+
+  ;--------------------------------------------------------------------------
+  ; 'adduser.nsi' macro used to ensure current skin selection uses lowercase
+  ;--------------------------------------------------------------------------
+
+  !macro PFI_SkinCaseChange OLDNAME NEWNAME
+
+      !insertmacro PFI_UNIQUE_ID
+
+      StrCmp ${L_SKIN} "${OLDNAME}" 0 skip_${PFI_UNIQUE_ID}
+      StrCpy ${L_SKIN} "${NEWNAME}"
+      Goto save_skin_setting
+
+    skip_${PFI_UNIQUE_ID}:
+
+  !macroend
+
+  ;--------------------------------------------------------------------------
+  ; 'adduser.nsi' macro used to update HKCU registry data using HKLM data
+  ;--------------------------------------------------------------------------
+
+  !macro PFI_Copy_HKLM_to_HKCU VAR NAME
+
+    ReadRegStr ${VAR} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "${NAME}"
+    WriteRegStr HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "${NAME}" ${VAR}
+
+  !macroend
+
+!endif
+
+
 #==============================================================================================
 #
-# Functions used only during installation of POPFile or User Data files (in alphabetic order)
+# Functions used only during 'installation' (i.e. not used by any 'uninstall' operations):
 #
-#    Installer Function: GetIEVersion
-#    Installer Function: GetParameters
-#    Installer Function: GetSeparator
-#    Installer Function: SetTrayIconMode
-#    Installer Function: StrStripLZS
+#    Installer Function: PFI_GetIEVersion
+#    Installer Function: PFI_GetParameters
+#    Installer Function: PFI_GetRoot
+#    Installer Function: PFI_GetSeparator
+#    Installer Function: PFI_GetSFNStatus
+#    Installer Function: PFI_SetTrayIconMode
+#    Installer Function: PFI_StrStripLZS
 #
 #==============================================================================================
 
 
 !ifdef INSTALLER | PFIDIAG
     #--------------------------------------------------------------------------
-    # Installer Function: GetIEVersion
+    # Installer Function: PFI_GetIEVersion
     #
     # Uses the registry to determine which version of Internet Explorer is installed.
     #
@@ -361,14 +422,14 @@
     #                              is not installed properly or at all, '?.?' is returned.
     #
     # Usage:
-    #         Call GetIEVersion
+    #         Call PFI_GetIEVersion
     #         Pop $R0
     #
     #         ($R0 at this point is "5.0", for example)
     #
     #--------------------------------------------------------------------------
 
-    Function GetIEVersion
+    Function PFI_GetIEVersion
 
       !define L_REGDATA   $R9
       !define L_TEMP      $R8
@@ -455,7 +516,7 @@
 
 !ifndef ADDSSL & BACKUP
     #--------------------------------------------------------------------------
-    # Installer Function: GetParameters
+    # Installer Function: PFI_GetParameters
     #
     # Returns the command-line parameters (if any) supplied when the installer was started
     #
@@ -465,14 +526,14 @@
     #         (top of stack)     - all of the parameters supplied on the command line (may be "")
     #
     # Usage:
-    #         Call GetParameters
+    #         Call PFI_GetParameters
     #         Pop $R0
     #
-    #         (if 'setup.exe /outlook' was used to start the installer, $R0 will hold '/outlook')
+    #         (if 'setup.exe /SSL' was used to start the installer, $R0 will hold '/SSL')
     #
     #--------------------------------------------------------------------------
 
-    Function GetParameters
+    Function PFI_GetParameters
 
       Push $R0
       Push $R1
@@ -513,9 +574,74 @@
 !endif
 
 
+!ifdef ADDUSER | INSTALLER | RESTORE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_GetRoot
+    #
+    # This function returns the root directory of a given path.
+    # The given path must be a full path. Normal paths and UNC paths are supported.
+    #
+    # NB: The path is assumed to use backslashes (\)
+    #
+    # Inputs:
+    #         (top of stack)          - input path
+    #
+    # Outputs:
+    #         (top of stack)          - the root part of the path (eg "X:" or "\\server\share")
+    #
+    # Usage:
+    #
+    #         Push "C:\Program Files\Directory\Whatever"
+    #         Call PFI_GetRoot
+    #         Pop $R0
+    #
+    #         ($R0 at this point is ""C:")
+    #
+    #--------------------------------------------------------------------------
+
+    Function PFI_GetRoot
+      Exch $0
+      Push $1
+      Push $2
+      Push $3
+      Push $4
+
+      StrCpy $1 $0 2
+      StrCmp $1 "\\" UNC
+      StrCpy $0 $1
+      Goto done
+
+    UNC:
+      StrCpy $2 3
+      StrLen $3 $0
+
+    loop:
+      IntCmp $2 $3 "" "" loopend
+      StrCpy $1 $0 1 $2
+      IntOp $2 $2 + 1
+      StrCmp $1 "\" loopend loop
+
+    loopend:
+      StrCmp $4 "1" +3
+      StrCpy $4 1
+      Goto loop
+
+      IntOp $2 $2 - 1
+      StrCpy $0 $0 $2
+
+    done:
+      Pop $4
+      Pop $3
+      Pop $2
+      Pop $1
+      Exch $0
+    FunctionEnd
+!endif
+
+
 !ifdef ADDUSER | TRANSLATOR_AUW
     #--------------------------------------------------------------------------
-    # Installer Function: GetSeparator
+    # Installer Function: PFI_GetSeparator
     #
     # Returns the character to be used as the separator when configuring an e-mail account.
     # If the character is not defined in popfile.cfg, the default separator (':') is returned
@@ -526,14 +652,14 @@
     #         (top of stack)     - character to be used as the separator
     #
     # Usage:
-    #         Call GetSeparator
+    #         Call PFI_GetSeparator
     #         Pop $R0
     #
     #         ($R0 at this point is ":" unless popfile.cfg has altered the default setting)
     #
     #--------------------------------------------------------------------------
 
-    Function GetSeparator
+    Function PFI_GetSeparator
 
       !define L_CFG         $R9   ; file handle
       !define L_LNE         $R8   ; a line from the popfile.cfg file
@@ -607,9 +733,81 @@
 !endif
 
 
+!ifdef ADDUSER | INSTALLER | RESTORE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_GetSFNStatus
+    #
+    # The current version of POPFile does not work properly if the values in the POPFILE_ROOT
+    # and POPFILE_USER environment variables contain spaces, therefore the installer uses the
+    # SFN (Short File Name) format for these values. Normally SFN support is enabled but on
+    # some NTFS-based systems SFN support has been disabled for performance reasons.
+    #
+    # Inputs:
+    #         (top of stack)     - installation folder (e.g. as selected via DIRECTORY page)
+    # Outputs:
+    #         (top of stack)     - SFN Support Status (1 = enabled, 0 = disabled)
+    #
+    # Usage:
+    #         Push $INSTDIR
+    #         Call PFI_GetSFNStatus
+    #         Pop $R0
+    #
+    #         ($R0 will be "1" is SFN Support is enabled for the $INSTDIR volume)
+    #
+    #--------------------------------------------------------------------------
+
+    Function PFI_GetSFNStatus
+
+      !define L_FOLDERPATH   $0     ; NB: System plugin call uses '$0' instead of this symbol
+      !define L_FILESYSTEM   $1     ; NB: System plugin call uses 'r1' instead of this symbol
+      !define L_RESULT       $2     ; NB: System plugin call uses 'r2' instead of this symbol
+
+      Exch ${L_FOLDERPATH}
+      Push ${L_FILESYSTEM}
+      Push ${L_RESULT}
+
+      ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+      StrCmp ${L_RESULT} "" sfn_enabled
+
+      Push ${L_FOLDERPATH}
+      Call PFI_GetCompleteFPN       ; convert input path to LFN format if possible
+      Pop ${L_RESULT}               ; "" is returned if path does not exist yet
+      StrCmp ${L_RESULT} "" getroot
+      StrCpy ${L_FOLDERPATH} ${L_RESULT}
+
+    getroot:
+      Push ${L_FOLDERPATH}
+      Call PFI_GetRoot              ; extract the "X:" or "\\server\share" part of the path
+      Pop ${L_FOLDERPATH}
+      StrCpy ${L_FILESYSTEM} ""     ; volume's file system type, eg FAT32, NTFS, CDFS, UDF, ""
+      StrCpy ${L_RESULT} ""         ; return code 1 = success, 0 = fail
+      System::Call "kernel32::GetVolumeInformation(t '$0\',,,,,,t .r1, i ${NSIS_MAX_STRLEN}) i .r2"
+      StrCmp ${L_FILESYSTEM} "NTFS" 0 sfn_enabled
+      ReadRegDWORD ${L_RESULT} \
+      HKLM "System\CurrentControlSet\Control\FileSystem" "NtfsDisable8dot3NameCreation"
+      StrCmp ${L_RESULT} "1" 0 sfn_enabled
+      StrCpy ${L_FOLDERPATH} "0"
+      Goto exit
+
+    sfn_enabled:
+      StrCpy ${L_FOLDERPATH} "1"
+
+    exit:
+      Pop ${L_RESULT}
+      Pop ${L_FILESYSTEM}
+      Exch ${L_FOLDERPATH}
+
+      !undef L_FOLDERPATH
+      !undef L_FILESYSTEM
+      !undef L_RESULT
+
+    FunctionEnd
+!endif
+
+
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Installer Function: SetTrayIconMode
+    # Installer Function: PFI_SetTrayIconMode
     #
     # Used to set required system tray icon mode in 'popfile.cfg'
     #
@@ -621,11 +819,11 @@
     #
     # Usage:
     #         Push "1"
-    #         Call SetTrayIconMode
+    #         Call PFI_SetTrayIconMode
     #
     #--------------------------------------------------------------------------
 
-    Function SetTrayIconMode
+    Function PFI_SetTrayIconMode
 
       !define L_NEW_CFG     $R9   ; file handle used for clean copy
       !define L_OLD_CFG     $R8   ; file handle for old version
@@ -695,7 +893,7 @@
 
 !ifdef ADDUSER | TRANSLATOR_AUW
     #--------------------------------------------------------------------------
-    # Installer Function: StrStripLZS
+    # Installer Function: PFI_StrStripLZS
     #
     # Strips any combination of leading zeroes and spaces from a string.
     #
@@ -706,14 +904,14 @@
     #
     # Usage:
     #         Push "  123"        ; the strings "000123" or " 0 0 0123" will give same result
-    #         Call StrStripLZS
+    #         Call PFI_StrStripLZS
     #         Pop $R0
     #
     #         ($R0 at this point is "123")
     #
     #--------------------------------------------------------------------------
 
-    Function StrStripLZS
+    Function PFI_StrStripLZS
 
       !define L_CHAR      $R9
       !define L_STRING    $R8
@@ -747,109 +945,125 @@
 #
 # Macro-based Functions which may be used by the installer and uninstaller (in alphabetic order)
 #
-#    Macro:                CheckIfLocked
-#    Installer Function:   CheckIfLocked
-#    Uninstaller Function: un.CheckIfLocked
+#    Macro:                PFI_CheckIfLocked
+#    Installer Function:   PFI_CheckIfLocked
+#    Uninstaller Function: un.PFI_CheckIfLocked
 #
-#    Macro:                FindLockedPFE
-#    Installer Function:   FindLockedPFE
-#    Uninstaller Function: un.FindLockedPFE
+#    Macro:                PFI_CheckSQLiteIntegrity
+#    Installer Function:   PFI_CheckSQLiteIntegrity
+#    Uninstaller Function: un.PFI_CheckSQLiteIntegrity
 #
-#    Macro:                GetCorpusPath
-#    Installer Function:   GetCorpusPath
-#    Uninstaller Function: un.GetCorpusPath
+#    Macro:                PFI_DumpLog
+#    Installer Function:   PFI_DumpLog
+#    Uninstaller Function: un.PFI_DumpLog
 #
-#    Macro:                GetDatabaseName
-#    Installer Function:   GetDatabaseName
-#    Uninstaller Function: un.GetDatabaseName
+#    Macro:                PFI_FindLockedPFE
+#    Installer Function:   PFI_FindLockedPFE
+#    Uninstaller Function: un.PFI_FindLockedPFE
 #
-#    Macro:                GetDataPath
-#    Installer Function:   GetDataPath
-#    Uninstaller Function: un.GetDataPath
+#    Macro:                PFI_GetCompleteFPN
+#    Installer Function:   PFI_GetCompleteFPN
+#    Uninstaller Function: un.PFI_GetCompleteFPN
 #
-#    Macro:                GetDateStamp
-#    Installer Function:   GetDateStamp
-#    Uninstaller Function: un.GetDateStamp
+#    Macro:                PFI_GetCorpusPath
+#    Installer Function:   PFI_GetCorpusPath
+#    Uninstaller Function: un.PFI_GetCorpusPath
 #
-#    Macro:                GetDateTimeStamp
-#    Installer Function:   GetTimeStamp
-#    Uninstaller Function: un.GetTimeStamp
+#    Macro:                PFI_GetDatabaseName
+#    Installer Function:   PFI_GetDatabaseName
+#    Uninstaller Function: un.PFI_GetDatabaseName
 #
-#    Macro:                GetFileSize
-#    Installer Function:   GetFileSize
-#    Uninstaller Function: un.GetFileSize
+#    Macro:                PFI_GetDataPath
+#    Installer Function:   PFI_GetDataPath
+#    Uninstaller Function: un.PFI_GetDataPath
 #
-#    Macro:                GetLocalTime
-#    Installer Function:   GetLocalTime
-#    Uninstaller Function: un.GetLocalTime
+#    Macro:                PFI_GetDateStamp
+#    Installer Function:   PFI_GetDateStamp
+#    Uninstaller Function: un.PFI_GetDateStamp
 #
-#    Macro:                GetMessagesPath
-#    Installer Function:   GetMessagesPath
-#    Uninstaller Function: un.GetMessagesPath
+#    Macro:                PFI_GetDateTimeStamp
+#    Installer Function:   PFI_GetDateTimeStamp
+#    Uninstaller Function: un.PFI_GetDateTimeStamp
 #
-#    Macro:                GetParent
-#    Installer Function:   GetParent
-#    Uninstaller Function: un.GetParent
+#    Macro:                PFI_GetFileSize
+#    Installer Function:   PFI_GetFileSize
+#    Uninstaller Function: un.PFI_GetFileSize
 #
-#    Macro:                GetPOPFileSchemaVersion
-#    Installer Function:   GetPOPFileSchemaVersion
-#    Uninstaller Function: un.GetPOPFileSchemaVersion
+#    Macro:                PFI_GetLocalTime
+#    Installer Function:   PFI_GetLocalTime
+#    Uninstaller Function: un.PFI_GetLocalTime
 #
-#    Macro:                GetSQLdbPathName
-#    Installer Function:   GetSQLdbPathName
-#    Uninstaller Function: un.GetSQLdbPathName
+#    Macro:                PFI_GetMessagesPath
+#    Installer Function:   PFI_GetMessagesPath
+#    Uninstaller Function: un.PFI_GetMessagesPath
 #
-#    Macro:                GetSQLiteFormat
-#    Installer Function:   GetSQLiteFormat
-#    Uninstaller Function: un.GetSQLiteFormat
+#    Macro:                PFI_GetParent
+#    Installer Function:   PFI_GetParent
+#    Uninstaller Function: un.PFI_GetParent
 #
-#    Macro:                GetSQLiteSchemaVersion
-#    Installer Function:   GetSQLiteSchemaVersion
-#    Uninstaller Function: un.GetSQLiteSchemaVersion
+#    Macro:                PFI_GetPOPFileSchemaVersion
+#    Installer Function:   PFI_GetPOPFileSchemaVersion
+#    Uninstaller Function: un.PFI_GetPOPFileSchemaVersion
 #
-#    Macro:                GetTimeStamp
-#    Installer Function:   GetTimeStamp
-#    Uninstaller Function: un.GetTimeStamp
+#    Macro:                PFI_GetSQLdbPathName
+#    Installer Function:   PFI_GetSQLdbPathName
+#    Uninstaller Function: un.PFI_GetSQLdbPathName
 #
-#    Macro:                RequestPFIUtilsShutdown
-#    Installer Function:   RequestPFIUtilsShutdown
-#    Uninstaller Function: un.RequestPFIUtilsShutdown
+#    Macro:                PFI_GetSQLiteFormat
+#    Installer Function:   PFI_GetSQLiteFormat
+#    Uninstaller Function: un.PFI_GetSQLiteFormat
 #
-#    Macro:                ServiceCall
-#    Installer Function:   ServiceCall
-#    Uninstaller Function: un.ServiceCall
+#    Macro:                PFI_GetSQLiteSchemaVersion
+#    Installer Function:   PFI_GetSQLiteSchemaVersion
+#    Uninstaller Function: un.PFI_GetSQLiteSchemaVersion
 #
-#    Macro:                ServiceRunning
-#    Installer Function:   ServiceRunning
-#    Uninstaller Function: un.ServiceRunning
+#    Macro:                PFI_GetTimeStamp
+#    Installer Function:   PFI_GetTimeStamp
+#    Uninstaller Function: un.PFI_GetTimeStamp
 #
-#    Macro:                ServiceStatus
-#    Installer Function:   ServiceStatus
-#    Uninstaller Function: un.ServiceStatus
+#    Macro:                PFI_RequestPFIUtilsShutdown
+#    Installer Function:   PFI_RequestPFIUtilsShutdown
+#    Uninstaller Function: un.PFI_RequestPFIUtilsShutdown
 #
-#    Macro:                ShutdownViaUI
-#    Installer Function:   ShutdownViaUI
-#    Uninstaller Function: un.ShutdownViaUI
+#    Macro:                PFI_RunSQLiteCommand
+#    Installer Function:   PFI_RunSQLiteCommand
+#    Uninstaller Function: un.PFI_RunSQLiteCommand
 #
-#    Macro:                StrBackSlash
-#    Installer Function:   StrBackSlash
-#    Uninstaller Function: un.StrBackSlash
+#    Macro:                PFI_ServiceCall
+#    Installer Function:   PFI_ServiceCall
+#    Uninstaller Function: un.PFI_ServiceCall
 #
-#    Macro:                StrCheckDecimal
-#    Installer Function:   StrCheckDecimal
-#    Uninstaller Function: un.StrCheckDecimal
+#    Macro:                PFI_ServiceRunning
+#    Installer Function:   PFI_ServiceRunning
+#    Uninstaller Function: un.PFI_ServiceRunning
 #
-#    Macro:                StrStr
-#    Installer Function:   StrStr
-#    Uninstaller Function: un.StrStr
+#    Macro:                PFI_ServiceStatus
+#    Installer Function:   PFI_ServiceStatus
+#    Uninstaller Function: un.PFI_ServiceStatus
 #
-#    Macro:                TrimNewlines
-#    Installer Function:   TrimNewlines
-#    Uninstaller Function: un.TrimNewlines
+#    Macro:                PFI_ShutdownViaUI
+#    Installer Function:   PFI_ShutdownViaUI
+#    Uninstaller Function: un.PFI_ShutdownViaUI
 #
-#    Macro:                WaitUntilUnlocked
-#    Installer Function:   WaitUntilUnlocked
-#    Uninstaller Function: un.WaitUntilUnlocked
+#    Macro:                PFI_StrBackSlash
+#    Installer Function:   PFI_StrBackSlash
+#    Uninstaller Function: un.PFI_StrBackSlash
+#
+#    Macro:                PFI_StrCheckDecimal
+#    Installer Function:   PFI_StrCheckDecimal
+#    Uninstaller Function: un.PFI_StrCheckDecimal
+#
+#    Macro:                PFI_StrStr
+#    Installer Function:   PFI_StrStr
+#    Uninstaller Function: un.PFI_StrStr
+#
+#    Macro:                PFI_TrimNewlines
+#    Installer Function:   PFI_TrimNewlines
+#    Uninstaller Function: un.PFI_TrimNewlines
+#
+#    Macro:                PFI_WaitUntilUnlocked
+#    Installer Function:   PFI_WaitUntilUnlocked
+#    Uninstaller Function: un.PFI_WaitUntilUnlocked
 #
 #==============================================================================================
 
@@ -867,8 +1081,8 @@
 # string (otherwise it returns the input parameter unchanged).
 #
 # NOTE:
-# The !insertmacro CheckIfLocked "" and !insertmacro CheckIfLocked "un." commands are included
-# in this file so the NSIS script can use 'Call CheckIfLocked' and 'Call un.CheckIfLocked'
+# The !insertmacro PFI_CheckIfLocked "" and !insertmacro PFI_CheckIfLocked "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_CheckIfLocked' and 'Call un.PFI_CheckIfLocked'
 # without additional preparation.
 #
 # Inputs:
@@ -881,15 +1095,15 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "$INSTDIR\wperl.exe"
-#         Call CheckIfLocked
+#         Call PFI_CheckIfLocked
 #         Pop $R0
 #
 #        (if the file is no longer in use, $R0 will be "")
 #        (if the file is still being used, $R0 will be "$INSTDIR\wperl.exe")
 #--------------------------------------------------------------------------
 
-!macro CheckIfLocked UN
-  Function ${UN}CheckIfLocked
+!macro PFI_CheckIfLocked UN
+  Function ${UN}PFI_CheckIfLocked
     !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
     !define L_FILE_HANDLE   $R8
 
@@ -918,27 +1132,188 @@
 
 !ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
     #--------------------------------------------------------------------------
-    # Installer Function: CheckIfLocked
+    # Installer Function: PFI_CheckIfLocked
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro CheckIfLocked ""
+    !insertmacro PFI_CheckIfLocked ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.CheckIfLocked
+    # Uninstaller Function: un.PFI_CheckIfLocked
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro CheckIfLocked "un."
+    !insertmacro PFI_CheckIfLocked "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: FindLockedPFE
+# Macro: PFI_CheckSQLiteIntegrity
+#
+# The installation process and the uninstall process may both need a function which
+# uses the SQLite command-line utility to perform a database integrity check. This macro
+# makes maintenance easier by ensuring that both processes use identical functions, with
+# the only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_CheckSQLiteIntegrity "" and !insertmacro PFI_CheckSQLiteIntegrity "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_CheckSQLiteIntegrity'
+# and 'Call un.PFI_CheckSQLiteIntegrity' without additional preparation.
+#
+# Inputs:
+#         (top of stack)     - full pathname of the SQLite database file
+#
+# Outputs:
+#         (top of stack)     - the result from the SQLite command-line utility ('ok' expected)
+#                              If the result is enclosed in parentheses then an error occurred.
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "popfile.db"
+#         Call PFI_CheckSQLiteIntegrity
+#         Pop $R0
+#
+#         ($R0 will be "ok" if the popfile.db file passes the integrity check)
+#--------------------------------------------------------------------------
+
+!macro PFI_CheckSQLiteIntegrity UN
+  Function ${UN}PFI_CheckSQLiteIntegrity
+
+    Push "pragma integrity_check;"
+    Call ${UN}PFI_RunSQLiteCommand
+
+  FunctionEnd
+!macroend
+
+!ifdef BACKUP
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_CheckSQLiteIntegrity
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_CheckSQLiteIntegrity ""
+!endif
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.PFI_CheckSQLiteIntegrity
+#
+# This function is used during the uninstall process
+#--------------------------------------------------------------------------
+
+;!insertmacro PFI_CheckSQLiteIntegrity "un."
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_DumpLog
+#
+# The installation process and the uninstall process may both need a function which dumps the
+# log using a filename supplied via the stack. This macro makes maintenance easier by ensuring
+# that both processes use identical functions, with the only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_DumpLog "" and !insertmacro PFI_DumpLog "un." commands are included in this file
+# so NSIS scripts can use 'Call PFI_DumpLog' and 'Call un.PFI_DumpLog' without additional preparation.
+#
+# Inputs:
+#         (top of stack)     - the full path of the file where the log will be dumped
+#
+# Outputs:
+#         (none)
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "$G_ROOTDIR\install.log"
+#         Call PFI_DumpLog
+#
+#        (the log contents will be saved in the "$G_ROOTDIR\install.log" file)
+#--------------------------------------------------------------------------
+
+!macro PFI_DumpLog UN
+  Function ${UN}PFI_DumpLog
+
+      !ifndef LVM_GETITEMCOUNT
+          !define LVM_GETITEMCOUNT 0x1004
+      !endif
+      !ifndef LVM_GETITEMTEXT
+        !define LVM_GETITEMTEXT 0x102D
+      !endif
+
+      Exch $5
+      Push $0
+      Push $1
+      Push $2
+      Push $3
+      Push $4
+      Push $6
+
+      FindWindow $0 "#32770" "" $HWNDPARENT
+      GetDlgItem $0 $0 1016
+      StrCmp $0 0 error
+      FileOpen $5 $5 "w"
+      StrCmp $5 "" error
+      SendMessage $0 ${LVM_GETITEMCOUNT} 0 0 $6
+      System::Alloc ${NSIS_MAX_STRLEN}
+      Pop $3
+      StrCpy $2 0
+      System::Call "*(i, i, i, i, i, i, i, i, i) i \
+                    (0, 0, 0, 0, 0, r3, ${NSIS_MAX_STRLEN}) .r1"
+
+    loop:
+      StrCmp $2 $6 done
+      System::Call "User32::SendMessageA(i, i, i, i) i \
+                    ($0, ${LVM_GETITEMTEXT}, $2, r1)"
+      System::Call "*$3(&t${NSIS_MAX_STRLEN} .r4)"
+      FileWrite $5 "$4${MB_NL}"
+      IntOp $2 $2 + 1
+      Goto loop
+
+    done:
+      FileClose $5
+      System::Free $1
+      System::Free $3
+      Goto exit
+
+    error:
+      MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_SAVELOG_ERROR)"
+
+    exit:
+      Pop $6
+      Pop $4
+      Pop $3
+      Pop $2
+      Pop $1
+      Pop $0
+      Pop $5
+
+    FunctionEnd
+!macroend
+
+!ifdef ADDSSL | BACKUP | INSTALLER | RESTORE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_DumpLog
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_DumpLog ""
+!endif
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.PFI_DumpLog
+#
+# This function is used during the uninstall process
+#--------------------------------------------------------------------------
+
+;!insertmacro PFI_DumpLog "un."
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_FindLockedPFE
 #
 # The installation process and the uninstall process may both use a function which checks if
 # any of the POPFile executable (EXE) files is being used. This macro makes maintenance easier
@@ -951,8 +1326,8 @@
 # be checked.
 #
 # NOTE:
-# The !insertmacro FindLockedPFE "" and !insertmacro FindLockedPFE "un." commands are included
-# in this file so the NSIS script can use 'Call FindLockedPFE' and 'Call un.FindLockedPFE'
+# The !insertmacro PFI_FindLockedPFE "" and !insertmacro PFI_FindLockedPFE "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_FindLockedPFE' and 'Call un.PFI_FindLockedPFE'
 # without additional preparation.
 #
 # Inputs:
@@ -965,14 +1340,14 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "C:\Program Files\POPFile"
-#         Call FindLockedPFE
+#         Call PFI_FindLockedPFE
 #         Pop $R0
 #
 #        (if popfileb.exe is still running, $R0 will be "C:\Program Files\POPFile\popfileb.exe")
 #--------------------------------------------------------------------------
 
-!macro FindLockedPFE UN
-  Function ${UN}FindLockedPFE
+!macro PFI_FindLockedPFE UN
+  Function ${UN}PFI_FindLockedPFE
     !define L_PATH          $R9    ; full path to the POPFile EXE files which are to be checked
     !define L_RESULT        $R8    ; either the full path to a locked file or an empty string
 
@@ -983,42 +1358,42 @@
     DetailPrint "Checking '${L_PATH}\popfileb.exe' ..."
 
     Push "${L_PATH}\popfileb.exe"  ; runs POPFile in the background
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" 0 exit
 
     DetailPrint "Checking '${L_PATH}\popfileib.exe' ..."
 
     Push "${L_PATH}\popfileib.exe" ; runs POPFile in the background with system tray icon
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" 0 exit
 
     DetailPrint "Checking '${L_PATH}\popfilef.exe' ..."
 
     Push "${L_PATH}\popfilef.exe"  ; runs POPFile in the foreground/console window/DOS box
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" 0 exit
 
     DetailPrint "Checking '${L_PATH}\popfileif.exe' ..."
 
     Push "${L_PATH}\popfileif.exe" ; runs POPFile in the foreground with system tray icon
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" 0 exit
 
     DetailPrint "Checking '${L_PATH}\wperl.exe' ..."
 
     Push "${L_PATH}\wperl.exe"     ; runs POPFile in the background (using popfile.pl)
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" 0 exit
 
     DetailPrint "Checking '${L_PATH}\perl.exe' ..."
 
     Push "${L_PATH}\perl.exe"      ; runs POPFile in the foreground (using popfile.pl)
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
 
    exit:
@@ -1032,27 +1407,147 @@
 
 !ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
     #--------------------------------------------------------------------------
-    # Installer Function: FindLockedPFE
+    # Installer Function: PFI_FindLockedPFE
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro FindLockedPFE ""
+    !insertmacro PFI_FindLockedPFE ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.FindLockedPFE
+    # Uninstaller Function: un.PFI_FindLockedPFE
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro FindLockedPFE "un."
+    !insertmacro PFI_FindLockedPFE "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: GetCorpusPath
+# Macro: PFI_GetCompleteFPN
+#
+# The installation process and the uninstall process may need a function which converts a path
+# into the full/long version (e.g. which converts 'C:\PROGRA~1' into 'C:\Program Files'). There
+# is a built-in NSIS command for this (GetFullPathName) but it only converts part of the path,
+# eg. it converts 'C:\PROGRA~1\PRE-RE~1' into 'C:\PROGRA~1\Pre-release POPFile' instead of the
+# expected 'C:\Program Files\Pre-release POPFile' string. This macro makes maintenance easier
+# by ensuring that both processes use identical functions, with the only difference being their
+# names.
+#
+# If the specified path does not exist, an empty string is returned in order to make this
+# function act like the built-in NSIS command (GetFullPathName).
+#
+# NOTE:
+# The !insertmacro PFI_GetCompleteFPN "" and !insertmacro PFI_GetCompleteFPN "un." commands are
+# included in this file so the NSIS script and/or other library functions in 'pfi-library.nsh'
+# can use 'Call PFI_GetCompleteFPN' and 'Call un.PFI_GetCompleteFPN' without additional preparation.
+#
+# Inputs:
+#         (top of stack)     - path to be converted to long filename format
+# Outputs:
+#         (top of stack)     - full (long) path name or an empty string if path was not found
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "c:\progra~1"
+#         Call PFI_GetCompleteFPN
+#         Pop $R0
+#
+#         ($R0 now holds 'C:\Program Files')
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_GetCompleteFPN UN
+    Function ${UN}PFI_GetCompleteFPN
+
+      Exch $0   ; the input path
+      Push $1   ; the result string (will be empty if the input path does not exist)
+      Exch
+      Push $2
+
+      ; 'GetLongPathNameA' is not available in Windows 95 systems (but it is in Windows 98)
+
+      ClearErrors
+      ReadRegStr $1 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+      IfErrors 0 use_system_plugin
+      ReadRegStr $1 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion" VersionNumber
+      StrCpy $2 $1 1
+      StrCmp $2 '4' 0 use_NSIS_code
+      StrCpy $2 $1 3
+      StrCmp $2 '4.0' use_NSIS_code use_system_plugin
+
+    use_NSIS_code:
+      Push $3
+
+      StrCpy $1 ""                ; used to hold the long filename format result
+      StrCpy $2 ""                ; holds a component part of the long filename
+
+      ; Convert the input path ($0) into a long path ($1) if possible
+
+    loop:
+      GetFullPathName $3 $0       ; Converts the last part of the path to long filename format
+      StrCmp $3 "" done           ; An empty string here means the path doesn't exist
+      StrCpy $2 $3 1 -1
+      StrCmp $2 '.' finished_unc  ; If last char of result is '.' then the path was a UNC one
+      StrCpy $0 $3                ; Set path we are working on to the 'GetFullPathName' result
+      Push $0
+      Call ${UN}PFI_GetParent
+      Pop $2
+      StrLen $3 $2
+      StrCpy $3 $0 "" $3          ; Get the last part of the path, including the leading '\'
+      StrCpy $1 "$3$1"            ; Update the long filename result
+      StrCpy $0 $2                ; Now prepare to convert the next part of the path
+      StrCpy $3 $2 1 -1
+      StrCmp $3 ':' done loop     ; We're done if all that is left is the drive letter part
+
+    finished_unc:
+      StrCpy $2 $0                ; $0 holds the '\\server\share' part of the UNC path
+
+    done:
+      StrCpy $1 "$2$1"            ; Assemble the last component of the long filename result
+
+      Pop $3
+      Goto exit
+
+    use_system_plugin:
+      StrCpy $1 ""
+
+      ; Convert the input path ($0) into a long path ($1) if possible
+
+      System::Call "Kernel32::GetLongPathNameA(t '$0', &t .r1, i ${NSIS_MAX_STRLEN})"
+
+    exit:
+      Pop $2
+      Pop $0
+      Exch $1
+
+    FunctionEnd
+!macroend
+
+!ifdef ADDUSER | DBSTATUS | INSTALLER | RESTORE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_GetCompleteFPN
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_GetCompleteFPN ""
+!endif
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.PFI_GetCompleteFPN
+#
+# This function is used during the uninstall process
+#--------------------------------------------------------------------------
+
+;!insertmacro PFI_GetCompleteFPN "un."
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_GetCorpusPath
 #
 # The installation process and the uninstall process may both use a function which finds the
 # full path for the corpus if a copy of 'popfile.cfg' is found in the installation folder. This
@@ -1070,8 +1565,8 @@
 # otherwise we assume the default location is to be used (the sub-folder called 'corpus').
 #
 # NOTE:
-# The !insertmacro GetCorpusPath "" and !insertmacro GetCorpusPath "un." commands are included
-# in this file so the NSIS script can use 'Call GetCorpusPath' and 'Call un.GetCorpusPath'
+# The !insertmacro PFI_GetCorpusPath "" and !insertmacro PFI_GetCorpusPath "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_GetCorpusPath' and 'Call un.PFI_GetCorpusPath'
 # without additional preparation.
 #
 # Inputs:
@@ -1083,14 +1578,14 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push $G_USERDIR
-#         Call un.GetCorpusPath
+#         Call un.PFI_GetCorpusPath
 #         Pop $R0
 #
 #         ($R0 will be "C:\Program Files\POPFile\corpus" if default corpus location is used)
 #--------------------------------------------------------------------------
 
-!macro GetCorpusPath UN
-  Function ${UN}GetCorpusPath
+!macro PFI_GetCorpusPath UN
+  Function ${UN}PFI_GetCorpusPath
 
     !define L_CORPUS        $R9
     !define L_FILE_HANDLE   $R8
@@ -1146,7 +1641,7 @@
   cfg_file_done:
     FileClose ${L_FILE_HANDLE}
     Push ${L_CORPUS}
-    Call ${UN}TrimNewlines
+    Call ${UN}PFI_TrimNewlines
     Pop ${L_CORPUS}
     StrCmp ${L_CORPUS} "" use_default_locn use_cfg_data
 
@@ -1157,7 +1652,7 @@
   use_cfg_data:
     Push ${L_SOURCE}
     Push ${L_CORPUS}
-    Call ${UN}GetDataPath
+    Call ${UN}PFI_GetDataPath
     Pop ${L_RESULT}
 
   got_result:
@@ -1180,56 +1675,59 @@
 
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Installer Function: GetCorpusPath
+    # Installer Function: PFI_GetCorpusPath
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetCorpusPath ""
+    !insertmacro PFI_GetCorpusPath ""
 !endif
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.GetCorpusPath
+# Uninstaller Function: un.PFI_GetCorpusPath
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetCorpusPath "un."
+;!insertmacro PFI_GetCorpusPath "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: GetDatabaseName
+# Macro: PFI_GetDatabaseName
 #
-# The installation process and the uninstall process may both need a function which finds the
-# value of the 'bayes_database' entry in the POPFile configuration file ('popfile.cfg'). This
-# entry supplies the name of the SQLite database used by POPFile and has a default value of
-# 'popfile.db'. This macro makes maintenance easier by ensuring that both processes use
-# identical functions, with the only difference being their names.
+# The installation process and the uninstall process may both need a function which extracts
+# the name of the SQLite database file from the POPFile configuration file ('popfile.cfg').
+# The default filename is 'popfile.db' (which means it is stored in the 'User Data' folder).
+# POPFile releases 0.21.x and 0.22.x used the 'bayes_database' entry to hold the filename but
+# the 0.23.0 and later releases use the 'database_database' entry instead. This macro makes
+# maintenance easier by ensuring that both processes use identical functions, with the only
+# difference being their names.
 #
 # NOTE:
-# The !insertmacro GetDatabaseName "" and !insertmacro GetDatabaseName "un." commands
-# are included in this file so the NSIS script can use 'Call GetDatabaseName' and
-# 'Call un.GetDatabaseName' without additional preparation.
+# The !insertmacro PFI_GetDatabaseName "" and !insertmacro PFI_GetDatabaseName "un." commands
+# are included in this file so the NSIS script can use 'Call PFI_GetDatabaseName' and
+# 'Call un.PFI_GetDatabaseName' without additional preparation.
 #
 # Inputs:
-#         (top of stack)          - the path where 'popfile.cfg' is to be found
+#         (top of stack)       - the path where 'popfile.cfg' is to be found
 #
 # Outputs:
-#         (top of stack)          - string with the current value of the 'bayes_database' entry
-#                                   (if entry is not found (perhaps because a "clean" install is
-#                                   in progress), the default value for the entry is returned)
+#         (top of stack)       - string with the current value of the 'database_database' or
+#                                the 'bayes_database' entry from the 'popfile.cfg' file
+#                                (if no entry is not found (perhaps because a "clean" install
+#                                is in progress), the default value for the entry is returned)
 #
 # Usage (after macro has been 'inserted'):
 #
 #         Push $G_USERDIR
-#         Call GetDatabaseName
+#         Call PFI_GetDatabaseName
 #         Pop $R0
 #
 #         ($R0 will be "popfile.db" if the default was in use or if this is a "clean" install)
 #--------------------------------------------------------------------------
 
-!macro GetDatabaseName UN
-  Function ${UN}GetDatabaseName
+!macro PFI_GetDatabaseName UN
+  Function ${UN}PFI_GetDatabaseName
 
     !define L_FILE_HANDLE   $R9   ; used to access the configuration file (popfile.cfg)
     !define L_PARAM         $R8   ; parameter from the configuration file
@@ -1242,7 +1740,7 @@
     Push ${L_RESULT}
     Exch
     Push ${L_FILE_HANDLE}
-    Push ${L_PARAM}
+     Push ${L_PARAM}
     Push ${L_TEMP}
     Push ${L_TEXTEND}
 
@@ -1261,6 +1759,12 @@
     StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
     StrCmp ${L_PARAM} "$\n" loop
 
+    StrCpy ${L_TEMP} ${L_PARAM} 18
+    StrCmp ${L_TEMP} "database_database " 0 check_old_value
+    StrCpy ${L_RESULT} ${L_PARAM} "" 18
+    Goto check_eol
+
+  check_old_value:
     StrCpy ${L_TEMP} ${L_PARAM} 15
     StrCmp ${L_TEMP} "bayes_database " 0 check_eol
     StrCpy ${L_RESULT} ${L_PARAM} "" 15
@@ -1278,7 +1782,7 @@
 
     StrCmp ${L_RESULT} "" use_default
     Push ${L_RESULT}
-    Call ${UN}TrimNewlines
+    Call ${UN}PFI_TrimNewlines
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" use_default got_result
 
@@ -1305,25 +1809,25 @@
 
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Installer Function: GetDatabaseName
+    # Installer Function: PFI_GetDatabaseName
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetDatabaseName ""
+    !insertmacro PFI_GetDatabaseName ""
 !endif
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.GetDatabaseName
+# Uninstaller Function: un.PFI_GetDatabaseName
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetDatabaseName "un."
+;!insertmacro PFI_GetDatabaseName "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: GetDataPath
+# Macro: PFI_GetDataPath
 #
 # The installation process and the uninstall process may both use a function which converts a
 # 'base directory' and a 'data folder' parameter (usually relative to the 'base directory')
@@ -1341,7 +1845,7 @@
 # corpus, ./corpus, "..\..\corpus", Z:/Data/corpus or even "\\server\share\corpus".
 #
 # NOTE:
-# The !insertmacro GetDataPath "" and !insertmacro GetDataPath "un." commands are included
+# The !insertmacro PFI_GetDataPath "" and !insertmacro PFI_GetDataPath "un." commands are included
 # in this file so the NSIS script can use 'Call GetDataPath' and 'Call un.GetDataPath'
 # without additional preparation.
 #
@@ -1357,14 +1861,14 @@
 #
 #         Push $G_USERDIR
 #         Push "../../corpus"
-#         Call un.GetDataPath
+#         Call un.PFI_GetDataPath
 #         Pop $R0
 #
 #         ($R0 will be "C:\corpus", assuming $G_USERDIR was "C:\Program Files\POPFile")
 #--------------------------------------------------------------------------
 
-!macro GetDataPath UN
-  Function ${UN}GetDataPath
+!macro PFI_GetDataPath UN
+  Function ${UN}PFI_GetDataPath
 
     !define L_BASEDIR     $R9
     !define L_DATA        $R8
@@ -1395,7 +1899,7 @@
   slashconversion:
     StrCmp ${L_DATA} "." source_folder
     Push ${L_DATA}
-    Call ${UN}StrBackSlash            ; ensure parameter uses backslashes
+    Call ${UN}PFI_StrBackSlash            ; ensure parameter uses backslashes
     Pop ${L_DATA}
 
     StrCmp ${L_DATA} ".\" source_folder
@@ -1440,7 +1944,7 @@
   relative_again:
     StrCpy ${L_DATA} ${L_DATA} "" 3
     Push ${L_RESULT}
-    Call ${UN}GetParent
+    Call ${UN}PFI_GetParent
     Pop ${L_RESULT}
     StrCpy ${L_TEMP} ${L_DATA} 3
     StrCmp ${L_TEMP} "..\" relative_again
@@ -1465,29 +1969,29 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | RESTORE | RUNPOPFILE
+!ifdef ADDUSER | BACKUP | DBSTATUS | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
-    # Installer Function: GetDataPath
+    # Installer Function: PFI_GetDataPath
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetDataPath ""
+    !insertmacro PFI_GetDataPath ""
 !endif
 
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.GetDataPath
+    # Uninstaller Function: un.PFI_GetDataPath
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetDataPath "un."
+    !insertmacro PFI_GetDataPath "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: GetDateStamp
+# Macro: PFI_GetDateStamp
 #
 # The installation process and the uninstall process may need a function which uses the
 # local time from Windows to generate a date stamp (eg '08-Dec-2003'). This macro makes
@@ -1495,9 +1999,9 @@
 # the only difference being their names.
 #
 # NOTE:
-# The !insertmacro GetDateStamp "" and !insertmacro GetDateStamp "un." commands are included
+# The !insertmacro PFI_GetDateStamp "" and !insertmacro PFI_GetDateStamp "un." commands are included
 # in this file so the NSIS script and/or other library functions in 'pfi-library.nsh' can use
-# 'Call GetDateStamp' and 'Call un.GetDateStamp' without additional preparation.
+# 'Call PFI_GetDateStamp' and 'Call un.PFI_GetDateStamp' without additional preparation.
 #
 # Inputs:
 #         (none)
@@ -1506,14 +2010,14 @@
 #
 # Usage (after macro has been 'inserted'):
 #
-#         Call un.GetDateStamp
+#         Call un.PFI_GetDateStamp
 #         Pop $R9
 #
 #         ($R9 now holds a string like '07-Dec-2003')
 #--------------------------------------------------------------------------
 
-!macro GetDateStamp UN
-  Function ${UN}GetDateStamp
+!macro PFI_GetDateStamp UN
+  Function ${UN}PFI_GetDateStamp
 
     !define L_DATESTAMP   $R9
     !define L_DAY         $R8
@@ -1525,7 +2029,7 @@
     Push ${L_MONTH}
     Push ${L_YEAR}
 
-    Call ${UN}GetLocalTime
+    Call ${UN}PFI_GetLocalTime
     Pop ${L_YEAR}
     Pop ${L_MONTH}
     Pop ${L_DAY}          ; ignore day of week
@@ -1602,24 +2106,24 @@
 !macroend
 
 #--------------------------------------------------------------------------
-# Installer Function: GetDateStamp
+# Installer Function: PFI_GetDateStamp
 #
 # This function is used during the installation process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetDateStamp ""
+;!insertmacro PFI_GetDateStamp ""
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.GetDateStamp
+# Uninstaller Function: un.PFI_GetDateStamp
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetDateStamp "un."
+;!insertmacro PFI_GetDateStamp "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: GetDateTimeStamp
+# Macro: PFI_GetDateTimeStamp
 #
 # The installation process and the uninstall process may need a function which returns a
 # string with the current date and time (using the current time from Windows). This macro
@@ -1627,9 +2131,9 @@
 # the only difference being their names.
 #
 # NOTE:
-# The !insertmacro GetDateTimeStamp "" and !insertmacro GetDateTimeStamp "un." commands are
+# The !insertmacro PFI_GetDateTimeStamp "" and !insertmacro PFI_GetDateTimeStamp "un." commands are
 # included in this file so the NSIS script and/or other library functions in 'pfi-library.nsh'
-# can use 'Call GetDateTimeStamp' & 'Call un.GetDateTimeStamp' without additional preparation.
+# can use 'Call PFI_GetDateTimeStamp' & 'Call un.PFI_GetDateTimeStamp' without additional preparation.
 #
 # Inputs:
 #         (none)
@@ -1638,14 +2142,14 @@
 #
 # Usage (after macro has been 'inserted'):
 #
-#         Call GetDateTimeStamp
+#         Call PFI_GetDateTimeStamp
 #         Pop $R9
 #
 #         ($R9 now holds a string like '08-Dec-2003 @ 23:01:59')
 #--------------------------------------------------------------------------
 
-!macro GetDateTimeStamp UN
-  Function ${UN}GetDateTimeStamp
+!macro PFI_GetDateTimeStamp UN
+  Function ${UN}PFI_GetDateTimeStamp
 
     !define L_DATETIMESTAMP   $R9
     !define L_DAY             $R8
@@ -1663,7 +2167,7 @@
     Push ${L_MINUTES}
     Push ${L_SECONDS}
 
-    Call ${UN}GetLocalTime
+    Call ${UN}PFI_GetLocalTime
     Pop ${L_YEAR}
     Pop ${L_MONTH}
     Pop ${L_DAY}              ; ignore day of week
@@ -1754,29 +2258,29 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | MSGCAPTURE | PFIDIAG | RESTORE | TRANSLATOR_AUW
+!ifndef RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
-    # Installer Function: GetDateTimeStamp
+    # Installer Function: PFI_GetDateTimeStamp
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetDateTimeStamp ""
+    !insertmacro PFI_GetDateTimeStamp ""
 !endif
 
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.GetDateTimeStamp
+    # Uninstaller Function: un.PFI_GetDateTimeStamp
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetDateTimeStamp "un."
+    !insertmacro PFI_GetDateTimeStamp "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: GetFileSize
+# Macro: PFI_GetFileSize
 #
 # The installation process and the uninstall process may need a function which gets the
 # size (in bytes) of a particular file. This macro makes maintenance easier by ensuring
@@ -1785,9 +2289,9 @@
 # If the specified file is not found, the function returns -1
 #
 # NOTE:
-# The !insertmacro GetFileSize "" and !insertmacro GetFileSize "un." commands are included
+# The !insertmacro PFI_GetFileSize "" and !insertmacro PFI_GetFileSize "un." commands are included
 # in this file so the NSIS script and/or other library functions in 'pfi-library.nsh' can use
-# 'Call GetFileSize' and 'Call un.GetFileSize' without additional preparation.
+# 'Call PFI_GetFileSize' and 'Call un.PFI_GetFileSize' without additional preparation.
 #
 # Inputs:
 #         (top of stack)     - filename of file to be checked
@@ -1799,15 +2303,15 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "corpus\spam\table"
-#         Call GetFileSize
+#         Call PFI_GetFileSize
 #         Pop $R0
 #
 #         ($R0 now holds the size (in bytes) of the 'spam' bucket's 'table' file)
 #
 #--------------------------------------------------------------------------
 
-!macro GetFileSize UN
-    Function ${UN}GetFileSize
+!macro PFI_GetFileSize UN
+    Function ${UN}PFI_GetFileSize
 
       !define L_FILENAME  $R9
       !define L_RESULT    $R8
@@ -1844,27 +2348,27 @@
 
 !ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE | STOP_POPFILE
     #--------------------------------------------------------------------------
-    # Installer Function: GetFileSize
+    # Installer Function: PFI_GetFileSize
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetFileSize ""
+    !insertmacro PFI_GetFileSize ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.GetFileSize
+    # Uninstaller Function: un.PFI_GetFileSize
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetFileSize "un."
+    !insertmacro PFI_GetFileSize "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: GetLocalTime
+# Macro: PFI_GetLocalTime
 #
 # The installation process and the uninstall process may need a function which gets the
 # local time from Windows (to generate data and/or time stamps, etc). This macro makes
@@ -1874,9 +2378,9 @@
 # Normally this function will be used by a higher level one which returns a suitable string.
 #
 # NOTE:
-# The !insertmacro GetLocalTime "" and !insertmacro GetLocalTime "un." commands are included
+# The !insertmacro PFI_GetLocalTime "" and !insertmacro PFI_GetLocalTime "un." commands are included
 # in this file so the NSIS script and/or other library functions in 'pfi-library.nsh' can use
-# 'Call GetLocalTime' and 'Call un.GetLocalTime' without additional preparation.
+# 'Call PFI_GetLocalTime' and 'Call un.PFI_GetLocalTime' without additional preparation.
 #
 # Inputs:
 #         (none)
@@ -1892,7 +2396,7 @@
 #
 # Usage (after macro has been 'inserted'):
 #
-#         Call GetLocalTime
+#         Call PFI_GetLocalTime
 #         Pop $Year
 #         Pop $Month
 #         Pop $DayOfWeek
@@ -1903,8 +2407,8 @@
 #         Pop $Milliseconds
 #--------------------------------------------------------------------------
 
-!macro GetLocalTime UN
-  Function ${UN}GetLocalTime
+!macro PFI_GetLocalTime UN
+  Function ${UN}PFI_GetLocalTime
 
     # Preparing Variables
 
@@ -1951,29 +2455,29 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | MSGCAPTURE | PFIDIAG | RESTORE | TRANSLATOR_AUW
+!ifndef RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
-    # Installer Function: GetLocalTime
+    # Installer Function: PFI_GetLocalTime
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetLocalTime ""
+    !insertmacro PFI_GetLocalTime ""
 !endif
 
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.GetLocalTime
+    # Uninstaller Function: un.PFI_GetLocalTime
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetLocalTime "un."
+    !insertmacro PFI_GetLocalTime "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: GetMessagesPath
+# Macro: PFI_GetMessagesPath
 #
 # The installation process and the uninstall process may need a function which finds the full
 # path for the folder used to store the message history if a copy of 'popfile.cfg' is found in
@@ -1994,9 +2498,9 @@
 # otherwise we assume the default location is to be used (the sub-folder called 'messages').
 #
 # NOTE:
-# The !insertmacro GetMessagesPath "" and !insertmacro GetMessagesPath "un." commands are
-# included in this file so the NSIS script can use 'Call GetMessagesPath' and
-# 'Call un.GetMessagesPath' without additional preparation.
+# The !insertmacro PFI_GetMessagesPath "" and !insertmacro PFI_GetMessagesPath "un." commands are
+# included in this file so the NSIS script can use 'Call PFI_GetMessagesPath' and
+# 'Call un.PFI_GetMessagesPath' without additional preparation.
 #
 # Inputs:
 #         (top of stack)          - the path where 'popfile.cfg' is to be found
@@ -2007,15 +2511,15 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push $G_USERDIR
-#         Call un.GetMessagesPath
+#         Call un.PFI_GetMessagesPath
 #         Pop $R0
 #
 #         ($R0 will be "C:\Program Files\POPFile\messages" if this is an upgraded installation
 #          which used the default location)
 #--------------------------------------------------------------------------
 
-!macro GetMessagesPath UN
-  Function ${UN}GetMessagesPath
+!macro PFI_GetMessagesPath UN
+  Function ${UN}PFI_GetMessagesPath
 
     !define L_FILE_HANDLE   $R9
     !define L_MSG_HISTORY   $R8
@@ -2071,7 +2575,7 @@
   cfg_file_done:
     FileClose ${L_FILE_HANDLE}
     Push ${L_MSG_HISTORY}
-    Call ${UN}TrimNewlines
+    Call ${UN}PFI_TrimNewlines
     Pop ${L_MSG_HISTORY}
     StrCmp ${L_MSG_HISTORY} "" use_default_locn use_cfg_data
 
@@ -2082,7 +2586,7 @@
   use_cfg_data:
     Push ${L_SOURCE}
     Push ${L_MSG_HISTORY}
-    Call ${UN}GetDataPath
+    Call ${UN}PFI_GetDataPath
     Pop ${L_RESULT}
 
   got_result:
@@ -2105,27 +2609,27 @@
 
 ;;!ifdef ADDUSER
 ;;    #--------------------------------------------------------------------------
-;;    # Installer Function: GetMessagesPath
+;;    # Installer Function: PFI_GetMessagesPath
 ;;    #
 ;;    # This function is used during the installation process
 ;;    #--------------------------------------------------------------------------
 ;;
-;;    !insertmacro GetMessagesPath ""
+;;    !insertmacro PFI_GetMessagesPath ""
 ;;!endif
 ;;
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.GetMessagesPath
+    # Uninstaller Function: un.PFI_GetMessagesPath
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetMessagesPath "un."
+    !insertmacro PFI_GetMessagesPath "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: GetParent
+# Macro: PFI_GetParent
 #
 # The installation process and the uninstall process may both use a function which extracts the
 # parent directory from a given path. This macro makes maintenance easier by ensuring that both
@@ -2134,8 +2638,8 @@
 # NB: The path is assumed to use backslashes (\)
 #
 # NOTE:
-# The !insertmacro GetParent "" and !insertmacro GetParent "un." commands are included
-# in this file so the NSIS script can use 'Call GetParent' and 'Call un.GetParent'
+# The !insertmacro PFI_GetParent "" and !insertmacro PFI_GetParent "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_GetParent' and 'Call un.PFI_GetParent'
 # without additional preparation.
 #
 # Inputs:
@@ -2147,15 +2651,15 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "C:\Program Files\Directory\Whatever"
-#         Call un.GetParent
+#         Call un.PFI_GetParent
 #         Pop $R0
 #
 #         ($R0 at this point is ""C:\Program Files\Directory")
 #
 #--------------------------------------------------------------------------
 
-!macro GetParent UN
-  Function ${UN}GetParent
+!macro PFI_GetParent UN
+  Function ${UN}PFI_GetParent
     Exch $R0
     Push $R1
     Push $R2
@@ -2181,29 +2685,29 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
-    # Installer Function: GetParent
+    # Installer Function: PFI_GetParent
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetParent ""
+    !insertmacro PFI_GetParent ""
 !endif
 
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.GetParent
+    # Uninstaller Function: un.PFI_GetParent
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetParent "un."
+    !insertmacro PFI_GetParent "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: GetPOPFileSchemaVersion
+# Macro: PFI_GetPOPFileSchemaVersion
 #
 # The installation process and the uninstall process may both need a function which determines
 # the Database Schema version used by POPFile. POPFile compares this value with the value stored
@@ -2214,9 +2718,9 @@
 # by ensuring both processes use identical functions with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro GetPOPFileSchemaVersion "" and !insertmacro GetPOPFileSchemaVersion "un."
-# commands are included in this file so the NSIS script can use 'Call GetPOPFileSchemaVersion'
-# and 'Call un.GetPOPFileSchemaVersion' without additional preparation.
+# The !insertmacro PFI_GetPOPFileSchemaVersion "" and !insertmacro PFI_GetPOPFileSchemaVersion "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_GetPOPFileSchemaVersion'
+# and 'Call un.PFI_GetPOPFileSchemaVersion' without additional preparation.
 #
 # Inputs:
 #         (top of stack)     - full pathname of the file containing POPFile's database schema
@@ -2236,14 +2740,14 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "C:\Program Files\POPFile\Classifier\popfile.sql"
-#         Call GetPOPFileSchemaVersion
+#         Call PFI_GetPOPFileSchemaVersion
 #         Pop $R0
 #
 #         ($R0 will be "3" if the first line of the popfile.sql file is "-- POPFILE SCHEMA 3")
 #--------------------------------------------------------------------------
 
-!macro GetPOPFileSchemaVersion UN
-  Function ${UN}GetPOPFileSchemaVersion
+!macro PFI_GetPOPFileSchemaVersion UN
+  Function ${UN}PFI_GetPOPFileSchemaVersion
 
     !define L_FILENAME   $R9  ; pathname of the POPFile schema file
     !define L_HANDLE     $R8  ; used to access the schema file
@@ -2266,7 +2770,7 @@
 
     StrCmp ${L_RESULT} "" error_exit
     Push ${L_RESULT}
-    Call ${UN}TrimNewlines
+    Call ${UN}PFI_TrimNewlines
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" error_exit
 
@@ -2307,25 +2811,25 @@
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Installer Function: GetPOPFileSchemaVersion
+    # Installer Function: PFI_GetPOPFileSchemaVersion
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetPOPFileSchemaVersion ""
+    !insertmacro PFI_GetPOPFileSchemaVersion ""
 !endif
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.GetPOPFileSchemaVersion
+# Uninstaller Function: un.PFI_GetPOPFileSchemaVersion
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetPOPFileSchemaVersion "un."
+;!insertmacro PFI_GetPOPFileSchemaVersion "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: GetSQLdbPathName
+# Macro: PFI_GetSQLdbPathName
 #
 # The installation process and the uninstall process may both need a function which finds the
 # full path (including the filename) for the SQLite database file. This macro makes maintenance
@@ -2339,9 +2843,9 @@
 # "Not SQLite"
 #
 # NOTE:
-# The !insertmacro GetSQLdbPathName "" and !insertmacro GetSQLdbPathName "un." commands
-# are included in this file so the NSIS script can use 'Call GetSQLdbPathName' and
-# 'Call un.GetSQLdbPathName' without additional preparation.
+# The !insertmacro PFI_GetSQLdbPathName "" and !insertmacro PFI_GetSQLdbPathName "un." commands
+# are included in this file so the NSIS script can use 'Call PFI_GetSQLdbPathName' and
+# 'Call un.PFI_GetSQLdbPathName' without additional preparation.
 #
 # Inputs:
 #         (top of stack)          - the path where 'popfile.cfg' is to be found
@@ -2354,15 +2858,15 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push $G_USERDIR
-#         Call un.GetSQLdbPathName
+#         Call un.PFI_GetSQLdbPathName
 #         Pop $R0
 #
 #         ($R0 will be "C:\Program Files\POPFile\popfile.db" if this is an upgraded version of
 #          a pre-0.21.0 installation using the default location)
 #--------------------------------------------------------------------------
 
-!macro GetSQLdbPathName UN
-  Function ${UN}GetSQLdbPathName
+!macro PFI_GetSQLdbPathName UN
+  Function ${UN}PFI_GetSQLdbPathName
 
     !define L_FILE_HANDLE   $R9
     !define L_RESULT        $R8
@@ -2382,6 +2886,7 @@
     Push ${L_TEXTEND}
 
     StrCpy ${L_SQL_CORPUS} ""
+    StrCpy ${L_SQL_CONNECT} ""
 
     IfFileExists "${L_SOURCE}\popfile.cfg" 0 no_sql_set
 
@@ -2396,18 +2901,31 @@
     StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
     StrCmp ${L_TEMP} "$\n" loop
 
+    StrCpy ${L_RESULT} ${L_TEMP} 18
+    StrCmp ${L_RESULT} "database_database " got_sql_corpus
+    StrCpy ${L_RESULT} ${L_TEMP} 19
+    StrCmp ${L_RESULT} "database_dbconnect " got_sql_connect
+
     StrCpy ${L_RESULT} ${L_TEMP} 15
-    StrCmp ${L_RESULT} "bayes_database " got_sql_corpus
+    StrCmp ${L_RESULT} "bayes_database " got_sql_old_corpus
     StrCpy ${L_RESULT} ${L_TEMP} 16
-    StrCmp ${L_RESULT} "bayes_dbconnect " got_sql_connect
+    StrCmp ${L_RESULT} "bayes_dbconnect " got_sql_old_connect
     Goto check_eol
 
-  got_sql_corpus:
+  got_sql_old_corpus:
     StrCpy ${L_SQL_CORPUS} ${L_TEMP} "" 15
     Goto check_eol
 
-  got_sql_connect:
+  got_sql_old_connect:
     StrCpy ${L_SQL_CONNECT} ${L_TEMP} "" 16
+    Goto check_eol
+
+  got_sql_corpus:
+    StrCpy ${L_SQL_CORPUS} ${L_TEMP} "" 18
+    Goto check_eol
+
+  got_sql_connect:
+    StrCpy ${L_SQL_CONNECT} ${L_TEMP} "" 19
 
     ; Now read file until we get to end of the current line
     ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
@@ -2424,14 +2942,14 @@
     ; is using an alternative SQL database (such as MySQL) so there is no SQLite database
 
     Push ${L_SQL_CONNECT}
-    Call ${UN}TrimNewlines
+    Call ${UN}PFI_TrimNewlines
     Pop ${L_SQL_CONNECT}
     StrCmp ${L_SQL_CONNECT} "" no_sql_set
     StrCpy ${L_SQL_CONNECT} ${L_SQL_CONNECT} 10
     StrCmp ${L_SQL_CONNECT} "dbi:SQLite" 0 not_sqlite
 
     Push ${L_SQL_CORPUS}
-    Call ${UN}TrimNewlines
+    Call ${UN}PFI_TrimNewlines
     Pop ${L_SQL_CORPUS}
     StrCmp ${L_SQL_CORPUS} "" no_sql_set use_cfg_data
 
@@ -2446,7 +2964,7 @@
   use_cfg_data:
     Push ${L_SOURCE}
     Push ${L_SQL_CORPUS}
-    Call ${UN}GetDataPath
+    Call ${UN}PFI_GetDataPath
     Pop ${L_RESULT}
 
   got_result:
@@ -2469,27 +2987,27 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER
+!ifdef ADDUSER | DBSTATUS
     #--------------------------------------------------------------------------
-    # Installer Function: GetSQLdbPathName
+    # Installer Function: PFI_GetSQLdbPathName
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetSQLdbPathName ""
+    !insertmacro PFI_GetSQLdbPathName ""
 !endif
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.GetSQLdbPathName
+# Uninstaller Function: un.PFI_GetSQLdbPathName
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetSQLdbPathName "un."
+;!insertmacro PFI_GetSQLdbPathName "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: GetSQLiteFormat
+# Macro: PFI_GetSQLiteFormat
 #
 # The installation process and the uninstall process may both need a function which determines
 # the format of the SQLite database. SQLite 2.x and 3.x databases use incompatible formats and
@@ -2498,9 +3016,9 @@
 # with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro GetSQLiteFormat "" and !insertmacro GetSQLiteFormat "un." commands
-# are included in this file so the NSIS script can use 'Call GetSQLiteFormat' and
-# 'Call un.GetSQLiteFormat' without additional preparation.
+# The !insertmacro PFI_GetSQLiteFormat "" and !insertmacro PFI_GetSQLiteFormat "un." commands
+# are included in this file so the NSIS script can use 'Call PFI_GetSQLiteFormat' and
+# 'Call un.PFI_GetSQLiteFormat' without additional preparation.
 #
 # Inputs:
 #         (top of stack)     - SQLite database filename (may include the path)
@@ -2517,14 +3035,14 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "popfile.db"
-#         Call GetSQLiteFormat
+#         Call PFI_GetSQLiteFormat
 #         Pop $R0
 #
 #         ($R0 will be "2.x" if the popfile.db file belongs to POPFile 0.21.0)
 #--------------------------------------------------------------------------
 
-!macro GetSQLiteFormat UN
-  Function ${UN}GetSQLiteFormat
+!macro PFI_GetSQLiteFormat UN
+  Function ${UN}PFI_GetSQLiteFormat
 
     !define L_BYTE       $R9  ; byte read from the database file
     !define L_COUNTER    $R8  ; expect a null-terminated string, but use a length limit as well
@@ -2591,27 +3109,27 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | RUNSQLITE | RESTORE
+!ifdef ADDUSER | BACKUP | DBSTATUS | RUNSQLITE | RESTORE
     #--------------------------------------------------------------------------
-    # Installer Function: GetSQLiteFormat
+    # Installer Function: PFI_GetSQLiteFormat
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetSQLiteFormat ""
+    !insertmacro PFI_GetSQLiteFormat ""
 !endif
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.GetSQLiteFormat
+# Uninstaller Function: un.PFI_GetSQLiteFormat
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetSQLiteFormat "un."
+;!insertmacro PFI_GetSQLiteFormat "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: GetSQLiteSchemaVersion
+# Macro: PFI_GetSQLiteSchemaVersion
 #
 # The installation process and the uninstall process may both need a function which determines
 # the POPFile Schema version used by the SQLite database. POPFile uses this data to determine
@@ -2622,9 +3140,9 @@
 # identical functions, with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro GetSQLiteSchemaVersion "" and !insertmacro GetSQLiteSchemaVersion "un."
-# commands are included in this file so the NSIS script can use 'Call GetSQLiteSchemaVersion'
-# and 'Call un.GetSQLiteSchemaVersion' without additional preparation.
+# The !insertmacro PFI_GetSQLiteSchemaVersion "" and !insertmacro PFI_GetSQLiteSchemaVersion "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_GetSQLiteSchemaVersion'
+# and 'Call un.PFI_GetSQLiteSchemaVersion' without additional preparation.
 #
 # Inputs:
 #         (top of stack)     - SQLite database filename (may include the path)
@@ -2642,90 +3160,42 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "popfile.db"
-#         Call GetSQLiteSchemaVersion
+#         Call PFI_GetSQLiteSchemaVersion
 #         Pop $R0
 #
 #         ($R0 will be "3" if the popfile.db database uses POPFile Schema version 3)
 #--------------------------------------------------------------------------
 
-!macro GetSQLiteSchemaVersion UN
-  Function ${UN}GetSQLiteSchemaVersion
+!macro PFI_GetSQLiteSchemaVersion UN
+  Function ${UN}PFI_GetSQLiteSchemaVersion
 
-    !define L_DATABASE    $R9   ; name of the SQLite database file
-    !define L_RESULT      $R8   ; string returned on top of the stack
-    !define L_SQLITEPATH  $R7   ; path to sqlite.exe utility
-    !define L_SQLITEUTIL  $R6   ; used to run relevant SQLite utility
-    !define L_STATUS      $R5   ; status code returned by SQLite utility
-
-    Exch ${L_DATABASE}
-    Push ${L_RESULT}
-    Exch
-    Push ${L_SQLITEPATH}
-    Push ${L_SQLITEUTIL}
-    Push ${L_STATUS}
-
-    Push ${L_DATABASE}
-    Call ${UN}GetSQLiteFormat
-    Pop ${L_RESULT}
-    StrCpy ${L_SQLITEUTIL} "sqlite.exe"
-    StrCmp ${L_RESULT} "2.x" look_for_sqlite
-    StrCpy ${L_SQLITEUTIL} "sqlite3.exe"
-    StrCmp ${L_RESULT} "3.x" look_for_sqlite
-    Goto exit
-
-  look_for_sqlite:
-    StrCpy ${L_SQLITEPATH} "$EXEDIR"
-    IfFileExists "${L_SQLITEPATH}\${L_SQLITEUTIL}" run_sqlite
-    StrCpy ${L_SQLITEPATH} "$PLUGINSDIR"
-    IfFileExists "${L_SQLITEPATH}\${L_SQLITEUTIL}" run_sqlite
-    StrCpy ${L_RESULT} "(cannot find '${L_SQLITEUTIL}' in '$EXEDIR' or '$PLUGINSDIR')"
-    Goto exit
-
-  run_sqlite:
-    nsExec::ExecToStack '"${L_SQLITEPATH}\${L_SQLITEUTIL}" "${L_DATABASE}" "select version from popfile;"'
-    Pop ${L_STATUS}
-    Call ${UN}TrimNewlines
-    Pop ${L_RESULT}
-    StrCmp ${L_STATUS} "0" exit
-    StrCpy ${L_RESULT} "(${L_RESULT})"
-
-  exit:
-    Pop ${L_STATUS}
-    Pop ${L_SQLITEUTIL}
-    Pop ${L_SQLITEPATH}
-    Pop ${L_DATABASE}
-    Exch ${L_RESULT}
-
-    !undef L_DATABASE
-    !undef L_RESULT
-    !undef L_SQLITEPATH
-    !undef L_SQLITEUTIL
-    !undef L_STATUS
+    Push "select version from popfile;"
+    Call ${UN}PFI_RunSQLiteCommand
 
   FunctionEnd
 !macroend
 
 !ifdef ADDUSER | BACKUP | RESTORE
     #--------------------------------------------------------------------------
-    # Installer Function: GetSQLiteSchemaVersion
+    # Installer Function: PFI_GetSQLiteSchemaVersion
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro GetSQLiteSchemaVersion ""
+    !insertmacro PFI_GetSQLiteSchemaVersion ""
 !endif
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.GetSQLiteSchemaVersion
+# Uninstaller Function: un.PFI_GetSQLiteSchemaVersion
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetSQLiteSchemaVersion "un."
+;!insertmacro PFI_GetSQLiteSchemaVersion "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: GetTimeStamp
+# Macro: PFI_GetTimeStamp
 #
 # The installation process and the uninstall process may need a function which uses the
 # local time from Windows to generate a time stamp (eg '01:23:45'). This macro makes
@@ -2733,9 +3203,9 @@
 # the only difference being their names.
 #
 # NOTE:
-# The !insertmacro GetTimeStamp "" and !insertmacro GetTimeStamp "un." commands are included
+# The !insertmacro PFI_GetTimeStamp "" and !insertmacro PFI_GetTimeStamp "un." commands are included
 # in this file so the NSIS script and/or other library functions in 'pfi-library.nsh' can use
-# 'Call GetTimeStamp' and 'Call un.GetTimeStamp' without additional preparation.
+# 'Call PFI_GetTimeStamp' and 'Call un.PFI_GetTimeStamp' without additional preparation.
 #
 # Inputs:
 #         (none)
@@ -2744,14 +3214,14 @@
 #
 # Usage (after macro has been 'inserted'):
 #
-#         Call GetTimeStamp
+#         Call PFI_GetTimeStamp
 #         Pop $R9
 #
 #         ($R9 now holds a string like '23:01:59')
 #--------------------------------------------------------------------------
 
-!macro GetTimeStamp UN
-  Function ${UN}GetTimeStamp
+!macro PFI_GetTimeStamp UN
+  Function ${UN}PFI_GetTimeStamp
 
     !define L_TIMESTAMP   $R9
     !define L_HOURS       $R8
@@ -2763,7 +3233,7 @@
     Push ${L_MINUTES}
     Push ${L_SECONDS}
 
-    Call ${UN}GetLocalTIme
+    Call ${UN}PFI_GetLocalTIme
     Pop ${L_TIMESTAMP}    ; ignore year
     Pop ${L_TIMESTAMP}    ; ignore month
     Pop ${L_TIMESTAMP}    ; ignore day of week
@@ -2798,24 +3268,24 @@
 !macroend
 
 #--------------------------------------------------------------------------
-# Installer Function: GetTimeStamp
+# Installer Function: PFI_GetTimeStamp
 #
 # This function is used during the installation process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetTimeStamp ""
+;!insertmacro PFI_GetTimeStamp ""
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.GetTimeStamp
+# Uninstaller Function: un.PFI_GetTimeStamp
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro GetTimeStamp "un."
+;!insertmacro PFI_GetTimeStamp "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: RequestPFIUtilsShutdown
+# Macro: PFI_RequestPFIUtilsShutdown
 #
 # The installation process and the uninstall process may both need a function which checks if
 # any of the POPFile Installer (PFI) utilities is in use and asks the user to shut them down.
@@ -2823,9 +3293,9 @@
 # with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro RequestPFIUtilsShutdown "" and !insertmacro RequestPFIUtilsShutdown "un."
-# commands are included in this file so the NSIS script can use 'Call RequestPFIUtilsShutdown'
-# and 'Call un.RequestPFIUtilsShutdown' without additional preparation.
+# The !insertmacro PFI_RequestPFIUtilsShutdown "" and !insertmacro PFI_RequestPFIUtilsShutdown "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_RequestPFIUtilsShutdown'
+# and 'Call un.PFI_RequestPFIUtilsShutdown' without additional preparation.
 #
 # Inputs:
 #         (top of stack)   - the path where the PFI Utilities can be found
@@ -2836,12 +3306,12 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "C:\Program Files\POPFile"
-#         Call RequestPFIUtilsShutdown
+#         Call PFI_RequestPFIUtilsShutdown
 #
 #--------------------------------------------------------------------------
 
-!macro RequestPFIUtilsShutdown UN
-  Function ${UN}RequestPFIUtilsShutdown
+!macro PFI_RequestPFIUtilsShutdown UN
+  Function ${UN}PFI_RequestPFIUtilsShutdown
     !define L_PATH          $R9    ; full path to the PFI utilities which are to be checked
     !define L_RESULT        $R8    ; either the full path to a locked file or an empty string
 
@@ -2861,7 +3331,7 @@
 
     DetailPrint "Checking '${L_PATH}\pfimsgcapture.exe' ..."
     Push "${L_PATH}\pfimsgcapture.exe"
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" pfi_util_a
     StrCpy $G_PLS_FIELD_1 "POPFile Message Capture Utility"
@@ -2879,7 +3349,7 @@
   pfi_util_a:
     DetailPrint "Checking '${L_PATH}\msgcapture.exe' ..."
     Push "${L_PATH}\msgcapture.exe"
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" pfi_util_b
     StrCpy $G_PLS_FIELD_1 "POPFile Message Capture Utility"
@@ -2897,7 +3367,7 @@
   pfi_util_b:
     DetailPrint "Checking '${L_PATH}\stop_pf.exe' ..."
     Push "${L_PATH}\stop_pf.exe"
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" pfi_util_c
     StrCpy $G_PLS_FIELD_1 "POPFile Silent Shutdown Utility"
@@ -2915,7 +3385,7 @@
   pfi_util_c:
     DetailPrint "Checking '${L_PATH}\pfidiag.exe' ..."
     Push "${L_PATH}\pfidiag.exe"
-    Call ${UN}CheckIfLocked
+    Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" exit
     StrCpy $G_PLS_FIELD_1 "PFI Diagnostic Utility"
@@ -2941,27 +3411,139 @@
 
 !ifdef INSTALLER
     #--------------------------------------------------------------------------
-    # Installer Function: RequestPFIUtilsShutdown
+    # Installer Function: PFI_RequestPFIUtilsShutdown
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro RequestPFIUtilsShutdown ""
+    !insertmacro PFI_RequestPFIUtilsShutdown ""
 !endif
 
 !ifdef INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.RequestPFIUtilsShutdown
+    # Uninstaller Function: un.PFI_RequestPFIUtilsShutdown
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro RequestPFIUtilsShutdown "un."
+    !insertmacro PFI_RequestPFIUtilsShutdown "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: ServiceCall
+# Macro: PFI_RunSQLiteCommand
+#
+# The installation process and the uninstall process may both need a function which uses the
+# SQLite command-line utility to run a single command, such as an integrity check. This macro
+# makes maintenance easier by ensuring that both processes use identical functions, with the
+# only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_RunSQLiteCommand "" and !insertmacro PFI_RunSQLiteCommand "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_RunSQLiteCommand'
+# and 'Call un.PFI_RunSQLiteCommand' without additional preparation.
+#
+# Inputs:
+#         (top of stack)     - the command to be passed to the SQLite command-line utility
+#         (top of stack - 1) - full pathname of the SQLite database file
+#
+# Outputs:
+#         (top of stack)     - the result string returned by the SQLite command-line utility
+#                              If the result is enclosed in parentheses then an error occurred.
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "popfile.db"
+#         Push "pragma integrity_check;"
+#         Call PFI_RunSQLiteCommand
+#         Pop $R0
+#
+#         ($R0 will be "ok" if the popfile.db file passes the integrity check)
+#--------------------------------------------------------------------------
+
+!macro PFI_RunSQLiteCommand UN
+  Function ${UN}PFI_RunSQLiteCommand
+
+    !define L_COMMAND     $R9   ; the command to be run by the SQLite command-line utility
+    !define L_DATABASE    $R8   ; name of the SQLite database file
+    !define L_RESULT      $R7   ; string returned on top of the stack
+    !define L_SQLITEPATH  $R6   ; path to sqlite.exe utility
+    !define L_SQLITEUTIL  $R5   ; used to run relevant SQLite utility
+    !define L_STATUS      $R4   ; status code returned by SQLite utility
+
+    Exch ${L_COMMAND}
+    Exch
+    Exch ${L_DATABASE}
+    Push ${L_RESULT}
+    Exch 2
+    Push ${L_SQLITEPATH}
+    Push ${L_SQLITEUTIL}
+    Push ${L_STATUS}
+
+    Push ${L_DATABASE}
+    Call ${UN}PFI_GetSQLiteFormat
+    Pop ${L_RESULT}
+    StrCpy ${L_SQLITEUTIL} "sqlite.exe"
+    StrCmp ${L_RESULT} "2.x" look_for_sqlite
+    StrCpy ${L_SQLITEUTIL} "sqlite3.exe"
+    StrCmp ${L_RESULT} "3.x" look_for_sqlite
+    Goto exit
+
+  look_for_sqlite:
+    StrCpy ${L_SQLITEPATH} "$EXEDIR"
+    IfFileExists "${L_SQLITEPATH}\${L_SQLITEUTIL}" run_sqlite
+    StrCpy ${L_SQLITEPATH} "$PLUGINSDIR"
+    IfFileExists "${L_SQLITEPATH}\${L_SQLITEUTIL}" run_sqlite
+    StrCpy ${L_RESULT} "(cannot find '${L_SQLITEUTIL}' in '$EXEDIR' or '$PLUGINSDIR')"
+    Goto exit
+
+  run_sqlite:
+    nsExec::ExecToStack '"${L_SQLITEPATH}\${L_SQLITEUTIL}" "${L_DATABASE}" "${L_COMMAND}"'
+    Pop ${L_STATUS}
+    Call ${UN}PFI_TrimNewlines
+    Pop ${L_RESULT}
+    StrCmp ${L_STATUS} "0" exit
+    StrCpy ${L_RESULT} "(${L_RESULT})"
+
+  exit:
+    Pop ${L_STATUS}
+    Pop ${L_SQLITEUTIL}
+    Pop ${L_SQLITEPATH}
+    Pop ${L_COMMAND}
+    Pop ${L_DATABASE}
+    Exch ${L_RESULT}
+
+    !undef L_COMMAND
+    !undef L_DATABASE
+    !undef L_RESULT
+    !undef L_SQLITEPATH
+    !undef L_SQLITEUTIL
+    !undef L_STATUS
+
+  FunctionEnd
+!macroend
+
+!ifdef ADDUSER | BACKUP | RESTORE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_RunSQLiteCommand
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_RunSQLiteCommand ""
+!endif
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.PFI_RunSQLiteCommand
+#
+# This function is used during the uninstall process
+#--------------------------------------------------------------------------
+
+;!insertmacro PFI_RunSQLiteCommand "un."
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_ServiceCall
 #
 # The installation process and the uninstall process may both need a function which interfaces
 # with the Windows Service Control Manager (SCM).  This macro makes maintenance easier by
@@ -2971,8 +3553,8 @@
 # NOTE: This version only supports a subset of the available Service Control Manager actions.
 #
 # NOTE:
-# The !insertmacro ServiceCall "" and !insertmacro ServiceCall "un." commands are included
-# in this file so the NSIS script can use 'Call ServiceCall' and 'Call un.ServiceCall'
+# The !insertmacro PFI_ServiceCall "" and !insertmacro PFI_ServiceCall "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_ServiceCall' and 'Call un.PFI_ServiceCall'
 # without additional preparation.
 #
 # Inputs:
@@ -3006,14 +3588,14 @@
 #
 #         Push "status"
 #         Push "POPFile"
-#         Call un.ServiceCall
+#         Call un.PFI_ServiceCall
 #         Pop $R0
 #
 #         (if $R0 at this point is "running" then POPFile is running as a Windows service)
 #
 #--------------------------------------------------------------------------
 
-!macro ServiceCall UN
+!macro PFI_ServiceCall UN
 
   !ifndef PFI_SERVICE_DEFINES
       !define PFI_SERVICE_DEFINES
@@ -3030,7 +3612,7 @@
       !define SERVICE_PAUSED            0x7
   !endif
 
-  Function ${UN}ServiceCall
+  Function ${UN}PFI_ServiceCall
 
     Push $0   ; used to return the result
     Push $2
@@ -3113,35 +3695,35 @@
 
 !ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
     #--------------------------------------------------------------------------
-    # Installer Function: ServiceCall
+    # Installer Function: PFI_ServiceCall
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro ServiceCall ""
+    !insertmacro PFI_ServiceCall ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.ServiceCall
+    # Uninstaller Function: un.PFI_ServiceCall
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro ServiceCall "un."
+    !insertmacro PFI_ServiceCall "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: ServiceRunning
+# Macro: PFI_ServiceRunning
 #
 # The installation process and the uninstall process may both need a function which checks
 # if a particular Windows service is running. This macro makes maintenance easier by ensuring
 # that both processes use identical functions, with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro ServiceRunning "" and !insertmacro ServiceRunning "un." commands are included
-# in this file so the NSIS script can use 'Call ServiceRunning' and 'Call un.ServiceRunning'
+# The !insertmacro PFI_ServiceRunning "" and !insertmacro PFI_ServiceRunning "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_ServiceRunning' and 'Call un.PFI_ServiceRunning'
 # without additional preparation.
 #
 # Inputs:
@@ -3155,15 +3737,15 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "POPFile"
-#         Call ServiceRunning
+#         Call PFI_ServiceRunning
 #         Pop $R0
 #
 #         (if $R0 at this point is "true" then POPFile is running as a Windows service)
 #
 #--------------------------------------------------------------------------
 
-!macro ServiceRunning UN
-  Function ${UN}ServiceRunning
+!macro PFI_ServiceRunning UN
+  Function ${UN}PFI_ServiceRunning
 
     !define L_RESULT    $R9
 
@@ -3171,7 +3753,7 @@
     Exch
     Push "status"
     Exch
-    Call ${UN}ServiceCall     ; uses 2 parameters from top of stack (top = servicename, action)
+    Call ${UN}PFI_ServiceCall     ; uses 2 parameters from top of stack (top = servicename, action)
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "running" 0 not_running
     StrCpy ${L_RESULT} "true"
@@ -3190,35 +3772,35 @@
 
 !ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
     #--------------------------------------------------------------------------
-    # Installer Function: ServiceRunning
+    # Installer Function: PFI_ServiceRunning
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro ServiceRunning ""
+    !insertmacro PFI_ServiceRunning ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.ServiceRunning
+    # Uninstaller Function: un.PFI_ServiceRunning
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro ServiceRunning "un."
+    !insertmacro PFI_ServiceRunning "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: ServiceStatus
+# Macro: PFI_ServiceStatus
 #
 # The installation process and the uninstall process may both need a function which checks
 # the status of a particular Windows Service. This macro makes maintenance easier by ensuring
 # that both processes use identical functions, with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro ServiceStatus "" and !insertmacro ServiceStatus "un." commands are included
-# in this file so the NSIS script can use 'Call ServiceStatus' and 'Call un.ServiceStatus'
+# The !insertmacro PFI_ServiceStatus "" and !insertmacro PFI_ServiceStatus "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_ServiceStatus' and 'Call un.PFI_ServiceStatus'
 # without additional preparation.
 #
 # Inputs:
@@ -3243,42 +3825,42 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "POPFile"
-#         Call ServiceStatus
+#         Call PFI_ServiceStatus
 #         Pop $R0
 #
 #         (if $R0 at this point is "running" then POPFile is running as a Windows service)
 #
 #--------------------------------------------------------------------------
 
-!macro ServiceStatus UN
-  Function ${UN}ServiceStatus
+!macro PFI_ServiceStatus UN
+  Function ${UN}PFI_ServiceStatus
 
     Push "status"            ; action required
     Exch                     ; top of stack = servicename, action required
-    Call ${UN}ServiceCall
+    Call ${UN}PFI_ServiceCall
 
   FunctionEnd
 !macroend
 
 #--------------------------------------------------------------------------
-# Installer Function: ServiceStatus
+# Installer Function: PFI_ServiceStatus
 #
 # This function is used during the installation process
 #--------------------------------------------------------------------------
 
-;!insertmacro ServiceStatus ""
+;!insertmacro PFI_ServiceStatus ""
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: un.ServiceStatus
+# Uninstaller Function: un.PFI_ServiceStatus
 #
 # This function is used during the uninstall process
 #--------------------------------------------------------------------------
 
-;!insertmacro ServiceStatus "un."
+;!insertmacro PFI_ServiceStatus "un."
 
 
 #--------------------------------------------------------------------------
-# Macro: ShutdownViaUI
+# Macro: PFI_ShutdownViaUI
 #
 # The installation process and the uninstall process may both use a function which attempts to
 # shutdown POPFile using the User Interface (UI) invisibly (i.e. no browser window is used).
@@ -3290,8 +3872,8 @@
 # As a debugging aid, we don't overwrite the first HTML file with the result of the second call.
 #
 # NOTE:
-# The !insertmacro ShutdownViaUI "" and !insertmacro ShutdownViaUI "un." commands are included
-# in this file so the NSIS script can use 'Call ShutdownViaUI' and 'Call un.ShutdownViaUI'
+# The !insertmacro PFI_ShutdownViaUI "" and !insertmacro PFI_ShutdownViaUI "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_ShutdownViaUI' and 'Call un.PFI_ShutdownViaUI'
 # without additional preparation.
 #
 # Inputs:
@@ -3311,15 +3893,15 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "8080"
-#         Call ShutdownViaUI
+#         Call PFI_ShutdownViaUI
 #         Pop $R0
 #
 #         (if $R0 at this point is "password?" then POPFile is still running)
 #
 #--------------------------------------------------------------------------
 
-!macro ShutdownViaUI UN
-  Function ${UN}ShutdownViaUI
+!macro PFI_ShutdownViaUI UN
+  Function ${UN}PFI_ShutdownViaUI
 
     ;--------------------------------------------------------------------------
     ; Override the default timeout for NSISdl requests (specifies timeout in milliseconds)
@@ -3340,7 +3922,7 @@
 
     StrCmp ${L_UIPORT} "" badport
     Push ${L_UIPORT}
-    Call ${UN}StrCheckDecimal
+    Call ${UN}PFI_StrCheckDecimal
     Pop ${L_UIPORT}
     StrCmp ${L_UIPORT} "" badport
     IntCmp ${L_UIPORT} 1 port_ok badport
@@ -3363,7 +3945,7 @@
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "success" 0 shutdown_ok
     Push "$PLUGINSDIR\shutdown_2.htm"
-    Call ${UN}GetFileSize
+    Call ${UN}PFI_GetFileSize
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} 0 shutdown_ok
     StrCpy ${L_RESULT} "password?"
@@ -3387,35 +3969,35 @@
 
 !ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
     #--------------------------------------------------------------------------
-    # Installer Function: ShutdownViaUI
+    # Installer Function: PFI_ShutdownViaUI
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro ShutdownViaUI ""
+    !insertmacro PFI_ShutdownViaUI ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.ShutdownViaUI
+    # Uninstaller Function: un.PFI_ShutdownViaUI
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro ShutdownViaUI "un."
+    !insertmacro PFI_ShutdownViaUI "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: StrBackSlash
+# Macro: PFI_StrBackSlash
 #
 # The installation process and the uninstall process may both use a function which converts all
 # slashes in a string into backslashes. This macro makes maintenance easier by ensuring that
 # both processes use identical functions, with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro StrBackSlash "" and !insertmacro StrBackSlash "un." commands are included
-# in this file so the NSIS script can use 'Call StrBackSlash' and 'Call un.StrBackSlash'
+# The !insertmacro PFI_StrBackSlash "" and !insertmacro PFI_StrBackSlash "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_StrBackSlash' and 'Call un.PFI_StrBackSlash'
 # without additional preparation.
 #
 # Inputs:
@@ -3427,15 +4009,15 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "C:/Program Files/Directory/Whatever"
-#         Call StrBackSlash
+#         Call PFI_StrBackSlash
 #         Pop $R0
 #
 #         ($R0 at this point is "C:\Program Files\Directory\Whatever")
 #
 #--------------------------------------------------------------------------
 
-!macro StrBackSlash UN
-  Function ${UN}StrBackSlash
+!macro PFI_StrBackSlash UN
+  Function ${UN}PFI_StrBackSlash
     Exch $R0    ; Input string with slashes
     Push $R1    ; Output string using backslashes
     Push $R2    ; Current character
@@ -3464,41 +4046,41 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
-    # Installer Function: StrBackSlash
+    # Installer Function: PFI_StrBackSlash
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro StrBackSlash ""
+    !insertmacro PFI_StrBackSlash ""
 !endif
 
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.StrBackSlash
+    # Uninstaller Function: un.PFI_StrBackSlash
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro StrBackSlash "un."
+    !insertmacro PFI_StrBackSlash "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: StrCheckDecimal
+# Macro: PFI_StrCheckDecimal
 #
 # The installation process and the uninstall process may both use a function which checks if
 # a given string contains a decimal number. This macro makes maintenance easier by ensuring
 # that both processes use identical functions, with the only difference being their names.
 #
-# The 'StrCheckDecimal' and 'un.StrCheckDecimal' functions check that a given string contains
+# The 'PFI_StrCheckDecimal' and 'un.PFI_StrCheckDecimal' functions check that a given string contains
 # only the digits 0 to 9. (if the string contains any invalid characters, "" is returned)
 #
 # NOTE:
-# The !insertmacro StrCheckDecimal "" and !insertmacro StrCheckDecimal "un." commands are
-# included in this file so the NSIS script can use 'Call StrCheckDecimal' and
-# 'Call un.StrCheckDecimal' without additional preparation.
+# The !insertmacro PFI_StrCheckDecimal "" and !insertmacro PFI_StrCheckDecimal "un." commands are
+# included in this file so the NSIS script can use 'Call PFI_StrCheckDecimal' and
+# 'Call un.PFI_StrCheckDecimal' without additional preparation.
 #
 # Inputs:
 #         (top of stack)   - string which may contain a decimal number
@@ -3509,14 +4091,14 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "12345"
-#         Call un.StrCheckDecimal
+#         Call un.PFI_StrCheckDecimal
 #         Pop $R0
 #         ($R0 at this point is "12345")
 #
 #--------------------------------------------------------------------------
 
-!macro StrCheckDecimal UN
-  Function ${UN}StrCheckDecimal
+!macro PFI_StrCheckDecimal UN
+  Function ${UN}PFI_StrCheckDecimal
 
     !define DECIMAL_DIGIT    "0123456789"
 
@@ -3561,37 +4143,37 @@
   FunctionEnd
 !macroend
 
-!ifndef PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
+!ifndef DBSTATUS & PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
     #--------------------------------------------------------------------------
-    # Installer Function: StrCheckDecimal
+    # Installer Function: PFI_StrCheckDecimal
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro StrCheckDecimal ""
+    !insertmacro PFI_StrCheckDecimal ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.StrCheckDecimal
+    # Uninstaller Function: un.PFI_StrCheckDecimal
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro StrCheckDecimal "un."
+    !insertmacro PFI_StrCheckDecimal "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: StrStr
+# Macro: PFI_StrStr
 #
 # The installation process and the uninstall process may both use a function which checks if
 # a given string appears inside another string. This macro makes maintenance easier by ensuring
 # that both processes use identical functions, with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro StrStr "" and !insertmacro StrStr "un." commands are included in this file
-# so the NSIS script can use 'Call StrStr' and 'Call un.StrStr' without additional preparation.
+# The !insertmacro PFI_StrStr "" and !insertmacro PFI_StrStr "un." commands are included in this file
+# so the NSIS script can use 'Call PFI_StrStr' and 'Call un.PFI_StrStr' without additional preparation.
 #
 # Search for matching string
 #
@@ -3605,14 +4187,14 @@
 #
 #         Push "this is a long string"
 #         Push "long"
-#         Call StrStr
+#         Call PFI_StrStr
 #         Pop $R0
 #         ($R0 at this point is "long string")
 #
 #--------------------------------------------------------------------------
 
-!macro StrStr UN
-  Function ${UN}StrStr
+!macro PFI_StrStr UN
+  Function ${UN}PFI_StrStr
 
     Exch $R1    ; Make $R1 the "needle", Top of stack = old$R1, haystack
     Exch        ; Top of stack = haystack, old$R1
@@ -3644,38 +4226,38 @@
   FunctionEnd
 !macroend
 
-!ifndef ADDSSL & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef ADDSSL & DBSTATUS & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
-    # Installer Function: StrStr
+    # Installer Function: PFI_StrStr
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro StrStr ""
+    !insertmacro PFI_StrStr ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.StrStr
+    # Uninstaller Function: un.PFI_StrStr
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro StrStr "un."
+    !insertmacro PFI_StrStr "un."
 !endif
 
 
 #--------------------------------------------------------------------------
-# Macro: TrimNewlines
+# Macro: PFI_TrimNewlines
 #
 # The installation process and the uninstall process may both use a function to trim newlines
 # from lines of text. This macro makes maintenance easier by ensuring that both processes use
 # identical functions, with the only difference being their names.
 #
 # NOTE:
-# The !insertmacro TrimNewlines "" and !insertmacro TrimNewlines "un." commands are
-# included in this file so the NSIS script can use 'Call TrimNewlines' and
-# 'Call un.TrimNewlines' without additional preparation.
+# The !insertmacro PFI_TrimNewlines "" and !insertmacro PFI_TrimNewlines "un." commands are
+# included in this file so the NSIS script can use 'Call PFI_TrimNewlines' and
+# 'Call un.PFI_TrimNewlines' without additional preparation.
 #
 # Inputs:
 #         (top of stack)   - string which may end with one or more newlines
@@ -3686,14 +4268,14 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "whatever$\r$\n"
-#         Call un.TrimNewlines
+#         Call un.PFI_TrimNewlines
 #         Pop $R0
 #         ($R0 at this point is "whatever")
 #
 #--------------------------------------------------------------------------
 
-!macro TrimNewlines UN
-  Function ${UN}TrimNewlines
+!macro PFI_TrimNewlines UN
+  Function ${UN}PFI_TrimNewlines
     Exch $R0
     Push $R1
     Push $R2
@@ -3715,28 +4297,28 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE | TRANSLATOR
+!ifndef MSGCAPTURE & PFIDIAG & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR_AUW
     #--------------------------------------------------------------------------
-    # Installer Function: TrimNewlines
+    # Installer Function: PFI_TrimNewlines
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro TrimNewlines ""
+    !insertmacro PFI_TrimNewlines ""
 !endif
 
 !ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.TrimNewlines
+    # Uninstaller Function: un.PFI_TrimNewlines
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro TrimNewlines "un."
+    !insertmacro PFI_TrimNewlines "un."
 !endif
 
 #--------------------------------------------------------------------------
-# Macro: WaitUntilUnlocked
+# Macro: PFI_WaitUntilUnlocked
 #
 # The installation process and the uninstall process may both use a function which waits until
 # a particular executable file (an EXE file) is no longer in use. This macro makes maintenance
@@ -3749,9 +4331,9 @@
 # A timeout counter is used to avoid an infinite loop.
 #
 # NOTE:
-# The !insertmacro WaitUntilUnlocked "" and !insertmacro WaitUntilUnlocked "un." commands are
-# included in this file so the NSIS script can use 'Call WaitUntilUnlocked' and
-# 'Call un.WaitUntilUnlocked' without additional preparation.
+# The !insertmacro PFI_WaitUntilUnlocked "" and !insertmacro PFI_WaitUntilUnlocked "un." commands are
+# included in this file so the NSIS script can use 'Call PFI_WaitUntilUnlocked' and
+# 'Call un.PFI_WaitUntilUnlocked' without additional preparation.
 #
 # Inputs:
 #         (top of stack)     - the full path of the EXE file to be checked
@@ -3762,12 +4344,12 @@
 # Usage (after macro has been 'inserted'):
 #
 #         Push "$INSTDIR\wperl.exe"
-#         Call WaitUntilUnlocked
+#         Call PFI_WaitUntilUnlocked
 #
 #--------------------------------------------------------------------------
 
-!macro WaitUntilUnlocked UN
-  Function ${UN}WaitUntilUnlocked
+!macro PFI_WaitUntilUnlocked UN
+  Function ${UN}PFI_WaitUntilUnlocked
     !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
     !define L_FILE_HANDLE   $R8
     !define L_TIMEOUT       $R7   ; used to avoid an infinite loop
@@ -3816,22 +4398,22 @@
 
 !ifdef ADDSSL | ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
-    # Installer Function: WaitUntilUnlocked
+    # Installer Function: PFI_WaitUntilUnlocked
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
 
-    !insertmacro WaitUntilUnlocked ""
+    !insertmacro PFI_WaitUntilUnlocked ""
 !endif
 
 !ifdef ADDUSER
     #--------------------------------------------------------------------------
-    # Uninstaller Function: un.WaitUntilUnlocked
+    # Uninstaller Function: un.PFI_WaitUntilUnlocked
     #
     # This function is used during the uninstall process
     #--------------------------------------------------------------------------
 
-    !insertmacro WaitUntilUnlocked "un."
+    !insertmacro PFI_WaitUntilUnlocked "un."
 !endif
 
 #--------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 #                   POPFile Windows installer when a flat-file or BerkeleyDB corpus
 #                   needs to be converted to the new SQL database format.
 #
-# Copyright (c) 2004 John Graham-Cumming
+# Copyright (c) 2004-2005 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -24,9 +24,26 @@
 #
 #--------------------------------------------------------------------------
 
-; This version of the script has been tested with the "NSIS 2" compiler (final),
-; released 7 February 2004, with no patches applied.
-;
+  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
+  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
+  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+
+  !define ${NSIS_VERSION}_found
+
+  !ifndef v2.0_found
+      !warning \
+          "$\r$\n\
+          $\r$\n***   NSIS COMPILER WARNING:\
+          $\r$\n***\
+          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\r$\n***\
+          $\r$\n***   The resulting 'installer' program should be tested carefully!\
+          $\r$\n$\r$\n"
+  !endif
+
+  !undef  ${NSIS_VERSION}_found
+
 ; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date.
 
 #--------------------------------------------------------------------------
@@ -93,9 +110,12 @@
   ;--------------------------------------------------------------------------
 
   !define C_PFI_PRODUCT  "POPFile Corpus Conversion Monitor"
+
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.1.17"
+  !define C_PFI_VERSION  "0.1.19"
+
+  !define C_OUTFILE      "monitorcc.exe"
 
   ; Mention the version number in the window title
 
@@ -120,19 +140,23 @@
   ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
   ; representing the following values: Major.Minor.Release.Build
 
-  VIProductVersion                   "${C_PFI_VERSION}.0"
+  VIProductVersion                          "${C_PFI_VERSION}.0"
 
-  VIAddVersionKey "ProductName"      "${C_PFI_PRODUCT}"
-  VIAddVersionKey "Comments"         "POPFile Homepage: http://getpopfile.org"
-  VIAddVersionKey "CompanyName"      "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"   "Copyright (c) 2004  John Graham-Cumming"
-  VIAddVersionKey "FileDescription"  "POPFile Corpus Conversion Monitor"
-  VIAddVersionKey "FileVersion"      "${C_PFI_VERSION}"
+  VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
+  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
+  VIAddVersionKey "CompanyName"             "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"         "POPFile Corpus Conversion Monitor"
+  VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
+  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
-  VIAddVersionKey "Build"            "Multi-Language"
+  VIAddVersionKey "Build"                   "Multi-Language"
 
-  VIAddVersionKey "Build Date/Time"  "${__DATE__} @ ${__TIME__}"
-  VIAddVersionKey "Build Script"     "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
+  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 #--------------------------------------------------------------------------
 # Configure the MUI pages
@@ -305,7 +329,7 @@
 
   ; Specify NSIS output filename
 
-  OutFile "monitorcc.exe"
+  OutFile "${C_OUTFILE}"
 
   ; Ensure CRC checking cannot be turned off using the /NCRC command-line switch
 

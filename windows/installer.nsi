@@ -10,16 +10,18 @@
 #                   (A) Requires the following programs (built using NSIS):
 #
 #                       (1) adduser.exe     (NSIS script: adduser.nsi)
-#                       (2) msgcapture.exe  (NSIS script: msgcapture.nsi)
-#                       (3) runpopfile.exe  (NSIS script: runpopfile.nsi)
-#                       (4) runsqlite.exe   (NSIS script: runsqlite.nsi)
-#                       (5) stop_pf.exe     (NSIS script: stop_popfile.nsi)
+#                       (2) ctchecks.exe    (NSIS script: ctchecks.nsi)
+#                       (3) msgcapture.exe  (NSIS script: msgcapture.nsi)
+#                       (4) runpopfile.exe  (NSIS script: runpopfile.nsi)
+#                       (5) runsqlite.exe   (NSIS script: runsqlite.nsi)
+#                       (6) stop_pf.exe     (NSIS script: stop_popfile.nsi)
 #
 #                   (B) The following programs (built using NSIS) are optional:
 #
-#                       (1) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
+#                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
+#                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2004 John Graham-Cumming
+# Copyright (c) 2002-2005 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -38,10 +40,35 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 #--------------------------------------------------------------------------
+# The original 'installer.nsi' script has been divided into several files:
+#
+#  (1) installer.nsi                 - master script which uses the following 'include' files
+#  (2) installer-SecPOPFile-body.nsh - body of section used to install the POPFile program
+#  (3) installer-SecPOPFile-func.nsh - functions used by the above 'include' file
+#  (4) installer-SecMinPerl-body.nsh - body of section used to install the basic minimal Perl
+#  (5) installer-Uninstall.nsh       - source for the POPFile uninstaller (uninstall.exe)
+#--------------------------------------------------------------------------
 
-; This version of the script has been tested with the "NSIS 2" compiler (final),
-; released 7 February 2004, with no "official" NSIS patches/CVS updates applied.
-;
+  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
+  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
+  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+
+  !define ${NSIS_VERSION}_found
+
+  !ifndef v2.0_found
+      !warning \
+          "$\r$\n\
+          $\r$\n***   NSIS COMPILER WARNING:\
+          $\r$\n***\
+          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\r$\n***\
+          $\r$\n***   The resulting 'installer' program should be tested carefully!\
+          $\r$\n$\r$\n"
+  !endif
+
+  !undef  ${NSIS_VERSION}_found
+  
 ; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date
 ; (if the default multi-language installer is compiled).
 ;
@@ -100,18 +127,14 @@
 # Run-time command-line switch (used by 'setup.exe')
 #--------------------------------------------------------------------------
 #
-# /NOSPACES
+# /SSL
 #
-# Two environment variables are used to specify the location of the POPFile PROGRAM files and
-# the User Data. At present POPFile does not work properly if the values in these variables
-# contain spaces. As a workaround, we use short file name format to ensure there are no spaces.
-# However some systems do not support short file names (using short file names on NTFS systems
-# can have a significant impact on performance, for example) and in these cases we insist upon
-# paths which do not contain spaces.
+# If there are problems downloading the optional SSL support files from the Internet, the
+# installer will skip this part of the installation. If SSL support is required, the SSL
+# files can be added by re-running the installer with the /SSL command-line switch to make
+# it skip everything except the downloading and installation of the SSL support files.
 #
-# This build of the installer is unable to detect every case where short file name support has
-# been disabled, so this command-line switch is provided to force the installer to insist upon
-# paths which do not contain spaces.  The switch can use uppercase or lowercase.
+# The /SSL switch can use uppercase or lowercase.
 #
 #--------------------------------------------------------------------------
 
@@ -253,19 +276,32 @@
   Var G_GUI                ; GUI port (1-65535)
 
   Var G_PFIFLAG            ; Multi-purpose variable:
-                            ; (1) used to indicate if banner was shown before the 'WELCOME' page
-                            ; (2) used to avoid unnecessary Install/Upgrade button text updates
+                           ; (1) used to indicate if banner was shown before the 'WELCOME' page
+                           ; (2) used to avoid unnecessary Install/Upgrade button text updates
 
   Var G_NOTEPAD            ; path to notepad.exe ("" = not found in search path)
 
   Var G_WINUSERNAME        ; current Windows user login name
   Var G_WINUSERTYPE        ; user group ('Admin', 'Power', 'User', 'Guest' or 'Unknown')
 
-  Var G_SFN_DISABLED       ; 1 = short file names not supported, 0 = short file names available
+  Var G_SSL_ONLY           ; 1 = SSL-only installation, 0 = normal installation
 
   Var G_PLS_FIELD_1        ; used to customize translated text strings
 
   Var G_DLGITEM            ; HWND of the UI dialog field we are going to modify
+
+  ;-------------------------------------------------------------------------------
+  ; At present (14 March 2004) POPFile does not work properly if POPFILE_ROOT or POPFILE_USER
+  ; are set to values containing spaces. A simple workaround is to use short file name format
+  ; values for these environment variables. But some systems may not support short file names
+  ; (e.g. using short file names on NTFS volumes can have a significant impact on performance)
+  ; so we need to check if short file names are supported (if they are not, we insist upon paths
+  ; which do not contain spaces).
+  ;-------------------------------------------------------------------------------
+
+  Var G_SFN_DISABLED       ; 1 = short file names not supported, 0 = short file names available
+
+  ;-------------------------------------------------------------------------------
 
   ; NSIS provides 20 general purpose user registers:
   ; (a) $R0 to $R9   are used as local registers
@@ -290,40 +326,6 @@
   !include "WinMessages.nsh"
 
 #--------------------------------------------------------------------------
-# Version Information settings (for the installer EXE and uninstaller EXE)
-#--------------------------------------------------------------------------
-
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
-  ; representing the following values: Major.Minor.Release.Build
-
-  VIProductVersion "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.0"
-
-  VIAddVersionKey "ProductName"      "${C_PFI_PRODUCT}"
-  VIAddVersionKey "Comments"         "POPFile Homepage: http://getpopfile.org"
-  VIAddVersionKey "CompanyName"      "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"   "Copyright (c) 2004  John Graham-Cumming"
-  VIAddVersionKey "FileDescription"  "POPFile Automatic email classification"
-  VIAddVersionKey "FileVersion"      "${C_PFI_VERSION}"
-  VIAddVersionKey "OriginalFilename" "${C_OUTFILE}"
-
-  !ifndef ENGLISH_MODE
-    !ifndef NO_KAKASI
-      VIAddVersionKey "Build"        "Multi-Language installer (with Kakasi)"
-    !else
-      VIAddVersionKey "Build"        "Multi-Language installer (without Kakasi)"
-    !endif
-  !else
-    !ifndef NO_KAKASI
-      VIAddVersionKey "Build"        "English-Mode installer (with Kakasi)"
-    !else
-      VIAddVersionKey "Build"        "English-Mode installer (without Kakasi)"
-    !endif
-  !endif
-
-  VIAddVersionKey "Build Date/Time"  "${__DATE__} @ ${__TIME__}"
-  VIAddVersionKey "Build Script"     "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
-
-#--------------------------------------------------------------------------
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
@@ -333,6 +335,62 @@
 
   !include "pfi-library.nsh"
   !include "WriteEnvStr.nsh"
+
+  ; Macros used for entries in the installation log file
+
+  !macro SECTIONLOG_ENTER NAME
+      SetDetailsPrint listonly
+      DetailPrint "----------------------------------------"
+      DetailPrint "$\"${NAME}$\" Section (entry)"
+      DetailPrint "----------------------------------------"
+      DetailPrint ""
+  !macroend
+
+  !macro SECTIONLOG_EXIT NAME
+      SetDetailsPrint listonly
+      DetailPrint ""
+      DetailPrint "----------------------------------------"
+      DetailPrint "$\"${NAME}$\" Section (exit)"
+      DetailPrint "----------------------------------------"
+      DetailPrint ""
+  !macroend
+
+#--------------------------------------------------------------------------
+# Version Information settings (for the installer EXE and uninstaller EXE)
+#--------------------------------------------------------------------------
+
+  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; representing the following values: Major.Minor.Release.Build
+
+  VIProductVersion "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.0"
+
+  VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
+  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
+  VIAddVersionKey "CompanyName"             "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"         "POPFile Automatic email classification"
+  VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
+  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
+
+  !ifndef ENGLISH_MODE
+    !ifndef NO_KAKASI
+      VIAddVersionKey "Build"               "Multi-Language installer (with Kakasi)"
+    !else
+      VIAddVersionKey "Build"               "Multi-Language installer (without Kakasi)"
+    !endif
+  !else
+    !ifndef NO_KAKASI
+      VIAddVersionKey "Build"               "English-Mode installer (with Kakasi)"
+    !else
+      VIAddVersionKey "Build"               "English-Mode installer (without Kakasi)"
+    !endif
+  !endif
+
+  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 #--------------------------------------------------------------------------
 # Configure the MUI pages
@@ -470,6 +528,10 @@
   ; Installer Page - Select Components to be installed
   ;---------------------------------------------------
 
+  ; Use a "pre" function to check if only the SSL Support files are to be installed
+
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "CheckSSLOnlyFlag"
+
   !insertmacro MUI_PAGE_COMPONENTS
 
   ;---------------------------------------------------
@@ -490,6 +552,14 @@
   !define MUI_DIRECTORYPAGE_TEXT_DESTINATION  "$(PFI_LANG_ROOTDIR_TEXT_DESTN)"
 
   !insertmacro MUI_PAGE_DIRECTORY
+
+  ;---------------------------------------------------
+  ; Installer Page - Show user what we are about to do and get permission to proceed
+  ;
+  ; This page must come immediately before the INSTFILES page ('MUI_PAGE_INSTFILES')
+  ;---------------------------------------------------
+
+  Page custom GetPermissionToInstall
 
   ;---------------------------------------------------
   ; Installer Page - Install POPFile PROGRAM files
@@ -571,7 +641,25 @@
 # Default Destination Folder
 #--------------------------------------------------------------------------
 
-  InstallDir "$PROGRAMFILES\${C_PFI_PRODUCT}"
+  ; Note that the 'InstallDir' value has a trailing slash (to override the default behaviour)
+  ;
+  ; By default, NSIS will append '\${C_PFI_PRODUCT}' to the path selected using the 'Browse'
+  ; button if the path does not already end with '\${C_PFI_PRODUCT}'. If the 'Browse' button
+  ; is used to select 'C:\Program Files\POPFile Test' the installer will install the program
+  ; in the 'C:\Program Files\POPFile Test\POPFile' folder and although this location is shown
+  ; on the DIRECTORY page before the user clicks the 'Next' button most users will not notice
+  ; that '\POPFile' has been appended to the location they selected. This problem will be made
+  ; worse if there is an existing version of POPFile in the 'C:\Program Files\POPFile Test'
+  ; folder since there will already be a 'C:\Program Files\POPFile Test\POPFile' folder holding
+  ; Configuration.pm, History.pm, etc
+  ;
+  ; By adding a trailing slash we ensure that if the user selects a folder using the 'Browse'
+  ; button then that is what the installer will use. One side effect of this change is that it
+  ; is now easier for users to select a folder such as 'C:\Program Files' for the installation
+  ; (which is not a good choice - so we refuse to accept any path matching the target system's
+  ; "program files" folder; see the 'CheckExistingProgDir' function)
+
+  InstallDir "$PROGRAMFILES\${C_PFI_PRODUCT}\"
   InstallDirRegKey HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
 
 #--------------------------------------------------------------------------
@@ -584,6 +672,11 @@
 
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
+  ReserveFile "${NSISDIR}\Plugins\Banner.dll"
+  ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
+  ReserveFile "${NSISDIR}\Plugins\System.dll"
+  ReserveFile "${NSISDIR}\Plugins\untgz.dll"
+  ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "ioG.ini"
   ReserveFile "${C_RELEASE_NOTES}"
 
@@ -624,7 +717,7 @@ loop:
   FileRead ${L_INPUT_FILE_HANDLE} ${L_TEMP}
   IfErrors close_files
   Push ${L_TEMP}
-  Call TrimNewlines
+  Call PFI_TrimNewlines
   Pop ${L_TEMP}
   FileWrite ${L_OUTPUT_FILE_HANDLE} "${L_TEMP}${MB_NL}"
   Goto loop
@@ -695,7 +788,7 @@ notes_ignored:
 
   StrCpy $G_PFIFLAG "banner displayed"
 
-  Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_BE_PATIENT)" "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
+  Call ShowPleaseWaitBanner
 
 continue:
 
@@ -707,30 +800,11 @@ continue:
 
   !endif
 
-  ; At present (14 March 2004) POPFile does not work properly if POPFILE_ROOT or POPFILE_USER
-  ; are set to values containing spaces. A simple workaround is to use short file name format
-  ; values for these environment variables. But some systems may not support short file names
-  ; (e.g. using short file names on NTFS volumes can have a significant impact on performance)
-  ; so we need to check if short file names are supported (if they are not, we insist upon paths
-  ; which do not contain spaces).
-
-  ; There are two registry keys of interest: one for NTFS and one for FAT. NSIS can check the
-  ; NTFS setting directly as it is a DWORD value but it is unable to check the FAT setting as
-  ; it is stored as a BINARY value (the built-in NSIS commands can only read DWORD and STRING
-  ; values). A command-line option can be used to force the installer to insist upon paths
-  ; which do not contain spaces.
-
-  Call GetParameters
+  StrCpy $G_SSL_ONLY "0"    ; assume a full installation is required
+  Call PFI_GetParameters
   Pop ${L_RESERVED}
-  StrCmp ${L_RESERVED} "/nospaces" 0 check_registry
-  StrCpy $G_SFN_DISABLED "1"
-  Goto exit
-
-check_registry:
-  ReadRegDWORD $G_SFN_DISABLED \
-      HKLM "System\CurrentControlSet\Control\FileSystem" "NtfsDisable8dot3NameCreation"
-  StrCmp $G_SFN_DISABLED "1" exit
-  StrCpy $G_SFN_DISABLED "0"
+  StrCmp ${L_RESERVED} "/SSL" 0 exit
+  StrCpy $G_SSL_ONLY "1"    ; just download and install the SSL support files
 
 exit:
   Pop ${L_RESERVED}
@@ -770,597 +844,52 @@ exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
+# Installer Section: StartLog (this must be the very first section)
+#
+# Creates the log header with information about this installation
+#--------------------------------------------------------------------------
+
+Section "-StartLog"
+
+  SetDetailsPrint listonly
+
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "$(^Name) v${C_PFI_VERSION} Installer Log"
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "Command-line: $CMDLINE"
+  DetailPrint "User Details: $G_WINUSERNAME ($G_WINUSERTYPE)"
+  DetailPrint "PFI Language: $LANGUAGE"
+  DetailPrint "------------------------------------------------------------"
+  Call PFI_GetDateTimeStamp
+  Pop $G_PLS_FIELD_1
+  DetailPrint "Installation started $G_PLS_FIELD_1"
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint ""
+
+SectionEnd
+
+#--------------------------------------------------------------------------
 # Installer Section: POPFile component (always installed)
 #
-# (a) If upgrading, shutdown existing version and rearrange minimal Perl files
-# (b) Create registry entries (HKLM and/or HKCU) for POPFile program files
-# (c) Install POPFile core program files and release notes
-# (d) Install minimal Perl system
-# (e) Write the uninstaller program and create/update the Start Menu shortcuts
-# (f) Create 'Add/Remove Program' entry
+# Installs the POPFile program files.
 #--------------------------------------------------------------------------
 
 Section "POPFile" SecPOPFile
+  !include "installer-SecPOPFile-body.nsh"
+SectionEnd
 
-  ; Make this section mandatory (i.e. it is always installed)
+; Functions used only by "installer-SecPOPFile-body.nsh"
 
-  SectionIn RO
+!include "installer-SecPOPFile-func.nsh"
 
-  !define L_RESULT        $R9
-  !define L_TEMP          $R8
+#--------------------------------------------------------------------------
+# Installer Section: Minimal Perl component (always installed)
+#
+# Installs the minimal Perl.
+#--------------------------------------------------------------------------
 
-  Push ${L_RESULT}
-  Push ${L_TEMP}
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_INST_PROG_UPGRADE) $(PFI_LANG_TAKE_A_FEW_SECONDS)"
-  SetDetailsPrint listonly
-
-  ; Before POPFile 0.21.0, POPFile and the minimal Perl shared the same folder structure
-  ; and there was only one set of user data (stored in the same folder as POPFile).
-
-  ; Phase 1 of the multi-user support introduced in 0.21.0 required some slight changes
-  ; to the folder structure (to permit POPFile to be run from any folder after setting the
-  ; POPFILE_ROOT and POPFILE_USER environment variables to appropriate values).
-
-  ; The folder arrangement used for this build:
-  ;
-  ; (a) $INSTDIR         -  main POPFile installation folder, holds popfile.pl and several
-  ;                         other *.pl scripts, runpopfile.exe, popfile*.exe plus three of the
-  ;                         minimal Perl files (perl.exe, wperl.exe and perl58.dll)
-  ;
-  ; (b) $INSTDIR\kakasi  -  holds the Kakasi package used to process Japanese email
-  ;                         (only installed when Japanese support is required)
-  ;
-  ; (c) $INSTDIR\lib     -  minimal Perl installation (except for the three files stored
-  ;                         in the $INSTDIR folder to avoid runtime problems)
-  ;
-  ; (d) $INSTDIR\*       -  the remaining POPFile folders (Classifier, languages, skins, etc)
-  ;
-  ; For this build, each user is expected to have separate user data folders. By default each
-  ; user data folder will contain popfile.cfg, stopwords, stopwords.default, popfile.db,
-  ; the messages folder, etc. The 'Add POPFile User' wizard (adduser.exe) is responsible for
-  ; creating/updating these user data folders and for handling conversion of existing flat file
-  ; or BerkeleyDB corpus files to the new SQL database format.
-  ;
-  ; For increased flexibility, some global user variables are used in addition to $INSTDIR
-  ; (this makes it easier to change the folder structure used by the installer).
-
-  StrCpy $G_ROOTDIR   "$INSTDIR"
-  StrCpy $G_MPLIBDIR  "$INSTDIR\lib"
-
-  IfFileExists "$G_ROOTDIR\*.*" rootdir_exists
-  ClearErrors
-  CreateDirectory "$G_ROOTDIR"
-  IfErrors 0 rootdir_exists
-  SetDetailsPrint both
-  DetailPrint "Fatal error: unable to create folder for the POPFile program files"
-  SetDetailsPrint listonly
-  MessageBox MB_OK|MB_ICONSTOP|MB_TOPMOST "Error: Unable to create folder for the POPFile program files\
-      ${MB_NL}${MB_NL}\
-      ($G_ROOTDIR)"
-  Abort
-
-rootdir_exists:
-
-  ; Starting with POPFile 0.22.0 the system tray icon uses 'localhost' instead of '127.0.0.1'
-  ; to display the User Interface (and the installer has been updated to follow suit), so we
-  ; need to ensure Win9x systems have a suitable 'hosts' file
-
-  Call IsNT
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "1" continue
-  Call CheckHostsFile
-
-continue:
-
-  ; If we are installing over a previous version, ensure that version is not running
-
-  Call MakeRootDirSafe
-
-  ; Starting with 0.21.0, a new structure is used for the minimal Perl (to enable POPFile to
-  ; be started from any folder, once POPFILE_ROOT and POPFILE_USER have been initialized)
-
-  Call MinPerlRestructure
-
-  ; Now that the HTML for the UI is no longer embedded in the Perl code, a new skin system is
-  ; used so we attempt to convert the existing skins to work with the new system
-
-  Call SkinsRestructure
-
-  StrCmp $G_WINUSERTYPE "Admin" 0 current_user_root
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language" "$LANGUAGE"
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version" "${C_POPFILE_MAJOR_VERSION}"
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${C_POPFILE_MINOR_VERSION}"
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision" "${C_POPFILE_REVISION}"
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile RevStatus" "${C_POPFILE_RC}"
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$INSTDIR"
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Author" "setup.exe"
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN" "$G_ROOTDIR"
-  StrCmp $G_SFN_DISABLED "0" find_HKLM_root_sfn
-  StrCpy ${L_TEMP} "Not supported"
-  Goto save_HKLM_root_sfn
-
-find_HKLM_root_sfn:
-  GetFullPathName /SHORT ${L_TEMP} "$G_ROOTDIR"
-
-save_HKLM_root_sfn:
-  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
-
-current_user_root:
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language" "$LANGUAGE"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version" "${C_POPFILE_MAJOR_VERSION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${C_POPFILE_MINOR_VERSION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision" "${C_POPFILE_REVISION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile RevStatus" "${C_POPFILE_RC}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$INSTDIR"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Author" "setup.exe"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN" "$G_ROOTDIR"
-  StrCmp $G_SFN_DISABLED "0" find_HKCU_root_sfn
-  StrCpy ${L_TEMP} "Not supported"
-  Goto save_HKCU_root_sfn
-
-find_HKCU_root_sfn:
-  GetFullPathName /SHORT ${L_TEMP} "$G_ROOTDIR"
-
-save_HKCU_root_sfn:
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
-
-  ; Install the POPFile Core files
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_INST_PROG_CORE)"
-  SetDetailsPrint listonly
-
-  SetOutPath "$G_ROOTDIR"
-
-  ; Remove redundant files (from earlier test versions of the installer)
-
-  Delete "$G_ROOTDIR\wrapper.exe"
-  Delete "$G_ROOTDIR\wrapperf.exe"
-  Delete "$G_ROOTDIR\wrapperb.exe"
-
-  ; Install POPFile 'core' files
-
-  File "..\engine\license"
-  File "${C_RELEASE_NOTES}"
-  CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_README}.txt" "$G_ROOTDIR\${C_README}.txt"
-
-  File "..\engine\popfile.exe"
-  File "..\engine\popfilef.exe"
-  File "..\engine\popfileb.exe"
-  File "..\engine\popfileif.exe"
-  File "..\engine\popfileib.exe"
-  File "..\engine\popfile-service.exe"
-  File /nonfatal "/oname=pfi-stopwords.default" "..\engine\stopwords"
-
-  File "runpopfile.exe"
-  File "stop_pf.exe"
-  File "sqlite.exe"
-  File "runsqlite.exe"
-  File "adduser.exe"
-  File /nonfatal "test\pfidiag.exe"
-  File "msgcapture.exe"
-
-  IfFileExists "$G_ROOTDIR\pfimsgcapture.exe" 0 app_paths
-  Delete "$G_ROOTDIR\pfimsgcapture.exe"
-  File "/oname=pfimsgcapture.exe" "msgcapture.exe"
-
-app_paths:
-
-  ; Add 'stop_pf.exe' to 'App Paths' to allow it to be run using Start -> Run -> stop_pf params
-
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\stop_pf.exe" \
-      "" "$G_ROOTDIR\stop_pf.exe"
-
-  SetOutPath "$G_ROOTDIR"
-
-  File "..\engine\popfile.pl"
-  File "..\engine\popfile.pck"
-  File "..\engine\insert.pl"
-  File "..\engine\bayes.pl"
-  File "..\engine\pipe.pl"
-
-  File "..\engine\pix.gif"
-  File "..\engine\favicon.ico"
-  File "..\engine\black.gif"
-  File "..\engine\otto.gif"
-  File "..\engine\otto.png"
-
-  SetOutPath "$G_ROOTDIR\Classifier"
-  File "..\engine\Classifier\Bayes.pm"
-  File "..\engine\Classifier\WordMangle.pm"
-  File "..\engine\Classifier\MailParse.pm"
-  IfFileExists "$G_ROOTDIR\Classifier\popfile.sql" update_the_schema
-
-no_previous_version:
-  WriteINIStr "$G_ROOTDIR\pfi-data.ini" "Settings" "Owner" "$G_WINUSERNAME"
-  DeleteINIStr "$G_ROOTDIR\pfi-data.ini" "Settings" "OldSchema"
-  Goto install_schema
-
-update_the_schema:
-  Push "$G_ROOTDIR\Classifier\popfile.sql"
-  Call GetPOPFileSchemaVersion
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "()" assume_early_schema
-  StrCpy ${L_TEMP} ${L_RESULT} 1
-  StrCmp ${L_TEMP} "(" no_previous_version remember_version
-
-assume_early_schema:
-  StrCpy ${L_RESULT} "0"
-
-remember_version:
-  WriteINIStr "$G_ROOTDIR\pfi-data.ini" "Settings" "Owner" "$G_WINUSERNAME"
-  WriteINIStr "$G_ROOTDIR\pfi-data.ini" "Settings" "OldSchema" "${L_RESULT}"
-
-install_schema:
-  File "..\engine\Classifier\popfile.sql"
-
-  SetOutPath "$G_ROOTDIR\Platform"
-  File "..\engine\Platform\MSWin32.pm"
-  Delete "$G_ROOTDIR\Platform\POPFileIcon.dll"
-
-  SetOutPath "$G_ROOTDIR\POPFile"
-  File "..\engine\POPFile\MQ.pm"
-  File "..\engine\POPFile\History.pm"
-  File "..\engine\POPFile\Loader.pm"
-  File "..\engine\POPFile\Logger.pm"
-  File "..\engine\POPFile\Module.pm"
-  File "..\engine\POPFile\Mutex.pm"
-  File "..\engine\POPFile\Configuration.pm"
-  File "..\engine\POPFile\popfile_version"
-
-  SetOutPath "$G_ROOTDIR\Proxy"
-  File "..\engine\Proxy\Proxy.pm"
-  File "..\engine\Proxy\POP3.pm"
-
-  SetOutPath "$G_ROOTDIR\UI"
-  File "..\engine\UI\HTML.pm"
-  File "..\engine\UI\HTTP.pm"
-
-  ; 'English' version of the QuickStart Guide
-
-  SetOutPath "$G_ROOTDIR\manual"
-  File "..\engine\manual\*.gif"
-
-  SetOutPath "$G_ROOTDIR\manual\en"
-  File "..\engine\manual\en\*.html"
-
-  ; Default UI language
-
-  SetOutPath "$G_ROOTDIR\languages"
-  File "..\engine\languages\English.msg"
-
-  ; Default UI skin (the POPFile UI looks better if a skin is used)
-
-  SetOutPath "$G_ROOTDIR\skins\default"
-  File "..\engine\skins\default\*.*"
-
-  ; Install the Minimal Perl files
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_INST_PROG_PERL)"
-  SetDetailsPrint listonly
-
-  SetOutPath "$G_ROOTDIR"
-  File "${C_PERL_DIR}\bin\perl.exe"
-  File "${C_PERL_DIR}\bin\wperl.exe"
-  File "${C_PERL_DIR}\bin\perl58.dll"
-
-  SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\lib\AutoLoader.pm"
-  File "${C_PERL_DIR}\lib\Carp.pm"
-  File "${C_PERL_DIR}\lib\Config.pm"
-  File "${C_PERL_DIR}\lib\constant.pm"
-  File "${C_PERL_DIR}\lib\DynaLoader.pm"
-  File "${C_PERL_DIR}\lib\Errno.pm"
-  File "${C_PERL_DIR}\lib\Exporter.pm"
-  File "${C_PERL_DIR}\lib\Fcntl.pm"
-  File "${C_PERL_DIR}\lib\integer.pm"
-  File "${C_PERL_DIR}\lib\IO.pm"
-  File "${C_PERL_DIR}\lib\lib.pm"
-  File "${C_PERL_DIR}\lib\locale.pm"
-  File "${C_PERL_DIR}\lib\POSIX.pm"
-  File "${C_PERL_DIR}\lib\re.pm"
-  File "${C_PERL_DIR}\lib\SelectSaver.pm"
-  File "${C_PERL_DIR}\lib\Socket.pm"
-  File "${C_PERL_DIR}\lib\strict.pm"
-  File "${C_PERL_DIR}\lib\Symbol.pm"
-  File "${C_PERL_DIR}\lib\vars.pm"
-  File "${C_PERL_DIR}\lib\warnings.pm"
-  File "${C_PERL_DIR}\lib\XSLoader.pm"
-
-  SetOutPath "$G_MPLIBDIR\Carp"
-  File "${C_PERL_DIR}\lib\Carp\*"
-
-  SetOutPath "$G_MPLIBDIR\Date"
-  File "${C_PERL_DIR}\site\lib\Date\Format.pm"
-  File "${C_PERL_DIR}\site\lib\Date\Parse.pm"
-
-  SetOutPath "$G_MPLIBDIR\Digest"
-  File "${C_PERL_DIR}\lib\Digest\MD5.pm"
-
-  SetOutPath "$G_MPLIBDIR\Exporter"
-  File "${C_PERL_DIR}\lib\Exporter\*"
-
-  SetOutPath "$G_MPLIBDIR\File"
-  File "${C_PERL_DIR}\lib\File\Copy.pm"
-  File "${C_PERL_DIR}\lib\File\Glob.pm"
-  File "${C_PERL_DIR}\lib\File\Spec.pm"
-
-  SetOutPath "$G_MPLIBDIR\File\Spec"
-  File "${C_PERL_DIR}\lib\File\Spec\Unix.pm"
-  File "${C_PERL_DIR}\lib\File\Spec\Win32.pm"
-
-  SetOutPath "$G_MPLIBDIR\Getopt"
-  File "${C_PERL_DIR}\lib\Getopt\Long.pm"
-
-  SetOutPath "$G_MPLIBDIR\HTML"
-  File "${C_PERL_DIR}\site\lib\HTML\Tagset.pm"
-  File "${C_PERL_DIR}\site\lib\HTML\Template.pm"
-
-  SetOutPath "$G_MPLIBDIR\IO"
-  File "${C_PERL_DIR}\lib\IO\*"
-
-  SetOutPath "$G_MPLIBDIR\IO\Socket"
-  File "${C_PERL_DIR}\lib\IO\Socket\*"
-
-  SetOutPath "$G_MPLIBDIR\MIME"
-  File "${C_PERL_DIR}\lib\MIME\*"
-
-  SetOutPath "$G_MPLIBDIR\Sys"
-  File "${C_PERL_DIR}\lib\Sys\*"
-
-  SetOutPath "$G_MPLIBDIR\Text"
-  File "${C_PERL_DIR}\lib\Text\ParseWords.pm"
-
-  SetOutPath "$G_MPLIBDIR\Time"
-  File "${C_PERL_DIR}\lib\Time\Local.pm"
-  File "${C_PERL_DIR}\site\lib\Time\Zone.pm"
-
-  SetOutPath "$G_MPLIBDIR\warnings"
-  File "${C_PERL_DIR}\lib\warnings\register.pm"
-
-  SetOutPath "$G_MPLIBDIR\auto\Digest\MD5"
-  File "${C_PERL_DIR}\lib\auto\Digest\MD5\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\DynaLoader"
-  File "${C_PERL_DIR}\lib\auto\DynaLoader\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\File\Glob"
-  File "${C_PERL_DIR}\lib\auto\File\Glob\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\IO"
-  File "${C_PERL_DIR}\lib\auto\IO\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\MIME\Base64"
-  File "${C_PERL_DIR}\lib\auto\MIME\Base64\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\POSIX"
-  File "${C_PERL_DIR}\lib\auto\POSIX\POSIX.dll"
-  File "${C_PERL_DIR}\lib\auto\POSIX\autosplit.ix"
-  File "${C_PERL_DIR}\lib\auto\POSIX\load_imports.al"
-
-  SetOutPath "$G_MPLIBDIR\auto\Fcntl"
-  File "${C_PERL_DIR}\lib\auto\Fcntl\Fcntl.dll"
-
-  SetOutPath "$G_MPLIBDIR\auto\Socket"
-  File "${C_PERL_DIR}\lib\auto\Socket\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\Sys\Hostname"
-  File "${C_PERL_DIR}\lib\auto\Sys\Hostname\*"
-
-  ; Install Perl modules and library files for BerkeleyDB support
-  ; (required in case we have to convert BerkeleyDB corpus files from an earlier version)
-
-  SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\site\lib\BerkeleyDB.pm"
-  File "${C_PERL_DIR}\lib\UNIVERSAL.pm"
-
-  SetOutPath "$G_MPLIBDIR\auto\BerkeleyDB"
-  File "${C_PERL_DIR}\site\lib\auto\BerkeleyDB\autosplit.ix"
-  File "${C_PERL_DIR}\site\lib\auto\BerkeleyDB\BerkeleyDB.bs"
-  File "${C_PERL_DIR}\site\lib\auto\BerkeleyDB\BerkeleyDB.dll"
-  File "${C_PERL_DIR}\site\lib\auto\BerkeleyDB\BerkeleyDB.exp"
-  File "${C_PERL_DIR}\site\lib\auto\BerkeleyDB\BerkeleyDB.lib"
-
-  ; Install Perl modules and library files for SQLite support
-
-  SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\lib\base.pm"
-  File "${C_PERL_DIR}\lib\overload.pm"
-  File "${C_PERL_DIR}\site\lib\DBI.pm"
-
-  SetOutPath "$G_MPLIBDIR\DBD"
-  File "${C_PERL_DIR}\site\lib\DBD\SQLite.pm"
-
-  SetOutPath "$G_MPLIBDIR\auto\DBD\SQLite"
-  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.bs"
-  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.dll"
-  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.exp"
-  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.lib"
-
-  SetOutPath "$G_MPLIBDIR\auto\DBI"
-  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.bs"
-  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.dll"
-  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.exp"
-  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.lib"
-
-  ; Create the uninstall program BEFORE creating the shortcut to it
-  ; (this ensures that the correct "uninstall" icon appears in the START MENU shortcut)
-
-  SetOutPath "$G_ROOTDIR"
-  Delete "$G_ROOTDIR\uninstall.exe"
-  WriteUninstaller "$G_ROOTDIR\uninstall.exe"
-
-  ; Attempt to remove some StartUp and Start Menu shortcuts created by previous installations
-
-  SetShellVarContext all
-  Delete "$SMSTARTUP\Run POPFile.lnk"
-  Delete "$SMSTARTUP\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
-
-  SetShellVarContext current
-  Delete "$SMSTARTUP\Run POPFile.lnk"
-  Delete "$SMSTARTUP\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
-
-  ; Create the START MENU entries
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_INST_PROG_SHORT)"
-  SetDetailsPrint listonly
-
-  ; 'CreateShortCut' uses '$OUTDIR' as the working directory for the shortcut
-  ; ('SetOutPath' is one way to change the value of $OUTDIR)
-
-  ; 'CreateShortCut' fails to update existing shortcuts if they are read-only, so try to clear
-  ; the read-only attribute first. Similar handling is required for the Internet shortcuts.
-
-  ; If the user has 'Admin' rights, create a 'POPFile' folder with a set of shortcuts in
-  ; the 'All Users' Start Menu . If the user does not have 'Admin' rights, the shortcuts
-  ; are created in the 'Current User' Start Menu.
-
-  ; If the 'All Users' folder is not found, NSIS will return the 'Current User' folder.
-
-  SetShellVarContext all
-  StrCmp $G_WINUSERTYPE "Admin" create_shortcuts
-  SetShellVarContext current
-
-create_shortcuts:
-  SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}"
-  SetOutPath "$G_ROOTDIR"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk" \
-                 "$G_ROOTDIR\runpopfile.exe"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" \
-                 "$G_ROOTDIR\uninstall.exe"
-
-  SetOutPath "$G_ROOTDIR"
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk" \
-                 "$G_ROOTDIR\${C_README}.txt"
-
-  SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url" \
-              "InternetShortcut" "URL" "http://${C_UI_URL}:$G_GUI/"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url" \
-              "InternetShortcut" "URL" "http://${C_UI_URL}:$G_GUI/shutdown"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url" \
-              "InternetShortcut" "URL" "file://$G_ROOTDIR/manual/en/manual.html"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" NORMAL
-
-  !ifndef ENGLISH_MODE
-      StrCmp $LANGUAGE ${LANG_JAPANESE} japanese_faq
-  !endif
-
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
-              "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?FrequentlyAskedQuestions"
-
-  !ifndef ENGLISH_MODE
-      Goto support
-
-    japanese_faq:
-      WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
-                  "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions"
-
-    support:
-  !endif
-
-  SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url" \
-              "InternetShortcut" "URL" "http://getpopfile.org/"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" NORMAL
-
-  !ifndef ENGLISH_MODE
-      StrCmp $LANGUAGE ${LANG_JAPANESE} japanese_wiki
-  !endif
-
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
-              "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?POPFileDocumentationProject"
-
-  !ifndef ENGLISH_MODE
-      Goto pfidiagnostic
-
-    japanese_wiki:
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
-                  "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_POPFileDocumentationProject"
-
-    pfidiagnostic:
-  !endif
-
-  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 silent_shutdown
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\PFI Diagnostic utility.lnk"
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
-                 "$G_ROOTDIR\pfidiag.exe"
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" \
-                 "$G_ROOTDIR\pfidiag.exe" "/full"
-
-silent_shutdown:
-  SetOutPath "$G_ROOTDIR"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk" \
-                 "$G_ROOTDIR\stop_pf.exe" "/showerrors $G_GUI"
-
-  ; Create entry in the Control Panel's "Add/Remove Programs" list
-
-  StrCmp $G_WINUSERTYPE "Admin" use_HKLM
-
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "UninstallString" "$G_ROOTDIR\uninstall.exe"
-  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoModify" "1"
-  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoRepair" "1"
-  Goto end_section
-
-use_HKLM:
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "UninstallString" "$G_ROOTDIR\uninstall.exe"
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoModify" "1"
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoRepair" "1"
-
-end_section:
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
-  SetDetailsPrint listonly
-
-  Pop ${L_TEMP}
-  Pop ${L_RESULT}
-
-  !undef L_RESULT
-  !undef L_TEMP
-
+Section "-Minimal Perl" SecMinPerl
+  !include "installer-SecMinPerl-body.nsh"
 SectionEnd
 
 #--------------------------------------------------------------------------
@@ -1372,6 +901,8 @@ SectionEnd
 #--------------------------------------------------------------------------
 
 Section "Skins" SecSkins
+
+  !insertmacro SECTIONLOG_ENTER "Skins"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_SKINS)"
@@ -1468,6 +999,8 @@ Section "Skins" SecSkins
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
 
+  !insertmacro SECTIONLOG_EXIT "Skins"
+
 SectionEnd
 
 #--------------------------------------------------------------------------
@@ -1475,6 +1008,8 @@ SectionEnd
 #--------------------------------------------------------------------------
 
 Section "Languages" SecLangs
+
+  !insertmacro SECTIONLOG_ENTER "Languages"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_LANGS)"
@@ -1486,6 +1021,8 @@ Section "Languages" SecLangs
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
+
+  !insertmacro SECTIONLOG_EXIT "Languages"
 
 SectionEnd
 
@@ -1501,6 +1038,8 @@ SectionEnd
 
     Section "Kakasi" SecKakasi
 
+      !insertmacro SECTIONLOG_ENTER "Kakasi"
+
       !define L_RESERVED  $0    ; used in system.dll call
 
       Push ${L_RESERVED}
@@ -1509,31 +1048,31 @@ SectionEnd
       ; Install Kakasi package
       ;--------------------------------------------------------------------------
 
-      SetOutPath "$INSTDIR"
+      SetOutPath "$G_ROOTDIR"
       File /r "${C_KAKASI_DIR}\kakasi"
 
       ; Add Environment Variables for Kakasi
 
       Push "ITAIJIDICTPATH"
-      Push "$INSTDIR\kakasi\share\kakasi\itaijidict"
+      Push "$G_ROOTDIR\kakasi\share\kakasi\itaijidict"
 
       StrCmp $G_WINUSERTYPE "Admin" all_users_1
-      Call WriteEnvStr
+      Call PFI_WriteEnvStr
       Goto next_var
 
     all_users_1:
-      Call WriteEnvStrNTAU
+      Call PFI_WriteEnvStrNTAU
 
     next_var:
       Push "KANWADICTPATH"
-      Push "$INSTDIR\kakasi\share\kakasi\kanwadict"
+      Push "$G_ROOTDIR\kakasi\share\kakasi\kanwadict"
 
       StrCmp $G_WINUSERTYPE "Admin" all_users_2
-      Call WriteEnvStr
+      Call PFI_WriteEnvStr
       Goto set_env
 
     all_users_2:
-      Call WriteEnvStrNTAU
+      Call PFI_WriteEnvStrNTAU
 
     set_env:
       IfRebootFlag set_vars_now
@@ -1541,7 +1080,7 @@ SectionEnd
       ; Running on a non-Win9x system which already has the correct Kakaksi environment data
       ; or running on a non-Win9x system
 
-      Call IsNT
+      Call PFI_IsNT
       Pop ${L_RESERVED}
       StrCmp ${L_RESERVED} "0" continue
 
@@ -1550,25 +1089,28 @@ SectionEnd
 
     set_vars_now:
       System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
-                    i("ITAIJIDICTPATH", "$INSTDIR\kakasi\share\kakasi\itaijidict").r0'
+                    i("ITAIJIDICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\itaijidict").r0'
       StrCmp ${L_RESERVED} 0 0 itaiji_set_ok
       MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (ITAIJIDICTPATH)"
 
     itaiji_set_ok:
       System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
-                    i("KANWADICTPATH", "$INSTDIR\kakasi\share\kakasi\kanwadict").r0'
+                    i("KANWADICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\kanwadict").r0'
       StrCmp ${L_RESERVED} 0 0 continue
       MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (KANWADICTPATH)"
 
     continue:
 
       ;--------------------------------------------------------------------------
-      ; Install Perl modules: base.pm, bytes.pm the Encode collection and Text::Kakasi
+      ; Install Perl modules: base.pm, bytes.pm, the Encode collection and Text::Kakasi
+      ; (the requirement for bytes_heavy.pl was added when the minimal Perl was updated
+      ; to use ActivePerl 5.8.7 components)
       ;--------------------------------------------------------------------------
 
       SetOutPath "$G_MPLIBDIR"
       File "${C_PERL_DIR}\lib\base.pm"
       File "${C_PERL_DIR}\lib\bytes.pm"
+      File "${C_PERL_DIR}\lib\bytes_heavy.pl"
       File "${C_PERL_DIR}\lib\Encode.pm"
 
       SetOutPath "$G_MPLIBDIR\Encode"
@@ -1587,10 +1129,12 @@ SectionEnd
 
       !undef L_RESERVED
 
+      !insertmacro SECTIONLOG_EXIT "Kakasi"
+
     SectionEnd
 !endif
 
-SubSection "Optional modules" SubSecOptional
+SubSection /e "Optional modules" SubSecOptional
 
 #--------------------------------------------------------------------------
 # Installer Section: (optional) POPFile NNTP proxy (default = not selected)
@@ -1600,8 +1144,12 @@ SubSection "Optional modules" SubSecOptional
 
 Section /o "NNTP proxy" SecNNTP
 
+  !insertmacro SECTIONLOG_ENTER "NNTP Proxy"
+
   SetOutPath "$G_ROOTDIR\Proxy"
   File "..\engine\Proxy\NNTP.pm"
+
+  !insertmacro SECTIONLOG_EXIT "NNTP Proxy"
 
 SectionEnd
 
@@ -1613,8 +1161,12 @@ SectionEnd
 
 Section /o "SMTP proxy" SecSMTP
 
+  !insertmacro SECTIONLOG_ENTER "SMTP Proxy"
+
   SetOutPath "$G_ROOTDIR\Proxy"
   File "..\engine\Proxy\SMTP.pm"
+
+  !insertmacro SECTIONLOG_EXIT "SMTP Proxy"
 
 SectionEnd
 
@@ -1627,6 +1179,8 @@ SectionEnd
 #--------------------------------------------------------------------------
 
 Section /o "XMLRPC" SecXMLRPC
+
+  !insertmacro SECTIONLOG_ENTER "XMLRPC"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_XMLRPC)"
@@ -1680,6 +1234,8 @@ Section /o "XMLRPC" SecXMLRPC
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
 
+  !insertmacro SECTIONLOG_EXIT "XMLRPC"
+
 SectionEnd
 
 #--------------------------------------------------------------------------
@@ -1689,6 +1245,8 @@ SectionEnd
 #--------------------------------------------------------------------------
 
 Section /o "IMAP" SecIMAP
+
+  !insertmacro SECTIONLOG_ENTER "IMAP"
 
   SetDetailsPrint textonly
   DetailPrint "Installing IMAP module..."
@@ -1709,6 +1267,8 @@ Section /o "IMAP" SecIMAP
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
 
+  !insertmacro SECTIONLOG_EXIT "IMAP"
+
 SectionEnd
 
 #--------------------------------------------------------------------------
@@ -1720,12 +1280,80 @@ SectionEnd
 
 Section /o "SOCKS" SecSOCKS
 
+  !insertmacro SECTIONLOG_ENTER "SOCKS"
+
   SetOutPath "$G_MPLIBDIR\IO\Socket"
   File "${C_PERL_DIR}\site\lib\IO\Socket\Socks.pm"
 
+  !insertmacro SECTIONLOG_EXIT "SOCKS"
+
 SectionEnd
 
+#--------------------------------------------------------------------------
+# Installer Section: (optional) SSL Support for POPFile (default = not selected)
+#
+# If this component is selected, the installer downloads and installs the extra
+# Perl modules and the necessary OpenSSL libraries required to support SSL access
+# access to mail servers. The installer waits until all of these extra files have
+# been downloaded before installing any of them. If the download attempt fails, the
+# installation will continue (since SSL support is an optional feature). A later
+# attempt can be made by running the stand-alone 'SSL Setup' wizard to download
+# and install only these extra SSL support files.
+#
+# Note: The 'getssl.nsh' file includes more than just the 'Section' code.
+#
+# The 'getssl.nsh' file is used by the 'SSL Setup' wizard to ensure it
+# handles the downloading and installation of the SSL support files in the
+# same way as the main POPFile installer.
+#--------------------------------------------------------------------------
+
+  !include "getssl.nsh"
+
 SubSectionEnd
+
+#--------------------------------------------------------------------------
+# Installer Section: StopLog (this must be the very last section)
+#
+# Finishes the log file and saves it (making backups of up to 3 previous logs)
+#--------------------------------------------------------------------------
+
+Section "-StopLog"
+
+  SetDetailsPrint textonly
+  DetailPrint "$(PFI_LANG_PROG_SAVELOG) $(PFI_LANG_TAKE_SEVERAL_SECONDS)"
+  SetDetailsPrint listonly
+  Call PFI_GetDateTimeStamp
+  Pop $G_PLS_FIELD_1
+  StrCmp $G_SSL_ONLY "0" normal_log
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "SSL Support installation finished $G_PLS_FIELD_1"
+  DetailPrint "------------------------------------------------------------"
+  Goto save_log
+
+normal_log:
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "'Add POPFile User' will be called to configure POPFile"
+  IfRebootFlag 0 close_log
+  DetailPrint "(a reboot is required to complete the Kakasi installation)"
+
+close_log:
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "Main program installation finished $G_PLS_FIELD_1"
+  DetailPrint "------------------------------------------------------------"
+
+save_log:
+
+  ; Save a log showing what was installed
+
+  !insertmacro PFI_BACKUP_123_DP "$G_ROOTDIR" "install.log"
+  Push "$G_ROOTDIR\install.log"
+  Call PFI_DumpLog
+  DetailPrint "Log report saved in '$G_ROOTDIR\install.log'"
+  SetDetailsPrint textonly
+  DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
+  SetDetailsPrint listonly
+
+SectionEnd
 
 #--------------------------------------------------------------------------
 # Component-selection page descriptions
@@ -1744,6 +1372,7 @@ SubSectionEnd
     !insertmacro MUI_DESCRIPTION_TEXT ${SecXMLRPC}      $(DESC_SecXMLRPC)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecIMAP}        $(DESC_SecIMAP)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSOCKS}       $(DESC_SecSOCKS)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecSSL}         $(DESC_SecSSL)
     !ifndef NO_KAKASI
       !insertmacro MUI_DESCRIPTION_TEXT ${SecKakasi} "Kakasi (used to process Japanese email)"
     !endif
@@ -1789,15 +1418,13 @@ SubSectionEnd
 Function CheckPerlRequirementsPage
 
   !define L_TEMP      $R9
-  !define L_VERSION   $R8
 
   Push ${L_TEMP}
-  Push ${L_VERSION}
 
-  Call GetIEVersion
-  Pop ${L_VERSION}
+  Call PFI_GetIEVersion
+  Pop $G_PLS_FIELD_1
 
-  StrCpy ${L_TEMP} ${L_VERSION} 1
+  StrCpy ${L_TEMP} $G_PLS_FIELD_1 1
   StrCmp ${L_TEMP} '?' not_good
   IntCmp ${L_TEMP} 5 exit not_good exit
 
@@ -1808,26 +1435,168 @@ not_good:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Settings" "RTL" "$(^RTL)"
 
   !insertmacro PFI_IO_TEXT "ioG.ini" "1" \
-      "$(PFI_LANG_PERLREQ_IO_TEXT_1)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_2)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_3)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_4)"
+      "$(PFI_LANG_PERLREQ_IO_TEXT_A)\
+       $(PFI_LANG_PERLREQ_IO_TEXT_B)\
+       $(PFI_LANG_PERLREQ_IO_TEXT_C)\
+       $(PFI_LANG_PERLREQ_IO_TEXT_D)"
 
   !insertmacro PFI_IO_TEXT "ioG.ini" "2" \
-      "$(PFI_LANG_PERLREQ_IO_TEXT_5) ${L_VERSION}${IO_NL}${IO_NL}\
-       $(PFI_LANG_PERLREQ_IO_TEXT_6)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_7)"
+      "$(PFI_LANG_PERLREQ_IO_TEXT_E)\
+       $(PFI_LANG_PERLREQ_IO_TEXT_F)\
+       $(PFI_LANG_PERLREQ_IO_TEXT_G)"
 
   !insertmacro MUI_HEADER_TEXT "$(PFI_LANG_PERLREQ_TITLE)" " "
 
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "ioG.ini"
 
 exit:
-  Pop ${L_VERSION}
   Pop ${L_TEMP}
 
   !undef L_TEMP
-  !undef L_VERSION
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: GetPermissionToInstall
+# (this is the last page shown before the installation starts)
+#
+# Display the information collected from the user to show what we are about to do.
+# The 'Back' button can be used to navigate to earlier pages if the user wishes to
+# change this information (i.e. select/deselect a component or change the install folder)
+#--------------------------------------------------------------------------
+
+Function GetPermissionToInstall
+
+  !define L_TEMP   $R9
+
+  Push ${L_TEMP}
+
+  ; This is a very simple custom page so we create the INI file here
+
+  ; Ensure custom page matches the selected language (left-to-right or right-to-left order)
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Settings" "RTL" "$(^RTL)"
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Settings" "NumFields" "1"
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Field 1"  "Type"   "text"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Field 1"  "Left"   "0"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Field 1"  "Right"  "300"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Field 1"  "Top"    "0"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Field 1"  "Bottom" "140"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Field 1"  "Flags"  "MULTILINE|HSCROLL|VSCROLL|READONLY"
+
+  !insertmacro MUI_HEADER_TEXT "$(PFI_LANG_SUMMARY_TITLE)" "$(PFI_LANG_SUMMARY_SUBTITLE)"
+
+  ; The entries in the "Basic" and "Optional" component lists are indented a little
+
+  !define C_NLT     "${IO_NL}\t"
+
+  ; Convert the installation pathname into a string which is safe to use in the summary page
+  
+  Push $G_ROOTDIR
+  Call NSIS2IO
+  Pop $G_PLS_FIELD_2
+
+  IfFileExists "$G_ROOTDIR\popfile.pl" upgrade
+  StrCpy ${L_TEMP} "$(PFI_LANG_SUMMARY_NEWLOCN)"
+  GetDlgItem $G_DLGITEM $HWNDPARENT 1
+  SendMessage $G_DLGITEM ${WM_SETTEXT} 0 "STR:$(^InstallBtn)"
+  Goto start_summary
+
+upgrade:
+  StrCpy ${L_TEMP} "$(PFI_LANG_SUMMARY_UPGRADELOCN)"
+  GetDlgItem $G_DLGITEM $HWNDPARENT 1
+  SendMessage $G_DLGITEM ${WM_SETTEXT} 0 "STR:$(PFI_LANG_INST_BTN_UPGRADE)"
+
+start_summary:
+  StrCpy $G_PLS_FIELD_1 "${L_TEMP}${IO_NL}${IO_NL}\
+      $(PFI_LANG_SUMMARY_BASICLIST)"
+  StrCpy ${L_TEMP} "${C_NLT}$(PFI_LANG_SUMMARY_NONE)"
+
+  !insertmacro PFI_SectionNotSelected ${SecPOPFile} check_min_perl
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}\
+          $(PFI_LANG_SUMMARY_POPFILECORE)${C_NLT}\
+          $(PFI_LANG_SUMMARY_DEFAULTSKIN)${C_NLT}\
+          $(PFI_LANG_SUMMARY_DEFAULTLANG)"
+
+check_min_perl:
+  !insertmacro PFI_SectionNotSelected ${SecMinPerl} check_skins
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_MINPERL)"
+
+check_skins:
+  !insertmacro PFI_SectionNotSelected ${SecSkins} check_langs
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_EXTRASKINS)"
+
+check_langs:
+  !insertmacro PFI_SectionNotSelected ${SecLangs} check_kakasi
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_EXTRALANGS)"
+
+check_kakasi:
+  !ifndef NO_KAKASI
+      !insertmacro PFI_SectionNotSelected ${SecKakasi} end_basic
+      StrCpy ${L_TEMP} ""
+      StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_KAKASI)"
+
+    end_basic:
+  !endif
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${L_TEMP}${IO_NL}${IO_NL}\
+      $(PFI_LANG_SUMMARY_OPTIONLIST)"
+
+  ; Check the optional components in alphabetic order
+
+  StrCpy ${L_TEMP} "${C_NLT}$(PFI_LANG_SUMMARY_NONE)"
+
+  !insertmacro PFI_SectionNotSelected ${SecIMAP} check_nntp
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_IMAP)"
+
+check_nntp:
+  !insertmacro PFI_SectionNotSelected ${SecNNTP} check_smtp
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_NNTP)"
+
+check_smtp:
+  !insertmacro PFI_SectionNotSelected ${SecSMTP} check_socks
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SMTP)"
+
+check_socks:
+  !insertmacro PFI_SectionNotSelected ${SecSOCKS} check_ssl
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SOCKS)"
+
+check_ssl:
+  !insertmacro PFI_SectionNotSelected ${SecSSL} check_xmlrpc
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SSL)"
+
+check_xmlrpc:
+  !insertmacro PFI_SectionNotSelected ${SecXMLRPC} end_optional
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_XMLRPC)"
+
+end_optional:
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${L_TEMP}${IO_NL}${IO_NL}\
+      $(PFI_LANG_SUMMARY_BACKBUTTON)"
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioData.ini" "Field 1" "State" $G_PLS_FIELD_1
+
+  ; Set focus to the button labelled "Install" or "Upgrade" (instead of the "Summary" data)
+
+  !insertmacro MUI_INSTALLOPTIONS_INITDIALOG "ioData.ini"
+  Pop ${L_TEMP}
+  GetDlgItem $G_DLGITEM $HWNDPARENT 1
+  SendMessage $HWNDPARENT ${WM_NEXTDLGCTL} $G_DLGITEM 1
+  !insertmacro MUI_INSTALLOPTIONS_SHOW
+
+  Pop ${L_TEMP}
+
+  !undef L_TEMP
 
 FunctionEnd
 
@@ -1901,358 +1670,40 @@ no_banner:
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: MakeRootDirSafe
+# Installer Function: CheckSSLOnlyFlag
+# (the "pre" function for the COMPONENTS selection page)
 #
-# If we are installing on top of a previous installation, we try to shut it down
-# (to allow the files to be overwritten without requiring a reboot)
-#
-# We also need to check if any of the PFI utilities are running (to avoid Abort/Retry/Ignore
-# messages or the need to reboot in order to update them)
+# If only the SSL Support files are to be installed, disable the other
+# POPFile-component sections and skip the COMPONENTS page
 #--------------------------------------------------------------------------
 
-Function MakeRootDirSafe
+Function CheckSSLOnlyFlag
 
-  IfFileExists "$G_ROOTDIR\*.exe" 0 nothing_to_check
+  StrCmp $G_SSL_ONLY "0" exit
 
-  !define L_CFG      $R9    ; file handle
-  !define L_EXE      $R8    ; name of EXE file to be monitored
-  !define L_LINE     $R7
-  !define L_NEW_GUI  $R6
-  !define L_OLD_GUI  $R5
-  !define L_PARAM    $R4
-  !define L_RESULT   $R3
-  !define L_TEXTEND  $R2    ; used to ensure correct handling of lines longer than 1023 chars
+  !insertmacro UnselectSection ${SecPOPFile}
+  !insertmacro UnselectSection ${SecMinPerl}
+  !insertmacro UnselectSection ${SecSkins}
+  !insertmacro UnselectSection ${SecLangs}
+  !ifndef NO_KAKASI
+    !insertmacro UnselectSection ${SecKakasi}
+  !endif
+  !insertmacro UnselectSection ${SecNNTP}
+  !insertmacro UnselectSection ${SecSMTP}
+  !insertmacro UnselectSection ${SecXMLRPC}
+  !insertmacro UnselectSection ${SecIMAP}
+  !insertmacro UnselectSection ${SecSOCKS}
 
-  Push ${L_CFG}
-  Push ${L_EXE}
-  Push ${L_LINE}
-  Push ${L_NEW_GUI}
-  Push ${L_OLD_GUI}
-  Push ${L_PARAM}
-  Push ${L_RESULT}
-  Push ${L_TEXTEND}
+  !insertmacro SelectSection ${SecSSL}
 
-  ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
-  ; to allow POPFile to be run as a Windows service.
+  ; Do not display the COMPONENTS page
 
-  Push "POPFile"
-  Call ServiceRunning
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "true" manual_shutdown
-
-  ; If we are about to overwrite an existing version which is still running,
-  ; then one of the EXE files will be 'locked' which means we have to shutdown POPFile.
-  ;
-  ; POPFile v0.20.0 and later may be using 'popfileb.exe', 'popfilef.exe', 'popfileib.exe',
-  ; 'popfileif.exe', 'perl.exe' or 'wperl.exe'.
-  ;
-  ; Earlier versions of POPFile use only 'perl.exe' or 'wperl.exe'.
-
-  Push $G_ROOTDIR
-  Call FindLockedPFE
-  Pop ${L_EXE}
-  StrCmp ${L_EXE} "" check_pfi_utils
-
-  ; The program files we are about to update are in use so we need to shut POPFile down
-
-  DetailPrint "... it is locked."
-
-  ; Attempt to discover which POPFile UI port is used by the current user, so we can issue
-  ; a shutdown request. The following cases are considered:
-  ;
-  ; (a) upgrading a 0.21.0 or later installation and runpopfile.exe was used to start POPFile,
-  ;     so POPFile is using environment variables which match the HKCU RootDir_SFN and
-  ;     UserDir_SFN registry data (or HKCU RootDir_LFN and UserDir_LFN if short file names are
-  ;     not supported)
-  ;
-  ; (b) upgrading a pre-0.21.0 installation, so popfile.cfg is in the $G_ROOTDIR folder. Need to
-  ;     look for old-style and new-style UI port specifications just like the old installer did.
-
-  ReadRegStr ${L_CFG} HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
-  StrCmp ${L_CFG} "" try_root_dir
-  IfFileExists "${L_CFG}\popfile.cfg" check_cfg_file
-
-try_root_dir:
-  IfFileExists "$G_ROOTDIR\popfile.cfg" 0 manual_shutdown
-  StrCpy ${L_CFG} "$G_ROOTDIR"
-
-check_cfg_file:
-  StrCpy ${L_NEW_GUI} ""
-  StrCpy ${L_OLD_GUI} ""
-
-  ; See if we can get the current gui port from an existing configuration.
-  ; There may be more than one entry for this port in the file - use the last one found
-  ; (but give priority to any "html_port" entry).
-
-  FileOpen  ${L_CFG} "${L_CFG}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LINE}
-  StrCmp ${L_LINE} "" done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LINE} "$\n" loop
-
-  StrCpy ${L_PARAM} ${L_LINE} 10
-  StrCmp ${L_PARAM} "html_port " got_html_port
-
-  StrCpy ${L_PARAM} ${L_LINE} 8
-  StrCmp ${L_PARAM} "ui_port " got_ui_port
-  Goto check_eol
-
-got_ui_port:
-  StrCpy ${L_OLD_GUI} ${L_LINE} 5 8
-  Goto check_eol
-
-got_html_port:
-  StrCpy ${L_NEW_GUI} ${L_LINE} 5 10
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-done:
-  FileClose ${L_CFG}
-
-  Push ${L_NEW_GUI}
-  Call TrimNewlines
-  Pop ${L_NEW_GUI}
-
-  Push ${L_OLD_GUI}
-  Call TrimNewlines
-  Pop ${L_OLD_GUI}
-
-  StrCmp ${L_NEW_GUI} "" try_old_style
-  DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_NEW_GUI} [new style port]"
-  DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-  Push ${L_NEW_GUI}
-  Call ShutdownViaUI
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" check_exe
-  StrCmp ${L_RESULT} "password?" manual_shutdown
-
-try_old_style:
-  StrCmp ${L_OLD_GUI} "" manual_shutdown
-  DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_OLD_GUI} [old style port]"
-  DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-  Push ${L_OLD_GUI}
-  Call ShutdownViaUI
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" check_exe
-  Goto manual_shutdown
-
-check_exe:
-  DetailPrint "Waiting for '${L_EXE}' to unlock after NSISdl request..."
-  DetailPrint "Please be patient, this may take more than 30 seconds"
-  Push ${L_EXE}
-  Call WaitUntilUnlocked
-  DetailPrint "Checking if '${L_EXE}' is still locked after NSISdl request..."
-  Push ${L_EXE}
-  Call CheckIfLocked
-  Pop ${L_EXE}
-  StrCmp ${L_EXE} "" unlocked_now
-
-manual_shutdown:
-  StrCpy $G_PLS_FIELD_1 "POPFile"
-  DetailPrint "Unable to shutdown $G_PLS_FIELD_1 automatically - manual intervention requested"
-  MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST "$(PFI_LANG_MBMANSHUT_1)\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBMANSHUT_2)\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBMANSHUT_3)"
-  Goto check_pfi_utils
-
-unlocked_now:
-  DetailPrint "File is now unlocked"
-
-check_pfi_utils:
-  Push $G_ROOTDIR
-  Call RequestPFIUtilsShutdown
-
-  Pop ${L_TEXTEND}
-  Pop ${L_RESULT}
-  Pop ${L_PARAM}
-  Pop ${L_OLD_GUI}
-  Pop ${L_NEW_GUI}
-  Pop ${L_LINE}
-  Pop ${L_EXE}
-  Pop ${L_CFG}
-
-  !undef L_CFG
-  !undef L_EXE
-  !undef L_LINE
-  !undef L_NEW_GUI
-  !undef L_OLD_GUI
-  !undef L_PARAM
-  !undef L_RESULT
-  !undef L_TEXTEND
-
-nothing_to_check:
-FunctionEnd
-
-#--------------------------------------------------------------------------
-# Installer Function: MinPerlRestructure
-#
-# Prior to POPFile 0.21.0, POPFile really only supported one user so the location of the
-# popfile.cfg configuration file was hard-coded and the minimal Perl files were intermingled
-# with the POPFile files. POPFile 0.21.0 introduced some multi-user support which means that
-# the location of the configuration file is now supplied via an environment variable to allow
-# POPFile to be run from any folder.  As a result, some rearrangement of the minimal Perl files
-# is required (to avoid Perl runtime errors when POPFile is started from a folder other than
-# the one where POPFile is installed).
-#--------------------------------------------------------------------------
-
-Function MinPerlRestructure
-
-  IfFileExists "$G_MPLIBDIR\*.pm" exit
-
-  IfFileExists "$G_ROOTDIR\*.pm" 0 exit
-
-  CreateDirectory "$G_MPLIBDIR"
-
-  CopyFiles /SILENT /FILESONLY "$G_ROOTDIR\*.pm" "$G_MPLIBDIR\"
-  Delete "$G_ROOTDIR\*.pm"
-
-  !insertmacro MinPerlMove "auto"
-  !insertmacro MinPerlMove "Carp"
-  !insertmacro MinPerlMove "DBD"
-  !insertmacro MinPerlMove "Digest"
-  !insertmacro MinPerlMove "Encode"
-  !insertmacro MinPerlMove "Exporter"
-  !insertmacro MinPerlMove "File"
-  !insertmacro MinPerlMove "Getopt"
-  !insertmacro MinPerlMove "IO"
-  !insertmacro MinPerlMove "MIME"
-  !insertmacro MinPerlMove "String"
-  !insertmacro MinPerlMove "Sys"
-  !insertmacro MinPerlMove "Text"
-  !insertmacro MinPerlMove "warnings"
-
-  ; Delete redundant minimal Perl files from earlier installations
-
-  IfFileExists "$G_ROOTDIR\Win32\API.pm" 0 exit
-  Delete "$G_ROOTDIR\Win32\API\Callback.pm"
-  Delete "$G_ROOTDIR\Win32\API\Struct.pm"
-  Delete "$G_ROOTDIR\Win32\API\Type.pm"
-  RMDir "$G_ROOTDIR\Win32\API"
-  Delete "$G_ROOTDIR\Win32\API.pm"
-  RMDir "$G_ROOTDIR\Win32"
+  Abort
 
 exit:
-FunctionEnd
 
-#--------------------------------------------------------------------------
-# Installer Function: SkinsRestructure
-#
-# Now that the HTML for the UI is no longer embedded in the Perl code, some changes need to be
-# made to the skins. There is now a new default skin which includes a set of HTML template files
-# in addition to a CSS file. Additional skins consist of separate folders containing 'style.css'
-# and any image files used by the skin (instead of each skin using a uniquely named CSS file in
-# the 'skins' folder, with any necessary image files being stored either in the 'skins' folder
-# or in a separate sub-folder).
-#
-# We attempt to rearrange any existing skins to suit this new structure (the current build only
-# moves files, it does not edit the CSS files to update any image references within them).
-#
-# The new default skin and its associated HTML template files are always installed by the
-# mandatory 'POPFile' component (even if the 'skins' component is not installed).
-#--------------------------------------------------------------------------
+  ; Display the COMPONENTS page
 
-Function SkinsRestructure
-
-  RMDir "$G_ROOTDIR\skins\lavishImages"
-  RMDir "$G_ROOTDIR\skins\sleetImages"
-
-  IfFileExists "$G_ROOTDIR\skins\default\*.thtml" exit
-
-  !insertmacro SkinMove "blue"           "blue"
-  !insertmacro SkinMove "CoolBlue"       "coolblue"
-  !insertmacro SkinMove "CoolBrown"      "coolbrown"
-  !insertmacro SkinMove "CoolGreen"      "coolgreen"
-  !insertmacro SkinMove "CoolOrange"     "coolorange"
-  !insertmacro SkinMove "CoolYellow"     "coolyellow"
-  !insertmacro SkinMove "default"        "default"
-  !insertmacro SkinMove "glassblue"      "glassblue"
-  !insertmacro SkinMove "green"          "green"
-
-  IfFileExists "$G_ROOTDIR\skins\lavishImages\*.*" 0 lavish
-  Rename  "$G_ROOTDIR\skins\lavishImages" "$G_ROOTDIR\skins\lavish"
-
-lavish:
-  !insertmacro SkinMove "Lavish"         "lavish"
-  !insertmacro SkinMove "LRCLaptop"      "lrclaptop"
-  !insertmacro SkinMove "orange"         "orange"
-  !insertmacro SkinMove "orangeCream"    "orangecream"
-  !insertmacro SkinMove "outlook"        "outlook"
-  !insertmacro SkinMove "PRJBlueGrey"    "prjbluegrey"
-  !insertmacro SkinMove "PRJSteelBeach"  "prjsteelbeach"
-  !insertmacro SkinMove "SimplyBlue"     "simplyblue"
-
-  IfFileExists "$G_ROOTDIR\skins\sleetImages\*.*" 0 sleet
-  Rename  "$G_ROOTDIR\skins\sleetImages" "$G_ROOTDIR\skins\sleet"
-
-sleet:
-  !insertmacro SkinMove "Sleet"          "sleet"
-  !insertmacro SkinMove "Sleet-RTL"      "sleet-rtl"
-  !insertmacro SkinMove "smalldefault"   "smalldefault"
-  !insertmacro SkinMove "smallgrey"      "smallgrey"
-  !insertmacro SkinMove "StrawberryRose" "strawberryrose"
-  !insertmacro SkinMove "tinydefault"    "tinydefault"
-  !insertmacro SkinMove "tinygrey"       "tinygrey"
-  !insertmacro SkinMove "white"          "white"
-  !insertmacro SkinMove "windows"        "windows"
-
-  IfFileExists "$G_ROOTDIR\skins\chipped_obsidian.gif" 0 metalback
-  CreateDirectory "$G_ROOTDIR\skins\prjsteelbeach"
-  Rename "$G_ROOTDIR\skins\chipped_obsidian.gif" "$G_ROOTDIR\skins\prjsteelbeach\chipped_obsidian.gif"
-
-metalback:
-  IfFileExists "$G_ROOTDIR\skins\metalback.gif" 0 check_for_extra_skins
-  CreateDirectory "$G_ROOTDIR\skins\prjsteelbeach"
-  Rename "$G_ROOTDIR\skins\metalback.gif" "$G_ROOTDIR\skins\prjsteelbeach\metalback.gif"
-
-check_for_extra_skins:
-
-  ; Move any remaining CSS files to an appropriate folder (to make them available for selection)
-  ; Only the CSS files are moved, the user will have to adjust any skins which use images
-
-  !define L_CSS_HANDLE    $R9   ; used when searching for non-standard skins
-  !define L_SKIN_NAME     $R8   ; name of a non-standard skin (i.e. not supplied with POPFile)
-
-  Push ${L_CSS_HANDLE}
-  Push ${L_SKIN_NAME}
-
-  FindFirst ${L_CSS_HANDLE} ${L_SKIN_NAME} "$G_ROOTDIR\skins\*.css"
-  StrCmp ${L_CSS_HANDLE} "" all_done_now
-
-process_skin:
-  StrCmp ${L_SKIN_NAME} "." look_again
-  StrCmp ${L_SKIN_NAME} ".." look_again
-  IfFileExists "$G_ROOTDIR\skins\${L_SKIN_NAME}\*.*" look_again
-  StrCpy ${L_SKIN_NAME} ${L_SKIN_NAME} -4
-  CreateDirectory "$G_ROOTDIR\skins\${L_SKIN_NAME}"
-  Rename "$G_ROOTDIR\skins\${L_SKIN_NAME}.css" "$G_ROOTDIR\skins\${L_SKIN_NAME}\style.css"
-
-look_again:
-  FindNext ${L_CSS_HANDLE} ${L_SKIN_NAME}
-  StrCmp ${L_SKIN_NAME} "" all_done_now process_skin
-
-all_done_now:
-  FindClose ${L_CSS_HANDLE}
-
-  Pop ${L_SKIN_NAME}
-  Pop ${L_CSS_HANDLE}
-
-  !undef L_CSS_HANDLE
-  !undef L_SKIN_NAME
-
-exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
@@ -2294,44 +1745,76 @@ FunctionEnd
 # Installer Function: CheckExistingProgDir
 # (the "leave" function for the POPFile PROGRAM DIRECTORY selection page)
 #
+# The POPFile PROGRAM DIRECTORY page uses the standard $INSTDIR variable so NSIS
+# automatically strips any trailing backslashes from the path selected by the user.
+#
+# Now that we are overriding the default 'InstallDir' behaviour it is easier for the
+# user to select the main 'Program Files' folder so we check for this case and refuse
+# to accept this path.
+#
 # This function is used to check if a previous POPFile installation exists in the directory
-# chosen for this installation's POPFile PROGRAM files (popfile.pl, etc)
+# chosen for this installation's POPFile PROGRAM files (popfile.pl, etc). If we find one,
+# we check if it contains any of the optional components and remind the user if it seems that
+# they have forgotten to 'upgrade' them.
 #--------------------------------------------------------------------------
 
 Function CheckExistingProgDir
 
   !define L_RESULT  $R9
 
-  ; If short file names are not supported on this system,
-  ; we cannot accept any path containing spaces.
-
-  StrCmp $G_SFN_DISABLED "0" check_locn
-
   Push ${L_RESULT}
+
+  ; We do not permit POPFile to be installed in the target system's 'Program Files' folder
+  ; (i.e. we do not allow 'popfile.pl' etc to be stored there)
+
+  StrCmp $INSTDIR "$PROGRAMFILES" return_to_directory_selection
+
+  ; Assume SFN support is enabled (the default setting for Windows)
+
+  StrCpy $G_SFN_DISABLED "0"
+
+  Push $INSTDIR
+  Call PFI_GetSFNStatus
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "1" check_SFN_PROGRAMFILES
+  StrCpy $G_SFN_DISABLED "1"
+
+  ; Short file names are not supported here, so we cannot accept any path containing spaces.
 
   Push $INSTDIR
   Push ' '
-  Call StrStr
+  Call PFI_StrStr
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" no_spaces
-  MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "Current configuration does not support short file names!\
-      ${MB_NL}${MB_NL}\
-      Please select a folder location which does not contain spaces"
+  StrCmp ${L_RESULT} "" check_locn
+  Push $INSTDIR
+  Call PFI_GetRoot
+  Pop $G_PLS_FIELD_1
+  MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_DIRSELECT_MBNOSFN)"
 
   ; Return to the POPFile PROGRAM DIRECTORY selection page
 
+return_to_directory_selection:
   Pop ${L_RESULT}
   Abort
 
-no_spaces:
-  Pop ${L_RESULT}
+check_SFN_PROGRAMFILES:
+  GetFullPathName /SHORT ${L_RESULT} "$PROGRAMFILES"
+  StrCmp $INSTDIR ${L_RESULT} return_to_directory_selection
 
 check_locn:
 
   ; Initialise the global user variable used for the POPFile PROGRAM files location
+  ; (we always try to use the LFN format, even if the user has entered a SFN format path)
 
   StrCpy $G_ROOTDIR "$INSTDIR"
+  Push $G_ROOTDIR
+  Call PFI_GetCompleteFPN
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "" got_path
+  StrCpy $G_ROOTDIR ${L_RESULT}
+
+got_path:
+  Pop ${L_RESULT}
 
   ; Warn the user if we are about to upgrade an existing installation
   ; and allow user to select a different directory if they wish
@@ -2342,7 +1825,7 @@ check_locn:
 warning:
   MessageBox MB_YESNO|MB_ICONQUESTION "$(PFI_LANG_DIRSELECT_MBWARN_1)\
       ${MB_NL}${MB_NL}\
-      $INSTDIR\
+      $G_ROOTDIR\
       ${MB_NL}${MB_NL}${MB_NL}\
       $(PFI_LANG_DIRSELECT_MBWARN_2)" IDYES check_options
 
@@ -2351,6 +1834,10 @@ warning:
   Abort
 
 check_options:
+
+  ; If we are only installing the SSL support files, there is no need to check the options
+
+  StrCmp $G_SSL_ONLY "1" continue
 
   ; If user has NOT selected a program component on the COMPONENTS page and we find that the
   ; version we are about to upgrade includes that program component then the user is asked for
@@ -2423,90 +1910,19 @@ continue:
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: CheckHostsFile
-#
-# Starting with the 0.22.0 release the system tray icon uses 'http://localhost:port' to open
-# the User Interface (earlier versions used 'http://127.0.0.1:port' instead). The installer has
-# been updated to follow suit. Some Windows 9x systems may not have a HOSTS file which defines
-# 'localhost' so we ensure a suitable one exists
-#--------------------------------------------------------------------------
-
-Function CheckHostsFile
-
-  !define L_CFG         $R9
-  !define L_LINE        $R8
-  !define L_LOCALHOST   $R7
-  !define L_TEMP        $R6
-
-  Push ${L_CFG}
-  Push ${L_LINE}
-  Push ${L_LOCALHOST}
-  Push ${L_TEMP}
-
-  IfFileExists "$WINDIR\HOSTS" look_for_localhost
-  FileOpen ${L_CFG} "$WINDIR\HOSTS" w
-  FileWrite ${L_CFG} "# Created by the installer for ${C_PFI_PRODUCT} ${C_PFI_VERSION}${MB_NL}"
-  FileWrite ${L_CFG} "${MB_NL}"
-  FileWrite ${L_CFG} "127.0.0.1       localhost${MB_NL}"
-  FileClose ${L_CFG}
-  Goto exit
-
-look_for_localhost:
-  StrCpy ${L_LOCALHOST} ""
-  FileOpen ${L_CFG} "$WINDIR\HOSTS" r
-
-loop:
-  FileRead ${L_CFG} ${L_LINE}
-  StrCmp ${L_LINE} "" done
-  StrCpy ${L_TEMP} ${L_LINE} 10
-  StrCmp ${L_TEMP} "127.0.0.1 " 0 loop
-  Push ${L_LINE}
-  Call TrimNewlines
-  Push " localhost"
-  Call StrStr
-  Pop ${L_TEMP}
-  StrCmp ${L_TEMP} "" loop
-  StrCmp ${L_TEMP} " localhost" found
-  StrCpy ${L_TEMP} ${L_TEMP} 11
-  StrCmp ${L_TEMP} " localhost " found
-  Goto loop
-
-found:
-  StrCpy ${L_LOCALHOST} "1"
-
-done:
-  FileClose ${L_CFG}
-  StrCmp ${L_LOCALHOST} "1" exit
-  FileOpen ${L_CFG} "$WINDIR\HOSTS" a
-  FileSeek ${L_CFG} 0 END
-  FileWrite ${L_CFG} "${MB_NL}"
-  FileWrite ${L_CFG} "# Inserted by the installer for ${C_PFI_PRODUCT} ${C_PFI_VERSION}${MB_NL}"
-  FileWrite ${L_CFG} "${MB_NL}"
-  FileWrite ${L_CFG} "127.0.0.1       localhost${MB_NL}"
-  FileClose ${L_CFG}
-
-exit:
-  Pop ${L_TEMP}
-  Pop ${L_LOCALHOST}
-  Pop ${L_LINE}
-  Pop ${L_CFG}
-
-  !undef L_CFG
-  !undef L_LINE
-  !undef L_LOCALHOST
-  !undef L_TEMP
-
-FunctionEnd
-
-#--------------------------------------------------------------------------
 # Installer Function: InstallUserData
 # (the "pre" function for the FINISH page)
 #--------------------------------------------------------------------------
 
 Function InstallUserData
 
-  ; For this build we skip our own FINISH page and disable the wizard's language selection
-  ; dialog to make the wizard appear as an extension of the main 'setup.exe' installer.
+  ; If we are only downloading and installing the SSL support files, display the FINISH page
+
+  StrCmp $G_SSL_ONLY "1" exit
+
+  ; For normal installations, skip our own FINISH page and disable the "Add POPFile User"
+  ; wizard's language selection dialog to make the wizard appear as an extension of the main
+  ; 'setup.exe' installer.
   ; [Future builds may pass more than just a command-line switch to the wizard]
 
   IfRebootFlag special_case
@@ -2516,6 +1932,10 @@ Function InstallUserData
 special_case:
   Exec '"$G_ROOTDIR\adduser.exe" /installreboot'
   Abort
+
+exit:
+
+  ; Display the FINISH page
 
 FunctionEnd
 
@@ -2537,746 +1957,140 @@ exit:
 FunctionEnd
 
 
-#####################################################################################
-#                                                                                   #
-#   ##    ##  ##    ##   ##   ##    ##   #####  ########  #####    ##      ##       #
-#   ##    ##  ###   ##   ##   ###   ##  ##   ##    ##    ##   ##   ##      ##       #
-#   ##    ##  ####  ##   ##   ####  ##  ##         ##    ##   ##   ##      ##       #
-#   ##    ##  ## ## ##   ##   ## ## ##   #####     ##    #######   ##      ##       #
-#   ##    ##  ##  ####   ##   ##  ####       ##    ##    ##   ##   ##      ##       #
-#   ##    ##  ##   ###   ##   ##   ###  ##   ##    ##    ##   ##   ##      ##       #
-#    ######   ##    ##   ##   ##    ##   #####     ##    ##   ##   ######  ######   #
-#                                                                                   #
-#####################################################################################
+#==========================================================================
+#==========================================================================
+# The 'Uninstall' part of the script is in a separate file
+#==========================================================================
+#==========================================================================
+
+  !include "installer-Uninstall.nsh"
+
+#==========================================================================
+#==========================================================================
 
 
 #--------------------------------------------------------------------------
-# Initialise the uninstaller
+# Macro-based Functions make it easier to maintain identical functions
+# which are (or might be) used in the installer and in the uninstaller.
 #--------------------------------------------------------------------------
 
-Function un.onInit
+!macro ShowPleaseWaitBanner UN
+  Function ${UN}ShowPleaseWaitBanner
 
-  ; Retrieve the language used when POPFile was installed, and use it for the uninstaller
-  ; (if the language entry is not found in the registry, a 'language selection' dialog is shown)
+    !ifndef ENGLISH_MODE
 
-  !insertmacro MUI_UNGETLANGUAGE
+      ; The Banner plug-in uses the "MS Shell Dlg" font to display the banner text but
+      ; East Asian versions of Windows 9x do not support this so in these cases we use
+      ; "English" text for the banner (otherwise the text would be unreadable garbage).
 
-  StrCpy $G_ROOTDIR   "$INSTDIR"
-  StrCpy $G_MPLIBDIR  "$INSTDIR\lib"
+      !define L_RESULT    $R9   ; The 'IsNT' function returns 0 if Win9x was detected
 
-  ; Starting with 0.21.0 the registry is used to store the location of the 'User Data'
-  ; (if setup.exe or adduser.exe was used to create/update the 'User Data' for this user)
+      Push ${L_RESULT}
 
-  ReadRegStr $G_USERDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
-  StrCmp $G_USERDIR "" 0 got_user_path
+      Call PFI_IsNT
+      Pop ${L_RESULT}
+      StrCmp ${L_RESULT} "1" show_banner
 
-  ; Pre-release versions of the 0.21.0 installer used a sub-folder for the default user data
+      ; Windows 9x has been detected
 
-  StrCpy $G_USERDIR "$INSTDIR\user"
+      StrCmp $LANGUAGE ${LANG_SIMPCHINESE} use_ENGLISH_banner
+      StrCmp $LANGUAGE ${LANG_TRADCHINESE} use_ENGLISH_banner
+      StrCmp $LANGUAGE ${LANG_JAPANESE} use_ENGLISH_banner
+      StrCmp $LANGUAGE ${LANG_KOREAN} use_ENGLISH_banner
+      Goto show_banner
 
-  ; If we are uninstalling an upgraded installation, the default user data may be in $INSTDIR
-  ; instead of $INSTDIR\user
+    use_ENGLISH_banner:
+      Banner::show /NOUNLOAD /set 76 "Please be patient." "This may take a few seconds..."
+      Goto continue
 
-  IfFileExists "$G_USERDIR\popfile.cfg" got_user_path
-  StrCpy $G_USERDIR   "$INSTDIR"
+      show_banner:
+    !endif
 
-got_user_path:
+    Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_BE_PATIENT)" "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
 
-  ; Email settings are stored on a 'per user' basis therefore we need to know which user is
-  ; running the uninstaller (e.g. so we can check ownership of any local 'User Data' we find)
+    !ifndef ENGLISH_MODE
+      continue:
+        Pop ${L_RESULT}
 
-	ClearErrors
-	UserInfo::GetName
-	IfErrors 0 got_name
+        !undef L_RESULT
+    !endif
 
-  ; Assume Win9x system, so user has 'Admin' rights
-  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
-
-  StrCpy $G_WINUSERNAME "UnknownUser"
-  StrCpy $G_WINUSERTYPE "Admin"
-  Goto start_uninstall
-
-got_name:
-	Pop $G_WINUSERNAME
-  StrCmp $G_WINUSERNAME "" 0 get_usertype
-  StrCpy $G_WINUSERNAME "UnknownUser"
-
-get_usertype:
-  UserInfo::GetAccountType
-	Pop $G_WINUSERTYPE
-  StrCmp $G_WINUSERTYPE "Admin" start_uninstall
-  StrCmp $G_WINUSERTYPE "Power" start_uninstall
-  StrCmp $G_WINUSERTYPE "User" start_uninstall
-  StrCmp $G_WINUSERTYPE "Guest" start_uninstall
-  StrCpy $G_WINUSERTYPE "Unknown"
-
-start_uninstall:
-FunctionEnd
+  FunctionEnd
+!macroend
 
 #--------------------------------------------------------------------------
-# Uninstaller Sections (this build uses all of these and executes them in the order shown)
+# Installer Function: ShowPleaseWaitBanner
 #
-#  (1) un.Uninstall Begin    - requests confirmation if appropriate
-#  (2) un.Local User Data    - looks for and removes 'User Data' from the PROGRAM folder
-#  (3) un.Shutdown POPFile   - shutdown POPFile if necessary (to avoid the need to reboot)
-#  (4) un.Start Menu Entries - remove StartUp shortcuts and Start Menu entries
-#  (5) un.POPFile Core       - uninstall POPFile PROGRAM files
-#  (6) un.Skins              - uninstall POPFile skins
-#  (7) un.Languages          - uninstall POPFile UI languages
-#  (8) un.QuickStart Guide   - uninstall POPFile English QuickStart Guide
-#  (9) un.Kakasi             - uninstall Kakasi package and remove its environment variables
-# (10) un.Minimal Perl       - uninstall minimal Perl, including all of the optional modules
-# (11) un.Registry Entries   - remove 'Add/Remove Program' data and other registry entries
-# (12) un.Uninstall End      - remove remaining files/folders (if it is safe to do so)
+# This function is used during the installation process
+#--------------------------------------------------------------------------
+
+!insertmacro ShowPleaseWaitBanner ""
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.ShowPleaseWaitBanner
+#
+# This function is used during the uninstall process
+#--------------------------------------------------------------------------
+
+;!insertmacro ShowPleaseWaitBanner "un."
+
+#--------------------------------------------------------------------------
+# Installer Function: NSIS2IO
+#
+# Convert an NSIS string to a form suitable for use by InstallOptions
+#
+# Inputs:
+#         (top of stack)     - a string to be used on an InstallOptions page
+# Outputs:
+#         (top of stack)     - a safe version of the input which will be displayed correctly
+#
+# Usage:
+#         Push "C:\Install\Workshop\restore"        ; InstallOptions treats '\r' as a CR char
+#         Call NSIS2IO
+#         Pop $R0
+#
+#         ($R0 will now hold "C:\\Install\\Workshop\\restore"
+#          to make InstallOptions display "C:\Install\Workshop\restore"
+#          instead of "C:\Install\Workshop
+#          estore")
 #
 #--------------------------------------------------------------------------
 
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Uninstall Begin' (the first section in the uninstaller)
-#--------------------------------------------------------------------------
-
-Section "un.Uninstall Begin" UnSecBegin
-
-  !define L_TEMP        $R9
-
-  Push ${L_TEMP}
-
-  ReadINIStr ${L_TEMP} "$G_USERDIR\install.ini" "Settings" "Owner"
-  StrCmp ${L_TEMP} "" section_exit
-  StrCmp ${L_TEMP} $G_WINUSERNAME section_exit
-
-  MessageBox MB_YESNO|MB_ICONSTOP|MB_DEFBUTTON2 \
-      "$(PFI_LANG_UN_MBDIFFUSER_1) ('${L_TEMP}') !\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_UN_MBNOTFOUND_2)" IDYES section_exit
-  Abort "$(PFI_LANG_UN_ABORT_1)"
-
-section_exit:
-  Pop ${L_TEMP}
-
-  !undef L_TEMP
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Local User Data'
-#
-# There may be 'User Data' in the same folder as the PROGRAM files (especially if this is
-# an upgraded installation) so we must run the 'User Data' uninstaller before we uninstall
-# POPFile (to restore any email settings changed by the installer).
-#--------------------------------------------------------------------------
-
-Section "un.Local User Data" UnSecUserData
-
-  !define L_RESULT    $R9
-
-  Push ${L_RESULT}
-
-  IfFileExists "$G_ROOTDIR\popfile.pl" look_for_uninstalluser
-  IfFileExists "$G_ROOTDIR\popfile.exe" look_for_uninstalluser
-    MessageBox MB_YESNO|MB_ICONSTOP|MB_DEFBUTTON2 \
-        "$(PFI_LANG_UN_MBNOTFOUND_1) '$G_ROOTDIR'.\
-        ${MB_NL}${MB_NL}\
-        $(PFI_LANG_UN_MBNOTFOUND_2)" IDYES look_for_uninstalluser
-    Abort "$(PFI_LANG_UN_ABORT_1)"
-
-look_for_uninstalluser:
-  IfFileExists "$G_ROOTDIR\uninstalluser.exe" 0 section_exit
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  ; Uninstall the 'User Data' in the PROGRAM folder before uninstalling the PROGRAM files
-  ; (note that running 'uninstalluser.exe' with the '_?=dir' option means it will be unable
-  ; to delete itself because the program is NOT automatically relocated to the TEMP folder)
-
-  HideWindow
-  ExecWait '"$G_ROOTDIR\uninstalluser.exe" _?=$G_ROOTDIR' ${L_RESULT}
-  BringToFront
-
-  ; If the 'User Data' uninstaller did not return the normal "success" code (e.g. because user
-  ; cancelled the 'User Data' uninstall) then we must retain the user data and uninstalluser.exe
-
-  StrCmp ${L_RESULT} "0" 0 section_exit
-
-  ; If any email settings have NOT been restored and the user wishes to try again later,
-  ; the relevant INI file will still exist and we should not remove it or uninstalluser.exe
-
-  IfFileExists "$G_ROOTDIR\pfi-outexpress.ini" section_exit
-  IfFileExists "$G_ROOTDIR\pfi-outlook.ini" section_exit
-  IfFileExists "$G_ROOTDIR\pfi-eudora.ini" section_exit
-  Delete "$G_ROOTDIR\uninstalluser.exe"
-
-section_exit:
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  Pop ${L_RESULT}
-
-  !undef L_RESULT
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Shutdown POPFile'
-#--------------------------------------------------------------------------
-
-Section "un.Shutdown POPFile" UnSecShutdown
-
-  !define L_CFG         $R9   ; used as file handle
-  !define L_EXE         $R8   ; full path of the EXE to be monitored
-  !define L_LNE         $R7   ; a line from popfile.cfg
-  !define L_TEMP        $R6
-  !define L_TEXTEND     $R5   ; used to ensure correct handling of lines longer than 1023 chars
-
-  Push ${L_CFG}
-  Push ${L_EXE}
-  Push ${L_LNE}
-  Push ${L_TEMP}
-  Push ${L_TEXTEND}
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_UN_PROG_SHUTDOWN)"
-  SetDetailsPrint listonly
-
-  ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
-  ; to allow POPFile to be run as a Windows service.
-
-  Push "POPFile"
-  Call un.ServiceRunning
-  Pop ${L_TEMP}
-  StrCmp ${L_TEMP} "true" manual_shutdown
-
-  ; If the POPFile we are to uninstall is still running, one of the EXE files will be 'locked'
-
-  Push $G_ROOTDIR
-  Call un.FindLockedPFE
-  Pop ${L_EXE}
-  StrCmp ${L_EXE} "" check_pfi_utils
-
-  ; The program files we are about to remove are in use so we need to shut POPFile down
-
-  IfFileExists "$G_USERDIR\popfile.cfg" 0 manual_shutdown
-
-  ; Use the UI port setting in the configuration file to shutdown POPFile
-
-  StrCpy $G_GUI ""
-
-  FileOpen ${L_CFG} "$G_USERDIR\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
+Function NSIS2IO
+  Exch $0               ; The source
+  Push $1               ; The output
+  Push $2               ; Temporary char
+  StrCpy $1 ""          ; Initialise the output
 
 loop:
-  FileRead ${L_CFG} ${L_LNE}
-  StrCmp ${L_LNE} "" ui_port_done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LNE} "$\n" loop
-
-  StrCpy ${L_TEMP} ${L_LNE} 10
-  StrCmp ${L_TEMP} "html_port " 0 check_eol
-  StrCpy $G_GUI ${L_LNE} 5 10
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-ui_port_done:
-  FileClose ${L_CFG}
-
-  StrCmp $G_GUI "" manual_shutdown
-  Push $G_GUI
-  Call un.TrimNewlines
-  Call un.StrCheckDecimal
-  Pop $G_GUI
-  StrCmp $G_GUI "" manual_shutdown
-  DetailPrint "$(PFI_LANG_UN_LOG_SHUTDOWN) $G_GUI"
-  DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-  Push $G_GUI
-  Call un.ShutdownViaUI
-  Pop ${L_TEMP}
-  StrCmp ${L_TEMP} "success" check_pfi_utils
-
-manual_shutdown:
-  StrCpy $G_PLS_FIELD_1 "POPFile"
-  DetailPrint "Unable to shutdown $G_PLS_FIELD_1 automatically - manual intervention requested"
-  MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST "$(PFI_LANG_MBMANSHUT_1)\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBMANSHUT_2)\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBMANSHUT_3)"
-
-  ; Assume user has managed to shutdown POPFile
-
-check_pfi_utils:
-  Push $G_ROOTDIR
-  Call un.RequestPFIUtilsShutdown
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  Pop ${L_TEXTEND}
-  Pop ${L_TEMP}
-  Pop ${L_LNE}
-  Pop ${L_EXE}
-  Pop ${L_CFG}
-
-  !undef L_CFG
-  !undef L_EXE
-  !undef L_LNE
-  !undef L_TEMP
-  !undef L_TEXTEND
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Start Menu Entries'
-#--------------------------------------------------------------------------
-
-Section "un.Start Menu Entries" UnSecStartMenu
-
-  !define L_TEMP  $R9
-
-  Push ${L_TEMP}
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_UN_PROG_SHORT)"
-  SetDetailsPrint listonly
-
-  SetShellVarContext all
-  StrCmp $G_WINUSERTYPE "Admin" menucleanup
-  SetShellVarContext current
-
-menucleanup:
-  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url" 0 delete_menu_entries
-  ReadINIStr ${L_TEMP} "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url" \
-      "InternetShortcut" "URL"
-  StrCmp ${L_TEMP} "file://$G_ROOTDIR/manual/en/manual.html" delete_menu_entries exit
-
-delete_menu_entries:
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk"
-  RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
-
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
-
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url"
-
-  Delete "$SMSTARTUP\Run POPFile in background.lnk"
-  Delete "$SMSTARTUP\Run POPFile.lnk"
-
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk"
-  RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}"
-
-exit:
-
-  ; Restore the default NSIS context
-
-  SetShellVarContext current
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  Pop ${L_TEMP}
-
-  !undef L_TEMP
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.POPFile Core'
-#
-# Files are explicitly deleted (instead of just using wildcards or 'RMDir /r' commands)
-# in an attempt to avoid unexpectedly deleting any files create by the user after installation.
-# Current commands only cover most recent versions of POPFile - need to add commands to cover
-# more of the early versions of POPFile.
-#--------------------------------------------------------------------------
-
-Section "un.POPFile Core" UnSecCore
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_UN_PROG_CORE)"
-  SetDetailsPrint listonly
-
-  Delete "$G_ROOTDIR\wrapper.exe"
-  Delete "$G_ROOTDIR\wrapperf.exe"
-  Delete "$G_ROOTDIR\wrapperb.exe"
-  Delete "$G_ROOTDIR\wrapper.ini"
-
-  Delete "$G_ROOTDIR\runpopfile.exe"
-  Delete "$G_ROOTDIR\adduser.exe"
-  Delete "$G_ROOTDIR\sqlite.exe"
-  Delete "$G_ROOTDIR\runsqlite.exe"
-  Delete "$G_ROOTDIR\pfidiag.exe"
-  Delete "$G_ROOTDIR\msgcapture.exe"
-  Delete "$G_ROOTDIR\pfimsgcapture.exe"
-
-  IfFileExists "$G_ROOTDIR\pfidiag.exe" try_again
-  IfFileExists "$G_ROOTDIR\msgcapture.exe" try_again
-  IfFileExists "$G_ROOTDIR\msgcapture.exe" 0 continue
-
-try_again:
-  Sleep 1000
-  Delete "$G_ROOTDIR\pfidiag.exe"
-  Delete "$G_ROOTDIR\msgcapture.exe"
-  Delete "$G_ROOTDIR\pfimsgcapture.exe"
-
-continue:
-  Delete "$G_ROOTDIR\otto.png"
-  Delete "$G_ROOTDIR\*.gif"
-  Delete "$G_ROOTDIR\*.change"
-  Delete "$G_ROOTDIR\*.change.txt"
-
-  Delete "$G_ROOTDIR\pfi-data.ini"
-
-  Delete "$G_ROOTDIR\popfile.pl"
-  Delete "$G_ROOTDIR\*.pm"
-
-  Delete "$G_ROOTDIR\bayes.pl"
-  Delete "$G_ROOTDIR\insert.pl"
-  Delete "$G_ROOTDIR\pipe.pl"
-  Delete "$G_ROOTDIR\favicon.ico"
-  Delete "$G_ROOTDIR\popfile.exe"
-  Delete "$G_ROOTDIR\popfilef.exe"
-  Delete "$G_ROOTDIR\popfileb.exe"
-  Delete "$G_ROOTDIR\popfileif.exe"
-  Delete "$G_ROOTDIR\popfileib.exe"
-  Delete "$G_ROOTDIR\popfile-service.exe"
-  Delete "$G_ROOTDIR\stop_pf.exe"
-  Delete "$G_ROOTDIR\license"
-  Delete "$G_ROOTDIR\pfi-stopwords.default"
-
-  Delete "$G_ROOTDIR\Classifier\*.pm"
-  Delete "$G_ROOTDIR\Classifier\popfile.sql"
-  RMDir "$G_ROOTDIR\Classifier"
-
-  Delete "$G_ROOTDIR\Platform\*.pm"
-  Delete "$G_ROOTDIR\Platform\*.dll"
-  RMDir "$G_ROOTDIR\Platform"
-
-  Delete "$G_ROOTDIR\POPFile\*.pm"
-  Delete "$G_ROOTDIR\POPFile\popfile_version"
-  RMDir "$G_ROOTDIR\POPFile"
-
-  Delete "$G_ROOTDIR\Proxy\*.pm"
-  RMDir "$G_ROOTDIR\Proxy"
-
-  Delete "$G_ROOTDIR\Server\*.pm"
-  RMDir "$G_ROOTDIR\Server"
-
-  Delete "$G_ROOTDIR\Services\*.pm"
-  RMDir "$G_ROOTDIR\Services"
-
-  Delete "$G_ROOTDIR\UI\*.pm"
-  RMDir "$G_ROOTDIR\UI"
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Skins'
-#--------------------------------------------------------------------------
-
-Section "un.Skins" UnSecSkins
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_UN_PROG_SKINS)"
-  SetDetailsPrint listonly
-
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\blue"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\coolblue"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\coolbrown"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\coolgreen"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\coolorange"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\coolyellow"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\default"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\glassblue"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\green"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\klingon"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\lavish"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\lrclaptop"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\oceanblue"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\orange"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\orangecream"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\osx"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\outlook"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\prjbluegrey"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\prjsteelbeach"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\simplyblue"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\sleet"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\sleet-rtl"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\smalldefault"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\smallgrey"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\strawberryrose"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\tinydefault"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\tinygrey"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\white"
-  !insertmacro DeleteSkin "$G_ROOTDIR\skins\windows"
-
-  RMDir "$G_ROOTDIR\skins"
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Languages'
-#--------------------------------------------------------------------------
-
-Section "un.Languages" UnSecLangs
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  Delete "$G_ROOTDIR\languages\*.msg"
-  RMDir "$G_ROOTDIR\languages"
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.QuickStart Guide'
-#--------------------------------------------------------------------------
-
-Section "un.QuickStart Guide" UnSecQuickGuide
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  Delete "$G_ROOTDIR\manual\en\*.html"
-  RMDir "$G_ROOTDIR\manual\en"
-  Delete "$G_ROOTDIR\manual\*.gif"
-  RMDir "$G_ROOTDIR\manual"
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Kakasi'
-#--------------------------------------------------------------------------
-
-Section "un.Kakasi" UnSecKakasi
-
-  !define L_TEMP        $R9
-
-  Push ${L_TEMP}
-
-  IfFileExists "$INSTDIR\kakasi\*.*" 0 section_exit
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  RMDir /r "$INSTDIR\kakasi"
-
-  ;Delete Environment Variables
-
-  Push "KANWADICTPATH"
-  Call un.DeleteEnvStr
-  Push "ITAIJIDICTPATH"
-  Call un.DeleteEnvStr
-
-  ; If the 'all users' environment variables refer to this installation, remove them too
-
-  ReadEnvStr ${L_TEMP} "KANWADICTPATH"
-  Push ${L_TEMP}
-  Push $INSTDIR
-  Call un.StrStr
-  Pop ${L_TEMP}
-  StrCmp ${L_TEMP} "" section_exit
-  Push "KANWADICTPATH"
-  Call un.DeleteEnvStrNTAU
-  Push "ITAIJIDICTPATH"
-  Call un.DeleteEnvStrNTAU
-
-section_exit:
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  Pop ${L_TEMP}
-
-  !undef L_TEMP
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Minimal Perl'
-#--------------------------------------------------------------------------
-
-Section "un.Minimal Perl" UnSecMinPerl
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_UN_PROG_PERL)"
-  SetDetailsPrint listonly
-
-  Delete "$G_ROOTDIR\perl*.dll"
-  Delete "$G_ROOTDIR\perl.exe"
-  Delete "$G_ROOTDIR\wperl.exe"
-
-  ; Win95 displays an error message if an attempt is made to delete
-  ; non-existent folders
-  ; (so we check before removing optional Perl components which may
-  ; not have been installed)
-
-  IfFileExists "$G_MPLIBDIR\HTTP\*.*" 0 skip_XMLRPC_support
-  RMDir /r "$G_MPLIBDIR\HTTP"
-  RMDir /r "$G_MPLIBDIR\LWP"
-  RMDir /r "$G_MPLIBDIR\Net"
-  RMDir /r "$G_MPLIBDIR\SOAP"
-  RMDir /r "$G_MPLIBDIR\URI"
-  RMDir /r "$G_MPLIBDIR\XML"
-  RMDir /r "$G_MPLIBDIR\XMLRPC"
-
-skip_XMLRPC_support:
-  RMDir /r "$G_MPLIBDIR\auto"
-  RMDir /r "$G_MPLIBDIR\Carp"
-  RMDir /r "$G_MPLIBDIR\Date"
-  RMDir /r "$G_MPLIBDIR\DBD"
-  RMDir /r "$G_MPLIBDIR\Digest"
-  IfFileExists "$G_MPLIBDIR\Encode\*.*" 0 skip_Encode
-  RMDir /r "$G_MPLIBDIR\Encode"
-
-skip_Encode:
-  RMDir /r "$G_MPLIBDIR\Exporter"
-  RMDir /r "$G_MPLIBDIR\File"
-  RMDir /r "$G_MPLIBDIR\Getopt"
-  RMDir /r "$G_MPLIBDIR\HTML"
-  RMDir /r "$G_MPLIBDIR\IO"
-  RMDir /r "$G_MPLIBDIR\MIME"
-  RMDir /r "$G_MPLIBDIR\String"
-  RMDir /r "$G_MPLIBDIR\Sys"
-  RMDir /r "$G_MPLIBDIR\Text"
-  RMDir /r "$G_MPLIBDIR\Time"
-  RMDir /r "$G_MPLIBDIR\warnings"
-  IfFileExists "$G_MPLIBDIR\Win32\*.*" 0 skip_Win32
-  RMDir /r "$G_MPLIBDIR\Win32"
-
-skip_Win32:
-  Delete "$G_MPLIBDIR\*.pm"
-  RMDIR "$G_MPLIBDIR"
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Registry Entries'
-#--------------------------------------------------------------------------
-
-Section "un.Registry Entries" UnSecRegistry
-
-  !define L_REGDATA $R9
-
-  Push ${L_REGDATA}
-
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  ; Only remove registry data if it matches what we are uninstalling
-
-  StrCmp $G_WINUSERTYPE "Admin" check_HKLM_data
-
-  ; Uninstalluser.exe deletes all HKCU registry data except for the 'Add/Remove Programs' entry
-
-  ReadRegStr ${L_REGDATA} HKCU \
-      "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
-  StrCmp ${L_REGDATA} "$G_ROOTDIR\uninstall.exe" 0 section_exit
-  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}"
-  Goto section_exit
-
-check_HKLM_data:
-  ReadRegStr ${L_REGDATA} HKLM \
-      "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
-  StrCmp ${L_REGDATA} "$G_ROOTDIR\uninstall.exe" 0 other_reg_data
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}"
-
-other_reg_data:
-  ReadRegStr ${L_REGDATA} HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
-  StrCmp ${L_REGDATA} $G_ROOTDIR 0 section_exit
-  DeleteRegKey HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI"
-  DeleteRegKey /ifempty HKLM "Software\POPFile Project\${C_PFI_PRODUCT}"
-  DeleteRegKey /ifempty HKLM "Software\POPFile Project"
-  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\App Paths\stop_pf.exe"
-
-section_exit:
-  SetDetailsPrint textonly
-  DetailPrint " "
-  SetDetailsPrint listonly
-
-  Pop ${L_REGDATA}
-
-  !undef L_REGDATA
-SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Uninstall End' (this is the final section in the uninstaller)
-#
-# Used to terminate the uninstaller - offers to remove any files/folders left behind.
-# If any 'User Data' is left in the PROGRAM folder then we preserve it to allow the
-# user to make another attempt at restoring the email settings.
-#--------------------------------------------------------------------------
-
-Section "un.Uninstall End" UnSecEnd
-
-  Delete "$G_ROOTDIR\Uninstall.exe"
-  RMDir "$G_ROOTDIR"
-
-  ; if the installation folder ($G_ROOTDIR) was removed, skip these next ones
-
-  IfFileExists "$G_ROOTDIR\*.*" 0 exit
-
-  ; If 'User Data' uninstaller still exists, we cannot offer to remove the remaining files
-  ; (some email settings have not been restored and the user wants to try again later or
-  ; the user decided not to uninstall the 'User Data' at the moment)
-
-  IfFileExists "$G_ROOTDIR\uninstalluser.exe" exit
-
-  MessageBox MB_YESNO|MB_ICONQUESTION "$(PFI_LANG_UN_MBREMDIR_1)" IDNO exit
-  DetailPrint "$(PFI_LANG_UN_LOG_DELUSERDIR)"
-  Delete "$G_ROOTDIR\*.*"
-  RMDir /r $G_ROOTDIR
-  IfFileExists "$G_ROOTDIR\*.*" 0 exit
-  DetailPrint "$(PFI_LANG_UN_LOG_DELUSERERR)"
-  MessageBox MB_OK|MB_ICONEXCLAMATION \
-      "$(PFI_LANG_UN_MBREMERR_1): $G_ROOTDIR $(PFI_LANG_UN_MBREMERR_2)"
-
-exit:
-  SetDetailsPrint both
-SectionEnd
+  StrCpy $2 $0 1        ; Get the next source char
+  StrCmp $2 "" done     ; Abort when none left
+  StrCpy $0 $0 "" 1     ; Remove it from the source
+  StrCmp $2 "\" "" +3   ; Back-slash?
+  StrCpy $1 "$1\\"
+  Goto loop
+
+  StrCmp $2 "$\r" "" +3 ; Carriage return?
+  StrCpy $1 "$1\r"
+  Goto loop
+
+  StrCmp $2 "$\n" "" +3 ; Line feed?
+  StrCpy $1 "$1\n"
+  Goto loop
+
+  StrCmp $2 "$\t" "" +3 ; Tab?
+  StrCpy $1 "$1\t"
+  Goto loop
+
+  StrCpy $1 "$1$2"      ; Anything else
+  Goto loop
+
+done:
+  StrCpy $0 $1
+  Pop $2
+  Pop $1
+  Exch $0
+FunctionEnd
 
 #--------------------------------------------------------------------------
 # End of 'installer.nsi'
