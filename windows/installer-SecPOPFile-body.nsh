@@ -252,6 +252,9 @@ app_paths:
 
   File "..\engine\favicon.ico"
 
+  File "..\engine\pix.gif"
+  File "..\engine\otto.png"
+
   SetOutPath "$G_ROOTDIR\Classifier"
   File "..\engine\Classifier\Bayes.pm"
   File "..\engine\Classifier\WordMangle.pm"
