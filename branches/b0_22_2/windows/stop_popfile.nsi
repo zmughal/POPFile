@@ -2,7 +2,7 @@
 #
 # stop_popfile.nsi --- A simple 'command-line' utility to shutdown POPFile silently.
 #
-# Copyright (c) 2003-2004 John Graham-Cumming
+# Copyright (c) 2003-2005 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -81,19 +81,41 @@
 #
 # The '/WAIT' parameter is important, otherwise the 'failed' case will not be detected.
 #-------------------------------------------------------------------------------------------
-#  This version was tested using "NSIS 2 Release Candidate 2" released 5 January 2004
-#-------------------------------------------------------------------------------------------
+
+  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
+  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
+  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+
+  !define ${NSIS_VERSION}_found
+
+  !ifndef v2.0_found
+      !warning \
+          "$\r$\n\
+          $\r$\n***   NSIS COMPILER WARNING:\
+          $\r$\n***\
+          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\r$\n***\
+          $\r$\n***   The resulting 'installer' program should be tested carefully!\
+          $\r$\n$\r$\n"
+  !endif
+
+  !undef  ${NSIS_VERSION}_found
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
   ;
   ; ${IO_NL} is used for InstallOptions-style 'new line' sequences.
   ; ${MB_NL} is used for MessageBox-style 'new line' sequences.
+  ;
+  ; (these two constants do not follow the 'C_' naming convention described below)
   ;--------------------------------------------------------------------------
 
-  !define IO_NL     "\r\n"
-  !define MB_NL     "$\r$\n"
+  !define IO_NL   "\r\n"
+  !define MB_NL   "$\r$\n"
 
+  ;--------------------------------------------------------------------------
+  ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -101,11 +123,13 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION   "0.5.9"       ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.5.11"     ; see 'VIProductVersion' comment below for format details
+
+  !define C_OUTFILE     "stop_pf.exe"
 
   ; Specify EXE filename and icon for the 'installer'
 
-  OutFile stop_pf.exe
+  OutFile "${C_OUTFILE}"
 
   Icon "shutdown.ico"
 
@@ -126,26 +150,6 @@
   !define C_DLGAP                    2000
 
 #--------------------------------------------------------------------------
-
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
-  ; representing the following values: Major.Minor.Release.Build
-
-  VIProductVersion                   "${C_VERSION}.1"
-
-  VIAddVersionKey "ProductName"      "POPFile Silent Shutdown Utility - stops POPFile without \
-                                     opening a browser window."
-  VIAddVersionKey "Comments"         "POPFile Homepage: http://getpopfile.org"
-  VIAddVersionKey "CompanyName"      "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"   "Copyright (c) 2004  John Graham-Cumming"
-  VIAddVersionKey "FileDescription"  "POPFile Silent Shutdown Utility"
-  VIAddVersionKey "FileVersion"      "${C_VERSION}"
-
-  VIAddVersionKey "Build Date/Time"  "${__DATE__} @ ${__TIME__}"
-  VIAddVersionKey "Build Script"     "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
-
-#----------------------------------------------------------------------------------------
-
-#--------------------------------------------------------------------------
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
@@ -154,6 +158,30 @@
   !define STOP_POPFILE
 
   !include "pfi-library.nsh"
+
+#--------------------------------------------------------------------------
+
+  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; representing the following values: Major.Minor.Release.Build
+
+  VIProductVersion                          "${C_VERSION}.0"
+
+  VIAddVersionKey "ProductName"             "POPFile Silent Shutdown Utility - stops POPFile without \
+                                            opening a browser window."
+  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
+  VIAddVersionKey "CompanyName"             "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"         "POPFile Silent Shutdown Utility"
+  VIAddVersionKey "FileVersion"             "${C_VERSION}"
+  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
+
+  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
+
+#----------------------------------------------------------------------------------------
 
 ;-------------------
 ; Section: Shutdown
@@ -171,7 +199,7 @@ Section Shutdown
 
   ; It does not matter if the first command-line parameter uses uppercase or lowercase
 
-  Call GetParameters
+  Call PFI_GetParameters
   Pop ${L_PARAMS}
   StrCmp ${L_PARAMS} "" usage
   StrCmp ${L_PARAMS} "/?" usage
@@ -188,7 +216,7 @@ Section Shutdown
 
   StrCpy ${L_TEMP} ${L_RESULT} 1
   Push ${L_TEMP}
-  Call StrCheckDecimal
+  Call PFI_StrCheckDecimal
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "" 0 port_checks
   StrCmp ${L_RESULT} "/showerrors" only_errors
@@ -200,7 +228,7 @@ Section Shutdown
 
 usage:
   MessageBox MB_OK "POPFile Silent Shutdown Utility v${C_VERSION}            \
-    Copyright (c) 2004  John Graham-Cumming\
+    Copyright (c) 2005  John Graham-Cumming\
     ${MB_NL}${MB_NL}\
     This command-line utility shuts POPFile down silently, without opening a browser window.\
     ${MB_NL}${MB_NL}\
@@ -248,7 +276,7 @@ other_param:
 port_checks:
   StrCmp ${L_RESULT} "" no_port_supplied
   Push ${L_RESULT}
-  Call StrCheckDecimal
+  Call PFI_StrCheckDecimal
   Pop ${L_GUI}
   StrCmp ${L_GUI} "" integer_error
   IntCmp ${L_GUI} 0 port_error port_error
@@ -287,7 +315,7 @@ try_password_again:
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "success" 0 password_ok
   Push "$PLUGINSDIR\shutdown_2.htm"
-  Call GetFileSize
+  Call PFI_GetFileSize
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} 0 password_ok
   StrCmp ${L_REPORT} "none" error_exit
@@ -328,7 +356,7 @@ try_again:
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "success" 0 shutdown_ok
   Push "$PLUGINSDIR\shutdown_2.htm"
-  Call GetFileSize
+  Call PFI_GetFileSize
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} 0 shutdown_ok
   StrCmp ${L_REPORT} "none" error_exit
