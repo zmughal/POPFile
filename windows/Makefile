@@ -24,7 +24,7 @@ include $(ENGINE)/vars.mak
 
 MAKENSIS_VERSION_STRING:=/DC_POPFILE_MAJOR_VERSION=$(POPFILE_MAJOR_VERSION) /DC_POPFILE_MINOR_VERSION=$(POPFILE_MINOR_VERSION) /DC_POPFILE_REVISION=$(POPFILE_REVISION) /DC_POPFILE_RC=$(RC)
 
-MAKENSIS=echo Making $@ ; makensis.exe $(MAKENSIS_VERSION_STRING) /V2 /O$(patsubst %.exe,%.log,$@) $<
+MAKENSIS=echo Making $@ ; makensis.exe $(MAKENSIS_VERSION_STRING) /V4 /O$(patsubst %.exe,%.log,$@) $<
 BUILD_ZIP=wzzip -P $(POPFILE_WINDOWS_ZIP) -a $^
 
 SETUP:=setup$(RC).exe
@@ -41,7 +41,7 @@ ALLEXES := $(SETUP) $(RUNPOPFILE) $(ADDUSER)     \
 
 all: build
 build: $(POPFILE_WINDOWS_ZIP)
-$(POPFILE_WINDOWS_ZIP): $(SETUP) addssl.zip
+$(POPFILE_WINDOWS_ZIP): $(SETUP)
 	rm -f $@
 	$(BUILD_ZIP)
 clean:
