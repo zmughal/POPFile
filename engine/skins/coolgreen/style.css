@@ -297,3 +297,8 @@ div.helpMessage {
   padding: 0.3em;
   padding-bottom: 0;
 }
+
+.menuLink {
+  display: block;
+  width: 100%;
+}
