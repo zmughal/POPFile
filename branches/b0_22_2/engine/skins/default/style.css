@@ -69,6 +69,11 @@ td.logo2menuSpace {
   width: 8%;
 }
 
+.menuLink {
+  display: block;
+  width: 100%;
+}
+
 /*********************************************************/
 /* Table Settings */
 

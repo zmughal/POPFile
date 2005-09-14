@@ -267,3 +267,7 @@ div.helpMessage {
   padding-bottom: 0;
 }
 
+.menuLink {
+  display: block;
+  width: 100%;
+}
