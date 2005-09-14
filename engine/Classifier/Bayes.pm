@@ -805,6 +805,10 @@ sub db_connect__
                     print "[$i]";
                     flush STDOUT;
                 }
+                if ( ( $i % 1000 ) == 0 ) {
+                    print "\n";
+                    flush STDOUT;
+                }
                 my @rows = $t->fetchrow_array;
 
                 last if ( $#rows == -1 );
