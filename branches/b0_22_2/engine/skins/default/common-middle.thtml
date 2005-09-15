@@ -24,7 +24,7 @@
         </tr>
     </table>
     <br />
-    <table class="menu" cellspacing="0" summary="<TMPL_VAR NAME="Localize_Header_MenuSummary>">
+    <table class="menu" cellspacing="0" summary="<TMPL_VAR NAME="Localize_Header_MenuSummary">">
         <tr>
             <td class="menuIndent">&nbsp;</td>
             <td class="<TMPL_VAR NAME="Common_Middle_Tab0">" align="center">
