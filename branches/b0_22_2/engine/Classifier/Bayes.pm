@@ -867,6 +867,10 @@ sub db_connect__
                print "[$i]";
                flush STDOUT;
             }
+            if ( ( $i % 1000 ) == 0 ) {
+                print "\n";
+                flush STDOUT;
+            }
             s/[\r\n]//g;
             $self->{db__}->do( $_ );
         }
