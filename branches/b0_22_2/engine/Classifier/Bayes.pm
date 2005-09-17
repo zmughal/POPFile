@@ -338,6 +338,25 @@ sub start
         return 0;
     }
 
+    # Since Text::Kakasi is not thread-safe, we use it under the
+    # control of a Mutex to avoid a crash if we are running on
+    # Windows and using the fork.
+
+    if ( ( $self->{parser__}->{lang__} eq 'Nihongo' ) && ( $^O eq 'MSWin32' ) && 
+         ( ( ( $self->module_config_( 'pop3', 'enabled' ) ) && 
+             ( $self->module_config_( 'pop3', 'force_fork' ) ) ) || 
+           ( ( $self->module_config_( 'nntp', 'enabled' ) ) && 
+             ( $self->module_config_( 'nntp', 'force_fork' ) ) ) || 
+           ( ( $self->module_config_( 'smtp', 'enabled' ) ) && 
+             ( $self->module_config_( 'smtp', 'force_fork' ) ) ) ) ) {
+        $self->{parser__}->{need_kakasi_mutex__} = 1;
+
+        # Prepare the Mutex.
+        require POPFile::Mutex;
+        $self->{parser__}->{kakasi_mutex__} = new POPFile::Mutex( 'mailparse_kakasi' );
+        $self->log_( 2, "Create mutex for Kakasi." );
+    }
+
     $self->upgrade_predatabase_data__();
 
     return 1;

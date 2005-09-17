@@ -2457,6 +2457,12 @@ sub history_page
                 $header =~ /(.)(.+)/;
                 $row_data{"History_If_$2"} = ( $1 eq '+')?1:0;
             }
+
+            if ( $self->config_( 'language' ) eq 'Nihongo' ) {
+                # Remove wrong characters as euc-jp.
+                $$row[4] =~ s/\G((?:$euc_jp)*)([\x80-\xFF](?=(?:$euc_jp)*))?/$1/og;
+            }
+
             $row_data{History_Arrived}       = $self->pretty_date__( $$row[7] );
             $row_data{History_From}          = $$row[1];
             $row_data{History_To}            = $$row[2];
