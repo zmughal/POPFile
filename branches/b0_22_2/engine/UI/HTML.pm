@@ -2510,8 +2510,10 @@ sub history_page
 
             if ( ( $last != -1 ) && ( $self->{form_}{sort} =~ /inserted/ ) && ( $self->config_( 'session_dividers' ) ) ) {
                 $row_data{History_If_Session} = ( abs( $$row[7] - $last ) > 300 );
-                $row_data{History_Colspan} = $colspan+1;
             }
+            # we set this here so feedback lines will also 
+            # get the correct colspan:
+            $row_data{History_Colspan} = $colspan+1;
 
             $last = $$row[7];
 
