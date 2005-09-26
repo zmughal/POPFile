@@ -31,6 +31,7 @@ FAQLink                                 JP_FrequentlyAskedQuestions
 
 # Common words that are used on their own all over the interface
 Apply                                   Å¬ÍÑ
+ApplyChanges                            ÊÑ¹¹¤òÅ¬ÍÑ
 On                                      ON
 Off                                     OFF
 TurnOn                                  ON ¤Ë¤¹¤ë
@@ -234,7 +235,7 @@ Security_ExplainStats                   (POPFile ¤ÏËèÆü°ì²ó¡¢°Ê²¼¤Î»°¤Ä¤Î¥Ç¡¼¥¿¤
 Security_ExplainUpdate                  (POPFile ¤ÏËèÆü°ì²ó¡¢°Ê²¼¤Î»°¤Ä¤Î¥Ç¡¼¥¿¤ò www.usethesource.com ¾å¤Î¥¹¥¯¥ê¥×¥È¤ËÁ÷¤ê¤Þ¤¹¡£: ma (¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë POPFile ¤Î¥á¥¸¥ã¡¼¥Ð¡¼¥¸¥ç¥óÈÖ¹æ)¡¢mi (¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë POPFile ¤Î¥Þ¥¤¥Ê¡¼¥Ð¡¼¥¸¥ç¥óÈÖ¹æ)¡¢bn (¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë POPFile ¤Î¥Ó¥ë¥ÉÈÖ¹æ)¡£¿·¤·¤¤¥Ð¡¼¥¸¥ç¥ó¤¬¥ê¥ê¡¼¥¹¤µ¤ì¤ë¤È¡¢POPFile ¤Ï¤½¤Î¾ðÊó¤ò¼õ¤±¤Æ¥Ú¡¼¥¸¤Î¾åÉô¤Ë¥°¥é¥Õ¥£¥Ã¥¯¤òÉ½¼¨¤·¤Æ¤ªÃÎ¤é¤»¤·¤Þ¤¹¡£»ÈÍÑ¤·¤Æ¤¤¤Þ¤¹ Web ¥µ¡¼¥Ð¡¼¤Ï¤³¤ì¤é¤Î¥í¥°¥Õ¥¡¥¤¥ë¤òÌó¸ÞÆü´ÖÊÝÂ¸¤·¤¿¤¢¤È¡¢ºï½ü¤·¤Þ¤¹¡£¤³¤ì¤é¤Î¹¹¿·¥Á¥§¥Ã¥¯¤Ë»ÈÍÑ¤·¤¿¥Ç¡¼¥¿¤ò IP ¥¢¥É¥ì¥¹¤È´ØÏ¢ÉÕ¤±¤ÆÊÝÂ¸¤·¤¿¤ê¤Ï¤¤¤Ã¤µ¤¤¤¤¤¿¤·¤Þ¤»¤ó¡£)
 Security_PasswordTitle                  ¥æ¡¼¥¶¡¼¥¤¥ó¥¿¡¼¥Õ¥§¡¼¥¹¥Ñ¥¹¥ï¡¼¥É
 Security_Password                       ¥Ñ¥¹¥ï¡¼¥É
-Security_PasswordUpdate                 ¥Ñ¥¹¥ï¡¼¥É¤ò %s ¤ËÊÑ¹¹¤·¤Þ¤·¤¿
+Security_PasswordUpdate                 ¥Ñ¥¹¥ï¡¼¥É¤òÊÑ¹¹¤·¤Þ¤·¤¿
 Security_AUTHTitle                      ¥ê¥â¡¼¥È¥µ¡¼¥Ð¡¼
 Security_SecureServer                   ¥ê¥â¡¼¥È POP3 ¥µ¡¼¥Ð¡¼ (SPA/AUTH ¤Þ¤¿¤Ï Æ©²á¥×¥í¥­¥·)
 Security_SecureServerUpdate             ¥ê¥â¡¼¥È POP3 ¥µ¡¼¥Ð¡¼¤ò %s ¤ËÊÑ¹¹¤·¤Þ¤·¤¿¡£
