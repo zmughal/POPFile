@@ -1825,6 +1825,7 @@ sub corpus_page
             push ( @color_data, \%color_row );
         }
         $row_data{Localize_Apply}          = $self->{language__}{Apply};
+        $row_data{Session_Key}             = $self->{session_key__};
         $row_data{Corpus_Loop_Loop_Colors} = \@color_data;
 
         push ( @corpus_data, \%row_data );
