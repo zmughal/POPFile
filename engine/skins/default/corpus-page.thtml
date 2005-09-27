@@ -80,8 +80,8 @@
                 <td align="left">
         
                     <TMPL_IF NAME="Corpus_If_Bucket_Not_Pseudo">
-        
-                    <a href="/buckets?showbucket=<TMPL_VAR NAME="Corpus_Bucket">">
+
+                    <a href="/buckets?session=<TMPL_VAR NAME="Session_Key">&amp;showbucket=<TMPL_VAR NAME="Corpus_Bucket">">
         
                     </TMPL_IF>
         
