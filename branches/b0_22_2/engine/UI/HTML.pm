@@ -1824,7 +1824,6 @@ sub corpus_page
             $color_row{Corpus_Color_Selected}  = ( $row_data{Corpus_Bucket_Color} eq $color )?'selected':'';
             push ( @color_data, \%color_row );
         }
-        $row_data{Localize_Apply}          = $self->{language__}{Apply};
         $row_data{Session_Key}             = $self->{session_key__};
         $row_data{Corpus_Loop_Loop_Colors} = \@color_data;
 
