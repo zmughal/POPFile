@@ -27,11 +27,9 @@
 
 </TMPL_IF>
 
-<h2 class="buckets"><TMPL_VAR NAME="Localize_Bucket_Title"></h2>
-
     <form class="bucketsSwitch" action="/buckets" method="post">
     <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
-        <table width="100%" summary="<TMPL_VAR NAME="Localize_Bucket_MaintenanceTableSummary">">
+        <table class="bucketsTable" width="100%" summary="<TMPL_VAR NAME="Localize_Bucket_MaintenanceTableSummary">">
             <tr>
                 <th colspan="7" align="left">
                     <h2 class="buckets"><TMPL_VAR NAME="Localize_Bucket_Title"></h2>
