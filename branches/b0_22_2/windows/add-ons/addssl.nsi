@@ -1,15 +1,29 @@
 #--------------------------------------------------------------------------
 #
-# addssl.nsi --- This is the NSIS script used to create a utility which downloads and
-#                installs SSL support for an existing POPFile 0.22.0 (or later) installation.
+# addssl.nsi --- This is the NSIS script used to create a utility which installs
+#                SSL support for an existing POPFile 0.22.0 (or later) installation.
+#
+#                Normally the SSL support files are downloaded from the University of Winnipeg
+#                repository. However these files are no longer compatible with the minimal Perl
+#                shipped with POPFile 0.22.0, 0.22.1 or 0.22.2 so this utility includes a set
+#                of compatible SSL files which will be installed instead. The minimal Perl's
+#                version number (obtained from the 'perl58.dll' file) is used to determine the
+#                action to be taken.
+#
+#                The Windows installer for POPFile 0.22.3 (or later) is able to download and
+#                install SSL support. Normally SSL support is downloaded at the same time that
+#                POPFile is installed, but SSL support can be added or updated later by using
+#                the command "setup.exe /SSL" to run the installer (instead of "setup.exe").
 #
 #                The version of Module.pm distributed with POPFile 0.22.0 results in extremely
 #                slow message downloads (e.g. 6 minutes for a 2,713 byte msg) so this utility
 #                will apply a patch to update Module.pm v1.40 to v1.41 (the original file will
 #                be backed up as Module.pm.bk1). The patch is only applied if v1.40 is found.
-#                A patch status message is always displayed.
 #
-# Copyright (c) 2004 John Graham-Cumming
+#                An 'include' file is used to ensure this utility and the main POPFile
+#                installer download and install the same SSL support files.
+#
+# Copyright (c) 2004-2005 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -29,8 +43,25 @@
 #
 #--------------------------------------------------------------------------
 
-; This version of the script has been tested with the "NSIS 2" compiler (final),
-; released 7 February 2004, with no "official" NSIS patches applied.
+  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
+  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
+  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+
+  !define ${NSIS_VERSION}_found
+
+  !ifndef v2.0_found
+      !warning \
+          "$\r$\n\
+          $\r$\n***   NSIS COMPILER WARNING:\
+          $\r$\n***\
+          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\r$\n***\
+          $\r$\n***   The resulting 'installer' program should be tested carefully!\
+          $\r$\n$\r$\n"
+  !endif
+
+  !undef  ${NSIS_VERSION}_found
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -38,8 +69,8 @@
 
   ; This script uses a special NSIS plugin (untgz) to extract files from the *.tar.gz archives.
   ;
-  ; The 'NSIS Archives' page for the 'untgz' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/archive/nsisweb.php?page=74&instances=0,32
+  ; The 'NSIS Wiki' page for the 'untgz' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/wiki/UnTGZ
   ;
   ; Alternative download links can be found at the 'untgz' author's site:
   ; http://www.darklogic.org/win32/nsis/plugins/
@@ -47,6 +78,37 @@
   ; To compile this script, copy the 'untgz.dll' file to the standard NSIS plugins folder
   ; (${NSISDIR}\Plugins\). The 'untgz' source and example files can be unzipped to the
   ; ${NSISDIR}\Contrib\untgz\ folder if you wish, but this step is entirely optional.
+  ;
+  ; Tested with versions 1.0.5, 1.0.6, 1.0.7 and 1.0.8 of the 'untgz' plugin.
+
+  ;------------------------------------------------
+  ; POPFile 0.22.x Compatibility Problem
+  ;------------------------------------------------
+
+  ; With effect from 22 June 2005 the SSL components in the University of Winnipeg repository
+  ; are no longer compatible with POPFile 0.22.0, 0.22.1 or 0.22.2 because the files have been
+  ; updated to work with ActivePerl 5.8.7 Build 813. POPFile 0.22.0 and 0.22.1 use a minimal
+  ; Perl based upon ActivePerl 5.8.3 Build 809 and 0.22.2 uses a minimal Perl based upon 5.8.4
+  ; Build 810. These minimal Perl systems will crash when attempting to use the University of
+  ; Winnipeg SSL files.
+  ;
+  ; In order to support POPFile 0.22.0, 0.22.1 and 0.22.2 the wizard includes an older set of
+  ; SSL files which were downloaded from the University of Winnipeg repository in January 2005.
+  ; In order to simplify the code, the normal Internet download operation is replaced by "File"
+  ; commands which store the old SSL files in the folder used to hold the downloaded files;
+  ; these old files can then be handled as if they had been downloaded from the University of
+  ; Winnipeg.
+  ;
+  ; The following local SSL files are compatible with POPFile 0.22.x:
+  ;
+  ;   (1) ssl-0.22.x\IO-Socket-SSL.tar.gz             (dated 01-Aug-2003)
+  ;   (2) ssl-0.22.x\Net_SSLeay.pm.tar.gz             (dated 23-Dec-2004)
+  ;   (3) ssl-0.22.x\libeay32.dll                     (dated 23-Dec-2004)
+  ;   (4) ssl-0.22.x\ssleay32.dll                     (dated 23-Dec-2004)
+  ;
+  ; POPFile 0.22.3 is based upon ActivePerl 5.8.7 Build 813 so it will be safe to download the
+  ; latest versions of the SSL files if the 'SSL Setup' wizard is used to add SSL support to a
+  ; system which uses a minimal Perl version of 5.8.7 or higher.
 
   ;------------------------------------------------
   ; How the Module.pm patch was created
@@ -56,6 +118,18 @@
   ; which is supplied with NSIS. The command used to create the patch was:
   ;   GenPat.exe Module.pm Module_ssl.pm Module_ssl.pat
   ; where Module.pm was CVS version 1.40 and Module_ssl.pm was CVS version 1.41.
+
+#--------------------------------------------------------------------------
+# Compile-time command-line switches (used by 'makensis.exe')
+#--------------------------------------------------------------------------
+#
+# /DENGLISH_MODE
+#
+# To build an 'SSL Setup' wizard that only displays English messages (so there is no need to
+# ensure all of the non-English *-pfi.nsh files are up-to-date), supply the command-line
+# switch /DENGLISH_MODE when compiling this script.
+#
+#--------------------------------------------------------------------------
 
   ;------------------------------------------------
   ; Define PFI_VERBOSE to get more compiler output
@@ -91,7 +165,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.0.10"
+  !define C_PFI_VERSION  "0.1.1"
 
   ; Mention the wizard's version number in the window title
 
@@ -103,17 +177,6 @@
 
 
 #--------------------------------------------------------------------------
-# URLs used to download the necessary SSL support archives and files
-# (all from the University of Winnipeg Repository)
-#--------------------------------------------------------------------------
-
-  !define C_UWR_IO_SOCKET_SSL "http://theoryx5.uwinnipeg.ca/ppms/x86/IO-Socket-SSL.tar.gz"
-  !define C_UWR_NET_SSLEAY    "http://theoryx5.uwinnipeg.ca/ppms/x86/Net_SSLeay.pm.tar.gz"
-  !define C_UWR_DLL_SSLEAY32  "http://theoryx5.uwinnipeg.ca/ppms/scripts/ssleay32.dll"
-  !define C_UWR_DLL_LIBEAY32  "http://theoryx5.uwinnipeg.ca/ppms/scripts/libeay32.dll"
-
-
-#--------------------------------------------------------------------------
 # User Registers (Global)
 #--------------------------------------------------------------------------
 
@@ -122,10 +185,7 @@
   Var G_ROOTDIR            ; full path to the folder used for the POPFile program files
   Var G_MPLIBDIR           ; full path to the folder used for most of the minimal Perl files
 
-  Var G_SSL_FILEURL        ; full URL used to download SSL file
-
   Var G_PLS_FIELD_1        ; used to customize some language strings
-  Var G_PLS_FIELD_2        ; ditto
 
   ; NSIS provides 20 general purpose user registers:
   ; (a) $R0 to $R9   are used as local registers
@@ -150,29 +210,6 @@
 
 
 #--------------------------------------------------------------------------
-# Version Information settings (for the wizard's EXE file)
-#--------------------------------------------------------------------------
-
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
-  ; representing the following values: Major.Minor.Release.Build
-
-  VIProductVersion "${C_PFI_VERSION}.0"
-
-  VIAddVersionKey "ProductName"       "POPFile SSL Setup wizard"
-  VIAddVersionKey "Comments"          "POPFile Homepage: http://getpopfile.org"
-  VIAddVersionKey "CompanyName"       "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"    "Copyright (c) 2004  John Graham-Cumming"
-  VIAddVersionKey "FileDescription"   "Installs SSL support for POPFile 0.22.x"
-  VIAddVersionKey "FileVersion"       "${C_PFI_VERSION}"
-  VIAddVersionKey "OriginalFilename"  "${C_OUTFILE}"
-
-  VIAddVersionKey "Build"             "English-Mode"
-
-  VIAddVersionKey "Build Date/Time"   "${__DATE__} @ ${__TIME__}"
-  VIAddVersionKey "Build Script"      "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
-
-
-#--------------------------------------------------------------------------
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
@@ -181,6 +218,36 @@
   !define ADDSSL
 
   !include "..\pfi-library.nsh"
+
+
+#--------------------------------------------------------------------------
+# Version Information settings (for the wizard's EXE file)
+#--------------------------------------------------------------------------
+
+  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; representing the following values: Major.Minor.Release.Build
+
+  VIProductVersion                          "${C_PFI_VERSION}.0"
+
+  VIAddVersionKey "ProductName"             "POPFile SSL Setup wizard"
+  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
+  VIAddVersionKey "CompanyName"             "The POPFile Project"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "FileDescription"         "Installs SSL support for POPFile 0.22 or later"
+  VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
+  VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
+
+  !ifndef ENGLISH_MODE
+    VIAddVersionKey "Build"                 "Multi-Language"
+  !else
+    VIAddVersionKey "Build"                 "English-Mode"
+  !endif
+
+  VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 
 #--------------------------------------------------------------------------
@@ -249,6 +316,21 @@
   ; (the user-selected language is not available for use in the .onInit function)
 
   !define MUI_CUSTOMFUNCTION_GUIINIT          PFIGUIInit
+
+  ;----------------------------------------------------------------
+  ; Language Settings for MUI pages
+  ;----------------------------------------------------------------
+
+  ; Override the standard "Installer Language" title to avoid confusion.
+
+  !define MUI_LANGDLL_WINDOWTITLE             "SSL Setup"
+
+  ; Use the language selected when POPFile was last installed or updated
+  ; (if the language setting is not found, the user will be asked to select a language)
+
+  !define MUI_LANGDLL_REGISTRY_ROOT           "HKCU"
+  !define MUI_LANGDLL_REGISTRY_KEY            "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI"
+  !define MUI_LANGDLL_REGISTRY_VALUENAME      "Installer Language"
 
 
 #--------------------------------------------------------------------------
@@ -335,111 +417,19 @@
 # Language Support for the utility
 #--------------------------------------------------------------------------
 
-  !insertmacro MUI_LANGUAGE "English"
+  ;-----------------------------------------
+  ; Select the languages to be supported by the wizard
+  ;-----------------------------------------
 
-  ;--------------------------------------------------------------------------
-  ; Current build only supports English and uses local strings
-  ; instead of language strings from languages\*-pfi.nsh files
-  ;--------------------------------------------------------------------------
+  ; At least one language must be specified for the wizard (the default is "English")
 
-  !macro PLS_TEXT NAME VALUE
-      LangString ${NAME} ${LANG_ENGLISH} "${VALUE}"
-  !macroend
+  !insertmacro PFI_LANG_LOAD "English"
 
-  ;--------------------------------------------------------------------------
-  ; WELCOME page
-  ;--------------------------------------------------------------------------
+  ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
 
-  !insertmacro PLS_TEXT PSS_LANG_WELCOME_TITLE         "Welcome to the $(^NameDA) Wizard"
-  !insertmacro PLS_TEXT PSS_LANG_WELCOME_TEXT          "This utility will download and install the files needed to allow POPFile to use SSL when accessing mail servers.${IO_NL}${IO_NL}This version does not configure any email accounts to use SSL, it just installs the necessary Perl components and DLLs.${IO_NL}${IO_NL}This product downloads software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/)${IO_NL}${IO_NL}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${IO_NL}${IO_NL}   PLEASE SHUT DOWN POPFILE NOW${IO_NL}${IO_NL}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${IO_NL}${IO_NL}$_CLICK"
-
-  ;--------------------------------------------------------------------------
-  ; LICENSE page
-  ;--------------------------------------------------------------------------
-
-  !insertmacro PLS_TEXT PSS_LANG_LICENSE_SUBHDR        "Please review the license terms before using $(^NameDA)."
-  !insertmacro PLS_TEXT PSS_LANG_LICENSE_BOTTOM        "If you accept the terms of the agreement, click the check box below. You must accept the agreement to use $(^NameDA). $_CLICK"
-
-  ;--------------------------------------------------------------------------
-  ; Source DIRECTORY page
-  ;--------------------------------------------------------------------------
-
-  !insertmacro PLS_TEXT PSS_LANG_DESTNDIR_TITLE        "Choose existing POPFile installation"
-  !insertmacro PLS_TEXT PSS_LANG_DESTNDIR_SUBTITLE     "SSL support should only be added to an existing POPFile 0.22.x installation"
-  !insertmacro PLS_TEXT PSS_LANG_DESTNDIR_TEXT_TOP     "SSL support must be installed using the same installation folder as POPFile 0.22.x.${MB_NL}${MB_NL}This utility will add SSL support to the version of POPFile which is installed in the following folder. To install in a different POPFile 0.22.x installation, click Browse and select another folder. $_CLICK"
-  !insertmacro PLS_TEXT PSS_LANG_DESTNDIR_TEXT_DESTN   "Existing POPFile 0.22.x installation folder"
-
-  !insertmacro PLS_TEXT PSS_LANG_DESTNDIR_MB_WARN_1    "POPFile 0.22.x does NOT seem to be installed in${MB_NL}${MB_NL}$G_PLS_FIELD_1"
-  !insertmacro PLS_TEXT PSS_LANG_DESTNDIR_MB_WARN_2    "Are you sure you want to use this folder ?"
-
-  ;--------------------------------------------------------------------------
-  ; INSTFILES page
-  ;--------------------------------------------------------------------------
-
-  ; Initial page header
-
-  !insertmacro PLS_TEXT PSS_LANG_STD_HDR               "Installing SSL support (for POPFile 0.22.x)"
-  !insertmacro PLS_TEXT PSS_LANG_STD_SUBHDR            "Please wait while the SSL files are downloaded and installed..."
-
-  ; Successful completion page header
-
-  !insertmacro PLS_TEXT PSS_LANG_END_HDR               "POPFile SSL Support installation completed"
-  !insertmacro PLS_TEXT PSS_LANG_END_SUBHDR            "SSL support for POPFile has been installed successfully"
-
-  ; Unsuccessful completion page header
-
-  !insertmacro PLS_TEXT PSS_LANG_ABORT_HDR             "POPFile SSL Support installation failed"
-  !insertmacro PLS_TEXT PSS_LANG_ABORT_SUBHDR          "The attempt to add SSL support to POPFile has failed"
-
-  ; Progress reports
-
-  !insertmacro PLS_TEXT PSS_LANG_PROG_INITIALISE       "Initializing..."
-  !insertmacro PLS_TEXT PSS_LANG_PROG_STARTDOWNLOAD    "Downloading $G_PLS_FIELD_1 file from $G_PLS_FIELD_2"
-  !insertmacro PLS_TEXT PSS_LANG_PROG_CHECKIFRUNNING   "Checking if POPFile is running..."
-  !insertmacro PLS_TEXT PSS_LANG_PROG_USERCANCELLED    "POPFile SSL Support installation cancelled by the user"
-  !insertmacro PLS_TEXT PSS_LANG_PROG_FILECOPY         "Copying $G_PLS_FIELD_2 files..."
-  !insertmacro PLS_TEXT PSS_LANG_PROG_FILEEXTRACT      "Extracting files from $G_PLS_FIELD_2 archive..."
-  !insertmacro PLS_TEXT PSS_LANG_PROG_SUCCESS          "POPFile 0.22.x SSL support installed"
-  !insertmacro PLS_TEXT PSS_LANG_PROG_SAVELOG          "Saving install log file..."
-
-  !insertmacro PLS_TEXT PSS_LANG_TAKE_A_FEW_SECONDS    "(this may take a few seconds)"
-
-  ;--------------------------------------------------------------------------
-  ; FINISH page
-  ;--------------------------------------------------------------------------
-
-  !insertmacro PLS_TEXT PSS_LANG_FINISH_TITLE          "Completing the $(^NameDA) Wizard"
-  !insertmacro PLS_TEXT PSS_LANG_FINISH_TEXT           "SSL support for POPFile 0.22.x has been installed.${IO_NL}${IO_NL}You can now start POPFile and configure POPFile and your email client to use SSL.${IO_NL}${IO_NL}Click Finish to close this wizard."
-
-  !insertmacro PLS_TEXT PSS_LANG_FINISH_README         "Important information"
-
-  ;--------------------------------------------------------------------------
-  ; Miscellaneous strings
-  ;--------------------------------------------------------------------------
-
-  !insertmacro PLS_TEXT PSS_LANG_MUTEX                 "Another copy of the SSL Setup wizard is running!"
-
-  !insertmacro PLS_TEXT PSS_LANG_COMPAT_NOTFOUND       "Warning: Cannot find compatible version of POPFile !"
-
-  !insertmacro PLS_TEXT PSS_LANG_ABORT_WARNING         "Are you sure you want to quit the $(^NameDA) Wizard?"
-
-  !insertmacro PLS_TEXT PSS_LANG_MB_NSISDLFAIL_1       "Download of $G_PLS_FIELD_1 file failed"
-  !insertmacro PLS_TEXT PSS_LANG_MB_NSISDLFAIL_2       "(error: $G_PLS_FIELD_2)"
-
-  !insertmacro PLS_TEXT PSS_LANG_MB_UNPACKFAIL         "Error detected while installing files in $G_PLS_FIELD_1 folder"
-
-  !insertmacro PLS_TEXT PSS_LANG_PREPAREPATCH          "Updating Module.pm (to avoid slow speed SSL downloads)"
-  !insertmacro PLS_TEXT PSS_LANG_PATCHSTATUS           "Module.pm patch status: $G_PLS_FIELD_1"
-  !insertmacro PLS_TEXT PSS_LANG_PATCHCOMPLETED        "Module.pm file has been updated"
-  !insertmacro PLS_TEXT PSS_LANG_PATCHFAILED           "Module.pm file has not been updated"
-
-  ; Strings required by the PFI Library functions
-
-  !insertmacro PLS_TEXT PFI_LANG_INST_LOG_SHUTDOWN     "Shutting down POPFile using port"
-  !insertmacro PLS_TEXT PFI_LANG_TAKE_A_FEW_SECONDS    "This may take a few seconds..."
-  !insertmacro PLS_TEXT PFI_LANG_MBMANSHUT_1           "Unable to shutdown '$G_PLS_FIELD_1' automatically."
-  !insertmacro PLS_TEXT PFI_LANG_MBMANSHUT_2           "Please shutdown '$G_PLS_FIELD_1' manually now."
-  !insertmacro PLS_TEXT PFI_LANG_MBMANSHUT_3           "When '$G_PLS_FIELD_1' has been shutdown, click 'OK' to continue."
+  !ifndef ENGLISH_MODE
+      !include "..\pfi-languages.nsh"
+  !endif
 
 
 #--------------------------------------------------------------------------
@@ -468,7 +458,27 @@
   ; Only useful when solid compression is used (by default, solid compression is enabled
   ; for BZIP2 and LZMA compression)
 
+  !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
+  ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
+  ReserveFile "${NSISDIR}\Plugins\System.dll"
+  ReserveFile "${NSISDIR}\Plugins\untgz.dll"
+  ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
+
+
+#--------------------------------------------------------------------------
+# Installer Function: .onInit - the wizard starts by offering a choice of languages
+#--------------------------------------------------------------------------
+
+Function .onInit
+
+  ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
+
+  !ifndef ENGLISH_MODE
+        !insertmacro MUI_LANGDLL_DISPLAY
+  !endif
+
+FunctionEnd
 
 
 #--------------------------------------------------------------------------
@@ -495,12 +505,6 @@ Function PFIGUIInit
   Abort
 
 mutex_ok:
-
-  ; The wizard does not contain the SSL support files so we provide an estimate which
-  ; includes a slack space allowance (based upon the development system's statistics)
-
-  SectionSetSize  0  2560
-
   Pop ${L_RESERVED}
 
   !undef L_RESERVED
@@ -509,34 +513,18 @@ FunctionEnd
 
 
 #--------------------------------------------------------------------------
-# Installer Section: POPFile SSL Support
+# Installer Section: Prepare to download and install the SSL Support files
 #--------------------------------------------------------------------------
 
-Section "SSL" SecSSL
+Section "-prepare"
 
-  !define L_RESULT  $R0  ; used by the 'untgz' plugin to return the result
-
-  Push ${L_RESULT}
-
+  SetDetailsPrint textonly
+  DetailPrint "$(PFI_LANG_INST_PROG_UPGRADE) $(PFI_LANG_TAKE_A_FEW_SECONDS)"
   SetDetailsPrint listonly
 
   DetailPrint "----------------------------------------------------"
-  DetailPrint "POPFile SSL Setup wizard v${C_PFI_VERSION}"
+  DetailPrint "POPFile SSL Setup v${C_PFI_VERSION}"
   DetailPrint "----------------------------------------------------"
-
-  ; Download the archives and OpenSSL DLLs
-
-  Push "${C_UWR_IO_SOCKET_SSL}"
-  Call GetSSLFile
-
-  Push "${C_UWR_NET_SSLEAY}"
-  Call GetSSLFile
-
-  Push "${C_UWR_DLL_SSLEAY32}"
-  Call GetSSLFile
-
-  Push "${C_UWR_DLL_LIBEAY32}"
-  Call GetSSLFile
 
   ; Make sure we do not try to add SSL support to an installation which is in use
 
@@ -547,88 +535,24 @@ Section "SSL" SecSSL
   DetailPrint ""
   SetOutPath $G_ROOTDIR
   File "addssl.txt"
-
-  ; Now install the files required for SSL support
-
-  StrCpy $G_MPLIBDIR "$G_ROOTDIR\lib"
-
-  StrCpy $G_PLS_FIELD_1 "$G_MPLIBDIR\IO\Socket"
   DetailPrint ""
-  CreateDirectory $G_PLS_FIELD_1
-  SetDetailsPrint both
-  StrCpy $G_PLS_FIELD_2 "IO-Socket-SSL.tar.gz"
-  DetailPrint "$(PSS_LANG_PROG_FILEEXTRACT)"
-  SetDetailsPrint listonly
-  untgz::extractFile -d "$G_PLS_FIELD_1" "$PLUGINSDIR\IO-Socket-SSL.tar.gz" "SSL.pm"
-  StrCmp ${L_RESULT} "success" label_a error_exit
 
-label_a:
-  DetailPrint ""
-  StrCpy $G_PLS_FIELD_1 "$G_MPLIBDIR\Net"
-  CreateDirectory $G_PLS_FIELD_1
-  SetDetailsPrint both
-  StrCpy $G_PLS_FIELD_2 "Net_SSLeay.pm.tar.gz"
-  DetailPrint "$(PSS_LANG_PROG_FILEEXTRACT)"
-  SetDetailsPrint listonly
-  untgz::extractFile -d "$G_PLS_FIELD_1" "$PLUGINSDIR\Net_SSLeay.pm.tar.gz" "SSLeay.pm"
-  StrCmp ${L_RESULT} "success" label_b error_exit
+SectionEnd
 
-label_b:
-  DetailPrint ""
-  StrCpy $G_PLS_FIELD_1 "$G_MPLIBDIR\Net\SSLeay"
-  CreateDirectory $G_PLS_FIELD_1
-  SetDetailsPrint both
-  StrCpy $G_PLS_FIELD_2 "Net_SSLeay.pm.tar.gz"
-  DetailPrint "$(PSS_LANG_PROG_FILEEXTRACT)"
-  SetDetailsPrint listonly
-  untgz::extractFile -d "$G_PLS_FIELD_1" "$PLUGINSDIR\Net_SSLeay.pm.tar.gz" "Handle.pm"
-  StrCmp ${L_RESULT} "success" label_c error_exit
 
-label_c:
-  DetailPrint ""
-  StrCpy $G_PLS_FIELD_1 "$G_MPLIBDIR\auto\Net\SSLeay"
-  CreateDirectory $G_PLS_FIELD_1
-  SetDetailsPrint both
-  StrCpy $G_PLS_FIELD_2 "OpenSSL DLL"
-  DetailPrint "$(PSS_LANG_PROG_FILECOPY)"
-  SetDetailsPrint listonly
-  CopyFiles /SILENT "$PLUGINSDIR\ssleay32.dll" "$G_PLS_FIELD_1\ssleay32.dll"
-  CopyFiles /SILENT "$PLUGINSDIR\libeay32.dll" "$G_PLS_FIELD_1\libeay32.dll"
-  DetailPrint ""
-  SetDetailsPrint both
-  StrCpy $G_PLS_FIELD_2 "Net_SSLeay.pm.tar.gz"
-  DetailPrint "$(PSS_LANG_PROG_FILEEXTRACT)"
-  SetDetailsPrint listonly
-  untgz::extractV -j -d "$G_PLS_FIELD_1" "$PLUGINSDIR\Net_SSLeay.pm.tar.gz" -x ".exists" "*.html" "*.pl" "*.pm" --
-  StrCmp ${L_RESULT} "success" check_bs_file
+#--------------------------------------------------------------------------
+# Installer Section: Download and install POPFile SSL Support files
+# (the 'include' file contains more than just the 'Section' code)
+#--------------------------------------------------------------------------
 
-error_exit:
-  SetDetailsPrint listonly
-  DetailPrint ""
-  SetDetailsPrint both
-  DetailPrint "$(PSS_LANG_MB_UNPACKFAIL)"
-  SetDetailsPrint listonly
-  DetailPrint ""
-  MessageBox MB_OK|MB_ICONSTOP "$(PSS_LANG_MB_UNPACKFAIL)"
+  !include "..\getssl.nsh"
 
-error_timestamp:
-  Call GetDateTimeStamp
-  Pop $G_PLS_FIELD_1
-  DetailPrint "----------------------------------------------------"
-  DetailPrint "POPFile SSL Setup failed ($G_PLS_FIELD_1)"
-  DetailPrint "----------------------------------------------------"
-  Abort
 
-check_bs_file:
+#--------------------------------------------------------------------------
+# Installer Section: Apply the SSL speed-up patch if necessary then tidy up
+#--------------------------------------------------------------------------
 
-  ; The current 'untgz' plugin (v1.0.5) does not extract empty files (i.e. file size is 0 bytes)
-  ; so we cheat a little to ensure all $G_MPLIBDIR\auto\Net\SSLeay\SSLeay.* files are extracted
-
-  IfFileExists "$G_PLS_FIELD_1\SSLeay.bs" done
-  File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "zerobyte.file"
-
-done:
-  DetailPrint ""
+Section "-tidyup"
 
   ; Now patch Module.pm (if it needs to be patched)
 
@@ -649,7 +573,7 @@ done:
 
   StrCmp $G_PLS_FIELD_1 "No suitable patches were found" close_log
   StrCmp $G_PLS_FIELD_1 "OK" 0 show_status
-  !insertmacro BACKUP_123_DP "$G_ROOTDIR\POPFile" "Module.pm"
+  !insertmacro PFI_BACKUP_123_DP "$G_ROOTDIR\POPFile" "Module.pm"
   SetDetailsPrint none
   Rename "$PLUGINSDIR\Module.ssl" "$G_ROOTDIR\POPFile\Module.pm"
   IfFileExists "$G_ROOTDIR\POPFile\Module.pm" success
@@ -660,7 +584,12 @@ done:
   DetailPrint "$(PSS_LANG_PATCHFAILED)"
   SetDetailsPrint listonly
   DetailPrint ""
-  Goto error_timestamp
+  Call PFI_GetDateTimeStamp
+  Pop $G_PLS_FIELD_1
+  DetailPrint "----------------------------------------------------"
+  DetailPrint "POPFile SSL Setup failed ($G_PLS_FIELD_1)"
+  DetailPrint "----------------------------------------------------"
+  Abort
 
 success:
   SetDetailsPrint listonly
@@ -675,7 +604,7 @@ close_log:
   DetailPrint "$(PSS_LANG_PROG_SUCCESS)"
   SetDetailsPrint listonly
   DetailPrint ""
-  Call GetDateTimeStamp
+  Call PFI_GetDateTimeStamp
   Pop $G_PLS_FIELD_1
   DetailPrint "----------------------------------------------------"
   DetailPrint "POPFile SSL Setup completed $G_PLS_FIELD_1"
@@ -685,19 +614,15 @@ close_log:
   ; Save a log showing what was installed
 
   SetDetailsPrint textonly
-  DetailPrint "$(PSS_LANG_PROG_SAVELOG)"
+  DetailPrint "$(PFI_LANG_PROG_SAVELOG)"
   SetDetailsPrint none
-  !insertmacro BACKUP_123 "$G_ROOTDIR" "addssl.log"
+  !insertmacro PFI_BACKUP_123 "$G_ROOTDIR" "addssl.log"
   Push "$G_ROOTDIR\addssl.log"
-  Call DumpLog
+  Call PFI_DumpLog
 
   SetDetailsPrint both
   DetailPrint "Log report saved in '$G_ROOTDIR\addssl.log'"
   SetDetailsPrint none
-
-  Pop ${L_RESULT}
-
-  !undef L_RESULT
 
 SectionEnd
 
@@ -792,14 +717,14 @@ Function MakeRootDirSafe
 
   DetailPrint ""
   SetDetailsPrint both
-  DetailPrint "$(PSS_LANG_PROG_CHECKIFRUNNING)"
+  DetailPrint "$(PFI_LANG_PROG_CHECKIFRUNNING)"
   SetDetailsPrint listonly
 
   ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
-  Call ServiceRunning
+  Call PFI_ServiceRunning
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "true" manual_shutdown
 
@@ -812,7 +737,7 @@ Function MakeRootDirSafe
   ; Earlier versions of POPFile use only 'perl.exe' or 'wperl.exe'.
 
   Push $G_ROOTDIR
-  Call FindLockedPFE
+  Call PFI_FindLockedPFE
   Pop ${L_EXE}
   StrCmp ${L_EXE} "" exit
 
@@ -864,14 +789,14 @@ done:
   FileClose ${L_CFG}
 
   Push ${L_NEW_GUI}
-  Call TrimNewlines
+  Call PFI_TrimNewlines
   Pop ${L_NEW_GUI}
 
   StrCmp ${L_NEW_GUI} "" manual_shutdown
   DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_NEW_GUI}"
   DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
   Push ${L_NEW_GUI}
-  Call ShutdownViaUI
+  Call PFI_ShutdownViaUI
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "success" check_exe
   StrCmp ${L_RESULT} "password?" manual_shutdown
@@ -880,10 +805,10 @@ check_exe:
   DetailPrint "Waiting for '${L_EXE}' to unlock after NSISdl request..."
   DetailPrint "Please be patient, this may take more than 30 seconds"
   Push ${L_EXE}
-  Call WaitUntilUnlocked
+  Call PFI_WaitUntilUnlocked
   DetailPrint "Checking if '${L_EXE}' is still locked after NSISdl request..."
   Push ${L_EXE}
-  Call CheckIfLocked
+  Call PFI_CheckIfLocked
   Pop ${L_EXE}
   StrCmp ${L_EXE} "" unlocked_now
 
@@ -919,113 +844,6 @@ exit:
 
 nothing_to_check:
 FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# Installer Function: GetSSLFile
-#
-# Inputs:
-#         (top of stack)     - full URL used to download the SSL file
-# Outputs:
-#         none
-#--------------------------------------------------------------------------
-
-Function GetSSLFile
-
-  Pop $G_SSL_FILEURL
-
-  StrCpy $G_PLS_FIELD_1 $G_SSL_FILEURL
-  Push $G_PLS_FIELD_1
-  Call StrBackSlash
-  Call GetParent
-  Pop $G_PLS_FIELD_2
-  StrLen $G_PLS_FIELD_2 $G_PLS_FIELD_2
-  IntOp $G_PLS_FIELD_2 $G_PLS_FIELD_2 + 1
-  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1" "" $G_PLS_FIELD_2
-  StrCpy $G_PLS_FIELD_2 "$G_SSL_FILEURL" $G_PLS_FIELD_2
-  DetailPrint ""
-  DetailPrint "$(PSS_LANG_PROG_STARTDOWNLOAD)"
-  NSISdl::download "$G_SSL_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1"
-  Pop $G_PLS_FIELD_2
-  StrCmp $G_PLS_FIELD_2 "success" file_received
-  SetDetailsPrint both
-  DetailPrint "$(PSS_LANG_MB_NSISDLFAIL_1)"
-  SetDetailsPrint listonly
-  DetailPrint "$(PSS_LANG_MB_NSISDLFAIL_2)"
-  MessageBox MB_OK|MB_ICONEXCLAMATION "$(PSS_LANG_MB_NSISDLFAIL_1)${MB_NL}$(PSS_LANG_MB_NSISDLFAIL_2)"
-  SetDetailsPrint listonly
-  DetailPrint ""
-  Call GetDateTimeStamp
-  Pop $G_PLS_FIELD_1
-  DetailPrint "----------------------------------------------------"
-  DetailPrint "POPFile SSL Setup failed ($G_PLS_FIELD_1)"
-  DetailPrint "----------------------------------------------------"
-  Abort
-
-file_received:
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# Installer Function: DumpLog
-#
-# This function saves the contents of the install log (from INSTPAGE) in a file.
-# The stack is used to pass the full pathname of the file to be used.
-#--------------------------------------------------------------------------
-
-  !define LVM_GETITEMCOUNT 0x1004
-  !define LVM_GETITEMTEXT 0x102D
-
-Function DumpLog
-  Exch $5
-  Push $0
-  Push $1
-  Push $2
-  Push $3
-  Push $4
-  Push $6
-
-  FindWindow $0 "#32770" "" $HWNDPARENT
-  GetDlgItem $0 $0 1016
-  StrCmp $0 0 error
-  FileOpen $5 $5 "w"
-  StrCmp $5 "" error
-  SendMessage $0 ${LVM_GETITEMCOUNT} 0 0 $6
-  System::Alloc ${NSIS_MAX_STRLEN}
-  Pop $3
-  StrCpy $2 0
-  System::Call "*(i, i, i, i, i, i, i, i, i) i \
-                (0, 0, 0, 0, 0, r3, ${NSIS_MAX_STRLEN}) .r1"
-
-loop:
-  StrCmp $2 $6 done
-  System::Call "User32::SendMessageA(i, i, i, i) i \
-                ($0, ${LVM_GETITEMTEXT}, $2, r1)"
-  System::Call "*$3(&t${NSIS_MAX_STRLEN} .r4)"
-  FileWrite $5 "$4${MB_NL}"
-  IntOp $2 $2 + 1
-  Goto loop
-
-done:
-  FileClose $5
-  System::Free $1
-  System::Free $3
-  Goto exit
-
-error:
-  MessageBox MB_OK|MB_ICONEXCLAMATION "Error: problem detected when saving the log file"
-
-exit:
-  Pop $6
-  Pop $4
-  Pop $3
-  Pop $2
-  Pop $1
-  Pop $0
-  Exch $5
-
-FunctionEnd
-
 
 #--------------------------------------------------------------------------
 # End of 'addssl.nsi'
