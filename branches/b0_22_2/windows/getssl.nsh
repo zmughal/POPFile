@@ -234,7 +234,7 @@ download:
 
       DetailPrint ""
       SetDetailsPrint both
-      DetailPrint "$(PSS_LANG_PROG_CHECKIFRUNNING) $(PFI_LANG_TAKE_SEVERAL_SECONDS)"
+      DetailPrint "$(PFI_LANG_PROG_CHECKIFRUNNING) $(PFI_LANG_TAKE_SEVERAL_SECONDS)"
       SetDetailsPrint listonly
       DetailPrint ""
       Call MakeRootDirSafe
