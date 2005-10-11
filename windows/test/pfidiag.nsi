@@ -99,7 +99,6 @@
 #
 #--------------------------------------------------------------------------
 
-
   ;--------------------------------------------------------------------------
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
@@ -477,9 +476,9 @@ enter_section:
   ; The 'UserInfo' plugin may return an error if run on a Win9x system but since Win9x systems
   ; do not support different account types, we treat this error as if user has 'Admin' rights.
 
-  ClearErrors
-  UserInfo::GetName
-  IfErrors 0 got_name
+	ClearErrors
+	UserInfo::GetName
+	IfErrors 0 got_name
 
   ; Assume Win9x system, so user has 'Admin' rights
 
@@ -488,13 +487,13 @@ enter_section:
   Goto section_end
 
 got_name:
-  Pop $G_WINUSERNAME
+	Pop $G_WINUSERNAME
   StrCmp $G_WINUSERNAME "" 0 get_usertype
   StrCpy $G_WINUSERNAME "UnknownUser"
 
 get_usertype:
   UserInfo::GetAccountType
-  Pop ${L_WINUSERTYPE}
+	Pop ${L_WINUSERTYPE}
   StrCmp ${L_WINUSERTYPE} "Admin" section_end
   StrCmp ${L_WINUSERTYPE} "Power" section_end
   StrCmp ${L_WINUSERTYPE} "User" section_end
@@ -1427,10 +1426,10 @@ examine_shortcut:
   StrCmp ${L_LNK_NAME} ".." look_again
   IfFileExists "${L_LNK_FOLDER}\${L_LNK_NAME}\*.*" look_again
   IntOp ${L_LNK_TOTAL} ${L_LNK_TOTAL} + 1
-  ShellLink::GetShortCutTarget "${L_LNK_FOLDER}\${L_LNK_NAME}"
-  Pop ${L_SHORTCUT_TARGET}
-  ShellLink::GetShortCutArgs "${L_LNK_FOLDER}\${L_LNK_NAME}"
-  Pop ${L_SHORTCUT_ARGS}
+	ShellLink::GetShortCutTarget "${L_LNK_FOLDER}\${L_LNK_NAME}"
+	Pop ${L_SHORTCUT_TARGET}
+	ShellLink::GetShortCutArgs "${L_LNK_FOLDER}\${L_LNK_NAME}"
+	Pop ${L_SHORTCUT_ARGS}
 
   Push ${L_SHORTCUT_TARGET}
   Push "popfile"
@@ -1445,8 +1444,8 @@ examine_shortcut:
 
 show_details:
   IntOp ${L_POPFILE_TOTAL} ${L_POPFILE_TOTAL} + 1
-  ShellLink::GetShortCutWorkingDirectory "${L_LNK_FOLDER}\${L_LNK_NAME}"
-  Pop ${L_SHORTCUT_START_IN}
+	ShellLink::GetShortCutWorkingDirectory "${L_LNK_FOLDER}\${L_LNK_NAME}"
+	Pop ${L_SHORTCUT_START_IN}
   DetailPrint ""
   DetailPrint "Shortcut name     = < ${L_LNK_NAME} >"
   DetailPrint "Shortcut start in = < ${L_SHORTCUT_START_IN} >"

@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 1
+# POPFILE LOADABLE MODULE
 package POPFile::Logger;
 
 use POPFile::Module;
@@ -226,8 +226,7 @@ sub debug
         return;
     }
 
-    if ( ( !defined( $self->config_( 'level' ) ) ) ||
-         ( $level > $self->config_( 'level' ) ) ) {
+    if ( $level > $self->config_( 'level' ) ) {
         return;
     }
 

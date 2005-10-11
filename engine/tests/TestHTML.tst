@@ -701,6 +701,4 @@ skip:
     $b->stop();
 }
 
-# TODO http_redirect_
-
 1;

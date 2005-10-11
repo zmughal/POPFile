@@ -29,7 +29,6 @@ export POPFILE_ROOT=../
 export POPFILE_USER=../tests/
 
 runtest:
-	@rm -rf popfile.pid popfile.cfg
 	@perl -I ../ $(DEBUGARGS) ../tests.pl $(TESTARGS)
 ifdef DEBUGARGS
 	@perl ../coverage.pl

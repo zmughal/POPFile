@@ -10,10 +10,11 @@
 #                   (A) Requires the following programs (built using NSIS):
 #
 #                       (1) adduser.exe     (NSIS script: adduser.nsi)
-#                       (2) msgcapture.exe  (NSIS script: msgcapture.nsi)
-#                       (3) runpopfile.exe  (NSIS script: runpopfile.nsi)
-#                       (4) runsqlite.exe   (NSIS script: runsqlite.nsi)
-#                       (5) stop_pf.exe     (NSIS script: stop_popfile.nsi)
+#                       (2) ctchecks.exe    (NSIS script: ctchecks.nsi)
+#                       (3) msgcapture.exe  (NSIS script: msgcapture.nsi)
+#                       (4) runpopfile.exe  (NSIS script: runpopfile.nsi)
+#                       (5) runsqlite.exe   (NSIS script: runsqlite.nsi)
+#                       (6) stop_pf.exe     (NSIS script: stop_popfile.nsi)
 #
 #                   (B) The following programs (built using NSIS) are optional:
 #
@@ -67,7 +68,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
-
+  
 ; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date
 ; (if the default multi-language installer is compiled).
 ;
@@ -1100,13 +1101,15 @@ SectionEnd
     continue:
 
       ;--------------------------------------------------------------------------
-      ; Install Perl modules: base.pm, the entire Encode collection and Text::Kakasi
-      ; (bytes.pm and bytes_heavy.pl are also required but these files became part of
-      ; the standard minimal Perl when support for encrypted cookies was added for 0.23.0)
+      ; Install Perl modules: base.pm, bytes.pm, the Encode collection and Text::Kakasi
+      ; (the requirement for bytes_heavy.pl was added when the minimal Perl was updated
+      ; to use ActivePerl 5.8.7 components)
       ;--------------------------------------------------------------------------
 
       SetOutPath "$G_MPLIBDIR"
       File "${C_PERL_DIR}\lib\base.pm"
+      File "${C_PERL_DIR}\lib\bytes.pm"
+      File "${C_PERL_DIR}\lib\bytes_heavy.pl"
       File "${C_PERL_DIR}\lib\Encode.pm"
 
       SetOutPath "$G_MPLIBDIR\Encode"
@@ -1489,7 +1492,7 @@ Function GetPermissionToInstall
   !define C_NLT     "${IO_NL}\t"
 
   ; Convert the installation pathname into a string which is safe to use in the summary page
-
+  
   Push $G_ROOTDIR
   Call NSIS2IO
   Pop $G_PLS_FIELD_2

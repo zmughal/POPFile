@@ -261,7 +261,7 @@ Magnet_Error3                           Criar novo ímã '%s' no balde '%s'
 Magnet_CurrentMagnets                   Ímãs Atuais
 Magnet_Message1                         Os seguintes ímãs fazem as mensagens serem sempre classificadas no balde especificado.
 Magnet_CreateNew                        Criar Novo Ímã
-Magnet_Explanation                      <b>Estes tipos de ímã estão disponíveis:</b> <ul><li><b>Endereço ou nome do remetente:</b> Por exemplo: fulano@empresa.com para pegar um endereço específico, <br />empresa.com para pegar todo mundo que envia de empresa.com, <br />Fulano de Tal para pegar uma pessoa específica, Fulano para pegar todos os Fulanos.</li><li><b>Endereço ou nome de destinatário/cópia:</b> Como um ímã de remetente mas para o endereço Para:/Cc: de uma mensagem.</li> <li><b>Palavras no assunto:</b> Por exemplo: olá para pegar todas as mensagens com olá no assunto.</li></ul>
+Magnet_Explanation                      Estes tipos de ímã estão disponíveis:</b> <ul><li><b>Endereço ou nome do remetente:</b> Por exemplo: fulano@empresa.com para pegar um endereço específico, <br />empresa.com para pegar todo mundo que envia de empresa.com, <br />Fulano de Tal para pegar uma pessoa específica, Fulano para pegar todos os Fulanos.</li><li><b>Endereço ou nome de destinatário/cópia:</b> Como um ímã de remetente mas para o endereço Para:/Cc: de uma mensagem.</li> <li><b>Palavras no assunto:</b> Por exemplo: olá para pegar todas as mensagens com olá no assunto.</li></ul>
 Magnet_MagnetType                       Tipo do ímã
 Magnet_Value                            Valores
 Magnet_Always                           Sempre vai para o balde
@@ -361,6 +361,8 @@ Imap_PasswordError                      Por favor informe uma senha para o servi
 Imap_Expunge                            Expurgar mensagens deletadas de pastas em observação.
 Imap_Interval                           Intervalo de atualização em segundos:
 Imap_IntervalError                      Por favor informe um intervalo entre 10 e 3600 segundos.
+Imap_Bytelimit                          Bytes por mensagem para usar para classificação. Informe 0 (Nulo) para usar a mensagem completa:
+Imap_BytelimitError                     Por favor informe um número.
 Imap_RefreshFolders                     Atualizar a lista de pastas
 Imap_Now                                agora!
 Imap_UpdateError1                       Não é possível logar. Verifique seu nome de usuário e senha, por favor.

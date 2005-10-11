@@ -314,10 +314,10 @@ loop:
 
   StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 7
   StrCmp ${CBP_L_RESULT} "corpus " got_flat_corpus
-  
+
   StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 13
   StrCmp ${CBP_L_RESULT} "bayes_corpus " got_bdb_corpus
-  
+
   StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 18
   StrCmp ${CBP_L_RESULT} "database_database " got_sql_corpus
   StrCpy ${CBP_L_RESULT} ${CBP_L_TEMP} 19

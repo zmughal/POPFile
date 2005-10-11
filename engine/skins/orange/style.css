@@ -1,148 +1,101 @@
-/*********************************************************/
-/* Main Body */
-
 body {
-  color: #000000;
   background-color: #FFFFFF;
+  border: none;
   font-family: sans-serif;
-  font-size: 100%;
-}
-
-/*********************************************************/
-/* Shell structure */
-
-.shell, .shellTop {
-  color: #000000;
-  background-color: #ffffcc;
-  border: 3px #ff9966 solid;
-}
-
-.shellStatusMessage { 
-  color: #000000;
-  background-color: #ffffcc;
-  border: 3px #ff9966 solid;
-  width: 100%;
-}
-
-.shellErrorMessage { 
-  color: #FF0000;
-  background-color: #ffffcc;
-  border: 3px #ff9966 solid;
-  width: 100%;
+  color: black;
 }
 
 table.head {
-  width: 100%;
-}
-
-td.head {
   font-weight: normal;
-  font-size: 1.8em;
-}
-
-table.footer {
+  font-size: 22pt;
+  background: #ffffcc;
+  color: black;
   width: 100%;
 }
 
-td.footerBody {
-  text-align: center;
+.shell, .shellTop {
+  background-color: #ffffcc;
+  border: 3px #ff9966 solid;
+  color: black;
 }
 
-td.naked {
-  padding: 0;
-  margin: 0;
-  border: 0;
+table.head a {
+  font-size: 12pt;
 }
-
-td.logo2menuSpace {
-  height: 0.8em;
-}
-
-/*********************************************************/
-/* Menu Settings */
 
 .menu {
-  font-size: 1.2em;
+  font-size: 14pt;
   font-weight: bold;
   width: 100%;
 }
 
 .menuSelected {
-  color: #000000;
   background-color: #ff9966;
   width: 14%;
+  color: #1E3B75;
 }
 
 .menuStandard {
-  color: #000000;
   background-color: #ffcc99;
   width: 14%;
+  color: #1E3B75;
 }
 
-.menuIndent {
-  width: 8%;
+tr.rowEven {
+  background-color: #ffffcc;
+  color: black;
 }
 
-.menuLink {
-  display: block;
-  width: 100%;
+tr.rowOdd {
+  background-color: #ffcc99;
+  color: black;
 }
 
-/*********************************************************/
-/* Table Settings */
+hr {
+  color: gray; 
+  background-color: transparent;
+}
 
 table.settingsTable {
-  border: 1px solid #ff9966;
+  border: 1px solid #ffcc99;
+}
+
+table.openMessageTable, table.lookupResultsTable {
+  border: 3px solid #ffcc99;
 }
 
 td.settingsPanel {
-  border: 1px solid #ff9966;
+  border: 1px solid #ffcc99;
 }
 
-table.openMessageTable {
-  border: 3px solid #ff9966;
-}
-
-td.openMessageBody {
-  text-align: left;
+td.naked {
+  padding: 0px; 
+  margin: 0px; 
+  border: none
 }
 
 td.openMessageCloser {
   text-align: right;
 }
 
-tr.rowEven {
-  color: #000000;
-  background-color: #ffffcc;
+.menuIndent {
+  width: 8%;
 }
 
-tr.rowOdd {
-  color: #000000;
-  background-color: #ffcc99;
+td.accuracy0to49 {
+  background-color: red;
+  color: black;
 }
 
-tr.rowHighlighted {
-  color: #000000;
-  background-color: #ff9966;
+td.accuracy50to93 {
+  background-color: yellow;
+  color: black;
 }
 
-tr.rowBoundary { 
-  background-color: #ff9966;
+td.accuracy94to100 {
+  background-color: green;
+  color: black;
 }
-
-table.lookupResultsTable {
-  border: 3px solid #ff9966;
-}
-
-/*********************************************************/
-/* Graphics */
-
-span.graphFont {
-  font-size: x-small;
-}
-
-/*********************************************************/
-/* Messages */
 
 div.error01 {
   background-color: transparent;
@@ -155,27 +108,8 @@ div.error02 {
   color: red;
 }
 
-div.helpMessage {
-  background-color: #ffcc99;
-  border: 2px solid #ff9966;
-  padding: 0.4em;
-}
-
-div.helpMessage form {
-  margin: 0;
-}
-
-/*********************************************************/
-/* Form Labels */
-
-th.historyLabel {
-  text-align: left;
-  font-weight: normal;
-}
-
-.historyLabelSort {
-  font-weight: bold;
-  font-style: normal;
+span.graphFont {
+  font-size: x-small;
 }
 
 .bucketsLabel {
@@ -193,11 +127,11 @@ th.historyLabel {
 .configurationLabel {
   font-weight: bold;
 }
-
+    
 .advancedLabel {
   font-weight: bold;
 }
-
+    
 .passwordLabel {
   font-weight: bold;
 }
@@ -205,21 +139,6 @@ th.historyLabel {
 .sessionLabel {
   font-weight: bold;
 }
-
-.bucketsWidgetStateOn, .bucketsWidgetStateOff {
-  font-weight: bold;
-}
-
-.configWidgetStateOn, .configWidgetStateOff {
-  font-weight: bold;
-}
-
-.securityWidgetStateOn, .securityWidgetStateOff {
-  font-weight: bold;
-}
-
-/*********************************************************/
-/* Positioning */
 
 table.historyWidgetsTop {
   width: 100%;
@@ -233,115 +152,71 @@ table.historyWidgetsBottom {
   margin-top: 0.6em;
 }
 
-.historyNavigatorTop, .historyNavigatorBottom {
+td.historyNavigatorTop {
   text-align: right;
-  vertical-align: top;
 }
 
-.historyNavigatorTop form, .historyNavigatorBottom form {
-  display:inline;
+td.historyNavigatorBottom {
+  text-align: right;
 }
 
-.refreshLink {
-  margin-top: 0.5em;
+tr.rowHighlighted {
+  background-color: #ff9966;
 }
 
-.magnetsTable caption {
-  text-align: left;
+td.logo2menuSpace { 
+  height: 0.8em;
 }
 
-h2.history {
-  margin-top: 0;
-  margin-bottom: 0.3em;
+a.changeSettingLink {
+  background-color: transparent;
+  color: #0000cc;
 }
 
-.search {
-  display: inline;
-  float: left;
-  padding-right: 1em;
+td.footerBody { 
+  text-align: center;
+  padding-left: 5%;
+  padding-right: 5%;
 }
 
-.filter {
-  display: inline;
+table.footer {
+  width: 100%;
+  margin-top: 1em;
 }
 
-.removeButtonsTop {
-  padding-bottom: 1em;
+span.bucketsWidgetState {
+  font-weight: bold;
 }
 
-.viewHeadings {
-  display: inline;
+span.configWidgetState {
+  font-weight: bold;
 }
 
-/*********************************************************/
-/* Config Bar */
-
-.configBar, .configBarHidden {
-  padding-top: 1em;
+span.securityWidgetState {
+  font-weight: bold;
 }
 
-.configBarTitle {
-  display: inline;
-  font-size: 1.0em;
+.historyLabel {
+  font-weight: normal;
 }
 
-.configBarTitle a {
-  border: 2px #ff9966 solid;
+.historyLabel em {
+  font-weight: bold;
+  font-style: normal;
+}
+
+tr.rowBoundary {
+  background-color: #ff9966;
+}
+
+div.helpMessage {
+  background-color: #ffcc99;
+  border: 2px solid #ff9966;
   padding: 0.3em;
   padding-bottom: 0;
-  margin-left: 0.3em;
-  background-color: #ff9966;
-  font-weight: bold;
-  font-size: 1.0em;
 }
 
-.configBarBody {
-  background-color: #ffcc99;
-  border: 1px solid #ff9966;
-}
-
-.configBarBody td {
-  border: 1px solid #ff9966;
-}
-
-.configBarBody form {
-  margin: 0;
-}
-
-.configBarOption {
-  border: 1px solid #ff9966;
-  margin: 0.3em;
-  padding: 0.3em;
-  display: inline;
-  float: left;
-  min-height: 3em;
-  background-color: #ffffcc;
-}
-
-.checkLabel {
-  border: 1px solid #ff9966;
-  white-space: nowrap;
-}
-
-.configBarBody input.submit {
-  margin-top: 0.1em;
-}
-
-.configBarBody label.configurationLabel {
+.menuLink {
   display: block;
-}
-
-/*********************************************************/
-/* History Column Controls */
-
-.columnControls {
-  white-space:nowrap;
-  vertical-align: top;
-  width: 10px;
-}
-
-.columnRemove, .columnMove {
-  display: block;
-  width:100%;
-  height: 1em;
+  width: 100%;
 }

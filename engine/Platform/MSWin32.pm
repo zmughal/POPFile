@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Platform::MSWin32;
 
 use POPFile::Module;
@@ -104,9 +104,9 @@ sub start
 
     foreach my $dir (@temp) {
         if ( $dir =~ /pdk\-.+\-(\d+)$/ ) {
-            if ( $$ != $1 ) {
+   	        if ( $$ != $1 ) {
                 rmdir $dir;
-            }
+	        }
         }
     }
 
@@ -150,22 +150,20 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ( $status_message );
-
     if ( $name eq 'windows_trayicon_and_console' ) {
 
         if ( defined($$form{windows_trayicon}) ) {
             $self->config_( 'trayicon', $$form{windows_trayicon} );
-            $status_message = $$language{Windows_NextTime};
+            $templ->param( 'trayicon_feedback' => 1 );
         }
 
         if ( defined($$form{windows_console}) ) {
             $self->config_( 'console', $$form{windows_console} );
-            $status_message = $$language{Windows_NextTime};
+            $templ->param( 'console_feedback' => 1 );
         }
     }
 
-   return ( $status_message, undef );
+   return '';
 }
 
 1;

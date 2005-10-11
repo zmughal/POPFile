@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 0
+# POPFILE LOADABLE MODULE
 package POPFile::MQ;
 
 use POPFile::Module;
@@ -11,7 +11,7 @@ use POPFile::Module;
 # send messages without having to know which modules need to receive
 # its messages.
 #
-# Message delivery is asynchronous and guaranteed, as well as guaranteed
+# Message delivery is asynchronous and guaranteed, as well as guaranteed 
 # first in, first out (FIFO) per process.
 #
 # The following public functions are defined:
@@ -37,13 +37,9 @@ use POPFile::Module;
 #     COMIT    Sent when an item is committed to the history through a call
 #              to POPFile::History::commit_slot
 #
-#     RELSE    Sent when a session key is being released by a client
+#    RELSE    Sent when a session key is being released by a client
 #
-#     CREAT    A sub-process has created a session key so send the session
-#              to the parent so that it can be released by the parent
-#              process at the right moment and used for API access
-#
-# Copyright (c) 2001-2005 John Graham-Cumming
+# Copyright (c) 2001-2004 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -165,8 +161,6 @@ sub stop
         close $self->{children__}{$kid};
         delete $self->{children__}{$kid};
     }
-
-    $self->SUPER::stop();
 }
 
 #----------------------------------------------------------------------------
@@ -203,8 +197,6 @@ sub yield_
 sub forked
 {
     my ( $self, $writer ) = @_;
-
-    $self->SUPER::forked( $writer );
 
     $self->{writer__} = $writer;
 

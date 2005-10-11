@@ -259,7 +259,7 @@ Magnet_Error3                           Uusi magneetti, '%s', luotu sankoon '%s'
 Magnet_CurrentMagnets                   T&auml;m&auml;nhetkiset magneetit
 Magnet_Message1                         Seuraavat magneetit aiheuttavat sen, ett&auml; viestit luokitellaan aina m&auml;&auml;riteltyyn sankoon.
 Magnet_CreateNew                        Luo uusi magneetti
-Magnet_Explanation                      <b>On olemassa seuraavanlaisia magneetteja:</b> <ul><li><b>L&auml;hett&auml;j&auml;n osoite tai nimi:</b> esimerkiksi &quot;erkki@esimerkki.fi&quot; yksitt&auml;ist&auml; osoitetta varten, <br />&quot;esimerkki.fi&quot; kaikkia niit&auml; varten, joiden osoite p&auml;&auml;ttyy &quot;esimerkki.fi&quot;, <br />&quot;Erkki Esimerkki&quot; yksitt&auml;ist&auml; henkil&ouml;&auml; varten ja &quot;Erkki&quot; kaikkia Erkkej&auml; varten</li><li><b>Vastaanottajan osoite tai nimi/Kopio:</b> Samalla tavoin kuin l&auml;hett&auml;j&auml;magneettien kanssa, mutta vastaanottajien/kopion saavien osoitteiden kanssa</li><li><b>Sanat aiheessa:</b> esimerkiksi &quot;heipparallaa&quot; kaikkia sellaisia viestej&auml; varten, joiden aiherivill&auml; on sana &quot;heipparallaa&quot;.</li></ul>
+Magnet_Explanation                      On olemassa seuraavanlaisia magneetteja:</b> <ul><li><b>L&auml;hett&auml;j&auml;n osoite tai nimi:</b> esimerkiksi &quot;erkki@esimerkki.fi&quot; yksitt&auml;ist&auml; osoitetta varten, <br />&quot;esimerkki.fi&quot; kaikkia niit&auml; varten, joiden osoite p&auml;&auml;ttyy &quot;esimerkki.fi&quot;, <br />&quot;Erkki Esimerkki&quot; yksitt&auml;ist&auml; henkil&ouml;&auml; varten ja &quot;Erkki&quot; kaikkia Erkkej&auml; varten</li><li><b>Vastaanottajan osoite tai nimi/Kopio:</b> Samalla tavoin kuin l&auml;hett&auml;j&auml;magneettien kanssa, mutta vastaanottajien/kopion saavien osoitteiden kanssa</li><li><b>Sanat aiheessa:</b> esimerkiksi &quot;heipparallaa&quot; kaikkia sellaisia viestej&auml; varten, joiden aiherivill&auml; on sana &quot;heipparallaa&quot;.</li></ul>
 Magnet_MagnetType                       Magneetin tyyppi
 Magnet_Value                            arvot
 Magnet_Always                           laitetaan aina sankoon
@@ -359,6 +359,8 @@ Imap_PasswordError                      T&auml;yt&auml; palvelimen salasana.
 Imap_Expunge                            Poista viestit vahdituista kansioista.
 Imap_Interval                           P&auml;ivitysv&auml;li sekunneissa.
 Imap_IntervalError                      T&auml;yt&auml; p&auml;ivitysv&auml;li 10 ja 3600 sekunnin v&auml;lilt&auml;.
+Imap_Bytelimit                          Luokitteluun k&auml;ytett&auml;v&auml; tavum&auml;&auml;r&auml;. Kirjoita 0 (nolla), jos haluat k&auml;ytt&auml;&auml; koko viesti&auml;:
+Imap_BytelimitError                     T&auml;yt&auml; numero.
 Imap_RefreshFolders                     P&auml;ivit&auml; kansiolista.
 Imap_Now                                nyt
 Imap_UpdateError1                       Kirjautuminen ep&auml;onnistui. Tarkista tunnus ja salasana.

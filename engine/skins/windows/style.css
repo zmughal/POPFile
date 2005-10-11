@@ -8,12 +8,19 @@ bad.  Its does well on OS X's Safari 1.0 beta, Opera, and IE 5.  It seems on
 most Mac browsers the "title bar" is not working correctly due to the way
 they handle system colors.
 
-Original design by Joseph Connors (TexasFett), but wouldn't look nearly as
-good without Dan Martin (Kraelen).  Thanks Dan.
+Original design by Joseph Connors (TexasFett) <wincss@texas.mailshell.com>,
+but wouldn't look nearly as good without Dan Martin (Kraelen).  Thanks Dan.
 
 CSS2 sytle comments are below the line they apply to.  CSS1 style comments are
 hacks to make the skin look better on IE and Konqueror since they ignore CSS1
 commenting.  But that means its not fully valid CSS2.
+
+03-29-03: Last Major Update
+04-19-03: Fix menu visited color on IE 6 - version accepted into POPFile 0.19
+05-03-03: Center footer better and add "icon" in Mozilla, maybe Opera head fix
+05-05-03: Changed a lot of head stuff, got rid of absolute positioning
+05-21-03: Did what I could to fix the changes 0.19 RC3 made to the footer
+08-06-04: Add support for some new 0.22 classes and some code improvements
 */
 
 body {
@@ -213,10 +220,6 @@ h2 {
   font-size: 1.2em;
 }
 
-th.historyLabel {
-  text-align: left;
-}
-
 tr.rowEven {
   background-color: transparent;
 /* If you would like more color try lightblue. */
@@ -269,16 +272,30 @@ td.stabColor01 {
   border: 1px outset ActiveBorder;
 }
 
+td.accuracy0to49 {
+  background-color: red;
+  color: black;
+}
+
+td.accuracy50to93 {
+  background-color: yellow;
+  color: black;
+}
+
+td.accuracy94to100 {
+  background-color: green;
+  color: black;
+}
+
 td.historyNavigatorTop {
   text-align: right;
   padding-right: 0.5em;
-  padding-top: 0.5em;
-  vertical-align: top;
 }
 
 td.historyNavigatorBottom {
   text-align: right;
   padding-right: 0.5em;
+  padding-bottom: 1em; 
 }
 
 .historyWidgetsTop {
@@ -291,32 +308,6 @@ td.historyNavigatorBottom {
   border-top: none;
   border-bottom: none;
   width: 100%;
-}
-
-.historyNavigatorTop form, .historyNavigatorBottom form {
-  display:inline;
-}
-
-.refreshLink {
-  display: none;
-}
-
-h2.history {
-  margin-top: 0.3em;
-  margin-bottom: 0.5em;
-}
-
-.search {
-  display: inline;
-  float: left;
-}
-
-.filter {
-  display: inline;
-}
-
-.removeButtonsTop {
-  padding-bottom: 1em;
 }
 
 .openMessageTable, .lookupResultsTable {
@@ -359,26 +350,7 @@ div.helpMessage {
   border: 1px solid black;
   padding: 0.4em;
   margin: 0.3em;
-}
-
-div.helpMessage form {
-  margin: 0;
-}
-
-.shellStatusMessage {
-  color: InfoText;
-  border: 1px solid black;
-  background-color: InfoBackground;
-  margin: auto;
-  text-align: center;
-}
-
-.shellErrorMessage {
-  color: red;
-  border: 1px solid black;
-  background-color: InfoBackground;
-  margin: auto;
-  text-align: center;
+  padding-bottom: 0;
 }
 
 span.graphFont {
@@ -388,116 +360,6 @@ span.graphFont {
 tr.rowBoundary {
   background-color: InfoBackground;
 }
-
-table.settingsTable + br {
-  display: none;
-}
-
-.viewHeadings {
-  display: inline;
-}
-
-td.top20 td.historyNavigatorTop a + a {
-  border-left: 1px solid black;
-  padding-left: 0.3em;
-}
-
-/*********************************************************/
-/* Config Bar */
-
-.configBar {
-  position: absolute;
-  bottom: *;
-  left: 0;
-  right: 0;
-  margin: 1%;
-  margin-top: 3em;
-  padding-top: 1em;
-  padding-bottom: 1em;
-}
-
-.configBarTitle {
-  display: inline;
-}
-
-.configBarTitle A,
-.configBarTitle A:hover {
-  color: ButtonText;
-  background-color: ThreeDFace;
-  text-decoration: none;
-  font-weight: normal;
-  border-style: outset;
-  border-color: ActiveBorder;
-  border-width: 2px;
-  padding-top: 1px;
-  padding-left: 5px;
-  padding-right: 5px;
-  padding-bottom: 2px;
-  text-decoration: none;
-  -moz-border-radius: 5px;
-}
-
-.configBar .configBarTitle A,
-.configBar .configBarTitle A:hover {
-  border-bottom: none;
-  -moz-border-radius-bottomleft: 0;
-  -moz-border-radius-bottomright: 0;
-}
-
-.configBarHidden {
-  padding-top: 1em;
-  padding-bottom: 0.5em;
-}
-
-.configBarBody {
-  border: 2px outset ActiveBorder;
-  background-color: ThreeDFace;
-}
-
-.configBarBody form {
-  margin: 0;
-}
-
-.configBarOption {
-  border: 2px groove ActiveBorder;
-  margin: 0.3em;
-  padding: 0.3em;
-  display: inline;
-  float: left;
-  min-height: 3em;
-}
-
-.checkLabel {
-  border: 2px groove ActiveBorder;
-  white-space: nowrap;
-}
-
-.configBarBody input.submit {
-  margin-top: 0.1em;
-}
-
-.configBarBody label.configurationLabel {
-  display: block;
-}
-
-/*********************************************************/
-/* History Column Controls */
-
-.columnControls {
-  white-space: nowrap;
-  vertical-align: top;
-  width: 10px;
-  display: none;
-}
-
-.columnRemove, .columnMove {
-  display: block;
-  width: 100%;
-  height: 1em;
-}
-
-/*********************************************************/
-/* Customizations */
 
 /* - uncomment this section if you want On text to be bold
 .bucketsWidgetStateOn, .configWidgetStateOn, .securityWidgetStateOn {

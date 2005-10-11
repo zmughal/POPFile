@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Proxy::POP3;
 
 use Proxy::Proxy;
@@ -9,7 +9,7 @@ use Digest::MD5;
 #
 # This module handles proxying the POP3 protocol for POPFile.
 #
-# Copyright (c) 2001-2005 John Graham-Cumming
+# Copyright (c) 2001-2004 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -155,16 +155,15 @@ sub start
 #
 # child__
 #
-# The worker method that is called when we get a good connection from
-# a client
+# The worker method that is called when we get a good connection from a client
 #
 # $client         - an open stream to a POP3 client
-# $admin_session  - administrator session
+# $session        - API session key
 #
 # ----------------------------------------------------------------------------
 sub child__
 {
-    my ( $self, $client, $admin_session ) = @_;
+    my ( $self, $client, $session ) = @_;
 
     # Hash of indexes of downloaded messages mapped to their
     # slot IDs
@@ -175,12 +174,6 @@ sub child__
 
     my $mail;
 
-    # Will hold the session key for the API, $token contains the
-    # string for the USER/APOP command that is used to get the key
-
-    my $session = undef;
-    my $token;
-
     $self->{apop_banner__} = undef;
     $self->{use_apop__} = 0;
     $self->{apop_user__} = '';
@@ -188,8 +181,7 @@ sub child__
     # Tell the client that we are ready for commands and identify our
     # version number
 
-    $self->tee_( $client, "+OK " . $self->config_( 'welcome_string' ) .
-               "$eol" );
+    $self->tee_( $client, "+OK " . $self->config_( 'welcome_string' ) . "$eol" );
 
     # Compile some configurable regexp's once
 
@@ -238,7 +230,6 @@ sub child__
 
         if ( $command =~ /$transparent/ ) {
             if ( $self->config_( 'secure_server' ) ne '' )  {
-                $token = $self->config_( 'secure_server' ). ":$1";
                 if ( $mail = $self->verify_connected_( $mail, $client,  $self->config_( 'secure_server' ), $self->config_( 'secure_port' ) ) )  {
                     last if ($self->echo_response_($mail, $client, $command) == 2 );
                 } else {
@@ -254,7 +245,6 @@ sub child__
         if ( $command =~ /$user_command/i ) {
             if ( $1 ne '' )  {
                 my ( $host, $port, $user, $options ) = ($1, $3, $4, $6);
-                $token = "$host:$user";
 
                 $self->mq_post_( 'LOGIN', $user );
 
@@ -321,8 +311,8 @@ sub child__
             next;
         }
 
-        # The PASS command.  Note how we only obtain a session key for
-        # the user if the authentication is successful.
+        # User is issuing the APOP command to start a session with the
+        # remote server
 
         if ( ( $command =~ /PASS (.*)/i ) ) {
             if ( $self->{use_apop__} ) {
@@ -345,26 +335,17 @@ sub child__
                     # return password ok
 
                     $self->tee_( $client, "+OK password ok$eol" );
-                    $session = $self->get_session_key_( $token );
-                    if ( !defined( $session ) ) {
-                        last;
-                    }
                 } else {
-                    $self->tee_( $client, $response );
+                    $self->tee_( $client, "$response" );
                 }
              } else {
-                 last if ($self->echo_response_($mail, $client,
-                              $command) == 2 );
-                 $session = $self->get_session_key_( $token );
-                 if ( !defined( $session ) ) {
-                     last;
-                 }
+               last if ($self->echo_response_($mail, $client, $command) == 2 );
              }
              next;
         }
 
         # User is issuing the APOP command to start a session with the
-        # remote server. We'd need a copy of the plaintext password to
+        # remote server We'd need a copy of the plaintext password to
         # support this.
 
         if ( $command =~ /$apop_command/io ) {
@@ -494,7 +475,7 @@ sub child__
                         # file for later RETR's
 
                         my ( $class, $slot ) =
-                             $self->classifier_()->classify_and_modify(
+                             $self->{classifier__}->classify_and_modify(
                                  $session, $mail, $client, 0, '', 0, 0 );
 
                         $downloaded{$count} = $slot;
@@ -513,8 +494,8 @@ sub child__
                             # Classify with pre-defined class, without
                             # saving, echoing to client
 
-                            $self->classifier_()->classify_and_modify(
-                               $session, $mail, $client, 1, $class, $slot, 1 );
+                            $self->{classifier__}->classify_and_modify(
+                                $session, $mail, $client, 1, $class, $slot, 1 );
                         }
                     }
                 } else {
@@ -523,7 +504,7 @@ sub child__
                     last if ( $response == 2 );
                     if ( $response == 0 ) {
                         $self->echo_to_dot_( $mail, $client );
-                    }
+		    }
                 }
 
                 next;
@@ -542,7 +523,7 @@ sub child__
                     last if ( $response == 2 );
                     if ( $response == 0 ) {
                         $self->echo_to_dot_( $mail, $client );
-                    }
+		    }
                 } else {
                     next;
                 }
@@ -585,7 +566,7 @@ sub child__
             my $file;
 
             if ( defined($downloaded{$count}) &&
-                 ( $file = $self->history_()->get_slot_file( $downloaded{$count} ) ) &&
+                 ( $file = $self->{history__}->get_slot_file( $downloaded{$count} ) ) &&
                  (open RETRFILE, "<$file") ) {
 
                 # act like a network stream
@@ -604,14 +585,14 @@ sub child__
 
                 my ( $id, $from, $to, $cc, $subject,
                     $date, $hash, $inserted, $bucket, $reclassified ) =
-                    $self->history_()->get_slot_fields( $downloaded{$count} );
+                    $self->{history__}->get_slot_fields( $downloaded{$count} );
 
                 if ( $bucket ne 'unknown class' ) {
 
                     # echo file, inserting known classification,
                     # without saving
 
-                    ($class, undef) = $self->classifier_()->classify_and_modify( $session, \*RETRFILE, $client, 1, $bucket, $downloaded{$count} );
+                    ($class, undef) = $self->{classifier__}->classify_and_modify( $session, \*RETRFILE, $client, 1, $bucket, $downloaded{$count} );
                     print $client ".$eol";
 
                 } else {
@@ -619,7 +600,7 @@ sub child__
                     # If the class wasn't saved properly, classify
                     # from disk normally
 
-                    ($class, undef) = $self->classifier_()->classify_and_modify( $session, \*RETRFILE, $client, 1, '', 0 );
+                    ($class, undef) = $self->{classifier__}->classify_and_modify( $session, \*RETRFILE, $client, 1, '', 0 );
                     print $client ".$eol";
                 }
 
@@ -638,7 +619,7 @@ sub child__
                 last if ( $response == 2 );
                 if ( $response == 0 ) {
                     my $slot;
-                    ( $class, $slot ) = $self->classifier_()->classify_and_modify( $session, $mail, $client, 0, '', 0 );
+                    ( $class, $slot ) = $self->{classifier__}->classify_and_modify( $session, $mail, $client, 0, '', 0 );
 
                     # Note locally that file has been retrieved if the
                     # full thing has been saved to disk
@@ -683,10 +664,6 @@ sub child__
         close $mail;
     }
 
-    if ( defined( $session ) ) {
-        $self->release_session_key_( $session );
-    }
-
     close $client;
     $self->mq_post_( 'CMPLT', $$ );
     $self->log_( 0, "POP3 proxy done" );
@@ -714,13 +691,13 @@ sub configure_item
     } else {
         if ( $name eq 'pop3_security' ) {
             $templ->param( 'POP3_Security_Local' => ( $self->config_( 'local' ) == 1 ) );
-        } else {
+	} else {
             if ( $name eq 'pop3_chain' ) {
                 $templ->param( 'POP3_Chain_Secure_Server' => $self->config_( 'secure_server' ) );
                 $templ->param( 'POP3_Chain_Secure_Port' => $self->config_( 'secure_port' ) );
-            } else {
+	    } else {
                 $self->SUPER::configure_item( $name, $templ, $language );
-            }
+	    }
         }
     }
 }
@@ -741,60 +718,60 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ($status_message,$error_message);
-
     if ( $name eq 'pop3_configuration' ) {
         if ( defined($$form{pop3_port}) ) {
             if ( ( $$form{pop3_port} >= 1 ) && ( $$form{pop3_port} < 65536 ) ) {
                 $self->config_( 'port', $$form{pop3_port} );
-                $status_message = sprintf( $$language{Configuration_POP3Update}, $self->config_( 'port' ) );
+                $templ->param( 'POP3_Configuration_If_Port_Updated' => 1 );
+                $templ->param( 'POP3_Configuration_Port_Updated' => sprintf( $$language{Configuration_POP3Update}, $self->config_( 'port' ) ) );
             } else {
-                $error_message .= $$language{Configuration_Error3};
+                $templ->param( 'POP3_Configuration_If_Port_Error' => 1 );
             }
         }
 
         if ( defined($$form{pop3_separator}) ) {
             if ( length($$form{pop3_separator}) == 1 ) {
                 $self->config_( 'separator', $$form{pop3_separator} );
-                $status_message .= "\n" if ( defined( $status_message ) );
-                $status_message .= sprintf( $$language{Configuration_POP3SepUpdate}, $self->config_( 'separator' ) )
+                $templ->param( 'POP3_Configuration_If_Sep_Updated' => 1 );
+                $templ->param( 'POP3_Configuration_Sep_Updated' => sprintf( $$language{Configuration_POP3SepUpdate}, $self->config_( 'separator' ) ) );
             } else {
-                $error_message .= "\n" if ( defined( $error_message ) );
-                $error_message .= $$language{Configuration_Error1};
+                $templ->param( 'POP3_Configuration_If_Sep_Error' => 1 );
             }
         }
 
         if ( defined($$form{pop3_force_fork}) ) {
-            $self->config_( 'force_fork', $$form{pop3_force_fork} ) if ($$form{pop3_force_fork} eq 1 || $$form{pop3_force_fork} eq 0);
+            $self->config_( 'force_fork', $$form{pop3_force_fork} );
         }
 
-        return($status_message, $error_message);
+        return;
     }
 
     if ( $name eq 'pop3_security' ) {
         $self->config_( 'local', $$form{pop3_local}-1 ) if ( defined($$form{pop3_local}) );
 
-        return(undef, undef);
+        return;
     }
 
     if ( $name eq 'pop3_chain' ) {
         if ( defined( $$form{server} ) ) {
             $self->config_( 'secure_server', $$form{server} );
-            $status_message .= sprintf( $$language{Security_SecureServerUpdate}, $self->config_( 'secure_server' ) );
-       }
+            $templ->param( 'POP3_Chain_If_Server_Updated' => 1 );
+            $templ->param( 'POP3_Chain_Server_Updated' => sprintf( $$language{Security_SecureServerUpdate}, $self->config_( 'secure_server' ) ) );
+	}
 
         if ( defined($$form{sport}) ) {
             if ( ( $$form{sport} >= 1 ) && ( $$form{sport} < 65536 ) ) {
                 $self->config_( 'secure_port', $$form{sport} );
-                $status_message .= sprintf( $$language{Security_SecurePortUpdate}, $self->config_( 'secure_port' ) );
+                $templ->param( 'POP3_Chain_If_Port_Updated' => 1 );
+                $templ->param( 'POP3_Chain_Port_Updated' => sprintf( $$language{Security_SecurePortUpdate}, $self->config_( 'secure_port' ) ) );
             } else {
-                $error_message .= $$language{Security_Error1};
+                $templ->param( 'POP3_Chain_If_Port_Error' => 1 );
             }
         }
 
-        return( $status_message, $error_message );
+        return;
     }
 
-    return $self->SUPER::validate_item( $name, $templ, $language, $form );
+    $self->SUPER::validate_item( $name, $templ, $language, $form );
 }
 

@@ -1,21 +1,21 @@
 <form action="/history" method="post">
-<div class="search">
-    <label class="historyLabel" for="historySearch" title="<TMPL_VAR NAME="Localize_tip_History_Search">">
-        <TMPL_VAR NAME="Localize_History_SearchMessage">
+    <label class="historyLabel" for="historySearch">
+        <TMPL_VAR NAME="Localize_History_SearchMessage">:
     </label>
-    <br />
-    <TMPL_IF NAME="History_If_Search">
-    <input type="text" id="historySearch" name="search" value="<TMPL_VAR ESCAPE=HTML NAME="History_Field_Search">" />
-    </TMPL_IF>
-    &nbsp;&nbsp;
-</div>
 
-<div class="filter">
-    <label class="historyLabel" for="historyFilter" title="<TMPL_VAR NAME="Localize_tip_History_Filter">">
-        <TMPL_VAR NAME="Localize_History_FilterBy">
+    <TMPL_IF NAME="History_If_Search">
+
+    <input type="text" id="historySearch" name="search" value="<TMPL_VAR ESCAPE=HTML NAME="History_Field_Search">" />
+
+    </TMPL_IF>
+
+    <input type="submit" class="submit" name="setsearch" value="<TMPL_VAR NAME="Localize_Find">" />
+    &nbsp;&nbsp;
+    <label class="historyLabel" for="historyFilter">
+        <TMPL_VAR NAME="Localize_History_FilterBy">:
     </label>
-    <br>
     <input type="hidden" name="sort" value="<TMPL_VAR NAME="History_Field_Sort">" />
+    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
     <select name="filter" id="historyFilter">
         <option value=""></option>
 
@@ -34,15 +34,9 @@
             &lt;unclassified&gt;
         </option>
     </select>
-    <input type="submit" class="submit" name="setfilter" value="<TMPL_VAR NAME="Localize_Find">" title="<TMPL_VAR NAME="Localize_tip_History_SearchSubmit">" />
-    <input type="submit" class="submit" name="reset_filter_search" value="<TMPL_VAR NAME="Localize_History_ResetSearch">" title="<TMPL_VAR NAME="Localize_tip_History_SearchReset">" />
-</div>
-
-<div class="negate">
+    <input type="submit" class="submit" name="setfilter" value="<TMPL_VAR NAME="Localize_Filter">" />
     <input type="hidden" name="negate" value="" />
-    <input type="checkbox" name="negate" id="negate" class="checkbox" <TMPL_VAR NAME="History_Field_Not"> />
-    <label class="historyLabel" for="negate" title="<TMPL_VAR NAME="Localize_tip_History_SearchNegate">">
-        <TMPL_VAR NAME="Localize_History_Negate_Search">
-    </label>
-</div>
+    <input type="checkbox" name="negate" class="checkbox" <TMPL_VAR NAME="History_Field_Not"> />
+    <TMPL_VAR NAME="Localize_History_Negate_Search">
+    <input type="submit" class="submit" name="reset_filter_search" value="<TMPL_VAR NAME="Localize_History_ResetSearch">" />
 </form>
