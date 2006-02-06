@@ -11,10 +11,9 @@
 #
 #   This file is part of POPFile
 #
-#   POPFile is free software; you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation; either version 2 of the License, or
-#   (at your option) any later version.
+#   POPFile is free software; you can redistribute it and/or modify it
+#   under the terms of version 2 of the GNU General Public License as
+#   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -156,7 +155,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_SHORT      "POPFile 바로가기 생성 중..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_LANGS      "POPFile UI 언어 파일 설치 중..."
 
-; Installation Progress Reports displayed above the progress bar [installer.nsi, adduser.nsh, getssl.nsh]
+; Installation Progress Reports displayed above the progress bar [installer.nsi, adduser.nsi, getssl.nsh]
 
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_ENDSEC     "계속 진행하기 위해 '다음'을 누르십시오."
 
