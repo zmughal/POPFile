@@ -4,12 +4,12 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
 #   POPFile is free software; you can redistribute it and/or modify it
-#   under the terms version 2 of the GNU General Public License as
+#   under the terms of version 2 of the GNU General Public License as
 #   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
@@ -34,15 +34,16 @@
 #  (2) ADDUSER          defined in adduser.nsi ('Add POPFile User' wizard)
 #  (3) BACKUP           defined in backup.nsi (POPFile 'User Data' Backup utility)
 #  (4) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
-#  (5) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
-#  (6) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
-#  (7) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-#  (8) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-#  (9) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-# (10) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (11) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (12) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (13) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+#  (5) IMAPUPDATER      defined in add-ons\updateimap.nsi (POPFile 'IMAP Updater' wizard)
+#  (6) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
+#  (7) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
+#  (8) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
+#  (9) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+# (10) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (11) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (12) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (13) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (14) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -56,7 +57,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.1.9"
+  !define C_PFI_LIBRARY_VERSION     "0.1.12"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -450,11 +451,11 @@
       ;    4.0                          4.71.1712.6
       ;    4.01                         4.72.2106.8
       ;    4.01 SP1                     4.72.3110.3
-      ;    5                  	        5.00.2014.0216
+      ;    5                            5.00.2014.0216
       ;    5.5                          5.50.4134.0100
       ;    6.0 Public Preview           6.0.2462.0000
       ;    6.0 Public Preview Refresh   6.0.2479.0006
-      ;    6.0 RTM                    	6.0.2600.0000
+      ;    6.0 RTM                      6.0.2600.0000
 
       StrCpy ${L_TEMP} ${L_REGDATA} 1
       StrCmp ${L_TEMP} "4" ie_4
@@ -1292,7 +1293,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDSSL | BACKUP | INSTALLER | RESTORE
+!ifdef ADDSSL | BACKUP | IMAPUPDATER | INSTALLER | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_DumpLog
     #
@@ -4142,7 +4143,7 @@
   FunctionEnd
 !macroend
 
-!ifndef DBSTATUS & PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
+!ifndef PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckDecimal
     #
@@ -4225,7 +4226,7 @@
   FunctionEnd
 !macroend
 
-!ifndef ADDSSL & DBSTATUS & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef ADDSSL & DBSTATUS & IMAPUPDATER & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #
