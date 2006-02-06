@@ -1,11 +1,11 @@
-# Copyright (c) 2001-2003 John Graham-Cumming
+# Copyright (c) 2001-2006 John Graham-Cumming
 # Translated by Adriano Rafael Gomes <adrianorg@users.sourceforge.net>
 # Updated by Fernando de Alcantara Correia <facorreia@users.sourceforge.net> to v0.19.1
 #
 #   This file is part of POPFile
 #
 #   POPFile is free software; you can redistribute it and/or modify it
-#   under the terms version 2 of the GNU General Public License as
+#   under the terms of version 2 of the GNU General Public License as
 #   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
