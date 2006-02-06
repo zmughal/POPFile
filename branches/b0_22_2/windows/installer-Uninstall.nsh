@@ -3,12 +3,12 @@
 # installer-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the main
 #                             NSIS 'installer.nsi' script used to create the POPFile installer.
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
 #   POPFile is free software; you can redistribute it and/or modify it
-#   under the terms version 2 of the GNU General Public License as
+#   under the terms of version 2 of the GNU General Public License as
 #   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
@@ -90,9 +90,9 @@ got_user_path:
   ; Email settings are stored on a 'per user' basis therefore we need to know which user is
   ; running the uninstaller (e.g. so we can check ownership of any local 'User Data' we find)
 
-	ClearErrors
-	UserInfo::GetName
-	IfErrors 0 got_name
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
 
   ; Assume Win9x system, so user has 'Admin' rights
   ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
@@ -102,13 +102,13 @@ got_user_path:
   Goto start_uninstall
 
 got_name:
-	Pop $G_WINUSERNAME
+  Pop $G_WINUSERNAME
   StrCmp $G_WINUSERNAME "" 0 get_usertype
   StrCpy $G_WINUSERNAME "UnknownUser"
 
 get_usertype:
   UserInfo::GetAccountType
-	Pop $G_WINUSERTYPE
+  Pop $G_WINUSERTYPE
   StrCmp $G_WINUSERTYPE "Admin" start_uninstall
   StrCmp $G_WINUSERTYPE "Power" start_uninstall
   StrCmp $G_WINUSERTYPE "User" start_uninstall
