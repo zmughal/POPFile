@@ -23,14 +23,13 @@
 #                An 'include' file is used to ensure this utility and the main POPFile
 #                installer download and install the same SSL support files.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
-#   POPFile is free software; you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation; either version 2 of the License, or
-#   (at your option) any later version.
+#   POPFile is free software; you can redistribute it and/or modify it
+#   under the terms of version 2 of the GNU General Public License as
+#   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -70,7 +69,7 @@
   ; This script uses a special NSIS plugin (untgz) to extract files from the *.tar.gz archives.
   ;
   ; The 'NSIS Wiki' page for the 'untgz' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/wiki/UnTGZ
+  ; http://nsis.sourceforge.net/UnTGZ_plug-in
   ;
   ; Alternative download links can be found at the 'untgz' author's site:
   ; http://www.darklogic.org/win32/nsis/plugins/
@@ -99,7 +98,7 @@
   ; these old files can then be handled as if they had been downloaded from the University of
   ; Winnipeg.
   ;
-  ; The following local SSL files are compatible with POPFile 0.22.x:
+  ; The following local SSL files are compatible with POPFile 0.22.0, 0.22.1 and 0.22.2:
   ;
   ;   (1) ssl-0.22.x\IO-Socket-SSL.tar.gz             (dated 01-Aug-2003)
   ;   (2) ssl-0.22.x\Net_SSLeay.pm.tar.gz             (dated 23-Dec-2004)
@@ -118,6 +117,22 @@
   ; which is supplied with NSIS. The command used to create the patch was:
   ;   GenPat.exe Module.pm Module_ssl.pm Module_ssl.pat
   ; where Module.pm was CVS version 1.40 and Module_ssl.pm was CVS version 1.41.
+
+#--------------------------------------------------------------------------
+# Language Support NSIS Compiler Warnings
+#--------------------------------------------------------------------------
+#
+# Expect 3 compiler warnings, all related to standard NSIS language files which are
+# out-of-date (if the default multi-language 'SSL Setup' wizard is compiled).
+#
+# There may be further warnings which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or
+# more language tables. The '..\pfi-languages.nsh' file lists all of the language table codes
+# used by the POPFile installer and other NSIS-based utilities.
+#
+# NOTE: The language selection menu order used in this script assumes that the NSIS MUI
+# 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
+# [see 'SMALL NSIS PATCH REQUIRED' in the '..\pfi-languages.nsh' file]
+#--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
@@ -165,7 +180,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.1.1"
+  !define C_PFI_VERSION  "0.1.5"
 
   ; Mention the wizard's version number in the window title
 
@@ -232,7 +247,7 @@
   VIAddVersionKey "ProductName"             "POPFile SSL Setup wizard"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Installs SSL support for POPFile 0.22 or later"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
