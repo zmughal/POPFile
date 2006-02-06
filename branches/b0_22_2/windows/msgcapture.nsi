@@ -6,12 +6,12 @@
 #                    the need to display the console window (when the console window was
 #                    used by earlier installers it caused confusion amongst some users).
 #
-# Copyright (c) 2004-2005  John Graham-Cumming
+# Copyright (c) 2004-2006  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
 #   POPFile is free software; you can redistribute it and/or modify it
-#   under the terms version 2 of the GNU General Public License as
+#   under the terms of version 2 of the GNU General Public License as
 #   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
@@ -69,6 +69,11 @@
 #
 #--------------------------------------------------------------------------
 
+  ; Although this utility was originally created for the 0.22.0 installer it is compatible
+  ; with POPFile 0.20.x and 0.21.x installations created by the installer, though in some
+  ; cases a small batch file may be required in order to define POPFILE_ROOT and POPFILE_USER
+  ; before running it (this utility assumes these two environment variables have been defined).
+
 #--------------------------------------------------------------------------
 # Optional run-time command-line switch (used by 'msgcapture.exe')
 #--------------------------------------------------------------------------
@@ -109,13 +114,16 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.61"
+  !define C_VERSION             "0.0.64"
 
   !define C_OUTFILE             "msgcapture.exe"
 
-  ; The timeout used when the installer calls this utility to monitor the SQL database upgrade
+  ; The timeout (in seconds) used when a pre-0.23.0 version of the installer calls
+  ; this utility to monitor the SQL database upgrade. Note: 30 seconds may not be
+  ; long enough to cope with the upgrade of very large databases (over 100 MB) on
+  ; some systems.
 
-  !define C_INSTALLER_TIMEOUT   15
+  !define C_INSTALLER_TIMEOUT   30
 
   ;--------------------------------------------------------------------------
   ; The default NSIS caption is "$(^Name) Setup" so we override it here
@@ -152,7 +160,7 @@
   VIAddVersionKey "ProductName"             "PFI Message Capture Utility"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Message Capture Utility (0-99 sec timeout)"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -451,9 +459,32 @@ found_cfg:
   ; recognize this option and will not run if it is used, so we use the Database.pm
   ; file as a simple POPFile version test (this file was first used in 0.23.0)
 
+  ; This utility is called by the "Add POPFile User" wizard (adduser.exe) with the option
+  ; '/TIMEOUT=PFI' when the installer detects that an existing SQL database is to be upgraded.
+  ; Database upgrades can take a very long time if the database is huge (over 30 minutes in
+  ; some cases). During the upgrade this utility is used to display the progress reports as
+  ; these are the only indication that POPFile is still working.
+  ;
+  ; Since POPFile cannot be used during the upgrade and the installer cannot easily monitor
+  ; the progress of the upgrade, a new POPFile command-line option was added for the 0.23.0
+  ; release.
+  ;
+  ; This new option (--shutdown) causes POPFile to shutdown after performing the upgrade so
+  ; when monitoring a SQL database upgrade we simply wait for POPFile to terminate (instead
+  ; of using a less than satisfactory 'one-size-fits-all' timeout).
+
   StrCpy ${L_OPTIONS} ""
   IfFileExists "${L_PFI_ROOT}\POPFile\Database.pm" 0 look_for_exe
   StrCpy ${L_OPTIONS} "--verbose"
+  StrCmp $G_MODE_FLAG "" look_for_exe
+
+  ; The upgrading of an existing SQL database is to be monitored, so we tell POPFile to
+  ; shutdown after the upgrade and then wait for POPFile to exit (i.e. we don't use a timeout).
+  ; Since POPFile will shutdown afterwards, there is no point in using the system tray icon.
+
+  StrCpy ${L_OPTIONS} "${L_OPTIONS} --shutdown"
+  StrCpy $G_TIMEOUT "0"
+  StrCpy ${L_TRAYICON} ""
 
 look_for_exe:
   IfFileExists "${L_PFI_ROOT}\popfile${L_TRAYICON}f.exe" found_exe
