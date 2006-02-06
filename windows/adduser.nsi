@@ -344,7 +344,7 @@
   VIAddVersionKey "ProductName"             "POPFile User wizard"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Add/Remove POPFile User wizard"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"

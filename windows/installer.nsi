@@ -21,7 +21,7 @@
 #                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
 #                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2005 John Graham-Cumming
+# Copyright (c) 2002-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -370,7 +370,7 @@
   VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Automatic email classification"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
