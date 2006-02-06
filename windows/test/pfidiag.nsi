@@ -4,14 +4,13 @@
 #                 to assist in solving problems with POPFile installations created
 #                 by the Windows installer for POPFile v0.21.0 (or later).
 #
-# Copyright (c) 2004-2005  John Graham-Cumming
+# Copyright (c) 2004-2006  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
-#   POPFile is free software; you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation; either version 2 of the License, or
-#   (at your option) any later version.
+#   POPFile is free software; you can redistribute it and/or modify it
+#   under the terms of version 2 of the GNU General Public License as
+#   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -53,7 +52,7 @@
   ; shortcut (*.lnk) file
   ;
   ; The 'NSIS Wiki' page for the 'ShellLink' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/wiki/ShellLink_plugin
+  ; http://nsis.sourceforge.net/ShellLink_plugin
   ;
   ; To compile this script, copy the 'ShellLink.dll' file to the standard NSIS plugins folder
   ; (${NSISDIR}\Plugins\). The 'ShellLink' source and example files can be unzipped to the
@@ -99,11 +98,12 @@
 #
 #--------------------------------------------------------------------------
 
+
   ;--------------------------------------------------------------------------
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.57"
+  !define C_VERSION   "0.0.60"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -147,7 +147,7 @@
   VIAddVersionKey "ProductName"             "PFI Diagnostic Utility"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Diagnostic Utility"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -476,9 +476,9 @@ enter_section:
   ; The 'UserInfo' plugin may return an error if run on a Win9x system but since Win9x systems
   ; do not support different account types, we treat this error as if user has 'Admin' rights.
 
-	ClearErrors
-	UserInfo::GetName
-	IfErrors 0 got_name
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
 
   ; Assume Win9x system, so user has 'Admin' rights
 
@@ -487,13 +487,13 @@ enter_section:
   Goto section_end
 
 got_name:
-	Pop $G_WINUSERNAME
+  Pop $G_WINUSERNAME
   StrCmp $G_WINUSERNAME "" 0 get_usertype
   StrCpy $G_WINUSERNAME "UnknownUser"
 
 get_usertype:
   UserInfo::GetAccountType
-	Pop ${L_WINUSERTYPE}
+  Pop ${L_WINUSERTYPE}
   StrCmp ${L_WINUSERTYPE} "Admin" section_end
   StrCmp ${L_WINUSERTYPE} "Power" section_end
   StrCmp ${L_WINUSERTYPE} "User" section_end
@@ -1426,10 +1426,10 @@ examine_shortcut:
   StrCmp ${L_LNK_NAME} ".." look_again
   IfFileExists "${L_LNK_FOLDER}\${L_LNK_NAME}\*.*" look_again
   IntOp ${L_LNK_TOTAL} ${L_LNK_TOTAL} + 1
-	ShellLink::GetShortCutTarget "${L_LNK_FOLDER}\${L_LNK_NAME}"
-	Pop ${L_SHORTCUT_TARGET}
-	ShellLink::GetShortCutArgs "${L_LNK_FOLDER}\${L_LNK_NAME}"
-	Pop ${L_SHORTCUT_ARGS}
+  ShellLink::GetShortCutTarget "${L_LNK_FOLDER}\${L_LNK_NAME}"
+  Pop ${L_SHORTCUT_TARGET}
+  ShellLink::GetShortCutArgs "${L_LNK_FOLDER}\${L_LNK_NAME}"
+  Pop ${L_SHORTCUT_ARGS}
 
   Push ${L_SHORTCUT_TARGET}
   Push "popfile"
@@ -1444,8 +1444,8 @@ examine_shortcut:
 
 show_details:
   IntOp ${L_POPFILE_TOTAL} ${L_POPFILE_TOTAL} + 1
-	ShellLink::GetShortCutWorkingDirectory "${L_LNK_FOLDER}\${L_LNK_NAME}"
-	Pop ${L_SHORTCUT_START_IN}
+  ShellLink::GetShortCutWorkingDirectory "${L_LNK_FOLDER}\${L_LNK_NAME}"
+  Pop ${L_SHORTCUT_START_IN}
   DetailPrint ""
   DetailPrint "Shortcut name     = < ${L_LNK_NAME} >"
   DetailPrint "Shortcut start in = < ${L_SHORTCUT_START_IN} >"
