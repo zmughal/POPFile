@@ -6,12 +6,12 @@
 # file.  Run check.pl and it will report missing or extraneous
 # entries in all the MSG files present
 #
-# Copyright (c) 2003 John Graham-Cumming
+# Copyright (c) 2003-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
 #   POPFile is free software; you can redistribute it and/or modify it
-#   under the terms version 2 of the GNU General Public License as
+#   under the terms of version 2 of the GNU General Public License as
 #   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
