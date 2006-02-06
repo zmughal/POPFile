@@ -25,6 +25,7 @@ package Classifier::MailParse;
 # ----------------------------------------------------------------------------
 
 use strict;
+use warnings;
 use locale;
 
 use MIME::Base64;
