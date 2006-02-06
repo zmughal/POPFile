@@ -4,12 +4,12 @@
 #                             functions used by the 'Add POPFile User' wizard (adduser.nsi)
 #                             when offering to reconfigure email accounts.
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
 #   POPFile is free software; you can redistribute it and/or modify it
-#   under the terms version 2 of the GNU General Public License as
+#   under the terms of version 2 of the GNU General Public License as
 #   published by the Free Software Foundation.
 #
 #   POPFile is distributed in the hope that it will be useful,
