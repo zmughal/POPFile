@@ -1638,6 +1638,7 @@ sub parse_line
                     }
                 }
                 $line = decode_qp( $line );
+                $line =~ s/\x00/NUL/g;
             }
 
             # Decode \x??
@@ -1874,12 +1875,12 @@ sub decode_string
         
         $output .= $pre unless ($last_is_encoded && defined($atom) # Per RFC 2047 section 6.2
                                     && $pre =~ /^[\t ]+$/);
-        
+
         if (defined($atom)) {
             if ($encoding eq "B" || $encoding eq "b") {
-                        
+
                 $value = decode_base64( $value );
-    
+
                 # for Japanese header
                 if ($lang eq 'Nihongo') {
                     $value = convert_encoding( $value, $charset, 'euc-jp', '7bit-jis', @{$encoding_candidates{$self->{lang__}}} );
@@ -1889,7 +1890,8 @@ sub decode_string
             elsif ($encoding eq "Q" || $encoding eq "q") {
                 $value =~ s/\_/=20/g;
                 $value = decode_qp( $value );
-    
+                $value =~ s/\x00/NUL/g;
+
                 # for Japanese header
                 if ($lang eq 'Nihongo') {
                     $value = convert_encoding( $value, $charset, 'euc-jp', '7bit-jis', @{$encoding_candidates{$self->{lang__}}} );
@@ -1901,10 +1903,10 @@ sub decode_string
         }
         $output .= $value || '';
     }
-    
+
     # grab the unmatched tail (thanks to /gc and \G)
     $output .= $1 if ($mystring =~ m/\G(.*)/g);
-    
+
     return $output;
 }
 
