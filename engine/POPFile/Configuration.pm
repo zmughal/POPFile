@@ -328,9 +328,10 @@ sub delete_pid_
 #
 # parse_command_line - Parse ARGV
 #
-# The arguments are the keys of the configuration hash.  Any argument that is not already
-# defined in the hash generates an error, there must be an even number of ARGV elements because
-# each command argument has to have a value.
+# The arguments are the keys of the configuration hash.  Any argument
+# that is not already defined in the hash generates an error, there
+# must be an even number of ARGV elements because each command
+# argument has to have a value.
 #
 # ----------------------------------------------------------------------------
 sub parse_command_line
@@ -348,15 +349,16 @@ sub parse_command_line
     #
     # So its possible to do
     #
-    # --set bayes_param=value --set=-bayes_param=value --set -bayes_param=value -- -bayes_param value
+    # --set bayes_param=value --set=-bayes_param=value --set
+    # -bayes_param=value -- -bayes_param value
 
     if ( !GetOptions( "set=s" => \@set_options ) ) {
         return 0;
     }
 
-    # Join together the options specified with --set and those after the --, the
-    # options in @set_options are going to be of the form foo=bar and hence need to
-    # be split into foo bar
+    # Join together the options specified with --set and those after
+    # the --, the options in @set_options are going to be of the form
+    # foo=bar and hence need to be split into foo bar
 
     my @options;
 
@@ -385,7 +387,7 @@ sub parse_command_line
             if ( $options[$i] =~ /^-(.+)$/ ) {
                 my $parameter = $self->upgrade_parameter__($1);
 
-                if ( defined($self->{configuration_parameters__}{$parameter}) ) {
+                if (defined($self->{configuration_parameters__}{$parameter})) {
                     if ( $i < $#options ) {
                         $self->parameter( $parameter, $options[$i+1] );
                         $i += 2;
@@ -411,8 +413,9 @@ sub parse_command_line
 #
 # upgrade_parameter__
 #
-# Given a parameter from either command line or from the configuration file return the
-# upgraded version (e.g. the old port parameter becomes pop3_port
+# Given a parameter from either command line or from the configuration
+# file return the upgraded version (e.g. the old port parameter
+# becomes pop3_port
 #
 # ----------------------------------------------------------------------------
 
@@ -433,9 +436,11 @@ sub upgrade_parameter__
                      # Parameters that are now handled by Classifier::Bayes
 
                      'corpus',                   'bayes_corpus',
-                     'unclassified_probability', 'bayes_unclassified_probability',
+                     'unclassified_probability',
+                         'bayes_unclassified_probability',
 
-                     # Parameters that are now handled by POPFile::Configuration
+                     # Parameters that are now handled by
+                     # POPFile::Configuration
 
                      'piddir',                   'config_piddir',
 
@@ -497,8 +502,9 @@ sub upgrade_parameter__
 #
 # load_configuration
 #
-# Loads the current configuration of popfile into the configuration hash from a local file.
-# The format is a very simple set of lines containing a space separated name and value pair
+# Loads the current configuration of popfile into the configuration
+# hash from a local file.  The format is a very simple set of lines
+# containing a space separated name and value pair
 #
 # ----------------------------------------------------------------------------
 sub load_configuration
@@ -517,8 +523,16 @@ sub load_configuration
 
                 $parameter = $self->upgrade_parameter__($parameter);
 
-                if ( defined( $self->{configuration_parameters__}{$parameter} ) ) {
-                    $self->{configuration_parameters__}{$parameter}{value} = $value;
+                # There's a special hack here inserted so that even if
+                # the HTML module is not loaded the html_language
+                # parameter is loaded and not discarded.  That's done
+                # so that the Japanese users can use insert.pl
+                # etc. which rely on knowing the language
+
+                if (defined($self->{configuration_parameters__}{$parameter}) ||
+                    ( $parameter eq 'html_language' ) ) {
+                    $self->{configuration_parameters__}{$parameter}{value} =
+                        $value;
                 } else {
                     $self->{deprecated_parameters__}{$parameter} = $value;
                 }
@@ -535,7 +549,8 @@ sub load_configuration
 #
 # save_configuration
 #
-# Saves the current configuration of popfile from the configuration hash to a local file.
+# Saves the current configuration of popfile from the configuration
+# hash to a local file.
 #
 # ----------------------------------------------------------------------------
 sub save_configuration
