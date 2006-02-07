@@ -83,6 +83,10 @@ input {
   border: 0;
 }
 
+form {
+  margin: 0;
+}
+
 .head {
   color: white;
   font-weight: bold;
