@@ -142,7 +142,6 @@ hr {
   padding: 0;
   margin: 0;
   width: 8.3em;
-//width: 6.3em;
   float:left;
 }
 
@@ -365,7 +364,3 @@ a:link:hover, a:visited:hover {
 .footer li {
   display: inline;
 }
-
-/* Hide Tan Hack from IE5-mac \*/
-* html .shell  {height: 1%;}
-/* End hide from IE5-mac */
