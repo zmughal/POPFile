@@ -2408,7 +2408,7 @@ sub handle_disposition
 
     my ( $attachment, $filename ) = $self->match_attachment_filename( $params );
 
-    if ( $attachment eq 'attachment' ) {
+    if ( defined( $attachment ) && ( $attachment eq 'attachment' ) ) {
         $self->add_attachment_filename( $filename ) ;
     }
 }
