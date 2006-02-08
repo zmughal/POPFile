@@ -7,8 +7,9 @@
     <form method="post" action="/buckets">
         <TMPL_VAR NAME="Localize_Help_Bucket_Setup">
         <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
-        <p />
+        <p>
         <input type="submit" class="submit" name="nomore_bucket_help" value="<TMPL_VAR NAME="Localize_Help_No_More">" />
+        </p>
     </form>
 </div>
 
@@ -20,8 +21,9 @@
     <form method="post" action="/buckets">
         <TMPL_VAR NAME="Localize_Help_Training">
         <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
-        <p />
+        <p>
         <input type="submit" class="submit" name="nomore_training_help" value="<TMPL_VAR NAME="Localize_Help_No_More">" />
+        </p>
     </form>
 </div>
 
