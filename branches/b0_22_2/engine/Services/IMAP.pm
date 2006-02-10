@@ -9,6 +9,8 @@ use POPFile::Module;
 #
 # Copyright (c) 2001-2006 John Graham-Cumming
 #
+#   $Revision$
+#
 #   This file is part of POPFile
 #
 #   POPFile is free software; you can redistribute it and/or modify it
@@ -271,8 +273,11 @@ sub service
                 # all of our folders
                 $self->connect_folders__();
 
-                # Now do the real job
+                # Reset the hash containing the hash values we have seen the 
+                # last time through service.
+                $self->{hash_values__} = ();
 
+                # Now do the real job
                 foreach my $folder ( keys %{$self->{folders__}} ) {
 
                     if ( exists $self->{folders__}{$folder}{imap} ) {
@@ -281,11 +286,7 @@ sub service
 
                     }
                 }
-
-                # Reset the hash containing the hash values we have just seen.
-                $self->{hash_values__} = ();
             }
-
         };
         # if an exception occurred, we try to catch it here
         if ( $@ ) {
