@@ -29,6 +29,7 @@ FAQLink                                 FrequentlyAskedQuestions
 
 # Common words that are used on their own all over the interface
 Apply                                   Apply
+ApplyChanges                            Apply Changes
 On                                      On
 Off                                     Off
 TurnOn                                  Turn On
@@ -154,14 +155,14 @@ Configuration_XTCInsertion              X-Text-Classification<br>Header
 Configuration_XPLInsertion              X-POPFile-Link<br>Header
 Configuration_Logging                   Logging
 Configuration_None                      None
-Configuration_ToScreen                  To Screen
+Configuration_ToScreen                  To Screen (console)
 Configuration_ToFile                    To File
 Configuration_ToScreenFile              To Screen and File
 Configuration_LoggerOutput              Logger output
 Configuration_GeneralSkins              Skins
 Configuration_SmallSkins                Small Skins
 Configuration_TinySkins                 Tiny Skins
-Configuration_CurrentLogFile            &lt;current log file&gt;
+Configuration_CurrentLogFile            &lt;View current log file&gt;
 Configuration_SOCKSServer               SOCKS V proxy host
 Configuration_SOCKSPort                 SOCKS V proxy port
 Configuration_SOCKSPortUpdate           Updated SOCKS V proxy port to %s
@@ -209,7 +210,7 @@ History_Magnet                          &nbsp;(just showing magnet classified me
 History_NoMagnet                        &nbsp;(just showing non-magnet classified messages)
 History_ResetSearch                     Reset
 History_ChangedClass                    Would now classify as
-History_Purge                           Purge Now
+History_Purge                           Expire Now
 History_Increase                        Increase
 History_Decrease                        Decrease
 History_Column_Characters               Change width of From, To, Cc and Subject columns
@@ -345,7 +346,7 @@ Configuration_InsertionTableSummary     This table contains buttons that determi
 Security_MainTableSummary               This table provides sets of controls that affect the security of the overall configuration of POPFile, whether it should automatically check for updates to the program, and whether statistics about POPFile's performance should be sent to the central datastore of the program's author for general information.
 Advanced_MainTableSummary               This table provides a list of words that POPFile ignores when classifying messages due to their relative frequency in messages in general.  They are organized per row according to the first letter of the words.
 
-Imap_Bucket2Folder                      Mail for bucket <b>%s</b> goes to folder
+Imap_Bucket2Folder                      Mail for bucket '<b>%s</b>' goes to folder
 Imap_MapError                           You cannot map more than one bucket to a single folder!
 Imap_Server                             IMAP server hostname:
 Imap_ServerNameError                    Please enter the server's hostname!
@@ -373,4 +374,4 @@ Shutdown_Message                        POPFile has shut down
 
 Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile misclassified to the correct bucket. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFile Documentation Project</a>.
 Help_Bucket_Setup                       POPFile requires at least two buckets in addition to the "unclassified" pseudo-bucket. What makes POPFile unique is that it can classify email more than that, you can have any number of buckets. A simple setup would be a "spam", "personal", and a "work" bucket.
-Help_No_More                            Don't show me this again
+Help_No_More                            Don't show this again

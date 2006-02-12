@@ -31,6 +31,7 @@ FAQLink                                 FrequentlyAskedQuestions
 
 # Common words that are used on their own all over the interface
 Apply                                   Aplicar
+ApplyChanges                            Aplicar Alterações
 On                                      Ligado
 Off                                     Desligado
 TurnOn                                  Ligar
@@ -156,14 +157,14 @@ Configuration_XTCInsertion              Cabeçalho<br>X-Text-Classification
 Configuration_XPLInsertion              Cabeçalho<br>X-POPFile-Link
 Configuration_Logging                   Logging
 Configuration_None                      Nada
-Configuration_ToScreen                  Na Tela
+Configuration_ToScreen                  Na Tela (console)
 Configuration_ToFile                    Em Arquivo
 Configuration_ToScreenFile              Na Tela e em Arquivo
 Configuration_LoggerOutput              Saída do Logger
 Configuration_GeneralSkins              Skins
 Configuration_SmallSkins                Small Skins
 Configuration_TinySkins                 Tiny Skins
-Configuration_CurrentLogFile            &lt;Download do arquivo de log atual&gt;
+Configuration_CurrentLogFile            &lt;Exibir arquivo de log atual&gt;
 Configuration_SOCKSServer               Endereço do proxy SOCKS V
 Configuration_SOCKSPort                 Porta do proxy SOCKS V
 Configuration_SOCKSPortUpdate           Alterada a porta do proxy SOCKS V para %s
@@ -182,7 +183,7 @@ Advanced_RemoveWord                     Remover palavra
 Advanced_AllParameters                  Todos os Parâmetros do POPFile
 Advanced_Parameter                      Parâmetro
 Advanced_Value                          Valor
-Advanced_Warning                        Esta é a lista completa dos parâmetros do POPFile.  Somente para usuários avançados: você pode alterar qualquer um e clicar em Alterar; não há verificação de validade.  Ítens em negrito estão diferentes da configuração padrão.
+Advanced_Warning                        Esta é a lista completa dos parâmetros do POPFile.  Somente para usuários avançados: você pode alterar qualquer um e clicar em Alterar; não há verificação de validade.  Ítens em negrito estão diferentes da configuração padrão. Veja <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?OptionReference">OptionReference</a> para mais informação sobre as opções.
 Advanced_ConfigFile                     Arquivo de configuração:
 
 History_Filter                          &nbsp;(apenas mostrando o balde <font color="%s">%s</font>)
@@ -211,7 +212,7 @@ History_Magnet                          &nbsp;(mostrando apenas mensagens classi
 History_NoMagnet                        &nbsp;(mostrando apenas mensagens não classificadas por ímã)
 History_ResetSearch                     Limpar
 History_ChangedClass                    Deveria classificar agora como
-History_Purge                           Deletar Agora
+History_Purge                           Expirar Agora
 History_Increase                        Incrementar
 History_Decrease                        Decrementar
 History_Column_Characters               Alterar a largura das colunas De, Para, Cc e Assunto
@@ -339,7 +340,7 @@ Bucket_StatisticsTableSummary           Esta tabela fornece três conjuntos de es
 Bucket_MaintenanceTableSummary          Esta tabela contém formulários que permitem que você crie, exclua ou renomeie baldes, e para procurar uma palavra em todos os baldes e ver as suas probabilidades relativas.
 Bucket_AccuracyChartSummary             Esta tabela representa graficamente a exatidão da classificação de mensagens.
 Bucket_BarChartSummary                  Esta tabela representa graficamente a uma alocação porcentual para cada um dos diferentes baldes.  Ela é usada tanto para o número de mensagens classificadas como para o número total de palavras.
-Bucket_LookupResultsSummary             Esta tabela mostra as probabilidades associadas com qualquer palavra específica do corpus.  Para cada balde, ela mostra a freqüência com que aquela palavra ocorre, a probabilidade de que ela ocorra naquele balde, e o efeito geral na pontuação do balde se aquela palavra existir em uma mensagem.
+Bucket_LookupResultsSummary             Esta tabela mostra as probabilidades associadas com qualquer palavra específica do corpus.  Para cada balde, ela mostra a freqüência com que cada palavra ocorre, a probabilidade de que ela ocorra naquele balde, e o efeito geral na pontuação do balde se aquela palavra existir em uma mensagem.
 Bucket_WordListTableSummary             Esta tabela fornece uma relação de todas as palavras para um balde específico, organizada pela primeira letra comum para cada linha.
 Magnet_MainTableSummary                 Esta tabela mostra a lista de ímãs que são usados para classificar automaticamente mensagens de acordo com regras fixas.  Cada linha mostra como o ímã está definido, para qual balde ele foi concebido, e um botão para excluir aquele ímã.
 Configuration_MainTableSummary          Esta tabela contém alguns formulários que permitem que você controle a configuração do PopFile.
@@ -347,7 +348,7 @@ Configuration_InsertionTableSummary     Esta tabela contém botões para determina
 Security_MainTableSummary               Esta tabela fornece conjuntos de controles que afetam a segurança da configuração geral do PopFile, se ele deve procurar automaticamente por atualizações do programa, e se estatísticas sobre o desempenho do PopFile devem ser enviadas ao banco de dados central do autor do programa para informação geral.
 Advanced_MainTableSummary               Esta tabela fornece uma lista de palavras que o PopFile ignora quando classifica mensagens por causa da sua freqüência relativa nas mensagens em geral.  Elas são organizadas por linha de acordo com a primeira letra das palavras.
 
-Imap_Bucket2Folder                      Email para o balde <b>%s</b> vai para a pasta
+Imap_Bucket2Folder                      Email para o balde '<b>%s</b>' vai para a pasta
 Imap_MapError                           Você não pode mapear mais de um balde para uma única pasta!
 Imap_Server                             Nome do servidor IMAP:
 Imap_ServerNameError                    Por favor informe o nome do servidor!
@@ -374,5 +375,5 @@ Imap_WatchedFolder                      Pasta em observação nº
 Shutdown_Message                        O POPFile foi desligado
 
 Help_Training                           Quando você usa o POPFile pela primeira vez, ele ainda não sabe nada e precisa de treinamento. O POPFile requer treinamento nas mensagens para cada balde, e o treinamento acontece quando você reclassifica para o balde correto uma mensagem que o POPFile classificou incorretamente. Você deve também configurar seu cliente de email para filtrar mensagens baseado na classificação do POPFile. Informação para configurar os filtros no seu cliente de email pode ser encontrado no <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">Projeto de Documentação do POPFile</a>.
-Help_Bucket_Setup                       O POPFile requer pelo menos dois baldes além do pseudo-balde unclassified. O que torna o POPFile único é que ele pode classificar email, mais do que isso, você pode ter qualquer número de baldes. Uma configuração simples poderia ser um balde "spam", "pessoal", e um balde "trabalho".
-Help_No_More                            Não me mostre isto novamente
+Help_Bucket_Setup                       O POPFile requer pelo menos dois baldes além do pseudo-balde "unclassified". O que torna o POPFile único é que ele pode classificar email, mais do que isso, você pode ter qualquer número de baldes. Uma configuração simples poderia ser um balde "spam", "pessoal", e um balde "trabalho".
+Help_No_More                            Não mostre isto novamente
