@@ -26,6 +26,7 @@ ManualLanguage                          br
  
 # Common words that are used on their own all over the interface
 Apply                                   Aplicar
+ApplyChanges                            Aplicar Alterações
 On                                      Ligado
 Off                                     Desligado
 TurnOn                                  Ligar
