@@ -74,6 +74,14 @@ input, select, textarea, .submit {
   background-color: #2175bc;
 }
 
+input:hover, select:hover, textarea:hover {
+  background-color: #1165ac;
+}
+
+.submit:hover {
+  background-color: #2586d7;
+}
+
 input {
   font-size: 1em;
 }
@@ -103,6 +111,10 @@ form {
   border-right: 0;  /* trick to get single line border in between Panels */
   margin: 0;
   padding: 0;
+}
+
+.settingsTable + br {
+  display: none;
 }
 
 .settingsPanel {
@@ -226,11 +238,6 @@ h2 {
   background-color: #5ba3e0;
 }
 
-.rowEven td a, .rowOdd td a {
-  display: block;
-  width: 100%;
-}
-
 .footer {
   font-size: 0.9em;
   background-color: lightblue;
@@ -270,12 +277,14 @@ h2 {
 .historyNavigatorTop {
   text-align: right;
   padding-right: 0.5em;
+  vertical-align: top;
 }
 
 .historyNavigatorBottom {
   text-align: right;
   padding-right: 0.5em;
   padding-bottom: 1em; 
+  vertical-align: top;
 }
 
 .historyWidgetsTop {
@@ -284,6 +293,10 @@ h2 {
   width: 100%;
 }
 
+h2.history {
+  margin-top: 0;
+  margin-bottom: 0.3em;
+}
 .historyTable {
   border-top: none;
   border-bottom: none;
