@@ -258,6 +258,13 @@ sub initialize
 
     $self->config_( 'xpl_angle', 0 );
 
+    # This parameter is used when the UI is operating in Stealth Mode.
+    # If left blank (the default setting) the X-POPFile-Link will use 127.0.0.1
+    # otherwise it will use this string instead. The system's HOSTS file should
+    # map the string to 127.0.0.1
+
+    $self->config_( 'localhostname', '' );
+
     # This is a bit mask used to control options when we are using the
     # default SQLite database.  By default all the options are on.
     #
@@ -2703,8 +2710,12 @@ sub classify_and_modify
 
     my $xpl = $self->config_( 'xpl_angle' )?'<':'';
 
+    my $xpl_localhost = ($self->config_( 'localhostname' ) eq '')?"127.0.0.1":$self->config_( 'localhostname' );
+
     $xpl .= "http://";
-    $xpl .= $self->module_config_( 'html', 'local' )?"127.0.0.1":$self->config_( 'hostname' );
+
+    $xpl .= $self->module_config_( 'html', 'local' )?$xpl_localhost:$self->config_( 'hostname' );
+
     $xpl .= ":" . $self->module_config_( 'html', 'port' ) . "/jump_to_message?view=$slot";
 
     if ( $self->config_( 'xpl_angle' ) ) {
