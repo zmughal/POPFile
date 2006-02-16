@@ -2289,7 +2289,7 @@ sub history_page
         for my $i ( keys %{$self->{form_}} ) {
             if ( $i =~ /^rowid_(\d+)$/ ) {
                 $self->log_( 1, "clearpage $i" );
-                $self->{history__}->delete_slot( $1 );
+                $self->{history__}->delete_slot( $1, 1 );
             }
         }
         $self->{history__}->stop_deleting();
