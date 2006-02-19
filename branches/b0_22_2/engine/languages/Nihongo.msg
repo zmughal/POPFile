@@ -333,21 +333,21 @@ Windows_NextTime                        <p><font color="red">この変更は POPFile 
 
 Header_MenuSummary                      This table is the navigation menu which allows access to each of the different pages of the control center.
 History_MainTableSummary                This table shows the sender and subject of recently received messages and allows them to be reviewed and reclassified.  Clicking on the subject line will show the full message text, along with information about why it was classified as it was.  The 'Should be' column allows you to specify which bucket the message belongs in, or to undo that change.  The 'Delete' column allows you to delete specific messages from the history if you don't need them anymore.
-History_OpenMessageSummary              This table contains the full text of an email message, with the words that are used for classification highlighted according to the bucket that was most relevant for each.
+History_OpenMessageSummary              This table contains the full text of a message, with the words that are used for classification highlighted according to the bucket that was most relevant for each.
 Bucket_MainTableSummary                 This table provides an overview of the classification buckets.  Each row shows the bucket name, the word count total for that bucket, the actual number of individual words in each bucket, whether the email's subject line will be modified when it gets classified to that bucket, whether to quarantine the messages received in that bucket, and a table to pick the color used in displaying anything related to that bucket in the control center.
 Bucket_StatisticsTableSummary           This table provides three sets of statistics on the overall performance of POPFile.  The first is how accurate its classification is, the second is how many emails have been classified, and to which buckets, and the third is how many words are in each bucket, and what their relative percentages are.
 Bucket_MaintenanceTableSummary          This table contains forms that allow you to create, delete or rename buckets, and to lookup a word in all of the buckets to see its relative probabilities.
 Bucket_AccuracyChartSummary             This table graphically represents the accuracy of the email classification.
 Bucket_BarChartSummary                  This table graphically represents a percentage allocation for each of the different buckets.  It is used for both number of emails classified, and total word counts.
-Bucket_LookupResultsSummary             This table shows the probabilities associated with any given word of the corpus.  For each bucket, it shows the frequency that that word occurs, the probability that it will occur in that bucket, and the overall effect on the score of the bucket if that word exists in an email.
+Bucket_LookupResultsSummary             This table shows the probabilities associated with any given word of the corpus.  For each bucket, it shows the frequency with which that word occurs, the probability that it will occur in that bucket, and the overall effect on the score of the bucket if that word exists in a message.
 Bucket_WordListTableSummary             This table provides a listing of all the words for a particular bucket, organized by common first letter for each row.
-Magnet_MainTableSummary                 This table shows the list of magnets that are used to automatically classify email according to fixed rules.  Each row shows how the magnet is defined, what bucket it is intended for, and a button to delete the magnet.
+Magnet_MainTableSummary                 This table shows the list of magnets that are used to automatically classify messages according to fixed rules.  Each row shows how the magnet is defined, what bucket it is intended for, and a button to delete the magnet.
 Configuration_MainTableSummary          This table contains a number of forms to allow you to control the configuration of POPFile.
 Configuration_InsertionTableSummary     This table contains buttons that determine whether or not certain modifications are made to the headers or subject line of the email before it is passed on to the email client.
 Security_MainTableSummary               This table provides sets of controls that affect the security of the overall configuration of POPFile, whether it should automatically check for updates to the program, and whether statistics about POPFile's performance should be sent to the central datastore of the program's author for general information.
-Advanced_MainTableSummary               This table provides a list of words that POPFile ignores when classifying email due to their relative frequency in email in general.  They are organized per row according to the first letter of the words.
+Advanced_MainTableSummary               This table provides a list of words that POPFile ignores when classifying messages due to their relative frequency in messages in general.  They are organized per row according to the first letter of the words.
 
-Imap_Bucket2Folder                      <b>%s</b> バケツに分類されたメールの移動先
+Imap_Bucket2Folder                      '<b>%s</b>' バケツに分類されたメールの移動先
 Imap_MapError                           複数のバケツをひとつのフォルダに対応付けすることはできません。
 Imap_Server                             IMAP サーバ ホスト名:
 Imap_ServerNameError                    サーバのホスト名を入力してください。
@@ -374,5 +374,5 @@ Imap_WatchedFolder                      監視フォルダ
 Shutdown_Message                        POPFile は終了しました。
 
 Help_Training                           POPFile をこれから使い始める場合、ある程度のトレーニングが必要となります。それは、POPFile はどのメールが必要なメールでどのメールが不要なメールかについてなにも知らないからです。トレーニングはそれぞれのバケツについて行う必要があり（最低でも１つのバケツについて、１つ以上のメッセージを再分類する）、POPFile が分類を間違えたメッセージを正しいバケツに再分類することによってトレーニングすることができます。また、POPFile が行った分類にあわせてフォルダに移動するなど、メールクライアントを設定する必要があります。メールクライアントの設定については、<a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions/EmailSorting">POPFile ドキュメンテーションプロジェクト</a>を参照してください。
-Help_Bucket_Setup                       POPFile では、もともとある unclassified という仮想的なバケツ以外に、最低でも２つのバケツを作成する必要があります。POPFile の特徴は、（メールを spam とそれ以外に分類するというだけではなく）いくつでもバケツを作成し、それらにメールを分類することができることです。簡単な設定では、"spam"、"personal"、"work" といったバケツを設定することになるでしょう。
+Help_Bucket_Setup                       POPFile では、もともとある "unclassified" という仮想的なバケツ以外に、最低でも２つのバケツを作成する必要があります。POPFile の特徴は、（メールを spam とそれ以外に分類するというだけではなく）いくつでもバケツを作成し、それらにメールを分類することができることです。簡単な設定では、"spam"、"personal"、"work" といったバケツを設定することになるでしょう。
 Help_No_More                            次回から表示しない。
