@@ -95,7 +95,7 @@ form {
   margin: 0;
 }
 
-table.head {
+.head {
   color: white;
   font-weight: bold;
   background-color: #2175bc;
@@ -195,6 +195,14 @@ html>body .menu li a {
   color: #fff;
 }
 
+.menuSpacer {
+  display: none;
+}
+
+.menuIndent {
+  display: none;
+}
+
 .menuStandard a:hover, .menuSelected a:hover {
   text-decoration: none;
   color: white;
@@ -257,28 +265,6 @@ h2 {
   color: darkblue;
 }
 
-.shellStatusMessage {
-  color: black;
-  border: 1px solid white;
-  background-color: lightblue;
-  margin: auto;
-  margin-bottom: 0.2em;
-  text-align: center;
-  width: 100%;
-  border: 1px solid #90bade;
-}
-
-.shellErrorMessage {
-  color: red;
-  border: 1px solid white;
-  background-color: lightblue;
-  margin: auto;
-  margin-bottom: 0.2em;
-  text-align: center;
-  width: 100%;
-  border: 1px solid #90bade;
-}
-
 .bottomLink {
   padding-left: 0.8em;
   padding-right: 0.8em;
@@ -301,39 +287,16 @@ h2 {
   vertical-align: top;
 }
 
-.historyNavigatorTop form, .historyNavigatorBottom form {
-  padding-top: 0.3em;
-  margin: 0;
-}
-
 .historyWidgetsTop {
   border-top: none;
   border-bottom: none;
   width: 100%;
 }
 
-.refreshLink {
-  display: none;
-}
-
 h2.history {
   margin-top: 0;
   margin-bottom: 0.3em;
 }
-
-.search {
-  display: inline;
-  float: left;
-}
-
-.filter {
-  display: inline;
-}
-
-.removeButtonsTop {
-  padding-bottom: 1em;
-}
-
 .historyTable {
   border-top: none;
   border-bottom: none;
@@ -385,10 +348,7 @@ div.helpMessage {
   background-color: lightblue;
   border: 1px solid black;
   padding: 0.4em;
-}
-
-div.helpMessage form {
-  margin: 0;
+  padding-bottom: 0;
 }
 
 span.graphFont {
@@ -420,77 +380,4 @@ a:link:hover, a:visited:hover {
 
 .footer li {
   display: inline;
-}
-
-.viewHeadings {
-  display: inline;
-}
-
-/*********************************************************/
-/* Config Bar */
-
-.configBar, .configBarHidden {
-  padding-top: 0.5em;
-}
-
-.configBarTitle {
-  display: inline;
-  font-weight: normal;
-  font-size: 1em;
-}
-
-.configBarTitle a {
-  border: 1px solid white;
-  color: white;
-  background-color: #2175bc;
-  font-size: 1.1em;
-}
-
-.configBarTitle a:hover {
-  background-color: #2586d7;
-}
-
-.configBarTitle a, .configBarTitle a:hover {
-  padding: 0 0.5em;
-  width: 100%;
-  text-decoration: none;
-}
-
-.configBarBody {
-  margin-top: 0.5em;
-  border: 1px solid #2175bc;
-}
-
-.configBarBody td {
-  border: 1px solid #2175bc;
-  background-color: #2586d7;
-}
-
-.configBarOption {
-  border: 1px solid #2175bc;
-  margin: 0.3em;
-  padding: 5px;
-  white-space: nowrap;
-  display: inline;
-  float: left;
-  background-color: #508fc4;
-}
-
-.checkLabel {
-  white-space: nowrap;
-}
-
-/*********************************************************/
-/* History Column Controls */
-
-.columnControls {
-  white-space:nowrap;
-  vertical-align: top;
-  width: 10px;
-}
-
-.columnRemove, .columnMove {
-  display: block;
-  width:100%;
-  height: 1em;
 }

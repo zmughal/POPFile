@@ -1,8 +1,7 @@
 #!/usr/bin/perl
 # ----------------------------------------------------------------------------
 #
-# pipe.pl --- Read a message in on STDIN and write out the modified
-# version on STDOUT
+# pipe.pl --- Read a message in on STDIN and write out the modified version on STDOUT
 #
 # Copyright (c) 2001-2006 John Graham-Cumming
 #
@@ -39,9 +38,11 @@ if ( $#ARGV == -1 ) {
     # Indicate that we should create not output on STDOUT (the POPFile
     # load sequence)
 
+    $POPFile->debug(0);
     $POPFile->CORE_loader_init();
     $POPFile->CORE_signals();
     $POPFile->CORE_load( 1 );
+    $POPFile->CORE_link_components();
     $POPFile->CORE_initialize();
 
     # Ugly hack which is needed because Bayes::classify_and_modify looks up

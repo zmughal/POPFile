@@ -255,7 +255,7 @@ Magnet_Error3                           Nouvel aimant '%s' créé pour la catégori
 Magnet_CurrentMagnets                   Aimants actuels
 Magnet_Message1                         Les aimants suivants entraînent la classification systématique d'un message dans la catégorie spécifiée.
 Magnet_CreateNew                        Créer un nouvel aimant
-Magnet_Explanation                      <b>Trois types d'aimants sont disponibles:</b> <ul><li><b>Adresse ou nom de l'expéditeur:</b> Par exemple: john@company.com pour capter une adresse spécifique, <br />company.com pour capter les messages de tous les expéditeurs de company.com, <br />John Doe pour capter une personne en particulier, John pour capter tous les John</li><li><b>Adresse ou nom du destinataire:</b> Comme un aimant De: mais pour l'adresse du destinataire du message</li><li><b>Mots du sujet:</b> Par exemple: bonjour pour capter tous les messages avec bonjour dans le sujet</li></ul>
+Magnet_Explanation                      Trois types d'aimants sont disponibles:</b> <ul><li><b>Adresse ou nom de l'expéditeur:</b> Par exemple: john@company.com pour capter une adresse spécifique, <br />company.com pour capter les messages de tous les expéditeurs de company.com, <br />John Doe pour capter une personne en particulier, John pour capter tous les John</li><li><b>Adresse ou nom du destinataire:</b> Comme un aimant De: mais pour l'adresse du destinataire du message</li><li><b>Mots du sujet:</b> Par exemple: bonjour pour capter tous les messages avec bonjour dans le sujet</li></ul>
 Magnet_MagnetType                       Type d'aimant
 Magnet_Value                            Valeur
 Magnet_Always                           Toujours envoyer dans la catégorie
@@ -355,6 +355,8 @@ Imap_PasswordError                      Veuillez entrer un mot de passe pour le 
 Imap_Expunge                            Effacer les messages supprimés des dossiers surveillés
 Imap_Interval                           Période de rafraîchissement en secondes :
 Imap_IntervalError                      Veuillez entrer un délai compris entre 10 et 3600 secondes.
+Imap_Bytelimit                          Par message, nombre d'octets pris en compte pour la classification. Entrez 0 (zéro) pour le message complet :
+Imap_BytelimitError                     Veuillez entrer un nombre.
 Imap_RefreshFolders                     Actualiser la liste des dossiers
 Imap_Now                                maintenant !
 Imap_UpdateError1                       Impossible de s'identifier. Veuillez vérifier votre nom de compte et votre mot de passe.
