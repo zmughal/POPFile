@@ -365,12 +365,6 @@ for my $parse_test (@parse_tests) {
     my $words = $parse_test;
     $words    =~ s/msg/wrd/;
 
-    # Ignore the special file used for Japanese testing
-
-    if ( $parse_test =~ /TestMailParse026/ ) {
-        next;
-    }
-
     # Parse the document and then check the words hash against the words in the
     # wrd file
 
@@ -528,6 +522,83 @@ close FILE;
 $cl->parse_file( 'temp.tmp' );
 test_assert_equal( $cl->{words__}{'html:imgwidth42'}, 1 );
 test_assert_equal( $cl->{words__}{'html:imgheight41'}, 1 );
+
+# Test Japanese mode
+
+my $have_text_kakasi = 0;
+
+foreach my $prefix (@INC) {
+    my $realfilename = "$prefix/Text/Kakasi.pm";
+    if (-f $realfilename) {
+        $have_text_kakasi = 1;
+        last;
+    }
+}
+
+if ( $have_text_kakasi ) {
+    $b->module_config_( 'html', 'language', 'Nihongo' );
+    $b->{parser__}->mangle( $w );
+    $b->initialize();
+    test_assert( $b->start() );
+    $cl->{lang__} = 'Nihongo';
+
+    # TODO: test decode_string
+
+    # TODO: test kakasi wakachi-gaki
+    $cl->init_kakasi();
+
+    
+
+    $cl->close_kakasi();
+
+    # parse test for Japanese e-mails.
+
+    require POPFile::Mutex;
+    $cl->{kakasi_mutex__} = new POPFile::Mutex( 'mailparse_kakasi' );
+    $cl->{need_kakasi_mutex__} = 1;
+
+    my @parse_tests = sort glob 'TestNihongo*.msg';
+    
+    for my $parse_test (@parse_tests) {
+        
+        my $words = $parse_test;
+        $words    =~ s/msg/wrd/;
+        
+        # Parse the document and then check the words hash against the words in the
+        # wrd file
+        
+        $cl->parse_file( $parse_test );
+        
+        open WORDS, "<$words";
+        while ( <WORDS> ) {
+            if ( /^(.+) (\d+)/ ) {
+                my ( $word, $value ) = ( $1, $2 );
+                test_assert_equal( $cl->{words__}{$word}, $value, "$words $word $value" );
+                delete $cl->{words__}{$word};
+            }
+        }
+        close WORDS;
+        
+        foreach my $missed ( sort( keys %{$cl->{words__}} ) ) {
+            test_assert( 0, "$missed $cl->{words__}{$missed} missing in $words" );
+        
+            # Only use this if once you KNOW FOR CERTAIN that it's
+            # not going to update the WRD files with bogus entries
+            # First manually check the test failures and then switch the
+            # 0 to 1 and run once
+        
+            if ( 0 ) {
+                 open UPDATE, ">>$words";
+                 print UPDATE "$missed $cl->{words__}{$missed}\n";
+                 close UPDATE;
+            }
+            delete $cl->{words__}{$missed};
+        }
+    }
+
+} else {
+    print "\nWarning: Japanese tests skipped because Text::Kakasi was not found\n";
+}
 
 $b->stop();
 
