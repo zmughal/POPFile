@@ -925,81 +925,94 @@ foreach my $prefix (@INC) {
 
 if ( $have_text_kakasi ) {
 
-  $b->module_config_( 'html', 'language', 'Nihongo' );
+    $b->module_config_( 'html', 'language', 'Nihongo' );
+    $b->{parser__}->mangle( $w );
+    $b->initialize();
+    test_assert( $b->start() );
 
-  # Test Japanese magnet. GOMI means "trash" in Japanese.
+    $b->{parser__}->{lang__} = 'Nihongo';
 
-  $b->create_bucket( $session, 'gomi' );
+    # Test Japanese magnet. GOMI means "trash" in Japanese.
 
-  # create_magnet
+    $b->create_bucket( $session, 'gomi' );
 
-  $b->clear_magnets( $session );
-  $b->create_magnet( $session, 'gomi', 'subject', chr(0xcc) . chr(0xa4) );
-  test_assert_equal( $b->classify( $session, 'TestMailParse026.msg' ), 'gomi' );
+    # create_magnet
 
-  test_assert_equal( $b->magnet_count( $session ), 1 );
-  $b->create_magnet( $session, 'gomi', 'subject', chr(0xa5) . chr(0xc6) . chr(0xa5) . chr(0xb9) . chr(0xa5) . chr(0xc8));
-  test_assert_equal( $b->magnet_count( $session ), 2 );
+    $b->clear_magnets( $session );
+    $b->create_magnet( $session, 'gomi', 'subject', chr(0xbe) . chr(0xb5) . chr(0xc2) . chr(0xfa) );
+    test_assert_equal( $b->classify( $session, 'TestNihongo021.msg' ), 'gomi' );
 
-  # get_magnets
+    test_assert_equal( $b->magnet_count( $session ), 1 );
+    $b->create_magnet( $session, 'gomi', 'subject', chr(0xa5) . chr(0xc6) . chr(0xa5) . chr(0xb9) . chr(0xa5) . chr(0xc8));
+    test_assert_equal( $b->magnet_count( $session ), 2 );
 
-  my @magnets = $b->get_magnets( $session, 'gomi', 'subject' );
-  test_assert_equal( $#magnets, 1 );
-  test_assert_equal( $magnets[0], chr(0xa5) . chr(0xc6) . chr(0xa5) . chr(0xb9) . chr(0xa5) . chr(0xc8) );
-  test_assert_equal( $magnets[1], chr(0xcc) . chr(0xa4) );
+    # get_magnets
 
-  # Test whether Japanese mail are splitted into words by Kakasi filter
+    my @magnets = $b->get_magnets( $session, 'gomi', 'subject' );
+    test_assert_equal( $#magnets, 1 );
+    test_assert_equal( $magnets[0], chr(0xa5) . chr(0xc6) . chr(0xa5) . chr(0xb9) . chr(0xa5) . chr(0xc8) );
+    test_assert_equal( $magnets[1], chr(0xbe) . chr(0xb5) . chr(0xc2) . chr(0xfa) );
 
-  open CLIENT, ">temp.tmp";
-  open MAIL, "<TestMailParse026.msg";
-  my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 1 );
-  close CLIENT;
-  close MAIL;
+    # delete_magnet
+    $b->delete_magnet( $session, 'gomi', 'subject', chr(0xbe) . chr(0xb5) . chr(0xc2) . chr(0xfa) );
+    test_assert_equal( $b->magnet_count( $session ), 1 );
 
-  open MSG, "<messages/popfile0=0.msg";
-  open KKS, "<TestMailParse026.kks";
-  while ( <MSG> ) {
-    my $msg = $_;
-    my $kks = <KKS>;
-    $msg =~ s/[\r\n]//g;
-    $kks =~ s/[\r\n]//g;
-    test_assert_equal( $msg, $kks );
-  }
-  close MSG;
-  close KKS;
-  $h->delete_slot( $slot );
-  unlink( 'temp.out' );
+    # add_message_to_bucket
 
-  # add_message_to_bucket
+    my %words;
 
-  my %words;
-
-  open WORDS, "<TestMailParse026.wrd";
-  while ( <WORDS> ) {
-    if ( /(.+) (\d+)/ ) {
-      $words{$1} = $2;
+    open WORDS, "<TestNihongo021.wrd";
+    while ( <WORDS> ) {
+        if ( /(.+) (\d+)/ ) {
+            $words{$1} = $2;
+        }
     }
-  }
-  close WORDS;
+    close WORDS;
 
-  test_assert( $b->add_message_to_bucket( $session, 'gomi', 'TestMailParse026.kks' ) );
+    test_assert( $b->add_message_to_bucket( $session, 'gomi', 'TestNihongo021.msg' ) );
 
-  foreach my $word (keys %words) {
-    test_assert_equal( $b->get_base_value_( $session, 'gomi', $word ), $words{$word}, "gomi: $word $words{$word}" );
-  }
+    foreach my $word (keys %words) {
+        test_assert_equal( $b->get_base_value_( $session, 'gomi', $word ), $words{$word}, "gomi: $word $words{$word}" );
+    }
 
-  # get_bucket_word_prefixes
+    # get_bucket_word_prefixes
 
-  my @words = $b->get_bucket_word_prefixes( $session, 'gomi' );
-  test_assert_equal( $#words, 19 );
-  test_assert_equal( $words[17], chr(0xa4) . chr(0xb3) );
-  test_assert_equal( $words[18], chr(0xa4) . chr(0xc7) );
-  test_assert_equal( $words[19], chr(0xa5) . chr(0xb9) );
+    my @words = $b->get_bucket_word_prefixes( $session, 'gomi' );
+    test_assert_equal( $#words, 20 );
+    test_assert_equal( $words[18], chr(0xa4) . chr(0xb3) );
+    test_assert_equal( $words[19], chr(0xa4) . chr(0xc7) );
+    test_assert_equal( $words[20], chr(0xa5) . chr(0xb9) );
 
-  # remove_message_from_bucket
+    # qurantine test
 
-  test_assert( $b->remove_message_from_bucket( $session, 'gomi', 'TestMailParse026.kks' ) );
-  test_assert_equal( $b->get_bucket_word_count( $session, 'gomi' ), 0 );
+    $b->set_bucket_parameter( $session, 'gomi', 'quarantine', 1 );
+
+    open CLIENT, ">temp.tmp";
+    open MAIL, "<TestNihongo021.msg";
+    my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 1 );
+    close CLIENT;
+    close MAIL;
+    
+    test_assert_equal( $class, 'gomi' );
+    test_assert( -e $h->get_slot_file( $slot ) );
+
+    open TEMP, "<temp.tmp";
+    open MAIL, "<TestNihongo021.qrn";
+    while ( !eof( MAIL ) && !eof( TEMP ) ) {
+        my $temp = <TEMP>;
+        $temp =~ s/[\r\n]//g;
+        my $mail = <MAIL>;
+        $mail =~ s/[\r\n]//g;
+        test_assert_equal( $temp, $mail );
+    }
+    close MAIL;
+    close TEMP;
+
+    # remove_message_from_bucket
+
+    test_assert( $b->remove_message_from_bucket( $session, 'gomi', 'TestNihongo021.msg' ) );
+    test_assert_equal( $b->get_bucket_word_count( $session, 'gomi' ), 0 );
+
 } else {
     print "\nWarning: Japanese tests skipped because Text::Kakasi was not found\n";
 }
