@@ -9,7 +9,7 @@
 #                                   required and these are installed at the same time as the
 #                                   optional POPFile component.
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -40,12 +40,6 @@
   ; POPFile components, such as the Kakasi package and POPFile's XMLRPC module, require
   ; extra Perl components which are added when the optional POPFile components are installed.
 
-  ; The 0.22.2 release's minimal Perl was based upon ActivePerl 5.8.4 but the optional SSL
-  ; components from the University of Winnipeg repository are no longer compatible with this
-  ; version of ActivePerl. ActivePerl 5.8.7 (the most recent version at the time of writing)
-  ; introduced some new dependencies so this section assumes the minimal Perl will be based
-  ; upon ActivePerl 5.8.7.
-
   !insertmacro SECTIONLOG_ENTER "Minimal Perl"
 
   ; Install the Minimal Perl files
@@ -68,7 +62,6 @@
   File "${C_PERL_DIR}\lib\Config.pm"
   File "${C_PERL_DIR}\lib\Config_heavy.pl"
   File "${C_PERL_DIR}\lib\constant.pm"
-  File "${C_PERL_DIR}\lib\Cwd.pm"
   File "${C_PERL_DIR}\lib\DynaLoader.pm"
   File "${C_PERL_DIR}\lib\Errno.pm"
   File "${C_PERL_DIR}\lib\Exporter.pm"
@@ -101,10 +94,8 @@
   File "${C_PERL_DIR}\lib\Exporter\*"
 
   SetOutPath "$G_MPLIBDIR\File"
-  File "${C_PERL_DIR}\lib\File\Basename.pm"
   File "${C_PERL_DIR}\lib\File\Copy.pm"
   File "${C_PERL_DIR}\lib\File\Glob.pm"
-  File "${C_PERL_DIR}\lib\File\Path.pm"
   File "${C_PERL_DIR}\lib\File\Spec.pm"
 
   SetOutPath "$G_MPLIBDIR\File\Spec"
@@ -200,7 +191,7 @@
   File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.exp"
   File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.lib"
 
-  ; Install SQLite support
+  ; Install SQLite support (using an old SQLite 2.x version of the SQLite module)
 
   SetOutPath "$G_MPLIBDIR\DBD"
   File "${C_PERL_DIR}\site\lib\DBD\SQLite.pm"
@@ -210,60 +201,6 @@
   File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.dll"
   File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.exp"
   File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.lib"
-
-  ; Extra Perl modules required for the encrypted cookies introduced in POPFile 0.23.0
-
-  SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\lib\bytes.pm"
-  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-  File "${C_PERL_DIR}\lib\subs.pm"
-
-  SetOutPath "$G_MPLIBDIR\Class"
-  File "${C_PERL_DIR}\site\lib\Class\Loader.pm"
-
-  SetOutPath "$G_MPLIBDIR\Crypt"
-  File "${C_PERL_DIR}\site\lib\Crypt\Blowfish.pm"
-  File "${C_PERL_DIR}\site\lib\Crypt\CBC.pm"
-  File "${C_PERL_DIR}\site\lib\Crypt\Random.pm"
-
-  SetOutPath "$G_MPLIBDIR\Crypt\Random"
-  File "${C_PERL_DIR}\site\lib\Crypt\Random\Generator.pm"
-
-  SetOutPath "$G_MPLIBDIR\Crypt\Random\Provider"
-  File "${C_PERL_DIR}\site\lib\Crypt\Random\Provider\*.pm"
-
-  SetOutPath "$G_MPLIBDIR\Data"
-  File "${C_PERL_DIR}\lib\Data\Dumper.pm"
-
-  SetOutPath "$G_MPLIBDIR\Digest"
-  File "${C_PERL_DIR}\site\lib\Digest\SHA.pm"
-
-  SetOutPath "$G_MPLIBDIR\Math"
-  File "${C_PERL_DIR}\site\lib\Math\Pari.pm"
-
-  SetOutPath "$G_MPLIBDIR\auto\Crypt\Blowfish"
-  File "${C_PERL_DIR}\site\lib\auto\Crypt\Blowfish\Blowfish.bs"
-  File "${C_PERL_DIR}\site\lib\auto\Crypt\Blowfish\Blowfish.dll"
-  File "${C_PERL_DIR}\site\lib\auto\Crypt\Blowfish\Blowfish.exp"
-  File "${C_PERL_DIR}\site\lib\auto\Crypt\Blowfish\Blowfish.lib"
-
-  SetOutPath "$G_MPLIBDIR\auto\Data\Dumper"
-  File "${C_PERL_DIR}\lib\auto\Data\Dumper\Dumper.bs"
-  File "${C_PERL_DIR}\lib\auto\Data\Dumper\Dumper.dll"
-  File "${C_PERL_DIR}\lib\auto\Data\Dumper\Dumper.exp"
-  File "${C_PERL_DIR}\lib\auto\Data\Dumper\Dumper.lib"
-
-  SetOutPath "$G_MPLIBDIR\auto\Digest\SHA"
-  File "${C_PERL_DIR}\site\lib\auto\Digest\SHA\SHA.bs"
-  File "${C_PERL_DIR}\site\lib\auto\Digest\SHA\SHA.dll"
-  File "${C_PERL_DIR}\site\lib\auto\Digest\SHA\SHA.exp"
-  File "${C_PERL_DIR}\site\lib\auto\Digest\SHA\SHA.lib"
-
-  SetOutPath "$G_MPLIBDIR\auto\Math\Pari"
-  File "${C_PERL_DIR}\site\lib\auto\Math\Pari\Pari.bs"
-  File "${C_PERL_DIR}\site\lib\auto\Math\Pari\Pari.dll"
-  File "${C_PERL_DIR}\site\lib\auto\Math\Pari\Pari.exp"
-  File "${C_PERL_DIR}\site\lib\auto\Math\Pari\Pari.lib"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"

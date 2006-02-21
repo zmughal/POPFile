@@ -3,7 +3,7 @@
 # installer-SecPOPFile-func.nsh --- This 'include' file contains the non-library functions
 #                                   used by the 'installer-SecPOPFile-body.nsh' file.
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #

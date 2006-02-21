@@ -24,7 +24,7 @@ include $(ENGINE)/vars.mak
 
 MAKENSIS_VERSION_STRING:=/DC_POPFILE_MAJOR_VERSION=$(POPFILE_MAJOR_VERSION) /DC_POPFILE_MINOR_VERSION=$(POPFILE_MINOR_VERSION) /DC_POPFILE_REVISION=$(POPFILE_REVISION) /DC_POPFILE_RC=$(RC)
 
-MAKENSIS=echo Making $@ ; makensis.exe $(MAKENSIS_VERSION_STRING) /V2 /O$(patsubst %.exe,%.log,$@) $<
+MAKENSIS=echo Making $@ ; makensis.exe $(MAKENSIS_VERSION_STRING) /V4 /O$(patsubst %.exe,%.log,$@) $<
 BUILD_ZIP=wzzip -P $(POPFILE_WINDOWS_ZIP) -a $^
 
 SETUP:=setup$(RC).exe
@@ -41,7 +41,7 @@ ALLEXES := $(SETUP) $(RUNPOPFILE) $(ADDUSER)     \
 
 all: build
 build: $(POPFILE_WINDOWS_ZIP)
-$(POPFILE_WINDOWS_ZIP): $(SETUP) addssl.zip
+$(POPFILE_WINDOWS_ZIP): $(SETUP)
 	rm -f $@
 	$(BUILD_ZIP)
 clean:
@@ -59,6 +59,12 @@ test/pfidiag.exe: UI/pfi_modern.exe
 test/pfidiag.exe:
 	@cd $(dir $@) ; makensis /v2 $(notdir $<)
 
+test/pfidbstatus.exe: test/pfidbstatus.nsi test/pfinfo.ico
+test/pfidbstatus.exe: hdr-common.bmp UI/pfi_headerbmpr.exe
+test/pfidbstatus.exe: UI/pfi_modern.exe
+test/pfidbstatus.exe:
+	@cd $(dir $@) ; makensis /v2 /DCTS_INTEGRATED $(notdir $<)
+
 $(SETUP): installer.nsi ; @$(MAKENSIS)
 $(SETUP): $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/Platform/MSWin32.pm $(ENGINE)/skins/*/*.css $(ENGINE)/skins/*/*.gif $(ENGINE)/skins/*/*.thtml $(ENGINE)/v$(POPFILE_VERSION).change
 $(SETUP): $(STOP_PF) $(ENGINE)/popfile.exe $(ENGINE)/popfileb.exe $(ENGINE)/popfileib.exe $(ENGINE)/popfilef.exe $(ENGINE)/popfileif.exe $(ENGINE)/popfile-service.exe
@@ -66,7 +72,7 @@ $(SETUP): $(RUNPOPFILE) $(ADDUSER) $(MONITORCC) $(STOP_PF) $(MSGCAPTURE)
 $(SETUP): ioG.ini WriteEnvStr.nsh
 $(SETUP): languages/*-pfi.nsh hdr-common.bmp special.bmp remove.ico
 $(SETUP): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
-$(SETUP): test/pfidiag.exe $(RUNSQLITE)
+$(SETUP): test/pfidbstatus.exe test/pfidiag.exe $(RUNSQLITE)
 
 $(RUNPOPFILE): $(patsubst %.exe,%.nsi,$(RUNPOPFILE))
 $(RUNPOPFILE): languages/English-pfi.nsh

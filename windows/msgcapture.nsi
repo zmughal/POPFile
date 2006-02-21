@@ -6,7 +6,7 @@
 #                    the need to display the console window (when the console window was
 #                    used by earlier installers it caused confusion amongst some users).
 #
-# Copyright (c) 2004-2005  John Graham-Cumming
+# Copyright (c) 2004-2006  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -114,7 +114,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.63"
+  !define C_VERSION             "0.0.64"
 
   !define C_OUTFILE             "msgcapture.exe"
 
@@ -160,7 +160,7 @@
   VIAddVersionKey "ProductName"             "PFI Message Capture Utility"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Message Capture Utility (0-99 sec timeout)"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"

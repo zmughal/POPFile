@@ -1,4 +1,4 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for Configuration.pm
 #
@@ -19,21 +19,19 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 unlink 'popfile.cfg';
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
 
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 
-$POPFile->CORE_load( 0, \%valid );
-my $c = $POPFile->get_module( 'POPFile/Configuration' );
+$c->configuration( $c );
 
 # Check that we can get and set a parameter
 $c->parameter( 'testparam', 'testvalue' );
@@ -44,9 +42,18 @@ my @all = $c->configuration_parameters();
 test_assert_equal( $#all, 0 );
 test_assert_equal( $all[0], 'testparam' );
 
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$c->mq( $mq );
+$c->logger( $l );
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
 
 # Basic tests
 test_assert_equal( $c->name(), 'config' );
@@ -119,8 +126,6 @@ $line = <FILE>;
 test_assert_regexp( $line, 'GLOBAL_message_cutoff 100000' );
 $line = <FILE>;
 test_assert_regexp( $line, 'GLOBAL_msgdir messages/' );
-$line = <FILE>;
-test_assert_regexp( $line, 'GLOBAL_single_user 1' );
 $line = <FILE>;
 test_assert_regexp( $line, 'GLOBAL_timeout 60' );
 $line = <FILE>;
@@ -210,7 +215,7 @@ open OUTPUT, "<stdout.tmp";
 <OUTPUT>;
 my $line = <OUTPUT>;
 close OUTPUT;
-test_assert_regexp( $line, 'Unknown option: -config_foobar' );
+test_assert_regexp( $line, 'Unknown option -config_foobar' );
 @ARGV = ( '--', '-config_piddir', 'test4/' );
 test_assert( $c->parse_command_line() );
 test_assert_equal( $c->module_config_( 'config', 'piddir' ), 'test4/' );
@@ -219,10 +224,9 @@ open (STDERR, ">stdout.tmp");
 test_assert( !$c->parse_command_line() );
 close STDERR;
 open OUTPUT, "<stdout.tmp";
-<OUTPUT>;
 my $line = <OUTPUT>;
 close OUTPUT;
-test_assert_regexp( $line, 'Unknown option: --doesnotexist' );
+test_assert_regexp( $line, 'Unknown option: doesnotexist' );
 @ARGV = ( '--set', 'baz' );
 open (STDERR, ">stdout.tmp");
 test_assert( !$c->parse_command_line() );
@@ -296,7 +300,5 @@ test_assert_equal( $c->get_root_path( '/foo', 0 ), '/foo' );
 test_assert( !defined( $c->get_root_path( '/foo' ) ) );
 test_assert_equal( $c->get_root_path( 'foo/' ), './foo/' );
 $c->{popfile_root__} = '../';
-
-$POPFile->CORE_stop();
 
 1;

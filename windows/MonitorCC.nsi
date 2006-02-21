@@ -4,7 +4,7 @@
 #                   POPFile Windows installer when a flat-file or BerkeleyDB corpus
 #                   needs to be converted to the new SQL database format.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -144,7 +144,7 @@
   VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Corpus Conversion Monitor"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"

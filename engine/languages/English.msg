@@ -28,7 +28,6 @@ ManualLanguage                          en
 FAQLink                                 FrequentlyAskedQuestions
 
 # Common words that are used on their own all over the interface
-Account                                 POP3 Account
 Apply                                   Apply
 ApplyChanges                            Apply Changes
 On                                      On
@@ -75,16 +74,13 @@ ID                                      ID
 Date                                    Date
 Arrived                                 Arrived
 Size                                    Size
-Go                                      Go
-Edit                                    Edit
-Logout                                  Logout
 
 # This is a regular expression pattern that is used to convert
 # a number into a friendly looking number (for the US and UK this
 # means comma separated at the thousands)
 
-Locale_Thousands                        ,
-Locale_Decimal                          .
+Locale_Thousands                       ,
+Locale_Decimal                         .
 
 # The Locale_Date uses the format strings in Perl's Date::Format
 # module to set the date format for the UI.  There are two possible
@@ -94,7 +90,7 @@ Locale_Decimal                          .
 # <<format> | <format> The first format is used for dates less than
 #                     7 days from now, the second for all other dates
 
-Locale_Date                             %a %R | %D %R
+Locale_Date                            %a %R | %D %R
 
 # The header and footer that appear on every UI page
 Header_Title                            POPFile Control Center
@@ -104,9 +100,7 @@ Header_Buckets                          Buckets
 Header_Configuration                    Configuration
 Header_Advanced                         Advanced
 Header_Security                         Security
-Header_Administration                   Administration
 Header_Magnets                          Magnets
-Header_Users                            Users
 
 Footer_HomePage                         POPFile Home Page
 Footer_Manual                           Manual
@@ -141,15 +135,15 @@ Configuration_POP3SepUpdate             Updated POP3 separator to %s
 Configuration_NNTPSepUpdate             Updated NNTP separator to %s
 Configuration_UI                        User interface web port
 Configuration_UIUpdate                  Updated user interface web port to %s; this change will not take affect until you restart POPFile
-Configuration_History                   Messages per page
+Configuration_History                   Number of messages per page
 Configuration_HistoryUpdate             Updated number of messages per page to %s
-Configuration_Days                      Days of history to keep
+Configuration_Days                      Number of days of history to keep
 Configuration_DaysUpdate                Updated number of days of history to %s
 Configuration_UserInterface             User Interface
 Configuration_Skins                     Skins
-Configuration_SkinsChoose               Skin
+Configuration_SkinsChoose               Choose skin
 Configuration_Language                  Language
-Configuration_LanguageChoose            Language
+Configuration_LanguageChoose            Choose language
 Configuration_ListenPorts               Module Options
 Configuration_HistoryView               History View
 Configuration_TCPTimeout                Connection Timeout
@@ -173,15 +167,7 @@ Configuration_SOCKSServer               SOCKS V proxy host
 Configuration_SOCKSPort                 SOCKS V proxy port
 Configuration_SOCKSPortUpdate           Updated SOCKS V proxy port to %s
 Configuration_SOCKSServerUpdate         Updated SOCKS V proxy host to %s
-Configuration_Fields                    Add history columns
-Configuration_ChangePassword            Change Password
-Configuration_OldPassword               Current
-Configuration_NewPassword               New
-Configuration_ConfirmPassword           Confirm New
-Configuration_Password_Mismatch         The new password must by identical in the New and Confirm New boxes
-Configuration_Password_Bad              The old password entered is incorrect
-Configuration_Password_Fail             Failed to set new password
-Configuration_Set_Password              New password has been set
+Configuration_Fields                    History Columns
 
 Advanced_Error1                         '%s' already in the Ignored Words list
 Advanced_Error2                         Ignored words can only contain alphanumeric, ., _, -, or @ characters
@@ -192,37 +178,14 @@ Advanced_StopWords                      Ignored Words
 Advanced_Message1                       POPFile ignores the following frequently-used words:
 Advanced_AddWord                        Add word
 Advanced_RemoveWord                     Remove word
-Advanced_AllParameters                  Global POPFile Parameters
+Advanced_AllParameters                  All POPFile Parameters
 Advanced_Parameter                      Parameter
 Advanced_Value                          Value
-Advanced_Warning                        This is the complete list of POPFile parameters.  Advanced users only: you may change any and click Update; there is no validity checking.  Items shown in bold have been changed from the default setting.  See <a href="http://getpopfile.org/cgi-bin/wiki.pl?OptionReference">OptionReference</a> for more information on options.
+Advanced_Warning                        This is the complete list of POPFile parameters.  Advanced users only: you may change any and click Update; there is no validity checking.  Items shown in bold have been changed from the default setting.  See <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?OptionReference">OptionReference</a> for more information on options.
 Advanced_ConfigFile                     Configuration file:
 
-Users_Create                            Create New User
-Users_Remove                            Remove Existing User
-Users_Edit                              Edit User Settings
-Users_CopyFrom                          Copying settings from user
-Users_RemoveUser                        Remove user
-Users_CreateUser                        Create user named
-Users_EditUser                          Edit user
-Users_Parameters                        Parameters
-Users_Created                           Created user '%s' (initial password '%s')
-Users_Not_Created                       Failed to create user '%s'
-Users_Created_And_Cloned                Created user '%s' as clone of '%s' (initial password '%s')
-Users_Not_Created_Exists                User '%s' not created: already exists
-Users_Created_Not_Cloned                Created user '%s' but clone of '%s' failed (initial password '%s')
-Users_Removed                           Removed user '%s'
-Users_Removed_Failed                    Failed to remove user '%s'
-Users_Removed_Failed_Admin              Failed to remove user '%s': disable admin rights first
-Users_SingleUserMode                    Single user mode (POPFile Classic)
-Users_Accounts                          Associated POP3 Accounts
-Users_AddAccount                        Add POP3 account (host:user)
-Users_Bad_Account                       The new account name must be in the form host:user
-Users_Duplicate_Account                 Failed to add the account because it is assigned to another user
-Users_Failed_Account                    Failed to add the account
-
 History_Filter                          &nbsp;(just showing bucket <font color="%s">%s</font>)
-History_FilterBy                        Filter&nbsp;By
+History_FilterBy                        Filter By
 History_Search                          &nbsp;(searched for from/subject %s)
 History_Title                           Recent Messages
 History_Jump                            Jump to page
@@ -238,6 +201,7 @@ History_Already                         Reclassified as <font color="%s">%s</fon
 History_RemoveAll                       Remove All
 History_RemovePage                      Remove Page
 History_RemoveChecked                   Remove Checked
+History_Remove                          To remove entries in the history click
 History_SearchMessage                   Search From/Subject
 History_NoMessages                      No messages
 History_ShowMagnet                      magnetized
@@ -249,18 +213,17 @@ History_ChangedClass                    Would now classify as
 History_Purge                           Expire Now
 History_Increase                        Increase
 History_Decrease                        Decrease
-History_Column_Characters               History column width
+History_Column_Characters               Change width of From, To, Cc and Subject columns
 History_Automatic                       Automatic
 History_Reclassified                    Reclassified
 History_Size_Bytes                      %d&nbsp;B
 History_Size_KiloBytes                  %.1f&nbsp;KB
 History_Size_MegaBytes                  %.1f&nbsp;MB
 
-Password_Title                          Login
-Password_Password                       Password
-Password_Username                       User name
-Password_Go                             Login
-Password_Error1                         Incorrect user name or password
+Password_Title                          Password
+Password_Enter                          Enter password
+Password_Go                             Go!
+Password_Error1                         Incorrect password
 
 Security_Error1                         The port must be a number between 1 and 65535
 Security_Stealth                        Stealth Mode/Server Operation
@@ -296,12 +259,11 @@ Magnet_Error3                           Create new magnet '%s' in bucket '%s'
 Magnet_CurrentMagnets                   Current Magnets
 Magnet_Message1                         The following magnets cause mail to always be classified into the specified bucket.
 Magnet_CreateNew                        Create New Magnet
-Magnet_Explanation                      <b>These types of magnets are available:</b> <ul><li><b>From address or name:</b> For example: john@company.com to match a specific address, <br />company.com to match everyone who sends from company.com, <br />John Doe to match a specific person, John to match all Johns</li><li><b>To/Cc address or name:</b> Like a From: magnet but for the To:/Cc: address in a message</li> <li><b>Subject words:</b> For example: hello to match all messages with hello in the subject</li></ul>
+Magnet_Explanation                      These types of magnets are available:</b> <ul><li><b>From address or name:</b> For example: john@company.com to match a specific address, <br />company.com to match everyone who sends from company.com, <br />John Doe to match a specific person, John to match all Johns</li><li><b>To/Cc address or name:</b> Like a From: magnet but for the To:/Cc: address in a message</li> <li><b>Subject words:</b> For example: hello to match all messages with hello in the subject</li></ul>
 Magnet_MagnetType                       Magnet type
 Magnet_Value                            Values
 Magnet_Always                           Always goes to bucket
 Magnet_Jump                             Jump to magnet page
-Magnet_Note                             Magnets should be used sparingly since they bypass POPFile's learning process.  Using magnets makes POPFile take longer to achieve high accuracy.<br /><br />Read more about magnets at the <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?Glossary/AMagnet">POPFile Documentation Project</a>.
 
 Bucket_Error1                           Bucket names can only contain the letters a to z in lower case, numbers 0 to 9,  plus - and _
 Bucket_Error2                           Bucket named %s already exists
@@ -327,7 +289,6 @@ Bucket_ClassificationFP                 False Positives
 Bucket_ClassificationFN                 False Negatives
 Bucket_ResetStatistics                  Reset Statistics
 Bucket_LastReset                        Last Reset
-Bucket_MessagesPerDay                   Average Messages Per Day
 Bucket_CurrentColor                     %s current color is %s
 Bucket_SetColorTo                       Set %s color to %s
 Bucket_Maintenance                      Maintenance
@@ -367,7 +328,7 @@ View_Chart                              Decision Chart
 
 Windows_TrayIcon                        Show POPFile icon in Windows system tray?
 Windows_Console                         Run POPFile in a console window?
-Windows_NextTime                        This change will not take effect until the next time you start POPFile
+Windows_NextTime                        <p><font color="red">This change will not take effect until the next time you start POPFile</font>
 
 Header_MenuSummary                      This table is the navigation menu which allows access to each of the different pages of the control center.
 History_MainTableSummary                This table shows the sender and subject of recently received messages and allows them to be reviewed and reclassified.  Clicking on the subject line will show the full message text, along with information about why it was classified as it was.  The 'Should be' column allows you to specify which bucket the message belongs in, or to undo that change.  The 'Delete' column allows you to delete specific messages from the history if you don't need them anymore.
@@ -384,11 +345,9 @@ Configuration_MainTableSummary          This table contains a number of forms to
 Configuration_InsertionTableSummary     This table contains buttons that determine whether or not certain modifications are made to the headers or subject line of the message before it is passed on to the message client.
 Security_MainTableSummary               This table provides sets of controls that affect the security of the overall configuration of POPFile, whether it should automatically check for updates to the program, and whether statistics about POPFile's performance should be sent to the central datastore of the program's author for general information.
 Advanced_MainTableSummary               This table provides a list of words that POPFile ignores when classifying messages due to their relative frequency in messages in general.  They are organized per row according to the first letter of the words.
-Users_AccountTableSummary               This table provides a list of POP3 accounts that are associated with the user being edited.
 
 Imap_Bucket2Folder                      Mail for bucket '<b>%s</b>' goes to folder
 Imap_MapError                           You cannot map more than one bucket to a single folder!
-Imap_MapUpdated                         Mapped bucket '%s' to folder '%s'.
 Imap_Server                             IMAP server hostname:
 Imap_ServerNameError                    Please enter the server's hostname!
 Imap_Port                               IMAP Server port:
@@ -397,114 +356,22 @@ Imap_Login                              IMAP account login:
 Imap_LoginError                         Please enter a user/login name!
 Imap_Password                           Password for IMAP account:
 Imap_PasswordError                      Please enter a password for the server!
-Imap_ConnectionDetailsUpdated           The IMAP connection details were updated. Please refresh the list of folders next.
 Imap_Expunge                            Expunge deleted messages from watched folders.
 Imap_Interval                           Update interval in seconds:
 Imap_IntervalError                      Please enter an interval between 10 and 3600 seconds.
-Imap_OptionsUpdated                     IMAP options were successfully updated.
+Imap_Bytelimit                          Bytes per message to use for classification. Enter 0 (Null) for the complete message:
+Imap_BytelimitError                     Please enter a number.
 Imap_RefreshFolders                     Refresh list of folders
 Imap_Now                                now!
 Imap_UpdateError1                       Could not login. Verify your login name and password, please.
 Imap_UpdateError2                       Failed to connect to server. Please check the host name and port and make sure you are online.
 Imap_UpdateError3                       Please configure the connection details first.
-Imap_UpdateOK                           Successfully read the list of mailboxes/folders on the server.
 Imap_NoConnectionMessage                Please configure the connection details first. After you have done that, more options will be available on this page.
 Imap_WatchMore                          a folder to list of watched folders
-Imap_WatchedFolderAdded                 Another folder was added to the list of watched folders. Please choose the desired folder now.
 Imap_WatchedFolder                      Watched folder no
-Imap_WatchedFoldersUpdated              Updated the list of watched folders
-Imap_WatchedFolderRemoved               Removed folder '%s' from list of watched folders
 
 Shutdown_Message                        POPFile has shut down
 
 Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile missclassified to the correct bucket. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFile Documentation Project</a>.
 Help_Bucket_Setup                       POPFile requires at least two buckets in addition to the "unclassified" pseudo-bucket. What makes POPFile unique is that it can classify email more than that, you can have any number of buckets. A simple setup would be a "spam", "personal", and a "work" bucket.
 Help_No_More                            Don't show this again
-
-# Tooltips used in title attribute of parts of the UI
-tip_Menu_History                        View and reclassify email that POPFile has processed
-tip_Menu_Buckets                        Manage buckets and browse classification statistics
-tip_Menu_Magnets                        Manage simple filters that bypass the Bayesian filtering system
-tip_Menu_Admin                          Configuration options
-tip_Menu_Users                          User management
-tip_Menu_Advanced                       Advanced configuration settings
-
-tip_History_RecentNum                   Number of messages matching current Search and Filter
-tip_History_Column                      Sort by this column
-tip_History_Reclassify                  Apply bucket corrections
-tip_History_Search                      Find matches in the From address or Subject
-tip_History_Filter                      Limit the view to the items in the selected bucket
-tip_History_SearchNegate                Invert both the Search and Filter
-tip_History_SearchSubmit                Submit Search and Filter
-tip_History_SearchReset                 Clear Search and Filter
-tip_History_RemoveAll                   Remove all messages from history (matching Search and Filter)
-tip_History_RemoveChecked               Remove selected messages from history
-tip_History_RemovePage                  Remove messages on this page from history
-tip_History_RemoveColumn                Remove column
-tip_History_MoveLeft                    Move left
-tip_History_MoveRight                   Move right
-tip_History_Sort                        Click to sort on this column
-
-tip_Bucket_BucketName                   View bucket details
-tip_Bucket_Distinct                     Unique words in each bucket
-tip_Bucket_SubjectMod                   Insert bucket name to the begining of the subject.  For clients that can not use the X-Text-Classification header
-tip_Bucket_XTCHeader                    Insert an "invisible" header that most mail clients can use to apply a rule based on POPFile's classification
-tip_Bucket_XPLHeader                    Insert a header with a link to the message to allow for quickly reclassifing a message
-tip_Bucket_Quarantine                   Islolate potentially dangerous email by placing it in attachment
-tip_Bucket_Color                        Select a color for each bucket
-tip_Bucket_Lookup                       Look up the probability and frequency of a word in all buckets
-tip_Bucket_WordCount                    Number and percentage of total words in each bucket
-tip_Bucket_Create                       Create a new bucket
-tip_Bucket_Delete                       Remove a bucket and its training
-tip_Bucket_Rename                       Rename a bucket
-tip_Bucket_FalsePos                     Messages that were incorrectly placed in this bucket
-tip_Bucket_FalseNeg                     Messages that were incorrectly NOT placed in this bucket
-
-tip_Magnet_Type                         Message header to match
-tip_Magnet_Value                        Text or address to match
-tip_Magnet_Bucket                       Bucket to send matches to
-
-tip_Config_Skin                         Change the look of POPFile
-tip_Config_Language                     Change the interface language
-tip_Config_HistoryColumns               Add columns you want to display in message history
-tip_Config_PageSize                     Number of messages to display per page
-tip_Config_Days                         Number of days to keep messages in history
-tip_Config_Purge                        Purge older messages now
-tip_Config_HistoryWidth                 Adjust size of history columns
-tip_Config_ColumnIncrease               Increase width of columns
-tip_Config_ColumnDecrease               Decrease width of columns
-tip_Config_ColumnAuto                   Reset column width based on current columns
-tip_Config_HideBar                      Hide configuration bar
-tip_Config_ShowBar                      Show configuration bar
-
-tip_Admin_AcceptRemoteHTTP              Allow UI access from another machine
-tip_Admin_AcceptRemotePOP3              Allow POP3 mail dowload from another machine
-tip_Admin_Password                      Add a password to limit access to POPFile
-tip_Admin_UpdateCheck                   0.22 text should be put back
-tip_Admin_ReportStats                   0.22 text should be put back
-
-tip_Users_Remove                        Delete user from POPFile
-
-tip_Footer_HomePage                     Visit the POPFile home page
-tip_Footer_Manual                       The original POPFile documentation (slightly outdated)
-tip_Footer_Wiki                         POPFile's documentation wiki
-tip_Footer_FAQ                          POPFile Frequently Asked Questions
-tip_Footer_Version                      POPFile version number
-tip_Footer_Login                        Date and time last accessed by this user
-tip_Footer_RFE                          Have an idea to improve POPFile? Let us know.
-tip_Footer_MailingList                  Want to hear about changes to POPFile?  Sign up.
-tip_Footer_FeedMe                       Like POPFile?  Contribute to making it more successful.
-
-# Jim's Bucket Stats stuff
-Words                                   Words
-Percent                                 Percent
-Header_ConfigurationShort               Configure
-Footer_HomePage_short                   Home Page
-Footer_QuickStart                       Quick Start
-Footer_WikiShort                        Documents
-Bucket_BreakEmailsClassifiedUpper       Messages<br>Classified
-Bucket_ClassificationErrorsUpper        Classification Errors
-Bucket_BreakClassificationFP            False<br>Positives
-Bucket_BreakClassificationFN            False<br>Negatives
-Bucket_HitRate                          Hit<br>Rate
-Bucket_StrikeRate                       Strike<br>Rate

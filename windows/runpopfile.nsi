@@ -10,7 +10,7 @@
 #                    Capture utility (if it is available) whenever the 'windows-console'
 #                    mode is selected in 'popfile.cfg'.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -105,7 +105,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.1.16"
+  !define C_PFI_VERSION   "0.1.17"
 
   !define C_OUTFILE       "runpopfile.exe"
 
@@ -152,7 +152,7 @@
   VIAddVersionKey "ProductName"             "Run POPFile"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Enhanced front-end for POPFile starter program"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -191,10 +191,10 @@ Section default
 
   ; Need to be able to confirm ownership when accessing the HKCU data
 
-	ClearErrors
-	UserInfo::GetName
-	IfErrors default_name
-	Pop ${L_WINUSERNAME}
+  ClearErrors
+  UserInfo::GetName
+  IfErrors default_name
+  Pop ${L_WINUSERNAME}
   StrCmp ${L_WINUSERNAME} "" 0 find_popfile
 
 default_name:

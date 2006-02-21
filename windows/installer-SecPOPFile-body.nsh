@@ -7,7 +7,7 @@
 #                                   The non-library functions used in this file are contained
 #                                   in a separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -193,12 +193,32 @@ save_HKCU_root_sfn:
   File "${C_RELEASE_NOTES}"
   CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_README}.txt" "$G_ROOTDIR\${C_README}.txt"
 
+  ; The experimental 'setup-repack587.exe' installer installed some NSIS-based replacements
+  ; for the non-service EXE files plus renamed versions of the old 0.22.2 EXE files. These
+  ; old ActivePerl 5.8.4 files can now be deleted as this installer contains versions based
+  ; upon ActivePerl 5.8.7.
+
+  Delete "$G_ROOTDIR\popfile-584.exe"
+  Delete "$G_ROOTDIR\popfilef-584.exe"
+  Delete "$G_ROOTDIR\popfileb-584.exe"
+  Delete "$G_ROOTDIR\popfileif-584.exe"
+  Delete "$G_ROOTDIR\popfileib-584.exe"
+  Delete "$G_ROOTDIR\popfile-service-584.exe"
+  
+  ; The experimental 'setup-repack587.exe' installer had to use 'perlmsgcap.exe' since the
+  ; NSIS-based replacements were not compatible with the standard "Message Capture" utility
+
+  Delete "$G_ROOTDIR\perlmsgcap.exe"
+
+  ; Install the POPFile EXE files
+  
   File "..\engine\popfile.exe"
   File "..\engine\popfilef.exe"
   File "..\engine\popfileb.exe"
   File "..\engine\popfileif.exe"
   File "..\engine\popfileib.exe"
   File "..\engine\popfile-service.exe"
+
   File /nonfatal "/oname=pfi-stopwords.default" "..\engine\stopwords"
 
   File "runpopfile.exe"
@@ -209,9 +229,9 @@ save_HKCU_root_sfn:
   File /nonfatal "test\pfidbstatus.exe"
   File /nonfatal "test\pfidiag.exe"
   File "msgcapture.exe"
-
+  
   IfFileExists "$G_ROOTDIR\pfimsgcapture.exe" 0 app_paths
-  Delete "$G_ROOTDIR\pfimsgcapture.exe"
+  Delete "$G_ROOTDIR\pfimsgcapture.exe"  
   File "/oname=pfimsgcapture.exe" "msgcapture.exe"
 
 app_paths:
@@ -224,13 +244,15 @@ app_paths:
   SetOutPath "$G_ROOTDIR"
 
   File "..\engine\popfile.pl"
-  File "..\engine\popfile-check-setup.pl"
   File "..\engine\popfile.pck"
   File "..\engine\insert.pl"
   File "..\engine\bayes.pl"
   File "..\engine\pipe.pl"
 
   File "..\engine\favicon.ico"
+
+  File "..\engine\pix.gif"
+  File "..\engine\otto.png"
 
   SetOutPath "$G_ROOTDIR\Classifier"
   File "..\engine\Classifier\Bayes.pm"
@@ -267,7 +289,6 @@ install_schema:
 
   SetOutPath "$G_ROOTDIR\POPFile"
   File "..\engine\POPFile\MQ.pm"
-  File "..\engine\POPFile\Database.pm"
   File "..\engine\POPFile\History.pm"
   File "..\engine\POPFile\Loader.pm"
   File "..\engine\POPFile\Logger.pm"

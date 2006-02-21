@@ -4,10 +4,12 @@
 <TMPL_IF NAME="If_Show_Bucket_Help">
 
 <div class="helpMessage">
-    <TMPL_VAR NAME="Localize_Help_Bucket_Setup">
-    <br /><br />
     <form method="post" action="/buckets">
+        <TMPL_VAR NAME="Localize_Help_Bucket_Setup">
+        <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
+        <p>
         <input type="submit" class="submit" name="nomore_bucket_help" value="<TMPL_VAR NAME="Localize_Help_No_More">" />
+        </p>
     </form>
 </div>
 
@@ -16,21 +18,20 @@
 <TMPL_IF NAME="If_Show_Training_Help">
 
 <div class="helpMessage">
-    <TMPL_VAR NAME="Localize_Help_Training">
-    <br /><br />
     <form method="post" action="/buckets">
+        <TMPL_VAR NAME="Localize_Help_Training">
+        <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
+        <p>
         <input type="submit" class="submit" name="nomore_training_help" value="<TMPL_VAR NAME="Localize_Help_No_More">" />
+        </p>
     </form>
 </div>
 
 </TMPL_IF>
 
-<table class="settingsTable" width="100%" cellpadding="10%" cellspacing="0" summary="<TMPL_VAR NAME="Localize_Bucket_MaintenanceTableSummary">">
- <tr>
-   <td class="settingsPanel" valign="top" width="33%" align="center">
-
     <form class="bucketsSwitch" action="/buckets" method="post">
-        <table width="100%" summary="<TMPL_VAR NAME="Localize_Bucket_MaintenanceTableSummary">">
+    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
+        <table class="bucketsTable" width="100%" summary="<TMPL_VAR NAME="Localize_Bucket_MaintenanceTableSummary">">
             <tr>
                 <th colspan="7" align="left">
                     <h2 class="buckets"><TMPL_VAR NAME="Localize_Bucket_Title"></h2>
@@ -67,6 +68,7 @@
             </tr>
         
             <TMPL_LOOP NAME="Corpus_Loop_Buckets">
+        
             <TMPL_IF NAME="__odd__">
         
             <tr class="rowOdd">
@@ -80,8 +82,8 @@
                 <td align="left">
         
                     <TMPL_IF NAME="Corpus_If_Bucket_Not_Pseudo">
-        
-                    <a href="/buckets?showbucket=<TMPL_VAR NAME="Corpus_Bucket">">
+
+                    <a href="/buckets?session=<TMPL_VAR NAME="Session_Key">&amp;showbucket=<TMPL_VAR NAME="Corpus_Bucket">">
         
                     </TMPL_IF>
         
@@ -176,16 +178,12 @@
                 </td>
             </tr>
         </table>
-    </form>
-</td>
-</tr>
-</table>
-<br />
+    </form><br />
 <table class="settingsTable" width="100%" cellpadding="10%" cellspacing="0" summary="<TMPL_VAR NAME="Localize_Bucket_StatisticsTableSummary">">
     <tr>
         <td class="settingsPanel" valign="top" width="33%" align="center">
             <h2 class="buckets"><TMPL_VAR NAME="Localize_Bucket_ClassificationAccuracy"></h2>
-            <table summary="" width="100%">
+            <table summary="">
                 <tr>
                     <th scope="row" align="left">
                         <TMPL_VAR NAME="Localize_Bucket_EmailsClassified">:
@@ -202,20 +200,6 @@
                         <TMPL_VAR NAME="Corpus_Error_Count">
                     </td>
                 </tr>
-
-                <TMPL_IF NAME="Corpus_If_Last_Reset">
-
-                <tr>
-                    <th scope="row" align="left">
-                        <TMPL_VAR NAME="Localize_Bucket_MessagesPerDay">:
-                    </th>
-                    <td align="right">
-                        <TMPL_VAR NAME="Corpus_PerDay_Count">
-                    </td>
-                </tr>
-
-                </TMPL_IF>
-
                 <tr>
                     <td colspan="2">
                         <hr />
@@ -237,12 +221,13 @@
                 <tr>
                     <td colspan="2" align="center">
                         <form action="/buckets" method="post">
+                            <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
                             <input type="submit" class="submit" name="reset_stats" value="<TMPL_VAR NAME="Localize_Bucket_ResetStatistics">" />
 
                             <TMPL_IF NAME="Corpus_If_Last_Reset">
 
                             <br />
-                            <TMPL_VAR NAME="Localize_Bucket_LastReset">: <TMPL_VAR NAME="Corpus_Last_Reset">
+                            (<TMPL_VAR NAME="Localize_Bucket_LastReset">: <TMPL_VAR NAME="Corpus_Last_Reset"> )
 
                             </TMPL_IF>
 
@@ -253,7 +238,7 @@
         </td>
         <td class="settingsPanel" valign="top" width="33%" align="center">
             <h2 class="buckets"><TMPL_VAR NAME="Localize_Bucket_EmailsClassifiedUpper"></h2>
-            <table summary="" width="100%">
+            <table summary="">
                 <tr>
                     <th class="bucketsLabel" scope="col" align="left">
                         <TMPL_VAR NAME="Localize_Bucket">
@@ -276,7 +261,7 @@
         </td>
         <td class="settingsPanel" width="34%" valign="top" align="center">
             <h2 class="buckets"><TMPL_VAR NAME="Localize_Bucket_WordCounts"></h2>
-            <table summary="" width="100%">
+            <table summary="">
                 <tr>
                     <th class="bucketsLabel" scope="col" align="left">
                         <TMPL_VAR NAME="Localize_Bucket">
@@ -306,6 +291,7 @@
                     <br />
                     <input name="cname" id="bucketsCreateBucket" type="text" />
                     <input type="submit" class="submit" name="create" value="<TMPL_VAR NAME="Localize_Create">" />
+                    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
                 </form>
 
                 <TMPL_IF NAME="Corpus_If_Create_Message">
@@ -334,7 +320,7 @@
                     </label>
                     <br />
                     <select name="name" id="bucketsDeleteBucket">
-                        <option value="">&nbsp;</option>
+                        <option value=""></option>
 
                         <TMPL_LOOP NAME="Corpus_Loop_Delete_Buckets">
 
@@ -346,6 +332,7 @@
 
                     </select>
                     <input type="submit" class="submit" name="delete" value="<TMPL_VAR NAME="Localize_Delete">" />
+                    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
                 </form>
 
                 <TMPL_IF NAME="Corpus_If_Delete_Message">
@@ -364,11 +351,11 @@
                     </label>
                     <br />
                     <select name="oname" id="bucketsRenameBucketFrom">
-                        <option value="">&nbsp;</option>
+                        <option value=""></option>
 
                         <TMPL_LOOP NAME="Corpus_Loop_Rename_Buckets">
 
-                        <option value="<TMPL_VAR NAME="Corpus_Rename_Bucket">" style="color:<TMPL_VAR NAME="Corpus_Rename_Bucket_Color">">
+                        <option value="<TMPL_VAR NAME="Corpus_Rename_Bucket">" style="color: <TMPL_VAR NAME="Corpus_Rename_Bucket_Color">">
                             <TMPL_VAR NAME="Corpus_Rename_Bucket">
                         </option>
 
@@ -380,6 +367,7 @@
                     </label>
                     <input type="text" id="bucketsRenameBucketTo" name="newname" />
                     <input type="submit" class="submit" name="rename" value="<TMPL_VAR NAME="Localize_Rename">" />
+                    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
                 </form>
 
                 <TMPL_IF NAME="Corpus_If_Rename_Message">
@@ -416,6 +404,7 @@
                     <br />
                     <input name="word" id="bucketsLookup" type="text" />
                     <input type="submit" class="submit" name="lookup" value="<TMPL_VAR NAME="Localize_Lookup">" />
+                    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
                 </form>
                 <br />
             </div>
@@ -431,8 +420,8 @@
                                     <strong>
                                         <TMPL_VAR NAME="Localize_Bucket_LookupMessage2">
                                         <TMPL_VAR NAME="Corpus_Word">
-                                        <br />
                                     </strong>
+                                    <p />
                                 </caption>
                                 <tr>
                                     <th scope="col">
@@ -530,7 +519,9 @@
                                 </TMPL_LOOP>
 
                             </table>
+                            <p />
                             <TMPL_VAR NAME="Corpus_Lookup_Message">
+
                         </td>
                     </tr>
                 </table>
@@ -542,5 +533,5 @@
     </tr>
 </table>
 
-<TMPL_INCLUDE NAME="configuration-bar.thtml">
 <TMPL_INCLUDE NAME="common-bottom.thtml">
+

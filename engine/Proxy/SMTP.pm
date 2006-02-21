@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Proxy::SMTP;
 
 use Proxy::Proxy;
@@ -145,11 +145,10 @@ sub start
 #
 # child__
 #
-# The worker method that is called when we get a good connection from
-# a client
+# The worker method that is called when we get a good connection from a client
 #
 # $client   - an open stream to a SMTP client
-# $session  - administrator session
+# $session        - API session key
 #
 # ----------------------------------------------------------------------------
 sub child__
@@ -157,21 +156,16 @@ sub child__
     my ( $self, $client, $session ) = @_;
 
     # Number of messages downloaded in this session
-
     my $count = 0;
 
     # The handle to the real mail server gets stored here
-
     my $mail;
 
-    # Tell the client that we are ready for commands and identify our
-    # version number
-
+    # Tell the client that we are ready for commands and identify our version number
     $self->tee_( $client, "220 " . $self->config_( 'welcome_string' ) . "$eol" );
 
-    # Retrieve commands from the client and process them until the
-    # client disconnects or we get a specific QUIT command
-
+    # Retrieve commands from the client and process them until the client disconnects or
+    # we get a specific QUIT command
     while  ( <$client> ) {
         my $command;
 
@@ -251,7 +245,7 @@ sub child__
             if ( $self->smtp_echo_response_( $mail, $client, $command ) ) {
                 $count += 1;
 
-                my ( $class, $history_file ) = $self->classifier_()->classify_and_modify( $session, $client, $mail, 0, '', 0  );
+                my ( $class, $history_file ) = $self->{classifier__}->classify_and_modify( $session, $client, $mail, 0, '', 0  );
 
                 my $response = $self->slurp_( $mail );
                 $self->tee_( $client, $response );
@@ -354,7 +348,7 @@ sub configure_item
     }
 
 
-    $self->SUPER::configure_item( $name, $templ, $language );
+    #$self->SUPER::configure_item( $name, $templ, $language );
 }
 
 # ----------------------------------------------------------------------------
@@ -373,8 +367,6 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ($status, $error, $changed);
-
     if ( $name eq 'smtp_fork_and_port' ) {
 
         if ( defined($$form{smtp_force_fork}) ) {
@@ -384,27 +376,24 @@ sub validate_item
         if ( defined($$form{smtp_port}) ) {
             if ( ( $$form{smtp_port} >= 1 ) && ( $$form{smtp_port} < 65536 ) ) {
                 $self->config_( 'port', $$form{smtp_port} );
-                $status = sprintf( $$language{Configuration_SMTPUpdate}, $self->config_( 'port' ) );
+                $templ->param( 'smtp_port_feedback' => sprintf( $$language{Configuration_SMTPUpdate}, $self->config_( 'port' ) ) );
              } else {
-                $error = $$language{Configuration_Error3};
+                $templ->param( 'smtp_port_feedback' => "<div class=\"error01\">$$language{Configuration_Error3}</div>" );
              }
         }
-        return( $status, $error );
     }
 
     if ( $name eq 'smtp_local' ) {
         if ( defined $$form{smtp_local} ) {
             $self->config_( 'local', $$form{smtp_local} );
         }
-        return ( $status, $error );
     }
 
     if ( $name eq 'smtp_server' ) {
         if ( defined $$form{smtp_chain_server} ) {
             $self->config_( 'chain_server', $$form{smtp_chain_server} );
-            $status = sprintf( $$language{Security_SMTPServerUpdate}, $self->config_( 'chain_server' ) );
+            $templ->param( 'smtp_server_feedback' => sprintf $$language{Security_SMTPServerUpdate}, $self->config_( 'chain_server' ) ) ;
         }
-        return( $status, $error );
     }
 
     if ( $name eq 'smtp_server_port' ) {
@@ -412,15 +401,16 @@ sub validate_item
 
             if ( ( $$form{smtp_chain_server_port} >= 1 ) && ( $$form{smtp_chain_server_port} < 65536 ) ) {
                 $self->config_( 'chain_port', $$form{smtp_chain_server_port} );
-                $status = sprintf( $$language{Security_SMTPPortUpdate}, $self->config_( 'chain_port' ) )
-            } else {
-                $error = $$language{Security_Error1};
+                $templ->param( 'smtp_port_feedback' => sprintf $$language{Security_SMTPPortUpdate}, $self->config_( 'chain_port' ) );
+            }
+            else {
+                $templ->param( 'smtp_port_feedback' => "<div class=\"error01\">$$language{Security_Error1}</div>" );
             }
         }
-        return( $status, $error );
     }
 
-    return $self->SUPER::validate_item( $name, $templ, $language, $form );
+
+    #$self->SUPER::validate_item( $name, $templ, $language, $form );
 }
 
 1;

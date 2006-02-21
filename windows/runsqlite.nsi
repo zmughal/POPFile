@@ -9,7 +9,7 @@
 #                   and sqlite3.exe for 3.x format files. This utility ensures the appropriate
 #                   utility is used to access the specified SQLite database file.
 #
-# Copyright (c) 2004-2005  John Graham-Cumming
+# Copyright (c) 2004-2006  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -74,7 +74,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.5"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.0.6"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -112,7 +112,7 @@
   VIAddVersionKey "ProductName"             "Run SQLite 2.x/3.x utility to examine a POPFile database"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Run SQLite Utility for POPFile"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
