@@ -359,6 +359,13 @@ $cl->update_tag( "faketag(|", "foo", 1, 0 );
 # glob the tests directory for files called TestMailParse\d+.msg which consist of messages
 # to be parsed with the resulting values for the words hash in TestMailParse\d+.wrd
 
+# Since the [[:alpha:]] regular expression is affected by the system locale, fix the
+# locale to 'C'.
+
+use POSIX qw( locale_h );
+my $current_locale = setlocale( LC_CTYPE );
+setlocale( LC_CTYPE, 'C' );
+
 my @parse_tests = sort glob 'TestMailParse*.msg';
 
 for my $parse_test (@parse_tests) {
@@ -396,6 +403,10 @@ for my $parse_test (@parse_tests) {
         delete $cl->{words__}{$missed};
     }
 }
+
+# Restore the system locale
+
+setlocale( LC_CTYPE, $current_locale );
 
 # Check that from, to and subject get set correctly when parsing a message
 $cl->parse_file( 'TestMailParse013.msg' );
@@ -542,12 +553,33 @@ if ( $have_text_kakasi ) {
     test_assert( $b->start() );
     $cl->{lang__} = 'Nihongo';
 
-    # TODO: test decode_string
+    # Test decode_string
+    my $original_string = 'POPFile' . pack( "H*", "a4cfbcabc6b0a5e1a1bca5ebbfb6a4eacaaca4b1a5c4a1bca5eba4c7a4b9" );
 
-    # TODO: test kakasi wakachi-gaki
+    test_assert_equal( $cl->decode_string('=?ISO-2022-JP?B?UE9QRmlsZRskQiRPPCtGMCVhITwlaz82JGpKLCQxJUQhPCVrJEckORsoQg==?='), $original_string );
+    test_assert_equal( $cl->decode_string('=?SHIFT_JIS?B?UE9QRmlsZYLNjqmTroOBgVuDi5BVguiVqoKvg2OBW4OLgsWCtw==?='), $original_string );
+    test_assert_equal( $cl->decode_string('=?UTF-8?B?UE9QRmlsZeOBr+iHquWLleODoeODvOODq+aMr+OCiuWIhuOBkeODhOODvOODq+OBp+OBmQ==?='), $original_string );
+    test_assert_equal( $cl->decode_string('=?ISO-2022-JP?Q?POPFile=1B$B$O<+F0%a!<%k?6$jJ,$1%D!<%k$G$9=1B(B?='), $original_string );
+    test_assert_equal( $cl->decode_string('=?SHIFT_JIS?Q?POPFile=82=CD=8E=A9=93=AE=83=81=81[=83=8B=90U=82=E8=95=AA=82=AF=83c=81[=83=8B=82=C5=82=B7?='), $original_string );
+    test_assert_equal( $cl->decode_string('=?UTF-8?Q?POPFile=E3=81=AF=E8=87=AA=E5=8B=95=E3=83=A1=E3=83=BC=E3=83=AB=E6=8C=AF=E3=82=8A=E5=88=86=E3=81=91=E3=83=84=E3=83=BC=E3=83=AB=E3=81=A7=E3=81=99?='), $original_string );
+
+    test_assert_equal( $cl->decode_string('=?UNKNOWN?B?UE9QRmlsZRskQiRPPCtGMCVhITwlaz82JGpKLCQxJUQhPCVrJEckORsoQg==?='), $original_string );
+    test_assert_equal( $cl->decode_string('=?ISO-2022-JP?B?UE9QRmlsZYLNjqmTroOBgVuDi5BVguiVqoKvg2OBW4OLgsWCtw==?='), $original_string );
+
+    test_assert_equal( $cl->decode_string('=?ISO-2022-JP?B?UE9QRmlsZRskQiRPPCtGMCVhITwlaxsoQg==?= =?ISO-2022-JP?B?GyRCPzYkakosJDElRCE8JWskRyQ5GyhC?='), $original_string );
+    test_assert_equal( $cl->decode_string('=?UTF-8?B?UE9QRmlsZeOBr+iHquWLleODoeODvOODqw==?= =?ISO-2022-JP?Q?=1B$B?6$jJ,$1%D!<%k$G$9=1B(B?='), $original_string );
+    test_assert_equal( $cl->decode_string('=?UTF-8?Q?POPFile=E3=81=AF=E8=87=AA=E5=8B=95=E3=83=A1=E3=83=BC=E3=83=AB?= =?UTF-8?B?5oyv44KK5YiG44GR44OE44O844Or44Gn44GZ?='), $original_string );
+
+    # Test kakasi wakachi-gaki
+
     $cl->init_kakasi();
 
-    
+    my $wakati_string = pack( "H*", "504f5046696c6520a4cf20bcabc6b020a5e1a1bca5eb20bfb6a4eacaaca4b120a5c4a1bca5eb20a4c7a4b9" );
+    test_assert_equal( $cl->parse_line_with_kakasi($original_string), $wakati_string );
+
+    $original_string = pack( "H*", "504f5046696c65a4cfbcab0a09c6b0a5e1a1bca5ebbfb609a4ea0dcaac202020a4b1a5c4a1bca5eba4c7a4b9" );
+    $wakati_string = pack( "H*", "504f5046696c6520a4cf20bcabc6b00a09a5e1a1bca5eb20bfb6a4eacaaca4b1090d202020a5c4a1bca5eb20a4c7a4b9" );
+    test_assert_equal( $cl->parse_line_with_kakasi($original_string), $wakati_string );
 
     $cl->close_kakasi();
 
