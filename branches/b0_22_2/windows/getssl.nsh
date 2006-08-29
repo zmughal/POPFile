@@ -8,6 +8,14 @@
 #                0.22 (or later) installation. This 'include' file ensures that these two
 #                programs download and install the same SSL files.
 #
+#                On 18 July 2006 the University of Winnipeg repository was updated to provide
+#                IO::Socket::SSL v0.99 which is not compatible with POPFile so a patch will be
+#                applied to downgrade the relevant file to the compatible v0.97 version.
+#
+#                On 18 August 2006 the University of Winnipeg repository was updated to supply
+#                IO::Socket::SSL v0.999 which is not compatible with POPFile so a patch will
+#                be applied to downgrade the relevant file to the compatible v0.97 version.
+#
 # Copyright (c) 2005-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
@@ -30,8 +38,25 @@
 # in the OpenSSL Toolkit (http://www.openssl.org/)
 #--------------------------------------------------------------------------
 
-; This version of the script has been tested with the "NSIS 2" compiler (final),
-; released 7 February 2004, with no "official" NSIS patches applied.
+  ; This version of the script has been tested with the "NSIS v2.19" compiler,
+  ; released 6 August 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.19-setup.exe?download
+
+  ;------------------------------------------------
+  ; This script requires the 'Inetc' NSIS plugin
+  ;------------------------------------------------
+
+  ; This script uses a special NSIS plugin (inetc) to download the SSL files. This plugin
+  ; has much better proxy support than the standard NSISdl plugin shipped with NSIS.
+  ;
+  ; The 'NSIS Wiki' page for the 'Inetc' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/Inetc_plug-in
+  ;
+  ; To compile this script, copy the 'inetc.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with the inetc.dll plugin timestamped 24 June 2006 12:40
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -51,15 +76,25 @@
   ;
   ; Tested with versions 1.0.5, 1.0.6, 1.0.7 and 1.0.8 of the 'untgz' plugin.
 
+  ;------------------------------------------------
+  ; How the SSL.pm patch was created
+  ;------------------------------------------------
+
+  ; The patch used to downgrade either SSL.pm v0.99 or SSL.pm v0.999 to v0.97 was created
+  ; using the VPATCH package which is supplied with NSIS. This special patch was made using
+  ; the commands:
+  ;
+  ;   GenPat.exe SSL_0.99.pm SSL_0.97.pm SSL_pm.pat
+  ;   GenPat.exe SSL_0.999.pm SSL_0.97.pm SSL_pm.pat
+  ;
+  ; where SSL_0.97.pm  was the SSL.pm file from v0.97  of the IO::Socket:SSL module
+  ;  and  SSL_0.99.pm  was the SSL.pm file from v0.99  of the IO::Socket:SSL module
+  ;  and  SSL_0.999.pm was the SSL.pm file from v0.999 of the IO::Socket:SSL module
 
 #--------------------------------------------------------------------------
 # URLs used to download the necessary SSL support archives and files
 # (all from the University of Winnipeg Repository)
 #--------------------------------------------------------------------------
-
-  ; To check if the target computer is connected to the Internet, we ping this address:
-
-  !define C_UWR_URL_TO_PING   "http://theoryx5.uwinnipeg.ca/"
 
   ; In addition to some extra Perl modules, POPFile's SSL support needs two OpenSSL DLLs.
 
@@ -93,7 +128,7 @@
 !else
     Section "SSL Support" SecSSL
 
-      ; The stand-alone utility includes a compressed set of POPFile 0.22.x compatible SSL
+      ; The stand-alone utility includes a compressed set of POPFile pre-0.22.3 compatible SSL
       ; support files so we increase the size estimate to take the necessary unpacking into
       ; account (and assume that there will not be a significant difference in the space
       ; required if the wizard decides to download the SSL support files instead).
@@ -108,6 +143,37 @@
 
   !ifdef ADDSSL
 
+      ; For POPFile 0.22.3 (and later) releases this stand-alone utility will download and,
+      ; if necessary, patch the SSL support files from the University of Winnipeg repository.
+      ;
+      ; However there will always be some delay between the repository being updated with SSL
+      ; files which are not compatible with POPFile and the generation of an updated version
+      ; of this stand-alone utility which fixes the SSL compatibility problem.
+      ;
+      ; The /BUILTIN command-line switch provides an easy way to force the installation of
+      ; the old SSL support files normally used only for the POPFile 0.22.0, 0.22.1 and
+      ; 0.22.2 releases as a workaround until this utility can be updated to handle the new
+      ; SSL support files.
+
+      Call PFI_GetParameters
+      Pop ${L_RESULT}
+      StrCmp ${L_RESULT} "/BUILTIN" 0 look_for_minimal_Perl
+      DetailPrint "The '/BUILTIN' option was supplied on the command-line"
+      Goto assume_pre_0_22_3
+
+    look_for_minimal_Perl:
+
+      ; The stand-alone utility may be used to add SSL support to an 0.22.x installation
+      ; which is not compatible with the files in the University of Winnipeg repository,
+      ; so we check the minimal Perl's version number to see if we should use the built-in
+      ; SSL files instead of downloading the most up-to-date ones.
+
+      IfFileExists "$G_ROOTDIR\perl58.dll" check_Perl_version
+      DetailPrint "Assume pre-0.22.3 installation (perl58.dll not found in '$G_ROOTDIR' folder)"
+      Goto assume_pre_0_22_3
+
+    check_Perl_version:
+
       !define L_VER_X    $R1     ; We check only the first three fields in the version number
       !define L_VER_Y    $R2     ; but the code could be further simplified by merely testing
       !define L_VER_Z    $R3     ; the 'build number' field (the field we currently ignore)
@@ -116,16 +182,6 @@
       Push ${L_VER_Y}
       Push ${L_VER_Z}
 
-      ; The stand-alone utility may be used to add SSL support to an 0.22.x installation
-      ; which is not compatible with the files in the University of Winnipeg repository,
-      ; so we check the minimal Perl's version number to see if we should use the built-in
-      ; SSL files instead of downloading the most up-to-date ones.
-
-      IfFileExists "$G_ROOTDIR\perl58.dll" check_Perl_version
-      DetailPrint "Assume 0.22.x installation (perl58.dll not found in '$G_ROOTDIR' folder)"
-      Goto assume_0_22_x
-
-    check_Perl_version:
       GetDllVersion "$G_ROOTDIR\perl58.dll" ${L_VER_Y} ${L_VER_Z}
       IntOp ${L_VER_X} ${L_VER_Y} / 0x00010000
       IntOp ${L_VER_Y} ${L_VER_Y} & 0x0000FFFF
@@ -154,7 +210,7 @@
 
       StrCmp ${L_RESULT} "download" download_ssl
 
-    assume_0_22_x:
+    assume_pre_0_22_3:
 
       ; Pretend we've just downloaded these files from the repository
 
@@ -171,42 +227,6 @@
       DetailPrint "therefore the latest versions of the SSL files will be downloaded"
       DetailPrint ""
   !endif
-
-  SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_PROG_CHECKINTERNET) $(PFI_LANG_TAKE_SEVERAL_SECONDS)"
-  SetDetailsPrint listonly
-
-  !define FLAG_ICC_FORCE_CONNECTION 0x00000001
-
-  ; The system call result is returned in 'r10' (i.e. in $R0)
-
-  System::Call "wininet::InternetCheckConnection( \
-  t '${C_UWR_URL_TO_PING}', \
-  i ${FLAG_ICC_FORCE_CONNECTION}, i 0) i .r10"
-
-  StrCmp ${L_RESULT} "error" no_ie3
-  StrCmp ${L_RESULT} "0" no_connection
-  DetailPrint "InternetCheckConnection: online (${L_RESULT})"
-  Goto download
-
-no_ie3:
-  DetailPrint "InternetCheckConnection: no IE3"
-  Goto manual_connect
-
-no_connection:
-  DetailPrint "InternetCheckConnection: offline"
-
-manual_connect:
-  DetailPrint "InternetCheckConnection: manual connect requested"
-  MessageBox MB_OKCANCEL|MB_ICONINFORMATION "$(PFI_LANG_MB_INTERNETCONNECT)" IDOK download
-  DetailPrint "InternetCheckConnection: cancelled by user"
-  !ifdef INSTALLER
-      Goto installer_error_exit
-  !else
-      Goto error_exit
-  !endif
-
-download:
 
   ; Download the archives and OpenSSL DLLs
 
@@ -253,7 +273,53 @@ install_SSL_support:
   DetailPrint "$(PFI_LANG_PROG_FILEEXTRACT)"
   SetDetailsPrint listonly
   untgz::extractFile -d "$G_PLS_FIELD_1" "$PLUGINSDIR\IO-Socket-SSL.tar.gz" "SSL.pm"
-  StrCmp ${L_RESULT} "success" label_a error_exit
+  StrCmp ${L_RESULT} "success" 0 error_exit
+
+  ; If IO::Socket::SSL v0.99 has been downloaded and installed, apply the patch which
+  ; downgrades the SSL.pm file from v0.99 to v0.97 to make it compatible with POPFile
+
+  DetailPrint ""
+  DetailPrint "$(PFI_LANG_SSLPREPAREPATCH)"
+
+  SetDetailsPrint none
+  !ifdef INSTALLER
+    File "/oname=$PLUGINSDIR\SSL_pm.pat" "SSL_pm.pat"
+  !else
+    File "/oname=$PLUGINSDIR\SSL_pm.pat" "..\SSL_pm.pat"
+  !endif
+  SetDetailsPrint listonly
+
+  DetailPrint ""
+  vpatch::vpatchfile "$PLUGINSDIR\SSL_pm.pat" "$G_PLS_FIELD_1\SSL.pm" "$PLUGINSDIR\SSL_v097.pm"
+  Pop $G_PLS_FIELD_2
+
+  SetDetailsPrint both
+  DetailPrint "$(PFI_LANG_SSLPATCHSTATUS)"
+  SetDetailsPrint listonly
+  DetailPrint ""
+
+  StrCmp $G_PLS_FIELD_2 "No suitable patches were found" label_a
+  StrCmp $G_PLS_FIELD_2 "OK" 0 show_downgrade_status
+  !insertmacro PFI_BACKUP_123_DP "$G_PLS_FIELD_1" "SSL.pm"
+  SetDetailsPrint none
+  Rename "$PLUGINSDIR\SSL_v097.pm" "$G_PLS_FIELD_1\SSL.pm"
+  IfFileExists "$G_PLS_FIELD_1\SSL.pm" downgrade_success
+  Rename "$G_PLS_FIELD_1\SSL.pm.bk1" "$G_PLS_FIELD_1\SSL.pm"
+  SetDetailsPrint listonly
+  DetailPrint ""
+  SetDetailsPrint both
+  DetailPrint "$(PFI_LANG_SSLPATCHFAILED)"
+  Goto label_a
+
+downgrade_success:
+  SetDetailsPrint listonly
+  DetailPrint "$(PFI_LANG_SSLPATCHCOMPLETED)"
+  DetailPrint ""
+
+show_downgrade_status:
+  !ifdef ADDSSL
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_SSLPATCHSTATUS)"
+  !endif
 
 label_a:
   DetailPrint ""
@@ -334,7 +400,11 @@ check_bs_file:
   ; (to ensure all of the $G_MPLIBDIR\auto\Net\SSLeay\SSLeay.* files exist)
 
   IfFileExists "$G_PLS_FIELD_1\SSLeay.bs" done
-  File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "zerobyte.file"
+  !ifdef INSTALLER
+    File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "zerobyte.file"
+  !else
+    File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "..\zerobyte.file"
+  !endif
 
 done:
   DetailPrint ""
@@ -380,9 +450,9 @@ Function GetSSLFile
   StrCpy $G_PLS_FIELD_2 "$G_SSL_FILEURL" $G_PLS_FIELD_2
   DetailPrint ""
   DetailPrint "$(PFI_LANG_PROG_STARTDOWNLOAD)"
-  NSISdl::download ${C_NSISDL_TRANSLATIONS} "$G_SSL_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1"
+  inetc::get /RESUME "$(PFI_LANG_MB_CHECKINTERNET)" ${C_NSISDL_TRANSLATIONS} "$G_SSL_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1" /END
   Pop $G_PLS_FIELD_2
-  StrCmp $G_PLS_FIELD_2 "success" file_received
+  StrCmp $G_PLS_FIELD_2 "OK" file_received
   SetDetailsPrint both
   DetailPrint "$(PFI_LANG_MB_NSISDLFAIL_1)"
   SetDetailsPrint listonly
