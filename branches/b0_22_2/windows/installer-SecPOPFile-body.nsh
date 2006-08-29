@@ -204,14 +204,14 @@ save_HKCU_root_sfn:
   Delete "$G_ROOTDIR\popfileif-584.exe"
   Delete "$G_ROOTDIR\popfileib-584.exe"
   Delete "$G_ROOTDIR\popfile-service-584.exe"
-  
+
   ; The experimental 'setup-repack587.exe' installer had to use 'perlmsgcap.exe' since the
   ; NSIS-based replacements were not compatible with the standard "Message Capture" utility
 
   Delete "$G_ROOTDIR\perlmsgcap.exe"
 
   ; Install the POPFile EXE files
-  
+
   File "..\engine\popfile.exe"
   File "..\engine\popfilef.exe"
   File "..\engine\popfileb.exe"
@@ -229,9 +229,9 @@ save_HKCU_root_sfn:
   File /nonfatal "test\pfidbstatus.exe"
   File /nonfatal "test\pfidiag.exe"
   File "msgcapture.exe"
-  
+
   IfFileExists "$G_ROOTDIR\pfimsgcapture.exe" 0 app_paths
-  Delete "$G_ROOTDIR\pfimsgcapture.exe"  
+  Delete "$G_ROOTDIR\pfimsgcapture.exe"
   File "/oname=pfimsgcapture.exe" "msgcapture.exe"
 
 app_paths:
@@ -467,6 +467,8 @@ silent_shutdown:
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" "$G_ROOTDIR\uninstall.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "InstallLocation" "$G_ROOTDIR"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoModify" "1"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
@@ -478,6 +480,8 @@ use_HKLM:
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" "$G_ROOTDIR\uninstall.exe"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "InstallLocation" "$G_ROOTDIR"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoModify" "1"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
