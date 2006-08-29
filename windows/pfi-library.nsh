@@ -57,7 +57,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.1.12"
+  !define C_PFI_LIBRARY_VERSION     "0.2.0"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -514,7 +514,7 @@
 !endif
 
 
-!ifndef ADDSSL & BACKUP
+!ifndef BACKUP
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParameters
     #
@@ -1219,6 +1219,23 @@
 # The !insertmacro PFI_DumpLog "" and !insertmacro PFI_DumpLog "un." commands are included in this file
 # so NSIS scripts can use 'Call PFI_DumpLog' and 'Call un.PFI_DumpLog' without additional preparation.
 #
+#--------------------------------------------------------------------------
+# This macro uses a plugin which is not distributed with the NSIS compiler
+#--------------------------------------------------------------------------
+# This macro uses a special NSIS plugin (DumpLog) to dump the log contents into a text file.
+# Originally a script-based method was used but it could take several seconds to save the log
+# (the plugin saves the file almost instantly).
+#
+# The 'NSIS Wiki' page for the 'DumpLog' plugin (description, example and download links):
+# http://nsis.sourceforge.net/DumpLog_plugin
+#
+# To install this plugin, copy the 'DumpLog.dll' file to the standard NSIS plugins folder
+# (${NSISDIR}\Plugins\). The 'DumpLog' source and example files can be unzipped to the
+# appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
+#
+# Tested with version 1.0 of the 'DumpLog' plugin.
+#--------------------------------------------------------------------------
+#
 # Inputs:
 #         (top of stack)     - the full path of the file where the log will be dumped
 #
@@ -1236,61 +1253,27 @@
 !macro PFI_DumpLog UN
   Function ${UN}PFI_DumpLog
 
-      !ifndef LVM_GETITEMCOUNT
-          !define LVM_GETITEMCOUNT 0x1004
-      !endif
-      !ifndef LVM_GETITEMTEXT
-        !define LVM_GETITEMTEXT 0x102D
-      !endif
+    !define L_LOGFILE   $R9
+    !define L_RESULT    $R8
 
-      Exch $5
-      Push $0
-      Push $1
-      Push $2
-      Push $3
-      Push $4
-      Push $6
+    Exch ${L_LOGFILE}
+    Push ${L_RESULT}
 
-      FindWindow $0 "#32770" "" $HWNDPARENT
-      GetDlgItem $0 $0 1016
-      StrCmp $0 0 error
-      FileOpen $5 $5 "w"
-      StrCmp $5 "" error
-      SendMessage $0 ${LVM_GETITEMCOUNT} 0 0 $6
-      System::Alloc ${NSIS_MAX_STRLEN}
-      Pop $3
-      StrCpy $2 0
-      System::Call "*(i, i, i, i, i, i, i, i, i) i \
-                    (0, 0, 0, 0, 0, r3, ${NSIS_MAX_STRLEN}) .r1"
+    DumpLog::DumpLog "${L_LOGFILE}" .R8
+    StrCmp ${L_RESULT} 0 exit
 
-    loop:
-      StrCmp $2 $6 done
-      System::Call "User32::SendMessageA(i, i, i, i) i \
-                    ($0, ${LVM_GETITEMTEXT}, $2, r1)"
-      System::Call "*$3(&t${NSIS_MAX_STRLEN} .r4)"
-      FileWrite $5 "$4${MB_NL}"
-      IntOp $2 $2 + 1
-      Goto loop
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_SAVELOG_ERROR)\
+        ${MB_NL}${MB_NL}\
+        (${L_LOGFILE})"
 
-    done:
-      FileClose $5
-      System::Free $1
-      System::Free $3
-      Goto exit
+  exit:
+    Pop ${L_RESULT}
+    Pop ${L_LOGFILE}
 
-    error:
-      MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_SAVELOG_ERROR)"
+    !undef L_LOGFILE
+    !undef L_RESULT
 
-    exit:
-      Pop $6
-      Pop $4
-      Pop $3
-      Pop $2
-      Pop $1
-      Pop $0
-      Pop $5
-
-    FunctionEnd
+  FunctionEnd
 !macroend
 
 !ifdef ADDSSL | BACKUP | IMAPUPDATER | INSTALLER | RESTORE
