@@ -10,11 +10,10 @@
 #                   (A) Requires the following programs (built using NSIS):
 #
 #                       (1) adduser.exe     (NSIS script: adduser.nsi)
-#                       (2) ctchecks.exe    (NSIS script: ctchecks.nsi)
-#                       (3) msgcapture.exe  (NSIS script: msgcapture.nsi)
-#                       (4) runpopfile.exe  (NSIS script: runpopfile.nsi)
-#                       (5) runsqlite.exe   (NSIS script: runsqlite.nsi)
-#                       (6) stop_pf.exe     (NSIS script: stop_popfile.nsi)
+#                       (2) msgcapture.exe  (NSIS script: msgcapture.nsi)
+#                       (3) runpopfile.exe  (NSIS script: runpopfile.nsi)
+#                       (4) runsqlite.exe   (NSIS script: runsqlite.nsi)
+#                       (5) stop_pf.exe     (NSIS script: stop_popfile.nsi)
 #
 #                   (B) The following programs (built using NSIS) are optional:
 #
@@ -48,18 +47,18 @@
 #  (5) installer-Uninstall.nsh       - source for the POPFile uninstaller (uninstall.exe)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.19" compiler,
+  ; released 6 August 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.19-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef v2.19_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.19 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -67,13 +66,11 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
-  
-; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date
-; (if the default multi-language installer is compiled).
-;
-; There may be further warnings which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or
-; more language tables. The 'pfi-languages.nsh' file lists all of the language table codes
-; used by the POPFile installer and other NSIS-based utilities.
+
+; Normally no NSIS compiler warnings are expected. However there may be some warnings
+; which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or more language tables.
+; These "PFI_LANG_NSISDL_PLURAL" warnings can be safely ignored (at present only the
+; 'Japanese-pfi.nsh' file generates this warning).
 ;
 ; NOTE: The language selection menu order used in this script assumes that the NSIS MUI
 ; 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
@@ -184,7 +181,7 @@
   ; Select LZMA compression to reduce 'setup.exe' size by around 30%
   ;--------------------------------------------------------------------------
 
-  SetCompressor lzma
+  SetCompressor /solid lzma
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -367,10 +364,13 @@
 
   VIProductVersion "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Automatic email classification"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -675,6 +675,7 @@
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
+  ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
@@ -1322,7 +1323,7 @@ SubSectionEnd
 Section "-StopLog"
 
   SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_PROG_SAVELOG) $(PFI_LANG_TAKE_SEVERAL_SECONDS)"
+  DetailPrint "$(PFI_LANG_PROG_SAVELOG)"
   SetDetailsPrint listonly
   Call PFI_GetDateTimeStamp
   Pop $G_PLS_FIELD_1
@@ -1495,7 +1496,7 @@ Function GetPermissionToInstall
   !define C_NLT     "${IO_NL}\t"
 
   ; Convert the installation pathname into a string which is safe to use in the summary page
-  
+
   Push $G_ROOTDIR
   Call NSIS2IO
   Pop $G_PLS_FIELD_2
