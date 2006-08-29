@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -464,7 +464,6 @@
 
 ; Progress reports
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_CHECKINTERNET   "インターネット接続をチェックしています..."
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_STARTDOWNLOAD   "$G_PLS_FIELD_1 を $G_PLS_FIELD_2 よりダウンロードしています。"
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILECOPY        "$G_PLS_FIELD_2 をコピー中..."
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILEEXTRACT     "$G_PLS_FIELD_2 よりファイルを展開中..."
@@ -475,7 +474,7 @@
 ; Get SSL: Message Box strings used when installing SSL Support [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_INTERNETCONNECT   "SSLをサポートするのに必要なファイルはインターネットよりダウンロードします。${MB_NL}${MB_NL}インターネットに接続して'OK'ボタンをクリックするか、${MB_NL}${MB_NL}'キャンセル' ボタンを押してこの部分のインストール作業をキャンセルしてください。"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_CHECKINTERNET     "The SSL Support files will be downloaded from the Internet.${MB_NL}${MB_NL}Your Internet connection seems to be down or disabled.${MB_NL}${MB_NL}Please reconnect and click Retry to resume installation"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_1      "$G_PLS_FIELD_1 ファイルをダウンロードできませんでした。"
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_2      "(エラー: $G_PLS_FIELD_2)"
@@ -485,10 +484,20 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "SSL用のファイルをインストールできませんでした。${MB_NL}${MB_NL}再度インストールを試みるには、後で次のコマンドを実行してください。${MB_NL}${MB_NL}$G_PLS_FIELD_1 /SSL"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; Get SSL: Strings used when patching SSL.pm from IO::Socket::SSL [getssl.nsh]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPREPAREPATCH      "Downgrading SSL.pm to v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHSTATUS       "SSL.pm patch status: $G_PLS_FIELD_2"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHCOMPLETED    "SSL.pm file has been downgraded to v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHFAILED       "SSL.pm file has not been downgraded to v0.97"
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: NSISdl strings (displayed by the plugin which downloads the SSL files) [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;
-; The NSISdl plugin shows two progress bars, for example:
+; The NSISdl plugin (or the Inetc plugin operating in NSISdl-compatible mode)
+; shows two progress bars, for example:
 ;
 ;     Downloading libeay32.dll
 ;
@@ -735,6 +744,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_TEXT_2    "重要: 自動的に設定変更できるメールクライアントについては、今すぐシャットダウンして下さい。${IO_NL}${IO_NL}この機能はまだ開発途中の機能です。(例えばいくつかの Outlook アカウントは検出されないかもしれません。)${IO_NL}メールクライアントを使用する前に設定変更がうまくいったかどうか確認して下さい。"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_CANCEL    "メールクライアントの設定変更はキャンセルされました。"
+!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_NOMATCHES "No suitable email clients found"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Text used on buttons to skip configuration of email clients [adduser.nsi]
@@ -797,6 +807,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSERVER      "POP3 サーバー :"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBUSERNAME    "POP3 ユーザー名 :"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOEPORT      "POP3 ポート :"
+!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSMTPLOGIN   "SMTP username will be set to ' $G_PLS_FIELD_2'"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOLDVALUE    "現在の設定"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBQUESTION    "このアカウントの設定を POPFile 用に変更しますか？"
 
