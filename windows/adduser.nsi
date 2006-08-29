@@ -33,18 +33,18 @@
 #  (4) adduser-Uninstall.nsh   - source for the 'User Data' uninstaller (uninstalluser.exe)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.19" compiler,
+  ; released 6 August 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.19-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef v2.19_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.19 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -53,9 +53,6 @@
 
   !undef  ${NSIS_VERSION}_found
 
-; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date
-; (if the default multi-language installer is compiled).
-;
 ; NOTE: The language selection menu order used in this script assumes that the NSIS MUI
 ; 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
 ; [see 'SMALL NSIS PATCH REQUIRED' in the 'pfi-languages.nsh' file]
@@ -341,10 +338,13 @@
 
   VIProductVersion                          "${C_PFI_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "POPFile User wizard"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Add/Remove POPFile User wizard"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -1291,6 +1291,8 @@ end_autostart_set:
               "DisplayName" "${C_PFI_PRODUCT} Data ($G_WINUSERNAME)"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "UninstallString" "$G_USERDIR\uninstalluser.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "InstallLocation" "$G_USERDIR"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "NoModify" "1"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
@@ -2019,7 +2021,7 @@ check_config:
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "1" check_restore_log
   StrCpy $G_SFN_DISABLED "1"
-  
+
   ; Short file names are not supported here, so we cannot accept any path containing spaces.
 
   Push $G_USERDIR
@@ -2608,9 +2610,9 @@ show_defaults:
     StrCmp $LANGUAGE ${LANG_KOREAN} button_text
   !endif
 
-  ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
+  ; Field 5 = 'Run POPFile at startup' checkbox control
 
-  GetDlgItem $G_DLGITEM $G_HWND 1204            ; Field 5 = 'Run POPFile at startup' checkbox
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioA.ini" "Field 5" "HWND"
   CreateFont $G_FONT "MS Shell Dlg" 10 700      ; use larger & bolder version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
 
