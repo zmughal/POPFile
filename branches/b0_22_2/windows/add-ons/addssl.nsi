@@ -15,6 +15,18 @@
 #                POPFile is installed, but SSL support can be added or updated later by using
 #                the command "setup.exe /SSL" to run the installer (instead of "setup.exe").
 #
+#                On 18 July 2006 the University of Winnipeg repository was updated to provide
+#                IO::Socket::SSL v0.99 which is not compatible with POPFile so this utility
+#                will apply a patch to downgrade this to the compatible v0.97 version.
+#
+#                On 18 August 2006 the University of Winnipeg repository was updated to provide
+#                IO::Socket::SSL v0.999 which is not compatible with POPFile so this utility
+#                will apply a patch to downgrade this to the compatible v0.97 version.
+#
+#                As a temporary workaround to cope with future "SSL compatibility" issues
+#                the command-line option /BUILTIN forces the wizard to install the old SSL
+#                files which are normally only used with POPFile 0.22.0, 0.22.1 and 0.22.3.
+#
 #                The version of Module.pm distributed with POPFile 0.22.0 results in extremely
 #                slow message downloads (e.g. 6 minutes for a 2,713 byte msg) so this utility
 #                will apply a patch to update Module.pm v1.40 to v1.41 (the original file will
@@ -42,18 +54,18 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.19" compiler,
+  ; released 6 August 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.19-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef v2.19_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.19 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -61,6 +73,22 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+
+  ;------------------------------------------------
+  ; This script requires the 'Inetc' NSIS plugin
+  ;------------------------------------------------
+
+  ; This script uses a special NSIS plugin (inetc) to download the SSL files. This plugin
+  ; has much better proxy support than the standard NSISdl plugin shipped with NSIS.
+  ;
+  ; The 'NSIS Wiki' page for the 'Inetc' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/Inetc_plug-in
+  ;
+  ; To compile this script, copy the 'inetc.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with the inetc.dll plugin timestamped 24 June 2006 12:40
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -105,9 +133,29 @@
   ;   (3) ssl-0.22.x\libeay32.dll                     (dated 23-Dec-2004)
   ;   (4) ssl-0.22.x\ssleay32.dll                     (dated 23-Dec-2004)
   ;
-  ; POPFile 0.22.3 is based upon ActivePerl 5.8.7 Build 813 so it will be safe to download the
-  ; latest versions of the SSL files if the 'SSL Setup' wizard is used to add SSL support to a
-  ; system which uses a minimal Perl version of 5.8.7 or higher.
+  ; POPFile 0.22.3 and 0.22.4 are based upon ActivePerl 5.8.7 (Builds 813 & 815 respectively).
+  ; Up until 18 July 2006 is was safe for POPFile 0.22.3 and 0.22.4 to use the latest versions
+  ; of the SSL files.
+  ;
+  ; On 18 July 2006 'IO::Socket::SSL' was upgraded from v0.97 to v0.99 which causes problems
+  ; with POPFile. On 18 August 2006 'IO::Socket::SSL' was upgraded to v0.999 which also causes
+  ; POPFile problems. Therefore this utility will automatically downgrade the relevant file
+  ; from that module (SSL.pm) from either v0.99 or v0.999 to v0.97 to avoid problems.
+
+  ;------------------------------------------------
+  ; How the SSL.pm patch was created
+  ;------------------------------------------------
+
+  ; The patch used to downgrade either SSL.pm v0.99 or SSL.pm v0.999 to v0.97 was created
+  ; using the VPATCH package which is supplied with NSIS. This special patch was made using
+  ; the commands:
+  ;
+  ;   GenPat.exe SSL_0.99.pm SSL_0.97.pm SSL_pm.pat
+  ;   GenPat.exe SSL_0.999.pm SSL_0.97.pm SSL_pm.pat
+  ;
+  ; where SSL_0.97.pm  was the SSL.pm file from v0.97  of the IO::Socket:SSL module
+  ;  and  SSL_0.99.pm  was the SSL.pm file from v0.99  of the IO::Socket:SSL module
+  ;  and  SSL_0.999.pm was the SSL.pm file from v0.999 of the IO::Socket:SSL module
 
   ;------------------------------------------------
   ; How the Module.pm patch was created
@@ -115,19 +163,41 @@
 
   ; The patch used to update Module.pm v1.40 to v1.41 was created using the VPATCH package
   ; which is supplied with NSIS. The command used to create the patch was:
+  ;
   ;   GenPat.exe Module.pm Module_ssl.pm Module_ssl.pat
+  ;
   ; where Module.pm was CVS version 1.40 and Module_ssl.pm was CVS version 1.41.
+
+#--------------------------------------------------------------------------
+# Optional run-time command-line switch (used by 'addssl.exe')
+#--------------------------------------------------------------------------
+#
+# /BUILTIN
+#
+# For POPFile 0.22.3 (and later) releases this wizard will download and, if necessary, patch
+# the SSL support files from the University of Winnipeg repository. However there will always
+# be some delay between the repository being updated with SSL files which are not compatible
+# with POPFile and the generation of an updated version of this wizard.
+#
+# The /BUILTIN switch provides an easy way to force the installation of the old SSL support
+# files normally used only for the POPFile 0.22.0, 0.22.1 and 0.22.2 releases as a workaround
+# until this wizard can be updated to handle the new SSL support files.
+#
+# To force the installation of the old SSL support files use the following command:
+#
+#   addssl.exe /BUILTIN
+#
+# (the option is not case-sensitive so the command 'addssl.exe /builtin' can be used instead)
+#--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
 # Language Support NSIS Compiler Warnings
 #--------------------------------------------------------------------------
 #
-# Expect 3 compiler warnings, all related to standard NSIS language files which are
-# out-of-date (if the default multi-language 'SSL Setup' wizard is compiled).
-#
-# There may be further warnings which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or
-# more language tables. The '..\pfi-languages.nsh' file lists all of the language table codes
-# used by the POPFile installer and other NSIS-based utilities.
+# Normally no NSIS compiler warnings are expected. However there may be some warnings
+# which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or more language tables.
+# These "PFI_LANG_NSISDL_PLURAL" warnings can be safely ignored (at present only the
+# 'Japanese-pfi.nsh' file generates this warning).
 #
 # NOTE: The language selection menu order used in this script assumes that the NSIS MUI
 # 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
@@ -153,10 +223,10 @@
 ## !define PFI_VERBOSE
 
   ;--------------------------------------------------------------------------
-  ; Select LZMA compression (to generate smallest EXE file)
+  ; Select "Solid" LZMA compression (to generate smallest EXE file)
   ;--------------------------------------------------------------------------
 
-  SetCompressor lzma
+  SetCompressor /SOLID lzma
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -180,7 +250,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.1.5"
+  !define C_PFI_VERSION  "0.2.0"
 
   ; Mention the wizard's version number in the window title
 
@@ -244,10 +314,13 @@
 
   VIProductVersion                          "${C_PFI_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "POPFile SSL Setup wizard"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Installs SSL support for POPFile 0.22 or later"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -475,6 +548,8 @@
 
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
+  ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
+  ReserveFile "${NSISDIR}\Plugins\inetc.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
@@ -587,11 +662,11 @@ Section "-tidyup"
   DetailPrint ""
 
   StrCmp $G_PLS_FIELD_1 "No suitable patches were found" close_log
-  StrCmp $G_PLS_FIELD_1 "OK" 0 show_status
+  StrCmp $G_PLS_FIELD_1 "OK" 0 show_speedup_status
   !insertmacro PFI_BACKUP_123_DP "$G_ROOTDIR\POPFile" "Module.pm"
   SetDetailsPrint none
   Rename "$PLUGINSDIR\Module.ssl" "$G_ROOTDIR\POPFile\Module.pm"
-  IfFileExists "$G_ROOTDIR\POPFile\Module.pm" success
+  IfFileExists "$G_ROOTDIR\POPFile\Module.pm" speedup_success
   Rename "$G_ROOTDIR\POPFile\Module.pm.bk1" "$G_ROOTDIR\POPFile\Module.pm"
   SetDetailsPrint listonly
   DetailPrint ""
@@ -606,12 +681,12 @@ Section "-tidyup"
   DetailPrint "----------------------------------------------------"
   Abort
 
-success:
+speedup_success:
   SetDetailsPrint listonly
   DetailPrint "$(PSS_LANG_PATCHCOMPLETED)"
   DetailPrint ""
 
-show_status:
+show_speedup_status:
   MessageBox MB_OK|MB_ICONEXCLAMATION "$(PSS_LANG_PATCHSTATUS)"
 
 close_log:
