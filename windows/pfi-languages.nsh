@@ -4,7 +4,7 @@
 #                       supported by the POPFile Windows installer and its associated
 #                       utilities. This makes maintenance easier.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -63,7 +63,7 @@
 #
 # In the file ${NSISDIR}\Contrib\Modern UI\Language files\Japanese.nsh, change the value of the
 # MUI_LANGNAME string from "Japanese" to "Nihongo". For example, using the file supplied with
-# NSIS 2.0, released 7 February 2004, change line 13 from:
+# NSIS 2.19, released 6 August 2006, change line 13 from:
 #
 # !define MUI_LANGNAME "Japanese" ;(“ú–{Œê) Use only ASCII characters (if this is not possible, use the English name)
 #
@@ -110,12 +110,16 @@
   ; NOTE: The order used here assumes that the NSIS MUI 'Japanese.nsh' language file has
   ; been patched to use 'Nihongo' instead of 'Japanese' [see 'SMALL NSIS PATCH REQUIRED' above]
 
-  ; Currently a subset of the languages supported by NSIS MUI 1.70 (using the NSIS names)
+  ; Currently a subset of the languages supported by NSIS MUI 1.75 (using the NSIS names)
 
-  ; NSIS 2.0 compiler error messages use language ID codes when referring to problems with
+  ; NSIS 2.0 compiler messages use language ID codes when referring to problems with
   ; language strings, e.g.
   ;
   ;     LangString "PFI_LANG_NSISDL_PLURAL" is not set in language table of language 1041
+  ;
+  ; NSIS 2.08 (or later) compiler messages usually mention names instead of ID codes, e.g.
+  ;
+  ;     LangString "PFI_LANG_NSISDL_PLURAL" is not set in language table of language Japanese
   ;
   ; Note: 'English' is 'Language 1033'
 
