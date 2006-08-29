@@ -68,6 +68,7 @@ FunctionEnd
 # Installer Function: SetEmailClientPage (generates a custom page)
 #
 # This function is used to introduce the reconfiguration of email clients
+# (at present only a few clients can be reconfigured automatically)
 #--------------------------------------------------------------------------
 
 Function SetEmailClientPage
@@ -76,15 +77,21 @@ Function SetEmailClientPage
   !define L_CLIENT_LIST     $R8
   !define L_CLIENT_NAME     $R7
   !define L_CLIENT_TYPE     $R6   ; used to indicate if client can be reconfigured by installer
-  !define L_SEPARATOR       $R5
-  !define L_TEMP            $R4
+  !define L_RECONFIGURABLE  $R5   ; 0 = no reconfigurable clients found
+  !define L_SEPARATOR       $R4
+  !define L_TEMP            $R3
 
   Push ${L_CLIENT_INDEX}
   Push ${L_CLIENT_LIST}
   Push ${L_CLIENT_NAME}
   Push ${L_CLIENT_TYPE}
+  Push ${L_RECONFIGURABLE}
   Push ${L_SEPARATOR}
   Push ${L_TEMP}
+
+  ; Assume no suitable clients are found
+
+  StrCpy ${L_RECONFIGURABLE} "0"
 
   ; On older systems with several email clients, the email client scan can take a few seconds
   ; during which time the user may be tempted to click the 'Next' button which would result in
@@ -115,7 +122,11 @@ read_next_name:
   Call PFI_StrStr
   Pop ${L_CLIENT_TYPE}
   StrCmp ${L_CLIENT_TYPE} "" add_to_list
+
+  ; A reconfigurable client has been found (NB Some Outlook accounts cannot be reconfigured)
+
   StrCpy ${L_CLIENT_TYPE} " (*)"
+  StrCpy ${L_RECONFIGURABLE} "1"
 
   ReadRegStr ${L_TEMP} HKLM "Software\Clients\Mail\${L_CLIENT_NAME}\shell\open\command" ""
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "ClientEXE" "${L_CLIENT_NAME}" "${L_TEMP}"
@@ -144,17 +155,28 @@ display_results:
   SendMessage $HWNDPARENT ${WM_NEXTDLGCTL} $G_DLGITEM 1
   !insertmacro MUI_INSTALLOPTIONS_SHOW_RETURN
   Pop ${L_TEMP}
-  StrCmp ${L_TEMP} "back" 0 exit
+  StrCmp ${L_TEMP} "back" skip_email_pages
+  StrCmp ${L_RECONFIGURABLE} "1" exit
+
+skip_email_pages:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "ClientEXE" "ConfigStatus" "SkipAll"
 
   !insertmacro MUI_INSTALLOPTIONS_WRITE   "ioF.ini" "Settings" "NumFields" "1"
   !insertmacro MUI_INSTALLOPTIONS_WRITE   "ioF.ini" "Settings" "BackEnabled" "0"
+  StrCmp ${L_TEMP} "back" cancelled_by_user
+  !insertmacro PFI_IO_TEXT "ioF.ini" "1" "$(PFI_LANG_MAILCFG_IO_NOMATCHES)"
+  goto show_skip_page
+
+cancelled_by_user:
   !insertmacro PFI_IO_TEXT "ioF.ini" "1" "$(PFI_LANG_MAILCFG_IO_CANCEL)"
+
+show_skip_page:
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "ioF.ini"
 
 exit:
   Pop ${L_TEMP}
   Pop ${L_SEPARATOR}
+  Pop ${L_RECONFIGURABLE}
   Pop ${L_CLIENT_TYPE}
   Pop ${L_CLIENT_NAME}
   Pop ${L_CLIENT_LIST}
@@ -164,6 +186,7 @@ exit:
   !undef L_CLIENT_LIST
   !undef L_CLIENT_NAME
   !undef L_CLIENT_TYPE
+  !undef L_RECONFIGURABLE
   !undef L_SEPARATOR
   !undef L_TEMP
 
@@ -232,22 +255,27 @@ Function SetOutlookExpressPage
   ;    HKEY_CURRENT_USER\...\Internet Account Manager\Accounts\00000002
   ;    etc
 
-  !define L_ACCOUNT     $R9   ; path to the data for the current OE account (less the HKCU part)
-  !define L_ACCT_INDEX  $R8   ; used to loop through OE accounts for the current OE Identity
-  !define L_CFG         $R7   ; file handle
-  !define L_GUID        $R6   ; GUID of the current entry in HKCU\Identities list
-  !define L_GUID_INDEX  $R5   ; used to loop through the list of OE Identities
-  !define L_IDENTITY    $R4   ; plain text form of OE Identity name
-  !define L_OEDATA      $R3   ; some data (it varies) for current OE account
-  !define L_OEPATH      $R2   ; holds part of the path used to access OE account data
-  !define L_ORDINALS    $R1   ; "Identity Ordinals" flag (1 = found, 0 = not found)
-  !define L_PORT        $R0   ; POP3 Port used for an OE Account
-  !define L_STATUS      $9    ; keeps track of the status of the account we are checking
-  !define L_TEMP        $8
+  !define L_ACCOUNT       $R9   ; path to data for the current OE account (less the HKCU part)
+  !define L_ACCT_INDEX    $R8   ; used to loop through OE accounts for the current OE Identity
+  !define L_CFG           $R7   ; file handle
+  !define L_GUID          $R6   ; GUID of the current entry in HKCU\Identities list
+  !define L_GUID_INDEX    $R5   ; used to loop through the list of OE Identities
+  !define L_IDENTITY      $R4   ; plain text form of OE Identity name
+  !define L_OEDATA        $R3   ; some data (it varies) for current OE account
+  !define L_OEPATH        $R2   ; holds part of the path used to access OE account data
+  !define L_ORDINALS      $R1   ; "Identity Ordinals" flag (1 = found, 0 = not found)
+  !define L_PORT          $R0   ; POP3 Port used for an OE Account
+  !define L_STATUS        $9    ; keeps track of the status of the account we are checking
+  !define L_TEMP          $8
 
   !define L_POP3SERVER    $7
   !define L_EMAILADDRESS  $6
   !define L_USERNAME      $5
+  !define L_SMTPAUTH      $4    ; 'SMTP Use Sicily' setting from this account's registry entry
+                                ; 0 (or an empty string) = SMTP Authentication is not used,
+                                ; 2 = SMTP Authentication uses the POP3 username and password,
+                                ; 3 = SMTP Authentication uses the 'SMTP User Name' username
+  !define L_SMTPUSERNAME  $3    ; user name to be used when SMTP Authentication is employed
 
   Push ${L_ACCOUNT}
   Push ${L_ACCT_INDEX}
@@ -265,6 +293,8 @@ Function SetOutlookExpressPage
   Push ${L_POP3SERVER}
   Push ${L_EMAILADDRESS}
   Push ${L_USERNAME}
+  Push ${L_SMTPAUTH}
+  Push ${L_SMTPUSERNAME}
 
   !insertmacro MUI_HEADER_TEXT "$(PFI_LANG_EXPCFG_TITLE)" "$(PFI_LANG_EXPCFG_SUBTITLE)"
 
@@ -479,6 +509,13 @@ continue:
 
   ReadRegStr ${L_OEDATA} HKCU ${L_ACCOUNT} "Account Name"
 
+  ; If this account uses SMTP Authentication and SMTP currently uses the POP3 username
+  ; then we will need to change the SMTP settings if this account is configured to work
+  ; with POPFile (all we need to do is set up a new SMTP username)
+
+  ReadRegDWORD ${L_SMTPAUTH} HKCU ${L_ACCOUNT} "SMTP Use Sicily"
+  ReadRegStr ${L_SMTPUSERNAME} HKCU ${L_ACCOUNT} "SMTP User Name"
+
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_STATUS} "ioB.ini" "Field 8" "State"
   StrCpy ${L_TEMP} ""
   StrCmp ${L_STATUS} "" no_padding
@@ -501,6 +538,8 @@ no_padding:
   !insertmacro MUI_INSTALLOPTIONS_WRITE  "pfi-cfg.ini" "Account $G_OOELIST_INDEX" "POP3server" "${L_POP3SERVER}"
   !insertmacro MUI_INSTALLOPTIONS_WRITE  "pfi-cfg.ini" "Account $G_OOELIST_INDEX" "POP3username" "${L_USERNAME}"
   !insertmacro MUI_INSTALLOPTIONS_WRITE  "pfi-cfg.ini" "Account $G_OOELIST_INDEX" "POP3port" "${L_PORT}"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE  "pfi-cfg.ini" "Account $G_OOELIST_INDEX" "SMTPauth" "${L_SMTPAUTH}"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE  "pfi-cfg.ini" "Account $G_OOELIST_INDEX" "SMTPusername" "${L_SMTPUSERNAME}"
   !insertmacro MUI_INSTALLOPTIONS_WRITE  "pfi-cfg.ini" "Account $G_OOELIST_INDEX" "RegistryKey" "${L_ACCOUNT}"
 
   !insertmacro PFI_OOECONFIG_BEFORE_LOG  "${L_IDENTITY}"     20
@@ -530,9 +569,9 @@ display_list:
     StrCmp $LANGUAGE ${LANG_KOREAN} show_page
   !endif
 
-  ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
+  ; Field 1 = IDENTITY label (above the box)
 
-  GetDlgItem $G_DLGITEM $G_HWND 1200             ; Field 1 = IDENTITY label (above the box)
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioB.ini" "Field 1" "HWND"
   CreateFont $G_FONT "MS Shell Dlg" 8 700        ; use a 'bolder' version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
 
@@ -572,9 +611,9 @@ display_list_again:
     StrCmp $LANGUAGE ${LANG_KOREAN} show_page_again
   !endif
 
-  ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
+  ; Field 1 = IDENTITY label (above the box)
 
-  GetDlgItem $G_DLGITEM $G_HWND 1200             ; Field 1 = IDENTITY label (above the box)
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioB.ini" "Field 1" "HWND"
   CreateFont $G_FONT "MS Shell Dlg" 8 700        ; use a 'bolder' version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
 
@@ -614,6 +653,8 @@ finished_oe_config:
   FileClose $G_OOECHANGES_HANDLE
 
 exit:
+  Pop ${L_SMTPUSERNAME}
+  Pop ${L_SMTPAUTH}
   Pop ${L_USERNAME}
   Pop ${L_EMAILADDRESS}
   Pop ${L_POP3SERVER}
@@ -647,6 +688,8 @@ exit:
   !undef L_POP3SERVER
   !undef L_EMAILADDRESS
   !undef L_USERNAME
+  !undef L_SMTPAUTH
+  !undef L_SMTPUSERNAME
 
 FunctionEnd
 
@@ -852,6 +895,8 @@ next_account:
   !insertmacro MUI_INSTALLOPTIONS_WRITE    "pfi-cfg.ini" "Account ${L_TEXT_INDEX}" "POP3server" ""
   !insertmacro MUI_INSTALLOPTIONS_WRITE    "pfi-cfg.ini" "Account ${L_TEXT_INDEX}" "POP3username" ""
   !insertmacro MUI_INSTALLOPTIONS_WRITE    "pfi-cfg.ini" "Account ${L_TEXT_INDEX}" "POP3port" ""
+  !insertmacro MUI_INSTALLOPTIONS_WRITE    "pfi-cfg.ini" "Account ${L_TEXT_INDEX}" "SMTPauth" ""
+  !insertmacro MUI_INSTALLOPTIONS_WRITE    "pfi-cfg.ini" "Account ${L_TEXT_INDEX}" "SMTPusername" ""
   !insertmacro MUI_INSTALLOPTIONS_WRITE    "pfi-cfg.ini" "Account ${L_TEXT_INDEX}" "RegistryKey" ""
   IntOp ${L_TEXT_INDEX} ${L_TEXT_INDEX} + 1
   IntCmp ${L_TEXT_INDEX} 6 next_account next_account
@@ -887,6 +932,12 @@ Function CheckOutlookExpressRequests
   !define L_POP3USERNAME  $6
   !define L_POP3PORT      $5
 
+  !define L_SMTPAUTH      $4    ; 'SMTP Use Sicily' setting from this account's registry entry
+                                ; 0 (or an empty string) = SMTP Authentication is not used,
+                                ; 2 = SMTP Authentication uses the POP3 username and password,
+                                ; 3 = SMTP Authentication uses the 'SMTP User Name' username
+  !define L_SMTPUSERNAME  $3    ; user name to be used when SMTP Authentication is employed
+
   Push ${L_CBOX_INDEX}
   Push ${L_CBOX_STATE}
   Push ${L_DATA_INDEX}
@@ -901,6 +952,8 @@ Function CheckOutlookExpressRequests
   Push ${L_POP3SERVER}
   Push ${L_POP3USERNAME}
   Push ${L_POP3PORT}
+  Push ${L_SMTPAUTH}
+  Push ${L_SMTPUSERNAME}
 
   ; If user has cancelled the reconfiguration, there is nothing to do here
 
@@ -929,8 +982,16 @@ next_row:
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_POP3SERVER}   "pfi-cfg.ini" "Account ${L_DATA_INDEX}" "POP3server"
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_POP3USERNAME} "pfi-cfg.ini" "Account ${L_DATA_INDEX}" "POP3username"
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_POP3PORT}     "pfi-cfg.ini" "Account ${L_DATA_INDEX}" "POP3port"
+  !insertmacro MUI_INSTALLOPTIONS_READ ${L_SMTPAUTH}     "pfi-cfg.ini" "Account ${L_DATA_INDEX}" "SMTPauth"
+  !insertmacro MUI_INSTALLOPTIONS_READ ${L_SMTPUSERNAME} "pfi-cfg.ini" "Account ${L_DATA_INDEX}" "SMTPusername"
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_REGKEY}       "pfi-cfg.ini" "Account ${L_DATA_INDEX}" "RegistryKey"
 
+  StrCpy $G_PLS_FIELD_1 "${MB_NL}"
+  StrCmp ${L_SMTPAUTH} "2" 0 get_permission
+  StrCpy $G_PLS_FIELD_2 "${L_POP3USERNAME}"
+  StrCpy $G_PLS_FIELD_1 "$(PFI_LANG_OOECFG_MBSMTPLOGIN)${MB_NL}${MB_NL}${MB_NL}"
+
+get_permission:
   MessageBox MB_YESNO \
       "$(PFI_LANG_EXPCFG_MBIDENTITY) ${L_IDENTITY}\
       ${MB_NL}${MB_NL}\
@@ -946,7 +1007,8 @@ next_row:
       ${MB_NL}${MB_NL}\
       $(PFI_LANG_OOECFG_MBOEPORT) $G_POP3 \
                                    ($(PFI_LANG_OOECFG_MBOLDVALUE) '${L_POP3PORT}')\
-      ${MB_NL}${MB_NL}${MB_NL}\
+      ${MB_NL}${MB_NL}\
+      $G_PLS_FIELD_1\
       $(PFI_LANG_OOECFG_MBQUESTION)\
       " IDNO ignore_tick
 
@@ -968,20 +1030,26 @@ add_entry:
   WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "History" "Undo-${L_UNDO}" "Created on ${L_TEMP}"
   WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "History" "User-${L_UNDO}" "$G_WINUSERNAME"
   WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "History" "Type-${L_UNDO}" "$G_WINUSERTYPE"
-  WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "History" "IniV-${L_UNDO}" "3"
+  WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "History" "IniV-${L_UNDO}" "4"
 
   WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "Undo-${L_UNDO}" "Restored" "No"
   WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "Undo-${L_UNDO}" "RegistryKey" "${L_REGKEY}"
   WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "Undo-${L_UNDO}" "POP3UserName" "${L_POP3USERNAME}"
   WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "Undo-${L_UNDO}" "POP3Server" "${L_POP3SERVER}"
   WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "Undo-${L_UNDO}" "POP3Port" "${L_POP3PORT}"
+  WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "Undo-${L_UNDO}" "SMTPUseSicily" "${L_SMTPAUTH}"
+  WriteINIStr "$G_USERDIR\pfi-outexpress.ini" "Undo-${L_UNDO}" "SMTPUserName" "${L_SMTPUSERNAME}"
 
   ; Reconfigure the Outlook Express account
 
   WriteRegStr HKCU ${L_REGKEY} "POP3 User Name" "${L_POP3SERVER}$G_SEPARATOR${L_POP3USERNAME}"
   WriteRegStr HKCU ${L_REGKEY} "POP3 Server" "127.0.0.1"
   WriteRegDWORD HKCU ${L_REGKEY} "POP3 Port" $G_POP3
+  StrCmp ${L_SMTPAUTH} "2" 0 update_log
+  WriteRegDWORD HKCU ${L_REGKEY} "SMTP Use Sicily" 3
+  WriteRegStr HKCU ${L_REGKEY} "SMTP User Name" "${L_POP3USERNAME}"
 
+update_log:
   !insertmacro PFI_OOECONFIG_CHANGES_LOG  "${L_IDENTITY}"    20
   !insertmacro PFI_OOECONFIG_CHANGES_LOG  "${L_ACCOUNTNAME}" 20
   !insertmacro PFI_OOECONFIG_CHANGES_LOG  "127.0.0.1"        17
@@ -999,6 +1067,8 @@ continue:
   IntCmp ${L_DATA_INDEX} $G_OOELIST_INDEX next_row next_row
 
 exit:
+  Pop ${L_SMTPUSERNAME}
+  Pop ${L_SMTPAUTH}
   Pop ${L_POP3PORT}
   Pop ${L_POP3USERNAME}
   Pop ${L_POP3SERVER}
@@ -1028,6 +1098,8 @@ exit:
   !undef L_POP3SERVER
   !undef L_POP3USERNAME
   !undef L_POP3PORT
+  !undef L_SMTPAUTH
+  !undef L_SMTPUSERNAME
 
 FunctionEnd
 
@@ -1351,9 +1423,9 @@ display_list:
     StrCmp $LANGUAGE ${LANG_KOREAN} show_page
   !endif
 
-  ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
+  ; Field 1 = IDENTITY label (above the box)
 
-  GetDlgItem $G_DLGITEM $G_HWND 1200              ; Field 1 = IDENTITY label (above the box)
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioB.ini" "Field 1" "HWND"
   CreateFont $G_FONT "MS Shell Dlg" 8 700        ; use a 'bolder' version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
 
@@ -1393,9 +1465,9 @@ display_list_again:
     StrCmp $LANGUAGE ${LANG_KOREAN} show_page_again
   !endif
 
-  ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
+  ; Field 1 = IDENTITY label (above the box)
 
-  GetDlgItem $G_DLGITEM $G_HWND 1200             ; Field 1 = IDENTITY label (above the box)
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioB.ini" "Field 1" "HWND"
   CreateFont $G_FONT "MS Shell Dlg" 8 700        ; use a 'bolder' version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
 
@@ -1899,9 +1971,9 @@ write_intro:
     StrCmp $LANGUAGE ${LANG_KOREAN} show_page
   !endif
 
-  ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
+  ; Field 4 = PERSONA (text in groupbox frame)
 
-  GetDlgItem $G_DLGITEM $G_HWND 1203             ; Field 4 = PERSONA (text in groupbox frame)
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioE.ini" "Field 4" "HWND"
   CreateFont $G_FONT "MS Shell Dlg" 8 700        ; use a 'bolder' version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
 
