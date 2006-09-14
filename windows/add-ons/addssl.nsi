@@ -15,13 +15,11 @@
 #                POPFile is installed, but SSL support can be added or updated later by using
 #                the command "setup.exe /SSL" to run the installer (instead of "setup.exe").
 #
-#                On 18 July 2006 the University of Winnipeg repository was updated to provide
-#                IO::Socket::SSL v0.99 which is not compatible with POPFile so this utility
-#                will apply a patch to downgrade this to the compatible v0.97 version.
-#
-#                On 18 August 2006 the University of Winnipeg repository was updated to provide
-#                IO::Socket::SSL v0.999 which is not compatible with POPFile so this utility
-#                will apply a patch to downgrade this to the compatible v0.97 version.
+#                IO::Socket:SSL v0.97 (released 17 July 2005) is the most recent version which
+#                is compatible with the current version of POPFile (0.22.4). IO::Socket::SSL
+#                versions 0.99, 0.999 and 1.01 (the most recent, released 13 September 2006)
+#                are all incompatible with POPFile 0.22.4 so a patch is applied to downgrade
+#                SSL.pm to v0.97 to make it POPFile-compatible (see ..\getssl.nsh for details).
 #
 #                As a temporary workaround to cope with future "SSL compatibility" issues
 #                the command-line option /BUILTIN forces the wizard to install the old SSL
@@ -88,7 +86,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 24 June 2006 12:40
+  ; Tested with the inetc.dll plugin timestamped 8 September 2006 10:13:18
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -137,25 +135,9 @@
   ; Up until 18 July 2006 is was safe for POPFile 0.22.3 and 0.22.4 to use the latest versions
   ; of the SSL files.
   ;
-  ; On 18 July 2006 'IO::Socket::SSL' was upgraded from v0.97 to v0.99 which causes problems
-  ; with POPFile. On 18 August 2006 'IO::Socket::SSL' was upgraded to v0.999 which also causes
-  ; POPFile problems. Therefore this utility will automatically downgrade the relevant file
-  ; from that module (SSL.pm) from either v0.99 or v0.999 to v0.97 to avoid problems.
-
-  ;------------------------------------------------
-  ; How the SSL.pm patch was created
-  ;------------------------------------------------
-
-  ; The patch used to downgrade either SSL.pm v0.99 or SSL.pm v0.999 to v0.97 was created
-  ; using the VPATCH package which is supplied with NSIS. This special patch was made using
-  ; the commands:
-  ;
-  ;   GenPat.exe SSL_0.99.pm SSL_0.97.pm SSL_pm.pat
-  ;   GenPat.exe SSL_0.999.pm SSL_0.97.pm SSL_pm.pat
-  ;
-  ; where SSL_0.97.pm  was the SSL.pm file from v0.97  of the IO::Socket:SSL module
-  ;  and  SSL_0.99.pm  was the SSL.pm file from v0.99  of the IO::Socket:SSL module
-  ;  and  SSL_0.999.pm was the SSL.pm file from v0.999 of the IO::Socket:SSL module
+  ; At present (14 September 2006) the University of Winnipeg repository supplies a version of
+  ; 'IO::Socket::SSL' which is not compatible with POPFile so a patch is applied to downgrade
+  ; the file to make it POPFile-compatible. See the ..\getssl.nsh INCLUDE file for details.
 
   ;------------------------------------------------
   ; How the Module.pm patch was created
@@ -250,7 +232,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.0"
+  !define C_PFI_VERSION  "0.2.1"
 
   ; Mention the wizard's version number in the window title
 
