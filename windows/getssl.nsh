@@ -16,6 +16,10 @@
 #                IO::Socket::SSL v0.999 which is not compatible with POPFile so a patch will
 #                be applied to downgrade the relevant file to the compatible v0.97 version.
 #
+#                On 13 September 2006 the University of Winnipeg repository was updated to
+#                provide IO::Socket::SSL v1.01 which is not compatible with POPFile so this
+#                utility will apply a patch to downgrade this to the compatible v0.97 version.
+#
 # Copyright (c) 2005-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
@@ -86,10 +90,12 @@
   ;
   ;   GenPat.exe SSL_0.99.pm SSL_0.97.pm SSL_pm.pat
   ;   GenPat.exe SSL_0.999.pm SSL_0.97.pm SSL_pm.pat
+  ;   GenPat.exe SSL_1.01.pm SSL_0.97.pm SSL_pm.pat
   ;
   ; where SSL_0.97.pm  was the SSL.pm file from v0.97  of the IO::Socket:SSL module
   ;  and  SSL_0.99.pm  was the SSL.pm file from v0.99  of the IO::Socket:SSL module
   ;  and  SSL_0.999.pm was the SSL.pm file from v0.999 of the IO::Socket:SSL module
+  ;  and  SSL_1.01.pm  was the SSL.pm file from v1.01  of the IO::Socket:SSL module
 
 #--------------------------------------------------------------------------
 # URLs used to download the necessary SSL support archives and files
@@ -298,7 +304,6 @@ install_SSL_support:
   SetDetailsPrint listonly
   DetailPrint ""
 
-  StrCmp $G_PLS_FIELD_2 "No suitable patches were found" label_a
   StrCmp $G_PLS_FIELD_2 "OK" 0 show_downgrade_status
   !insertmacro PFI_BACKUP_123_DP "$G_PLS_FIELD_1" "SSL.pm"
   SetDetailsPrint none
@@ -439,6 +444,10 @@ Function GetSSLFile
 
   Pop $G_SSL_FILEURL
 
+  !define L_DLG_ITEM  $R9
+
+  Push ${L_DLG_ITEM}
+
   StrCpy $G_PLS_FIELD_1 $G_SSL_FILEURL
   Push $G_PLS_FIELD_1
   Call PFI_StrBackSlash
@@ -450,8 +459,22 @@ Function GetSSLFile
   StrCpy $G_PLS_FIELD_2 "$G_SSL_FILEURL" $G_PLS_FIELD_2
   DetailPrint ""
   DetailPrint "$(PFI_LANG_PROG_STARTDOWNLOAD)"
+
+  ; The current version of the Inetc plugin (dated 8 September 2006) leaves the "Show Details"
+  ; button in view so we temporarily disable it during the download to avoid a messy display
+  ; (if the user has already clicked the button then they'll just need to put up with the mess)
+
+  FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
+  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x403
+  EnableWindow ${L_DLG_ITEM} 0
+
   inetc::get /RESUME "$(PFI_LANG_MB_CHECKINTERNET)" ${C_NSISDL_TRANSLATIONS} "$G_SSL_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1" /END
   Pop $G_PLS_FIELD_2
+
+  ; Enable the "Show Details" button now that the download has been completed
+
+  EnableWindow ${L_DLG_ITEM} 1
+
   StrCmp $G_PLS_FIELD_2 "OK" file_received
   SetDetailsPrint both
   DetailPrint "$(PFI_LANG_MB_NSISDLFAIL_1)"
@@ -470,6 +493,10 @@ Function GetSSLFile
   !endif
 
 file_received:
+  Pop ${L_DLG_ITEM}
+
+  !undef L_DLG_ITEM
+
 FunctionEnd
 
 
