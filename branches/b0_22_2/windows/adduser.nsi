@@ -1239,7 +1239,7 @@ skip_rel_notes:
                  "$G_USERDIR"
 
 pfidiag_entries:
-  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 dbstatus_check
+  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 msgcapture_entry
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\PFI Diagnostic utility.lnk"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
@@ -1251,7 +1251,11 @@ pfidiag_entries:
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk" \
                  "$G_ROOTDIR\pfidiag.exe" "/shortcut"
 
-dbstatus_check:
+msgcapture_entry:
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk" NORMAL
+  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk" \
+                 "$G_ROOTDIR\runpopfile.exe" "/msgcapture"
+
   IfFileExists "$G_ROOTDIR\pfidbstatus.exe" 0 silent_shutdown
   Push $G_USERDIR
   Call PFI_GetSQLdbPathName
