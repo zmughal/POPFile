@@ -63,7 +63,7 @@
 # same StartUp folder (to avoid unexpected 'Add POPFile User' activity if some users do not use
 # (or have not yet used) POPFile). The switch can be in uppercase or lowercase.
 #
-# This switch cannot be combined with the '/config' switch.
+# This switch cannot be combined with the '/config' or '/msgcapture' switches.
 #
 # ---------------------------------------------------------------------------------------
 #
@@ -85,7 +85,18 @@
 #
 # These temporary changes will override any existing values in these environment variables.
 #
-# This switch cannot be combined with the '/startup' switch.
+# This switch cannot be combined with the '/startup' or '/msgcapture' switches.
+#
+# ---------------------------------------------------------------------------------------
+#
+# /msgcapture
+#
+# By default POPFile runs without showing the console window. This command-line switch forces
+# the utility to use the Message Capture utility in order to make it easy to see (and save)
+# POPFile's console messages which are normally hidden from view. This switch makes it much
+# easier for users (especially those using Windows 9x) to capture these console messages.
+#
+# This switch cannot be combined with the '/startup' or '/config=path' switches.
 #
 #-------------------------------------------------------------------------------------------
 
@@ -105,7 +116,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.2.0"
+  !define C_PFI_VERSION   "0.2.1"
 
   !define C_OUTFILE       "runpopfile.exe"
 
@@ -219,6 +230,7 @@ found_popfile:
   Pop ${L_PARAMS}
   StrCmp ${L_PARAMS} "" use_reg_dirdata
   StrCmp ${L_PARAMS} "/startup" use_reg_dirdata
+  StrCmp ${L_PARAMS} "/msgcapture" use_reg_dirdata
   StrCpy ${L_TEMP} ${L_PARAMS} 8
   StrCmp ${L_TEMP} "/config=" extract_config_path
   MessageBox MB_OK|MB_ICONSTOP "Error: Unknown option supplied !\
@@ -389,6 +401,21 @@ set_user_now:
   Goto exit
 
 start_popfile:
+  StrCmp ${L_PARAMS} "/msgcapture" 0 look_for_pfimsgcapture
+  IfFileExists "${L_EXEFILE}\msgcapture.exe" run_capture_mode
+  IfFileExists "${L_EXEFILE}\pfimsgcapture.exe" run_debug_mode
+  MessageBox MB_OK|MB_ICONSTOP "Error: Unable to start Message Capture utility !\
+      ${MB_NL}${MB_NL}\
+      Cannot find\
+      ${MB_NL}\
+      ${L_EXEFILE}\msgcapture.exe\
+      ${MB_NL}\
+      or\
+      ${MB_NL}\
+      ${L_EXEFILE}\pfimsgcapture.exe"
+  Goto exit
+
+look_for_pfimsgcapture:
   IfFileExists "${L_EXEFILE}\pfimsgcapture.exe" 0 run_normal_mode
   IfFileExists "${L_PFI_USER}\popfile.cfg" 0 run_normal_mode
   StrCpy ${L_CONSOLE} "0"
@@ -425,6 +452,10 @@ run_normal_mode:
 
 run_debug_mode:
   Exec '"${L_EXEFILE}\pfimsgcapture.exe" /TIMEOUT=0'
+  Goto exit
+
+run_capture_mode:
+  Exec '"${L_EXEFILE}\msgcapture.exe" /TIMEOUT=0'
   Goto exit
 
 bad_root_error:
