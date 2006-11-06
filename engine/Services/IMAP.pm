@@ -273,7 +273,7 @@ sub service
                 # all of our folders
                 $self->connect_folders__();
 
-                # Reset the hash containing the hash values we have seen the 
+                # Reset the hash containing the hash values we have seen the
                 # last time through service.
                 $self->{hash_values__} = ();
 
@@ -293,6 +293,9 @@ sub service
             # say__() and get_response__() will die with this message:
             if ( $@ =~ /The connection to the IMAP server was lost/ ) {
                 $self->log_( 0, $@ );
+
+                # If we caught an exception, we better reset training_mode
+                $self->config_( 'training_mode', 0 );
             }
             # If we didn't die but somebody else did, we have empathy.
             else {
@@ -1097,6 +1100,8 @@ sub say__
         unless ( exists $self->{folders__}{$imap_or_folder}{imap} ) {
             # No! commit suicide.
             $self->log_( 0, "Got a folder ($imap_or_folder) with no attached socket in say!" );
+            my ($package, $filename, $line, $subroutine, $hasargs, $wantarray, $evaltext, $is_require, $hints, $bitmask) = caller 1;
+            $self->log_( 0, "Got this after being called by $subroutine." );
             die( "The connection to the IMAP server was lost. Could not talk to the server." );
         }
 
@@ -2309,17 +2314,17 @@ sub train_on_archive__
     $self->connect_folders__();
 
     foreach my $folder ( keys %{$self->{folders__}} ) {
-
-        # Set uidnext value to 1. We will train on all messages.
-        $self->uid_next__( $folder, 1 );
-        my @uids = $self->get_new_message_list( $folder );
         my $bucket = $self->{folders__}{$folder}{output};
-
+        
         # Skip pseudobuckets and the INBOX
         next if $self->{classifier__}->is_pseudo_bucket( $self->{api_session__}, $bucket );
         next if $folder eq 'INBOX';
 
-        $self->log_( 0, "Training on messages in folder $folder to bucket $bucket." );
+        # Set uidnext value to 1. We will train on all messages.
+        $self->uid_next__( $folder, 1 );
+        my @uids = $self->get_new_message_list( $folder );
+
+        $self->log_( 0, "Training on " . ( scalar @uids ) . " messages in folder $folder to bucket $bucket." );
 
         foreach my $msg ( @uids ) {
 
