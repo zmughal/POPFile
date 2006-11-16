@@ -220,7 +220,7 @@ sub service
             if ( $self->{api_session__} eq '' ) {
                 $self->{api_session__} =
                     $self->{classifier__}->get_session_key( 'admin', '' );
-	    }
+            }
 
             # Check that this is a connection from the local machine,
             # if it's not then we drop it immediately without any
@@ -251,7 +251,7 @@ sub service
                             $self->{api_session__} );
                         exit(0) if ( defined( $pid ) );
                     }
-	        } else {
+                } else {
                     pipe my $reader, my $writer;
 
                     $self->{child_}( $self, $client, $self->{api_session__} );
@@ -332,9 +332,9 @@ sub echo_to_regexp_
             $self->log_( 2, "Suppressed: $line" );
         }
 
-	if ( $line =~ $regexp ) {
+        if ( $line =~ $regexp ) {
             last;
-	}
+        }
     }
 }
 
@@ -450,7 +450,7 @@ sub echo_response_
     if ( $ok == 1 ) {
         if ( $response =~ /$self->{good_response_}/ ) {
             return 0;
-	} else {
+        } else {
             return 1;
         }
     } else {
@@ -491,6 +491,9 @@ sub verify_connected_
                     ProxyPort => $self->config_( 'socks_port' ),
                     ConnectAddr  => $hostname,
                     ConnectPort  => $port ); # PROFILE BLOCK STOP
+        $self->log_( 0, "Attempting to connect to socks server at " 
+                    . $self->config_( 'socks_server' ) . ":" 
+                    . ProxyPort => $self->config_( 'socks_port' ) );
     } else {
         if ( $ssl ) {
             require IO::Socket::SSL;
@@ -498,11 +501,16 @@ sub verify_connected_
                         Proto    => "tcp",
                         PeerAddr => $hostname,
                         PeerPort => $port ); # PROFILE BLOCK STOP
-	} else {
+            $self->log_( 0, "Attempting to connect to SSL server at " 
+                        . "$hostname:$port" );
+        
+        } else {
             $mail = IO::Socket::INET->new( # PROFILE BLOCK START
                         Proto    => "tcp",
                         PeerAddr => $hostname,
                         PeerPort => $port ); # PROFILE BLOCK STOP
+            $self->log_( 0, "Attempting to connect to POP server at " 
+                        . "$hostname:$port" );
         }
     }
 
@@ -517,7 +525,7 @@ sub verify_connected_
 
             if ( !$ssl ) {
                 binmode( $mail );
-	    }
+            }
 
             # Wait 10 seconds for a response from the remote server and if
             # there isn't one then give up trying to connect
