@@ -42,9 +42,9 @@
 # in the OpenSSL Toolkit (http://www.openssl.org/)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.19" compiler,
-  ; released 6 August 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.19-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.21" compiler,
+  ; released 20 October 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.21-setup.exe?download
 
   ;------------------------------------------------
   ; This script requires the 'Inetc' NSIS plugin
@@ -60,7 +60,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 24 June 2006 12:40
+  ; Tested with the inetc.dll plugin timestamped 12 November 2006 15:32:16
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -84,9 +84,9 @@
   ; How the SSL.pm patch was created
   ;------------------------------------------------
 
-  ; The patch used to downgrade either SSL.pm v0.99 or SSL.pm v0.999 to v0.97 was created
-  ; using the VPATCH package which is supplied with NSIS. This special patch was made using
-  ; the commands:
+  ; The patch used to downgrade SSL.pm v0.99, SSL.pm v0.999 or SSL.pm v1.01 to v0.97 was
+  ; created using the VPATCH package which is supplied with NSIS. The following commands
+  ; were used to create the patch:
   ;
   ;   GenPat.exe SSL_0.99.pm SSL_0.97.pm SSL_pm.pat
   ;   GenPat.exe SSL_0.999.pm SSL_0.97.pm SSL_pm.pat
@@ -149,6 +149,10 @@
 
   !ifdef ADDSSL
 
+      ; Assume we will use the built-in SSL files which are compatible with pre-0.22.3 releases
+
+      StrCpy $G_SSL_SOURCE "${C_BUILTIN}"
+
       ; For POPFile 0.22.3 (and later) releases this stand-alone utility will download and,
       ; if necessary, patch the SSL support files from the University of Winnipeg repository.
       ;
@@ -194,16 +198,14 @@
       IntOp ${L_VER_Z} ${L_VER_Z} / 0x00010000
       DetailPrint "Minimal Perl version ${L_VER_X}.${L_VER_Y}.${L_VER_Z} detected in '$G_ROOTDIR' folder"
 
-      ; Only download the SSL files if the minimal Perl is version 5.8.7 or higher
-
-      StrCpy ${L_RESULT} "built-in"
+      ; Only download the SSL files if the minimal Perl version is 5.8.7 or higher
 
       IntCmp ${L_VER_X} 5 0 restore_vars set_download_flag
       IntCmp ${L_VER_Y} 8 0 restore_vars set_download_flag
       IntCmp ${L_VER_Z} 7 0 restore_vars set_download_flag
 
     set_download_flag:
-      StrCpy ${L_RESULT} "download"
+      StrCpy $G_SSL_SOURCE "${C_INTERNET}"
 
     restore_vars:
       Pop ${L_VER_Z}
@@ -214,11 +216,11 @@
       !undef L_VER_Y
       !undef L_VER_Z
 
-      StrCmp ${L_RESULT} "download" download_ssl
+      StrCmp $G_SSL_SOURCE "${C_INTERNET}" download_ssl
 
     assume_pre_0_22_3:
 
-      ; Pretend we've just downloaded these files from the repository
+      ; Pretend we've just downloaded the SSL archives and OpenSSL DLLs from the Internet
 
       DetailPrint "therefore built-in SSL files used instead of downloading the latest versions"
       DetailPrint ""
@@ -234,7 +236,7 @@
       DetailPrint ""
   !endif
 
-  ; Download the archives and OpenSSL DLLs
+  ; Download the SSL archives and OpenSSL DLLs
 
   Push "${C_UWR_IO_SOCKET_SSL}"
   Call GetSSLFile
@@ -281,17 +283,24 @@ install_SSL_support:
   untgz::extractFile -d "$G_PLS_FIELD_1" "$PLUGINSDIR\IO-Socket-SSL.tar.gz" "SSL.pm"
   StrCmp ${L_RESULT} "success" 0 error_exit
 
-  ; If IO::Socket::SSL v0.99 has been downloaded and installed, apply the patch which
-  ; downgrades the SSL.pm file from v0.99 to v0.97 to make it compatible with POPFile
+  !ifdef ADDSSL
+
+      ; If the built-in SSL Support files are being used then there is no need to patch SSL.pm
+
+      StrCmp $G_SSL_SOURCE "${C_BUILTIN}" extract_Net_SSLeay_files
+  !endif
+
+  ; If IO::Socket::SSL v0.99 (or v0.999 or v1.01) has been downloaded and installed, apply
+  ; the patch which downgrades the SSL.pm file to v0.97 to make it compatible with POPFile
 
   DetailPrint ""
   DetailPrint "$(PFI_LANG_SSLPREPAREPATCH)"
 
   SetDetailsPrint none
   !ifdef INSTALLER
-    File "/oname=$PLUGINSDIR\SSL_pm.pat" "SSL_pm.pat"
+      File "/oname=$PLUGINSDIR\SSL_pm.pat" "SSL_pm.pat"
   !else
-    File "/oname=$PLUGINSDIR\SSL_pm.pat" "..\SSL_pm.pat"
+      File "/oname=$PLUGINSDIR\SSL_pm.pat" "..\SSL_pm.pat"
   !endif
   SetDetailsPrint listonly
 
@@ -314,7 +323,7 @@ install_SSL_support:
   DetailPrint ""
   SetDetailsPrint both
   DetailPrint "$(PFI_LANG_SSLPATCHFAILED)"
-  Goto label_a
+  Goto extract_Net_SSLeay_files
 
 downgrade_success:
   SetDetailsPrint listonly
@@ -323,10 +332,10 @@ downgrade_success:
 
 show_downgrade_status:
   !ifdef ADDSSL
-    MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_SSLPATCHSTATUS)"
+      MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_SSLPATCHSTATUS)"
   !endif
 
-label_a:
+extract_Net_SSLeay_files:
   DetailPrint ""
   StrCpy $G_PLS_FIELD_1 "$G_MPLIBDIR\Net"
   CreateDirectory $G_PLS_FIELD_1
@@ -406,9 +415,9 @@ check_bs_file:
 
   IfFileExists "$G_PLS_FIELD_1\SSLeay.bs" done
   !ifdef INSTALLER
-    File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "zerobyte.file"
+      File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "zerobyte.file"
   !else
-    File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "..\zerobyte.file"
+      File "/oname=$G_PLS_FIELD_1\SSLeay.bs" "..\zerobyte.file"
   !endif
 
 done:
@@ -468,7 +477,7 @@ Function GetSSLFile
   GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x403
   EnableWindow ${L_DLG_ITEM} 0
 
-  inetc::get /RESUME "$(PFI_LANG_MB_CHECKINTERNET)" ${C_NSISDL_TRANSLATIONS} "$G_SSL_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1" /END
+  inetc::get /CAPTION "Internet Download" /RESUME "$(PFI_LANG_MB_CHECKINTERNET)" ${C_NSISDL_TRANSLATIONS} "$G_SSL_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1" /END
   Pop $G_PLS_FIELD_2
 
   ; Enable the "Show Details" button now that the download has been completed
