@@ -52,18 +52,18 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.19" compiler,
-  ; released 6 August 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.19-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.21" compiler,
+  ; released 20 October 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.21-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.19_found
+  !ifndef v2.21_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.19 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.21 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -86,7 +86,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 8 September 2006 10:13:18
+  ; Tested with the inetc.dll plugin timestamped 12 November 2006 15:32:16
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -232,7 +232,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.1"
+  !define C_PFI_VERSION  "0.2.2"
 
   ; Mention the wizard's version number in the window title
 
@@ -242,6 +242,11 @@
 
   !define C_OUTFILE      "addssl.exe"
 
+  ; Values used for the $G_SSL_SOURCE flag which indicates where we get the SSL files from
+  ; (to make maintenance easier, constants are used for these values)
+
+  !define C_BUILTIN      "built-in"    ; use old SSL files compatible with pre-0.22.3 releases
+  !define C_INTERNET     "internet"    ; download latest SSL Support files from the Internet
 
 #--------------------------------------------------------------------------
 # User Registers (Global)
@@ -251,6 +256,9 @@
 
   Var G_ROOTDIR            ; full path to the folder used for the POPFile program files
   Var G_MPLIBDIR           ; full path to the folder used for most of the minimal Perl files
+
+  Var G_SSL_SOURCE         ; indicates the source of the SSL files we are to install
+                           ; (the possible values are either ${C_BUILTIN} or ${C_INTERNET})
 
   Var G_PLS_FIELD_1        ; used to customize some language strings
 
