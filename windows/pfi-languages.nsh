@@ -28,7 +28,7 @@
 #
 # For example, to remove support for the 'Dutch' language, comment-out the line
 #
-#     !insertmacro PFI_LANG_LOAD "Dutch"
+#       !insertmacro PFI_LANG_LOAD "Dutch"        "-"        ; Language 1043
 #
 #--------------------------------------------------------------------------
 # Adding support for a particular language (it must be supported by NSIS):
@@ -52,26 +52,6 @@
 # If there is a suitable POPFile UI language file for the new language, some changes will be
 # required to the code in 'adduser.nsi' which attempts to select an appropriate UI language.
 #--------------------------------------------------------------------------
-# SMALL NSIS PATCH REQUIRED:
-#
-# The POPFile User Interface 'Language' menu uses the name 'Nihongo' to select the Japanese
-# language texts. The NSIS default name used to select the Japanese language texts is 'Japanese'
-# which can cause some confusion.
-#
-# It is an easy matter to make the installer display 'Nihongo' in the list of languages offered.
-# However this requires a small change to one of the NSIS MUI language files:
-#
-# In the file ${NSISDIR}\Contrib\Modern UI\Language files\Japanese.nsh, change the value of the
-# MUI_LANGNAME string from "Japanese" to "Nihongo". For example, using the file supplied with
-# NSIS 2.19, released 6 August 2006, change line 13 from:
-#
-# !define MUI_LANGNAME "Japanese" ;(“ú–{Œê) Use only ASCII characters (if this is not possible, use the English name)
-#
-# to:
-#
-# !define MUI_LANGNAME "Nihongo" ;(“ú–{Œê) Use only ASCII characters (if this is not possible, use the English name)
-#
-#--------------------------------------------------------------------------
 # USAGE EXAMPLES
 #
 # It is assumed that ENGLISH is the default language and that it is defined before this file
@@ -81,7 +61,7 @@
 #
 #     ; At least one language must be specified for the installer (the default is "English")
 #
-#     !insertmacro PFI_LANG_LOAD "English"
+#     !insertmacro PFI_LANG_LOAD "English" "-"
 #
 #     ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
 #
@@ -93,7 +73,7 @@
 #
 #     ; Default language (appears first in the drop-down list)
 #
-#     !insertmacro PFI_LANG_LOAD "English"
+#     !insertmacro PFI_LANG_LOAD "English" "-"
 #
 #     ; Additional languages supported by the utility
 #
@@ -107,8 +87,8 @@
   ; It is assumed that !insertmacro PFI_LANG_LOAD "English" has been used to define "English"
   ; before including this file (which is why "English" does not appear in the list below).
 
-  ; NOTE: The order used here assumes that the NSIS MUI 'Japanese.nsh' language file has
-  ; been patched to use 'Nihongo' instead of 'Japanese' [see 'SMALL NSIS PATCH REQUIRED' above]
+  ; NOTE: The order used here makes the names appear in alphabetic order in the language
+  ; selection menu (NB we override the normal "Japanese" menu entry with "Nihongo" here)
 
   ; Currently a subset of the languages supported by NSIS MUI 1.75 (using the NSIS names)
 
@@ -123,32 +103,35 @@
   ;
   ; Note: 'English' is 'Language 1033'
 
-  !insertmacro PFI_LANG_LOAD "Arabic"             ; Language 1025
-  !insertmacro PFI_LANG_LOAD "Bulgarian"          ; Language 1026
-  !insertmacro PFI_LANG_LOAD "Catalan"            ; Language 1027
-  !insertmacro PFI_LANG_LOAD "SimpChinese"        ; Language 2052
-  !insertmacro PFI_LANG_LOAD "TradChinese"        ; Language 1028
-  !insertmacro PFI_LANG_LOAD "Czech"              ; Language 1029
-  !insertmacro PFI_LANG_LOAD "Danish"             ; Language 1030
-  !insertmacro PFI_LANG_LOAD "German"             ; Language 1031
-  !insertmacro PFI_LANG_LOAD "Spanish"            ; Language 1034
-  !insertmacro PFI_LANG_LOAD "French"             ; Language 1036
-  !insertmacro PFI_LANG_LOAD "Greek"              ; Language 1032
-  !insertmacro PFI_LANG_LOAD "Italian"            ; Language 1040
-  !insertmacro PFI_LANG_LOAD "Korean"             ; Language 1042
-  !insertmacro PFI_LANG_LOAD "Hungarian"          ; Language 1038
-  !insertmacro PFI_LANG_LOAD "Dutch"              ; Language 1043
-  !insertmacro PFI_LANG_LOAD "Japanese"           ; Language 1041
-  !insertmacro PFI_LANG_LOAD "Norwegian"          ; Language 1044
-  !insertmacro PFI_LANG_LOAD "Polish"             ; Language 1045
-  !insertmacro PFI_LANG_LOAD "Portuguese"         ; Language 2070
-  !insertmacro PFI_LANG_LOAD "PortugueseBR"       ; Language 1046
-  !insertmacro PFI_LANG_LOAD "Russian"            ; Language 1049
-  !insertmacro PFI_LANG_LOAD "Slovak"             ; Language 1051
-  !insertmacro PFI_LANG_LOAD "Finnish"            ; Language 1035
-  !insertmacro PFI_LANG_LOAD "Swedish"            ; Language 1053
-  !insertmacro PFI_LANG_LOAD "Turkish"            ; Language 1055
-  !insertmacro PFI_LANG_LOAD "Ukrainian"          ; Language 1058
+  ; Note: The "-" parameter means "use the language name specified in the standard NSIS
+  ; MUI language file when adding the language to the installer's language selection menu"
+
+  !insertmacro PFI_LANG_LOAD "Arabic"       "-"        ; Language 1025
+  !insertmacro PFI_LANG_LOAD "Bulgarian"    "-"        ; Language 1026
+  !insertmacro PFI_LANG_LOAD "Catalan"      "-"        ; Language 1027
+  !insertmacro PFI_LANG_LOAD "SimpChinese"  "-"        ; Language 2052
+  !insertmacro PFI_LANG_LOAD "TradChinese"  "-"        ; Language 1028
+  !insertmacro PFI_LANG_LOAD "Czech"        "-"        ; Language 1029
+  !insertmacro PFI_LANG_LOAD "Danish"       "-"        ; Language 1030
+  !insertmacro PFI_LANG_LOAD "German"       "-"        ; Language 1031
+  !insertmacro PFI_LANG_LOAD "Spanish"      "-"        ; Language 1034
+  !insertmacro PFI_LANG_LOAD "French"       "-"        ; Language 1036
+  !insertmacro PFI_LANG_LOAD "Greek"        "-"        ; Language 1032
+  !insertmacro PFI_LANG_LOAD "Italian"      "-"        ; Language 1040
+  !insertmacro PFI_LANG_LOAD "Korean"       "-"        ; Language 1042
+  !insertmacro PFI_LANG_LOAD "Hungarian"    "-"        ; Language 1038
+  !insertmacro PFI_LANG_LOAD "Dutch"        "-"        ; Language 1043
+  !insertmacro PFI_LANG_LOAD "Japanese"     "Nihongo"  ; Language 1041
+  !insertmacro PFI_LANG_LOAD "Norwegian"    "-"        ; Language 1044
+  !insertmacro PFI_LANG_LOAD "Polish"       "-"        ; Language 1045
+  !insertmacro PFI_LANG_LOAD "Portuguese"   "-"        ; Language 2070
+  !insertmacro PFI_LANG_LOAD "PortugueseBR" "-"        ; Language 1046
+  !insertmacro PFI_LANG_LOAD "Russian"      "-"        ; Language 1049
+  !insertmacro PFI_LANG_LOAD "Slovak"       "-"        ; Language 1051
+  !insertmacro PFI_LANG_LOAD "Finnish"      "-"        ; Language 1035
+  !insertmacro PFI_LANG_LOAD "Swedish"      "-"        ; Language 1053
+  !insertmacro PFI_LANG_LOAD "Turkish"      "-"        ; Language 1055
+  !insertmacro PFI_LANG_LOAD "Ukrainian"    "-"        ; Language 1058
 
 #--------------------------------------------------------------------------
 # End of 'pfi-languages.nsh'

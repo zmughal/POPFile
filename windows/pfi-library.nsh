@@ -57,7 +57,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.2.1"
+  !define C_PFI_LIBRARY_VERSION     "0.2.3"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -141,18 +141,23 @@
   ; Macro used to load the files required for each language:
   ; (1) The MUI_LANGUAGE macro loads the standard MUI text strings for a particular language
   ; (2) '*-pfi.nsh' contains the text strings used for pages, progress reports, logs etc
+  ; (3) Normally the MUI's language selection menu uses the name defined in the MUI language
+  ;     file, however it is possible to override this by supplying an alternative string
+  ;     (the MENUNAME parameter in this macro). At present the only alternative string used
+  ;     is "Nihongo" which replaces "Japanese" to make things easier for non-English-speaking
+  ;     users - see 'pfi-languages.nsh' for details.
 
-!ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
-        !macro PFI_LANG_LOAD LANG
-            !insertmacro MUI_LANGUAGE "${LANG}"
-            !include "..\languages\${LANG}-pfi.nsh"
-        !macroend
-!else
-        !macro PFI_LANG_LOAD LANG
-            !insertmacro MUI_LANGUAGE "${LANG}"
-            !include "languages\${LANG}-pfi.nsh"
-        !macroend
-!endif
+  !macro PFI_LANG_LOAD LANG MENUNAME
+      !if "${MENUNAME}" != "-"
+          !define MUI_${LANG}_LANGNAME "${MENUNAME}"
+      !endif
+      !insertmacro MUI_LANGUAGE "${LANG}"
+      !ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
+          !include "..\languages\${LANG}-pfi.nsh"
+      !else
+          !include "languages\${LANG}-pfi.nsh"
+      !endif
+  !macroend
 
 #--------------------------------------------------------------------------
 #
@@ -4123,6 +4128,7 @@
     Exch $0           ; place result on top of the stack
 
     !undef DECIMAL_DIGIT
+    !undef BAD_OFFSET
 
   FunctionEnd
 !macroend
