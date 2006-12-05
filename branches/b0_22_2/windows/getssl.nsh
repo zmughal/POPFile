@@ -42,10 +42,6 @@
 # in the OpenSSL Toolkit (http://www.openssl.org/)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.21" compiler,
-  ; released 20 October 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.21-setup.exe?download
-
   ;------------------------------------------------
   ; This script requires the 'Inetc' NSIS plugin
   ;------------------------------------------------
