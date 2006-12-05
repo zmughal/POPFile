@@ -48,7 +48,7 @@
   DetailPrint "$(PFI_LANG_INST_PROG_PERL)"
   SetDetailsPrint listonly
 
-  ; Install the minimal Perl "core"
+  ; Install the minimal Perl "core" based upon ActivePerl 5.8.8 Build 819
   ; (extra Perl files are added by the "Kakasi", "SOCKS" & "XMLRPC" sections in installer.nsi)
 
   SetOutPath "$G_ROOTDIR"
@@ -106,7 +106,7 @@
   File "${C_PERL_DIR}\lib\Getopt\Long.pm"
 
   SetOutPath "$G_MPLIBDIR\HTML"
-  File "${C_PERL_DIR}\site\lib\HTML\Tagset.pm"
+  File "${C_PERL_DIR}\lib\HTML\Tagset.pm"
   File "${C_PERL_DIR}\site\lib\HTML\Template.pm"
 
   SetOutPath "$G_MPLIBDIR\IO"
@@ -181,26 +181,29 @@
   SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\base.pm"
   File "${C_PERL_DIR}\lib\overload.pm"
-  File "${C_PERL_DIR}\site\lib\DBI.pm"
+  File "${C_PERL_DIR}\lib\DBI.pm"
 
   ; Required in order to use any version of SQLite
 
   SetOutPath "$G_MPLIBDIR\auto\DBI"
-  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.bs"
-  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.dll"
-  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.exp"
-  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.lib"
+  File "${C_PERL_DIR}\lib\auto\DBI\DBI.bs"
+  File "${C_PERL_DIR}\lib\auto\DBI\DBI.dll"
+  File "${C_PERL_DIR}\lib\auto\DBI\DBI.exp"
+  File "${C_PERL_DIR}\lib\auto\DBI\DBI.lib"
 
-  ; Install SQLite support (using an old SQLite 2.x version of the SQLite module)
+  ; Install SQLite2 support. The 0.22.5 release is based upon ActivePerl 5.8.8 Build 819
+  ; which includes the 3.x flavour of the DBD::SQLite module so we now default to using
+  ; DBD::SQLite2 since POPFile 0.22.x is not compatible with SQLite 3.x. The 0.23.0 release
+  ; of POPFile ia expected to use SQLite 3.x.
 
   SetOutPath "$G_MPLIBDIR\DBD"
-  File "${C_PERL_DIR}\site\lib\DBD\SQLite.pm"
+  File "${C_PERL_DIR}\site\lib\DBD\SQLite2.pm"
 
-  SetOutPath "$G_MPLIBDIR\auto\DBD\SQLite"
-  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.bs"
-  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.dll"
-  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.exp"
-  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.lib"
+  SetOutPath "$G_MPLIBDIR\auto\DBD\SQLite2"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.bs"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.dll"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.exp"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.lib"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
