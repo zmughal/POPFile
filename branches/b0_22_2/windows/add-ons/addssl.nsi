@@ -52,18 +52,18 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.21" compiler,
-  ; released 20 October 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.21-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.22" compiler,
+  ; released 27 November 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.21_found
+  !ifndef v2.22_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.21 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -132,7 +132,7 @@
   ;   (4) ssl-0.22.x\ssleay32.dll                     (dated 23-Dec-2004)
   ;
   ; POPFile 0.22.3 and 0.22.4 are based upon ActivePerl 5.8.7 (Builds 813 & 815 respectively).
-  ; Up until 18 July 2006 is was safe for POPFile 0.22.3 and 0.22.4 to use the latest versions
+  ; Up until 18 July 2006 it was safe for POPFile 0.22.3 and 0.22.4 to use the latest versions
   ; of the SSL files.
   ;
   ; At present (14 September 2006) the University of Winnipeg repository supplies a version of
@@ -181,9 +181,6 @@
 # These "PFI_LANG_NSISDL_PLURAL" warnings can be safely ignored (at present only the
 # 'Japanese-pfi.nsh' file generates this warning).
 #
-# NOTE: The language selection menu order used in this script assumes that the NSIS MUI
-# 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
-# [see 'SMALL NSIS PATCH REQUIRED' in the '..\pfi-languages.nsh' file]
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
@@ -232,7 +229,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.2"
+  !define C_PFI_VERSION  "0.2.4"
 
   ; Mention the wizard's version number in the window title
 
@@ -501,7 +498,7 @@
 
   ; At least one language must be specified for the wizard (the default is "English")
 
-  !insertmacro PFI_LANG_LOAD "English"
+  !insertmacro PFI_LANG_LOAD "English" "-"
 
   ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
 

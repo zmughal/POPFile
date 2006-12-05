@@ -47,18 +47,18 @@
 #  (5) installer-Uninstall.nsh       - source for the POPFile uninstaller (uninstall.exe)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.19" compiler,
-  ; released 6 August 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.19-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.22" compiler,
+  ; released 27 November 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.19_found
+  !ifndef v2.22_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.19 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -71,10 +71,6 @@
 ; which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or more language tables.
 ; These "PFI_LANG_NSISDL_PLURAL" warnings can be safely ignored (at present only the
 ; 'Japanese-pfi.nsh' file generates this warning).
-;
-; NOTE: The language selection menu order used in this script assumes that the NSIS MUI
-; 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
-; [see 'SMALL NSIS PATCH REQUIRED' in the 'pfi-languages.nsh' file]
 
 ; INSTALLER SIZE: The LZMA compression method is used to reduce the size of the 'setup.exe'
 ; file by around 25% compared to the default compression method but at the expense of greatly
@@ -167,8 +163,6 @@
 # The Kakasi package and the additional Perl modules almost double the size of the installer
 # (assuming that the default compression method is used). If the command-line switch
 # /DNO_KAKASI is used then a smaller installer can be built by omitting the Japanese support.
-#
-# SMALL NSIS PATCH REQUIRED: See 'pfi-languages.nsh' for details.
 #--------------------------------------------------------------------------
 
   ;------------------------------------------------
@@ -617,7 +611,7 @@
 
   ; At least one language must be specified for the installer (the default is "English")
 
-  !insertmacro PFI_LANG_LOAD "English"
+  !insertmacro PFI_LANG_LOAD "English" "-"
 
   ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
 
@@ -676,10 +670,12 @@
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
   ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
+  ReserveFile "${NSISDIR}\Plugins\inetc.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
+  ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
   ReserveFile "ioG.ini"
   ReserveFile "${C_RELEASE_NOTES}"
 
@@ -1202,21 +1198,21 @@ Section /o "XMLRPC" SecXMLRPC
   ; Perl modules required to support the POPFile XMLRPC component
 
   SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\site\lib\LWP.pm"
+  File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\re.pm"
-  File "${C_PERL_DIR}\site\lib\URI.pm"
+  File "${C_PERL_DIR}\lib\URI.pm"
 
   SetOutPath "$G_MPLIBDIR\HTTP"
-  File /r "${C_PERL_DIR}\site\lib\HTTP\*"
+  File /r "${C_PERL_DIR}\lib\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\LWP"
-  File /r "${C_PERL_DIR}\site\lib\LWP\*"
+  File /r "${C_PERL_DIR}\lib\LWP\*"
 
   SetOutPath "$G_MPLIBDIR\Net"
-  File "${C_PERL_DIR}\site\lib\Net\HTT*"
+  File "${C_PERL_DIR}\lib\Net\HTT*"
 
   SetOutPath "$G_MPLIBDIR\Net\HTTP"
-  File "${C_PERL_DIR}\site\lib\Net\HTTP\*"
+  File "${C_PERL_DIR}\lib\Net\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\SOAP"
   File /r "${C_PERL_DIR}\site\lib\SOAP\*"
@@ -1225,10 +1221,10 @@ Section /o "XMLRPC" SecXMLRPC
   File /r "${C_PERL_DIR}\lib\Time\*"
 
   SetOutPath "$G_MPLIBDIR\URI"
-  File /r "${C_PERL_DIR}\site\lib\URI\*"
+  File /r "${C_PERL_DIR}\lib\URI\*"
 
   SetOutPath "$G_MPLIBDIR\XML"
-  File /r "${C_PERL_DIR}\site\lib\XML\*"
+  File /r "${C_PERL_DIR}\lib\XML\*"
 
   SetOutPath "$G_MPLIBDIR\XMLRPC"
   File /r "${C_PERL_DIR}\site\lib\XMLRPC\*"
