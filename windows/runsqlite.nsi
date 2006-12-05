@@ -38,18 +38,18 @@
 #
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.19" compiler,
-  ; released 6 August 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.19-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.22" compiler,
+  ; released 27 November 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.19_found
+  !ifndef v2.22_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.19 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -74,7 +74,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.0"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.2"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
