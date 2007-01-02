@@ -33,7 +33,7 @@
 #                An 'include' file is used to ensure this utility and the main POPFile
 #                installer download and install the same SSL support files.
 #
-# Copyright (c) 2004-2006 John Graham-Cumming
+# Copyright (c) 2004-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -86,7 +86,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 12 November 2006 15:32:16
+  ; Tested with the inetc.dll plugin timestamped 1 January 2007 19:03:52
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -229,7 +229,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.4"
+  !define C_PFI_VERSION  "0.2.5"
 
   ; Mention the wizard's version number in the window title
 
