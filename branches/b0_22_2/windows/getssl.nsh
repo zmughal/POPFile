@@ -20,7 +20,7 @@
 #                provide IO::Socket::SSL v1.01 which is not compatible with POPFile so this
 #                utility will apply a patch to downgrade this to the compatible v0.97 version.
 #
-# Copyright (c) 2005-2006 John Graham-Cumming
+# Copyright (c) 2005-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -56,7 +56,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 12 November 2006 15:32:16
+  ; Tested with the inetc.dll plugin timestamped 1 January 2007 19:03:52
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -465,7 +465,7 @@ Function GetSSLFile
   DetailPrint ""
   DetailPrint "$(PFI_LANG_PROG_STARTDOWNLOAD)"
 
-  ; The current version of the Inetc plugin (dated 8 September 2006) leaves the "Show Details"
+  ; Unlike the NSISdl plugin shipped with NSIS, the Inetc plugin leaves the "Show Details"
   ; button in view so we temporarily disable it during the download to avoid a messy display
   ; (if the user has already clicked the button then they'll just need to put up with the mess)
 
