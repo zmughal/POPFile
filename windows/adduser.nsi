@@ -7,7 +7,7 @@
 #                 to run POPFile for the first time. Some simple "repair work" can also
 #                 be done using this wizard.
 #
-# Copyright (c) 2004-2006 John Graham-Cumming
+# Copyright (c) 2004-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -2211,6 +2211,11 @@ FunctionEnd
 # is case-sensitive so we have to convert the skin name to lowercase otherwise the current
 # skin will not be shown in the Configuration page of the UI (the UI will show the first entry
 # in the list ("blue") instead of the skin currently in use).
+#
+# For the 0.22.5 release POPFile switched from using an old version of the DBD::SQLite package
+# to the newer DBD::SQLite2 package. This change lets POPFile use the most recent SQLite 2.x
+# libraries (POPFile cannot use SQLite3.x libraries yet). If upgrading an installation that
+# currently uses DBD::SQLite then change the configuration in popfile.cfg to use DBD::SQLite2.
 #--------------------------------------------------------------------------
 
 Function CheckExistingConfigData
@@ -2281,6 +2286,7 @@ loop:
   StrCmp ${L_CMPRE} "windows_trayicon " got_trayicon
   StrCpy ${L_CMPRE} ${L_LNE} 16
   StrCmp ${L_CMPRE} "windows_console " got_console
+  StrCmp ${L_CMPRE} "bayes_dbconnect " got_dbconnect
 
   ; do not transfer any UI language settings to the copy of popfile.cfg
 
@@ -2312,6 +2318,16 @@ got_trayicon:
 got_console:
   StrCpy ${L_CONSOLE} ${L_LNE} 1 16
   Goto loop
+
+got_dbconnect:
+  Push ${L_LNE}
+  Push "dbi:SQLite:"
+  Call PFI_StrStr
+  Pop ${L_CMPRE}
+  StrCmp ${L_CMPRE} "" copy_lne
+  StrCpy ${L_CMPRE} ${L_CMPRE} "" 11
+  StrCpy ${L_LNE} "bayes_dbconnect dbi:SQLite2:${L_CMPRE}"
+  Goto copy_lne
 
 got_lang_new:
   StrCpy ${L_LANG_NEW} ${L_LNE} "" 14
