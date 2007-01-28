@@ -73,6 +73,23 @@
   !undef  ${NSIS_VERSION}_found
 
   ;------------------------------------------------
+  ; This script requires the 'DumpLog' NSIS plugin
+  ;------------------------------------------------
+
+  ; This script uses a special NSIS plugin (DumpLog) to save the installation log to a file.
+  ; This plugin is much faster than the 'Dump Content of Log Window to File' function shown
+  ; in the NSIS Users Manual (see section D.4 in Appendix D of the manual for NSIS 2.22).
+  ;
+  ; The 'NSIS Wiki' page for the 'DumpLog' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/DumpLog_plug-in
+  ;
+  ; To compile this script, copy the 'DumpLog.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'DumpLog' source and example files can be unzipped to the
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with version 1.0 of the DumpLog.dll plugin.
+
+  ;------------------------------------------------
   ; This script requires the 'Inetc' NSIS plugin
   ;------------------------------------------------
 
@@ -86,7 +103,25 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 1 January 2007 19:03:52
+  ; Tested with the inetc.dll plugin timestamped 18 January 2007 15:52:34
+
+  ;------------------------------------------------
+  ; This script requires the 'md5dll' NSIS plugin
+  ;------------------------------------------------
+
+  ; This script uses a special NSIS plugin (md5dll) to calculate the MD5 sum for a file.
+  ;
+  ; The 'NSIS Wiki' page for the 'md5dll' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/MD5_plugin
+  ;
+  ; Alternative download links can be found at the 'md5dll' author's site:
+  ; http://www.darklogic.org/win32/nsis/plugins/md5dll/
+  ;
+  ; To compile this script, copy the 'md5dll.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'md5dll' source and example files can be unzipped to the
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with version 0.4 of the 'md5dll' plugin.
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -102,7 +137,7 @@
   ;
   ; To compile this script, copy the 'untgz.dll' file to the standard NSIS plugins folder
   ; (${NSISDIR}\Plugins\). The 'untgz' source and example files can be unzipped to the
-  ; ${NSISDIR}\Contrib\untgz\ folder if you wish, but this step is entirely optional.
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
   ; Tested with versions 1.0.5, 1.0.6, 1.0.7 and 1.0.8 of the 'untgz' plugin.
 
@@ -229,7 +264,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.5"
+  !define C_PFI_VERSION  "0.2.7"
 
   ; Mention the wizard's version number in the window title
 
@@ -239,12 +274,6 @@
 
   !define C_OUTFILE      "addssl.exe"
 
-  ; Values used for the $G_SSL_SOURCE flag which indicates where we get the SSL files from
-  ; (to make maintenance easier, constants are used for these values)
-
-  !define C_BUILTIN      "built-in"    ; use old SSL files compatible with pre-0.22.3 releases
-  !define C_INTERNET     "internet"    ; download latest SSL Support files from the Internet
-
 #--------------------------------------------------------------------------
 # User Registers (Global)
 #--------------------------------------------------------------------------
@@ -253,9 +282,6 @@
 
   Var G_ROOTDIR            ; full path to the folder used for the POPFile program files
   Var G_MPLIBDIR           ; full path to the folder used for most of the minimal Perl files
-
-  Var G_SSL_SOURCE         ; indicates the source of the SSL files we are to install
-                           ; (the possible values are either ${C_BUILTIN} or ${C_INTERNET})
 
   Var G_PLS_FIELD_1        ; used to customize some language strings
 
@@ -537,6 +563,7 @@
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
   ReserveFile "${NSISDIR}\Plugins\inetc.dll"
+  ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
@@ -633,6 +660,7 @@ Section "-tidyup"
 
   ; Now patch Module.pm (if it needs to be patched)
 
+  DetailPrint ""
   DetailPrint "$(PSS_LANG_PREPAREPATCH)"
 
   SetDetailsPrint none
