@@ -9,7 +9,7 @@
 #                                   required and these are installed at the same time as the
 #                                   optional POPFile component.
 #
-# Copyright (c) 2005-2006 John Graham-Cumming
+# Copyright (c) 2005-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -195,6 +195,11 @@
   ; which includes the 3.x flavour of the DBD::SQLite module so we now default to using
   ; DBD::SQLite2 since POPFile 0.22.x is not compatible with SQLite 3.x. The 0.23.0 release
   ; of POPFile ia expected to use SQLite 3.x.
+
+  ; If DBD::SQLite is currently installed, disable it (because we are installing
+  ; DBD::SQLite2 which uses a more up-to-date version of the SQLite 2.x library)
+
+  !insertmacro PFI_BACKUP_123_DP "$G_MPLIBDIR\DBD" "SQLite.pm"
 
   SetOutPath "$G_MPLIBDIR\DBD"
   File "${C_PERL_DIR}\site\lib\DBD\SQLite2.pm"
