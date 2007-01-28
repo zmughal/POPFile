@@ -20,7 +20,7 @@
 #                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
 #                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2006 John Graham-Cumming
+# Copyright (c) 2002-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -671,6 +671,7 @@
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
   ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
   ReserveFile "${NSISDIR}\Plugins\inetc.dll"
+  ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
@@ -678,6 +679,7 @@
   ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
   ReserveFile "ioG.ini"
   ReserveFile "${C_RELEASE_NOTES}"
+  ReserveFile "SSL_pm.pat"
 
 #--------------------------------------------------------------------------
 # Installer Function: .onInit - installer starts by offering a choice of languages
