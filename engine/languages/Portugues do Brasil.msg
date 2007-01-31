@@ -183,7 +183,7 @@ Advanced_RemoveWord                     Remover palavra
 Advanced_AllParameters                  Todos os Parâmetros do POPFile
 Advanced_Parameter                      Parâmetro
 Advanced_Value                          Valor
-Advanced_Warning                        Esta é a lista completa dos parâmetros do POPFile.  Somente para usuários avançados: você pode alterar qualquer um e clicar em Alterar; não há verificação de validade.  Ítens em negrito estão diferentes da configuração padrão. Veja <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?OptionReference">OptionReference</a> para mais informação sobre as opções.
+Advanced_Warning                        Esta é a lista completa dos parâmetros do POPFile.  Somente para usuários avançados: você pode alterar qualquer um e clicar em Alterar; não há verificação de validade.  Ítens em negrito estão diferentes da configuração padrão. Veja <a href="http://getpopfile.org/wiki/OptionReference">OptionReference</a> para mais informação sobre as opções.
 Advanced_ConfigFile                     Arquivo de configuração:
 
 History_Filter                          &nbsp;(apenas mostrando o balde <font color="%s">%s</font>)
@@ -374,6 +374,6 @@ Imap_WatchedFolder                      Pasta em observação nº
 
 Shutdown_Message                        O POPFile foi desligado
 
-Help_Training                           Quando você usa o POPFile pela primeira vez, ele ainda não sabe nada e precisa de treinamento. O POPFile requer treinamento nas mensagens para cada balde, e o treinamento acontece quando você reclassifica para o balde correto uma mensagem que o POPFile classificou incorretamente. Você deve também configurar seu cliente de email para filtrar mensagens baseado na classificação do POPFile. Informação para configurar os filtros no seu cliente de email pode ser encontrado no <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FAQ:EmailSorting">Projeto de Documentação do POPFile</a>.
+Help_Training                           Quando você usa o POPFile pela primeira vez, ele ainda não sabe nada e precisa de treinamento. O POPFile requer treinamento nas mensagens para cada balde, e o treinamento acontece quando você reclassifica para o balde correto uma mensagem que o POPFile classificou incorretamente. Você deve também configurar seu cliente de email para filtrar mensagens baseado na classificação do POPFile. Informação para configurar os filtros no seu cliente de email pode ser encontrado no <a href="http://getpopfile.org/wiki/FAQ:EmailSorting">Projeto de Documentação do POPFile</a>.
 Help_Bucket_Setup                       O POPFile requer pelo menos dois baldes além do pseudo-balde "unclassified". O que torna o POPFile único é que ele pode classificar email, mais do que isso, você pode ter qualquer número de baldes. Uma configuração simples poderia ser um balde "spam", "pessoal", e um balde "trabalho".
 Help_No_More                            Não mostre isto novamente
