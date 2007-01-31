@@ -182,7 +182,7 @@ Advanced_RemoveWord                     単語削除
 Advanced_AllParameters                  POPFile 全パラメーター
 Advanced_Parameter                      パラメーター
 Advanced_Value                          値
-Advanced_Warning                        以下は POPFile の全てのパラメーターのリストです。アドバンスド・ユーザー専用です。値を変更して更新ボタンをクリックして下さい。バリディティー（妥当性）チェックは行いません。太字で表示されている項目はデフォルト設定から変更されたものです。オプションについての詳細は、<a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?JP_OptionReference">オプション・リファレンス</a>を参照してください。
+Advanced_Warning                        以下は POPFile の全てのパラメーターのリストです。アドバンスド・ユーザー専用です。値を変更して更新ボタンをクリックして下さい。バリディティー（妥当性）チェックは行いません。太字で表示されている項目はデフォルト設定から変更されたものです。オプションについての詳細は、<a href="http://getpopfile.org/wiki/JP:OptionReference">オプション・リファレンス</a>を参照してください。
 Advanced_ConfigFile                     設定ファイル:
 
 History_Filter                          &nbsp;(<font color="%s">%s </font>バケツのみを表示)
