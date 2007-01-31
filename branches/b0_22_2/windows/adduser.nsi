@@ -1192,7 +1192,7 @@ skip_rel_notes:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?FrequentlyAskedQuestions"
+              "http://getpopfile.org/wiki/FAQ"
 
   !ifndef ENGLISH_MODE
       Goto support
@@ -1200,7 +1200,7 @@ skip_rel_notes:
     japanese_faq:
       WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions"
+                  "http://getpopfile.org/wiki/JP:FAQ"
 
     support:
   !endif
@@ -1219,7 +1219,7 @@ skip_rel_notes:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?POPFileDocumentationProject"
+              "http://getpopfile.org/wiki"
 
   !ifndef ENGLISH_MODE
       Goto pfidiagnostic
@@ -1227,7 +1227,7 @@ skip_rel_notes:
     japanese_wiki:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_POPFileDocumentationProject"
+                  "http://getpopfile.org/wiki/jp"
 
     pfidiagnostic:
   !endif
