@@ -1,4 +1,4 @@
-﻿# Copyright (c) 2001-2006 John Graham-Cumming
+﻿# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -25,7 +25,7 @@ LanguageDirection                       rtl
 ManualLanguage                          ar
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 FrequentlyAskedQuestions
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   تطبيق

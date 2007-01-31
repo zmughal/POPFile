@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -25,7 +25,7 @@ LanguageDirection                       ltr
 ManualLanguage                          en
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 FrequentlyAskedQuestions
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   K&auml;yt&auml;
@@ -371,6 +371,6 @@ Imap_WatchedFolder                      Vahdittu kansio no
 
 Shutdown_Message                        POPFile on sammutettu
 
-Help_Training                           Kun k&auml;yt&auml;t POPFile&auml; ensimm&auml;ist&auml; kertaa, se ei tied&auml; mit&auml;&auml;n ja vaatii opetusta. POPFilelle pit&auml;&auml; opettaa milt&auml; eri sankojen viestit n&auml;ytt&auml;v&auml;t. POPFile oppii, kun korjaat sen tekemi&auml; virheit&auml; luokittelemalla v&auml;&auml;rin luokitellut viestit oikeaan sankoon. Lis&auml;ksi sinun pit&auml;&auml; lis&auml;t&auml; k&auml;ytt&auml;m&auml;&auml;si s&auml;hk&ouml;postiohjelmaan suodattimia, joka suodattavat viestit POPFilen luokitusten mukaan. Englanninkielist&auml; apua suodatinten tekoon l&ouml;ytyy <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFilen dokumentointiprojektista</a>.
+Help_Training                           Kun k&auml;yt&auml;t POPFile&auml; ensimm&auml;ist&auml; kertaa, se ei tied&auml; mit&auml;&auml;n ja vaatii opetusta. POPFilelle pit&auml;&auml; opettaa milt&auml; eri sankojen viestit n&auml;ytt&auml;v&auml;t. POPFile oppii, kun korjaat sen tekemi&auml; virheit&auml; luokittelemalla v&auml;&auml;rin luokitellut viestit oikeaan sankoon. Lis&auml;ksi sinun pit&auml;&auml; lis&auml;t&auml; k&auml;ytt&auml;m&auml;&auml;si s&auml;hk&ouml;postiohjelmaan suodattimia, joka suodattavat viestit POPFilen luokitusten mukaan. Englanninkielist&auml; apua suodatinten tekoon l&ouml;ytyy <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FAQ:EmailSorting">POPFilen dokumentointiprojektista</a>.
 Help_Bucket_Setup                       POPFile vaatii v&auml;hint&auml;&auml;n kaksi sankoa unclassified (luokittelematon) -nimisen pseudosangon lis&auml;ksi. POPFile voi kuitenkin luokitella viestit hienojakoisemminkin. Sankojen m&auml;&auml;r&auml;&auml; ei ole rajoitettu. Voit k&auml;ytt&auml;&auml; esimerkiksi sankoja "roskapostit", "yksityiset" ja "ty&ouml;asiat".
 Help_No_More                            &Auml;l&auml; n&auml;yt&auml; t&auml;t&auml; viesti&auml; en&auml;&auml;
