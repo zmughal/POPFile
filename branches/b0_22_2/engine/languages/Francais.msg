@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -368,6 +368,6 @@ Imap_WatchedFolder                      Dossier surveillé n°
 
 Shutdown_Message                        POPFile s'est arrêté
 
-Help_Training                           Lorsque vous utilisez POPFile pour la première fois, il ne connait rien et a besoin d'un apprentissage. POPFile a besoin d'être entraîné avec des messages appartenant à chaque catégorie, cet apprentissage ayant lieu quand vous reclassifiez un message que POPFile a mal classé. Vous devez également configurer votre client de messagerie pour filtrer les messages en fonction de la classification effectuée par POPFile. Pour plus de renseignements sur la mise en place du filtrage dans les clients de messagerie, consultez : <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFile Documentation Project</a> (en Anglais).
+Help_Training                           Lorsque vous utilisez POPFile pour la première fois, il ne connait rien et a besoin d'un apprentissage. POPFile a besoin d'être entraîné avec des messages appartenant à chaque catégorie, cet apprentissage ayant lieu quand vous reclassifiez un message que POPFile a mal classé. Vous devez également configurer votre client de messagerie pour filtrer les messages en fonction de la classification effectuée par POPFile. Pour plus de renseignements sur la mise en place du filtrage dans les clients de messagerie, consultez : <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FAQ:EmailSorting">POPFile Documentation Project</a> (en Anglais).
 Help_Bucket_Setup                       POPFile a besoin d'au moins deux catégories en plus de la pseudo-catégorie 'unclassified'. Ce qui rend POPFile unique est qu'il peut classifier les messages dans autant de catégorie que vous le désirez. Une configuration simple pourrait être une catégorie "spam", une autre "personnel" et une autre "professionnel"
 Help_No_More                            Ne plus montrer ceci

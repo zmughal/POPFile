@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -25,7 +25,7 @@ LanguageDirection                       ltr
 ManualLanguage                          en
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 FrequentlyAskedQuestions
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   Apply
@@ -373,6 +373,6 @@ Imap_WatchedFolder                      Watched folder no
 
 Shutdown_Message                        POPFile has shut down
 
-Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile missclassified to the correct bucket. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFile Documentation Project</a>.
+Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile missclassified to the correct bucket. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FAQ:EmailSorting">POPFile Documentation Project</a>.
 Help_Bucket_Setup                       POPFile requires at least two buckets in addition to the "unclassified" pseudo-bucket. What makes POPFile unique is that it can classify email more than that, you can have any number of buckets. A simple setup would be a "spam", "personal", and a "work" bucket.
 Help_No_More                            Don't show this again

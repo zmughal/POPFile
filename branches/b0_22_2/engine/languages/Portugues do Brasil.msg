@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 # Translated by Adriano Rafael Gomes <adrianorg@users.sourceforge.net>
 # Updated by Fernando de Alcantara Correia <facorreia@users.sourceforge.net> to v0.19.1
 #
@@ -27,7 +27,7 @@ LanguageDirection                       ltr
 ManualLanguage                          br
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 FrequentlyAskedQuestions
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   Aplicar
@@ -374,6 +374,6 @@ Imap_WatchedFolder                      Pasta em observação nº
 
 Shutdown_Message                        O POPFile foi desligado
 
-Help_Training                           Quando você usa o POPFile pela primeira vez, ele ainda não sabe nada e precisa de treinamento. O POPFile requer treinamento nas mensagens para cada balde, e o treinamento acontece quando você reclassifica para o balde correto uma mensagem que o POPFile classificou incorretamente. Você deve também configurar seu cliente de email para filtrar mensagens baseado na classificação do POPFile. Informação para configurar os filtros no seu cliente de email pode ser encontrado no <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">Projeto de Documentação do POPFile</a>.
+Help_Training                           Quando você usa o POPFile pela primeira vez, ele ainda não sabe nada e precisa de treinamento. O POPFile requer treinamento nas mensagens para cada balde, e o treinamento acontece quando você reclassifica para o balde correto uma mensagem que o POPFile classificou incorretamente. Você deve também configurar seu cliente de email para filtrar mensagens baseado na classificação do POPFile. Informação para configurar os filtros no seu cliente de email pode ser encontrado no <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FAQ:EmailSorting">Projeto de Documentação do POPFile</a>.
 Help_Bucket_Setup                       O POPFile requer pelo menos dois baldes além do pseudo-balde "unclassified". O que torna o POPFile único é que ele pode classificar email, mais do que isso, você pode ter qualquer número de baldes. Uma configuração simples poderia ser um balde "spam", "pessoal", e um balde "trabalho".
 Help_No_More                            Não mostre isto novamente
