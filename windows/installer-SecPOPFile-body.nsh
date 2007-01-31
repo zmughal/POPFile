@@ -7,7 +7,7 @@
 #                                   The non-library functions used in this file are contained
 #                                   in a separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005-2006 John Graham-Cumming
+# Copyright (c) 2005-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -403,7 +403,7 @@ create_shortcuts:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?FrequentlyAskedQuestions"
+              "http://getpopfile.org/wiki/FAQ"
 
   !ifndef ENGLISH_MODE
       Goto support
@@ -411,7 +411,7 @@ create_shortcuts:
     japanese_faq:
       WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions"
+                  "http://getpopfile.org/wiki/JP:FAQ"
 
     support:
   !endif
@@ -430,7 +430,7 @@ create_shortcuts:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?POPFileDocumentationProject"
+              "http://getpopfile.org/wiki"
 
   !ifndef ENGLISH_MODE
       Goto pfidiagnostic
@@ -438,7 +438,7 @@ create_shortcuts:
     japanese_wiki:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_POPFileDocumentationProject"
+                  "http://getpopfile.org/wiki/jp"
 
     pfidiagnostic:
   !endif
