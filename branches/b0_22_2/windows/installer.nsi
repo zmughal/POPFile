@@ -227,6 +227,12 @@
   !define C_README        "v${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.change"
   !define C_RELEASE_NOTES "..\engine\${C_README}"
 
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   admin
+
   ;----------------------------------------------------------------------
   ; Root directory for the Perl files (used when building the installer)
   ;----------------------------------------------------------------------
@@ -383,6 +389,7 @@
     !endif
   !endif
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
