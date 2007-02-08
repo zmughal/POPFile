@@ -212,6 +212,19 @@
   Caption                "Add POPFile User v${C_PFI_VERSION}"
   UninstallCaption       "Remove POPFile User v${C_PFI_VERSION}"
 
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
+  !tempfile EXE_HDR
+  !packhdr "${EXE_HDR}" \
+      '"toolkit\pfi-manifest.exe" \
+          /FILE="${EXE_HDR}" \
+          /NAME="POPFile.wizard" \
+          /DESCRIPTION="Add POPFile User wizard"'
+
   ;----------------------------------------------------------------------
   ; Default location for POPFile User Data files (popfile.cfg and others)
   ;
@@ -354,6 +367,7 @@
     VIAddVersionKey "Build"                 "English-Mode"
   !endif
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
