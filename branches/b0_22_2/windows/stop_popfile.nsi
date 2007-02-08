@@ -2,7 +2,7 @@
 #
 # stop_popfile.nsi --- A simple 'command-line' utility to shutdown POPFile silently.
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2003-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -122,7 +122,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.6.2"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.6.4"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
@@ -135,6 +135,19 @@
   ; Selecting 'silent' mode makes the installer behave like a command-line utility
 
   SilentInstall silent
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
+  !tempfile EXE_HDR
+  !packhdr "${EXE_HDR}" \
+      '"toolkit\pfi-manifest.exe" \
+          /FILE="${EXE_HDR}" \
+          /NAME="POPFile.utility" \
+          /DESCRIPTION="Silent shutdown utility for POPFile"'
 
   ;-------------------------------------------------------------------------------
   ; Time delay constants used in conjunction with the NSISdl plugin
@@ -177,6 +190,7 @@
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -230,7 +244,7 @@ Section Shutdown
 
 usage:
   MessageBox MB_OK "POPFile Silent Shutdown Utility v${C_VERSION}            \
-    Copyright (c) 2006  John Graham-Cumming\
+    Copyright (c)  ${C_BUILD_YEAR}  John Graham-Cumming\
     ${MB_NL}${MB_NL}\
     This command-line utility shuts POPFile down silently, without opening a browser window.\
     ${MB_NL}${MB_NL}\

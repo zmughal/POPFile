@@ -11,7 +11,7 @@
 #                           to execute SQL from the command-line so this utility checks the
 #                           sqlite.exe version number before trying to execute any SQL.
 #
-# Copyright (c) 2005-2006  John Graham-Cumming
+# Copyright (c) 2005-2007  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -156,7 +156,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.2"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.4"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -174,6 +174,19 @@
   OutFile "${C_OUTFILE}"
 
   Icon "..\POPFileIcon\popfile.ico"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
+  !tempfile EXE_HDR
+  !packhdr "${EXE_HDR}" \
+      '"..\toolkit\pfi-manifest.exe" \
+          /FILE="${EXE_HDR}" \
+          /NAME="POPFile.utility" \
+          /DESCRIPTION="Check POPFile SQLite database integrity"'
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"
@@ -213,6 +226,7 @@
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"

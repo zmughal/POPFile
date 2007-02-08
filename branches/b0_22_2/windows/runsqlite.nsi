@@ -9,7 +9,7 @@
 #                   and sqlite3.exe for 3.x format files. This utility ensures the appropriate
 #                   utility is used to access the specified SQLite database file.
 #
-# Copyright (c) 2004-2006  John Graham-Cumming
+# Copyright (c) 2004-2007  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -74,7 +74,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.2"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.4"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -91,6 +91,19 @@
   ; Selecting 'silent' mode makes the installer behave like a command-line utility
 
   SilentInstall silent
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
+  !tempfile EXE_HDR
+  !packhdr "${EXE_HDR}" \
+      '"toolkit\pfi-manifest.exe" \
+          /FILE="${EXE_HDR}" \
+          /NAME="POPFile.utility" \
+          /DESCRIPTION="Intelligent front-end to SQLite command-line utility"'
 
 #--------------------------------------------------------------------------
 # Include private library functions and macro definitions
@@ -120,6 +133,7 @@
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"

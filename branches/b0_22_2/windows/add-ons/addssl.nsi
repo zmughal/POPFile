@@ -264,7 +264,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.7"
+  !define C_PFI_VERSION  "0.2.8"
 
   ; Mention the wizard's version number in the window title
 
@@ -273,6 +273,19 @@
   ; Name to be used for the program file (also used for the 'Version Information')
 
   !define C_OUTFILE      "addssl.exe"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   admin
+
+  !tempfile EXE_HDR
+  !packhdr "${EXE_HDR}" \
+      '"..\toolkit\pfi-manifest.exe" \
+          /FILE="${EXE_HDR}" \
+          /NAME="POPFile.wizard" \
+          /DESCRIPTION="Add SSL Support to POPFile"'
 
 #--------------------------------------------------------------------------
 # User Registers (Global)
@@ -344,6 +357,7 @@
     VIAddVersionKey "Build"                 "English-Mode"
   !endif
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"

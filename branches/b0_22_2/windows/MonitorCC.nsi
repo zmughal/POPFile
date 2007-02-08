@@ -4,7 +4,7 @@
 #                   POPFile Windows installer when a flat-file or BerkeleyDB corpus
 #                   needs to be converted to the new SQL database format.
 #
-# Copyright (c) 2004-2006 John Graham-Cumming
+# Copyright (c) 2004-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -110,13 +110,26 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.2.3"
+  !define C_PFI_VERSION  "0.2.5"
 
   !define C_OUTFILE      "monitorcc.exe"
 
   ; Mention the version number in the window title
 
   Caption                "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
+  !tempfile EXE_HDR
+  !packhdr "${EXE_HDR}" \
+      '"toolkit\pfi-manifest.exe" \
+          /FILE="${EXE_HDR}" \
+          /NAME="POPFile.utility" \
+          /DESCRIPTION="Monitor flat-file or BerkeleyDB corpus conversion"'
 
   ;------------------------------------------------
   ; Define PFI_VERBOSE to get more compiler output
@@ -152,6 +165,7 @@
 
   VIAddVersionKey "Build"                   "Multi-Language"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
