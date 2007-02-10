@@ -196,7 +196,7 @@ save_HKCU_root_sfn:
   ; The experimental 'setup-repack587.exe' installer installed some NSIS-based replacements
   ; for the non-service EXE files plus renamed versions of the old 0.22.2 EXE files. These
   ; old ActivePerl 5.8.4 files can now be deleted as this installer contains versions based
-  ; upon ActivePerl 5.8.7.
+  ; upon a more recent version of ActivePerl (e.g. 0.22.5 is based upon 5.8.8 Build 820).
 
   Delete "$G_ROOTDIR\popfile-584.exe"
   Delete "$G_ROOTDIR\popfilef-584.exe"
