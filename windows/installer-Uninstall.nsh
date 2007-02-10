@@ -3,7 +3,7 @@
 # installer-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the main
 #                             NSIS 'installer.nsi' script used to create the POPFile installer.
 #
-# Copyright (c) 2005-2006 John Graham-Cumming
+# Copyright (c) 2005-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -687,15 +687,13 @@ skip_Encode:
   RMDir /r "$G_MPLIBDIR\IO"
   RMDir /r "$G_MPLIBDIR\Math"
   RMDir /r "$G_MPLIBDIR\MIME"
+  RMDir /r "$G_MPLIBDIR\Scalar"
   RMDir /r "$G_MPLIBDIR\String"
   RMDir /r "$G_MPLIBDIR\Sys"
   RMDir /r "$G_MPLIBDIR\Text"
   RMDir /r "$G_MPLIBDIR\Time"
   RMDir /r "$G_MPLIBDIR\warnings"
-  IfFileExists "$G_MPLIBDIR\Win32\*.*" 0 skip_Win32
   RMDir /r "$G_MPLIBDIR\Win32"
-
-skip_Win32:
   Delete "$G_MPLIBDIR\*.pm"
   Delete "$G_MPLIBDIR\*.pl"
   RMDIR "$G_MPLIBDIR"
