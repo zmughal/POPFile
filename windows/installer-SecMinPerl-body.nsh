@@ -48,7 +48,7 @@
   DetailPrint "$(PFI_LANG_INST_PROG_PERL)"
   SetDetailsPrint listonly
 
-  ; Install the minimal Perl "core" based upon ActivePerl 5.8.8 Build 819
+  ; Install the minimal Perl "core" based upon ActivePerl 5.8.8 Build 820
   ; (extra Perl files are added by the "Kakasi", "SOCKS" & "XMLRPC" sections in installer.nsi)
 
   SetOutPath "$G_ROOTDIR"
@@ -78,6 +78,7 @@
   File "${C_PERL_DIR}\lib\Symbol.pm"
   File "${C_PERL_DIR}\lib\vars.pm"
   File "${C_PERL_DIR}\lib\warnings.pm"
+  File "${C_PERL_DIR}\lib\Win32.pm"
   File "${C_PERL_DIR}\lib\XSLoader.pm"
 
   SetOutPath "$G_MPLIBDIR\Carp"
@@ -118,6 +119,9 @@
   SetOutPath "$G_MPLIBDIR\MIME"
   File "${C_PERL_DIR}\lib\MIME\*"
 
+  SetOutPath "$G_MPLIBDIR\Scalar"
+  File "${C_PERL_DIR}\lib\Scalar\Util.pm"
+
   SetOutPath "$G_MPLIBDIR\Sys"
   File "${C_PERL_DIR}\lib\Sys\*"
 
@@ -125,7 +129,7 @@
   File "${C_PERL_DIR}\lib\Text\ParseWords.pm"
 
   SetOutPath "$G_MPLIBDIR\Time"
-  File "${C_PERL_DIR}\lib\Time\Local.pm"
+  File "${C_PERL_DIR}\site\lib\Time\Local.pm"
   File "${C_PERL_DIR}\site\lib\Time\Zone.pm"
 
   SetOutPath "$G_MPLIBDIR\warnings"
@@ -160,6 +164,9 @@
   SetOutPath "$G_MPLIBDIR\auto\Sys\Hostname"
   File "${C_PERL_DIR}\lib\auto\Sys\Hostname\*"
 
+  SetOutPath "$G_MPLIBDIR\auto\Win32"
+  File "${C_PERL_DIR}\lib\auto\Win32\*"
+
   ; Install Perl modules and library files for BerkeleyDB support. Although POPFile now uses
   ; SQLite (or another SQL database) to store the corpus and other essential data, it retains
   ; the ability to automatically convert old BerkeleyDB format corpus files to the SQL database
@@ -191,7 +198,7 @@
   File "${C_PERL_DIR}\lib\auto\DBI\DBI.exp"
   File "${C_PERL_DIR}\lib\auto\DBI\DBI.lib"
 
-  ; Install SQLite2 support. The 0.22.5 release is based upon ActivePerl 5.8.8 Build 819
+  ; Install SQLite2 support. The 0.22.5 release is based upon ActivePerl 5.8.8 Build 820
   ; which includes the 3.x flavour of the DBD::SQLite module so we now default to using
   ; DBD::SQLite2 since POPFile 0.22.x is not compatible with SQLite 3.x. The 0.23.0 release
   ; of POPFile ia expected to use SQLite 3.x.
