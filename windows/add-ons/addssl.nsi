@@ -264,7 +264,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.8"
+  !define C_PFI_VERSION  "0.2.9"
 
   ; Mention the wizard's version number in the window title
 
@@ -279,13 +279,6 @@
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   admin
-
-  !tempfile EXE_HDR
-  !packhdr "${EXE_HDR}" \
-      '"..\toolkit\pfi-manifest.exe" \
-          /FILE="${EXE_HDR}" \
-          /NAME="POPFile.wizard" \
-          /DESCRIPTION="Add SSL Support to POPFile"'
 
 #--------------------------------------------------------------------------
 # User Registers (Global)

@@ -103,7 +103,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.4"
+  !define C_VERSION   "0.1.5"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -124,13 +124,6 @@
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   user
-
-  !tempfile EXE_HDR
-  !packhdr "${EXE_HDR}" \
-      '"..\toolkit\pfi-manifest.exe" \
-          /FILE="${EXE_HDR}" \
-          /NAME="POPFile.utility" \
-          /DESCRIPTION="PFI Diagnostic Utility for POPFile"'
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"

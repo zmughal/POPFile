@@ -74,7 +74,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.4"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.5"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -97,13 +97,6 @@
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   user
-
-  !tempfile EXE_HDR
-  !packhdr "${EXE_HDR}" \
-      '"toolkit\pfi-manifest.exe" \
-          /FILE="${EXE_HDR}" \
-          /NAME="POPFile.utility" \
-          /DESCRIPTION="Intelligent front-end to SQLite command-line utility"'
 
 #--------------------------------------------------------------------------
 # Include private library functions and macro definitions
