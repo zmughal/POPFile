@@ -122,7 +122,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.6.4"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.6.5"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
@@ -141,13 +141,6 @@
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   user
-
-  !tempfile EXE_HDR
-  !packhdr "${EXE_HDR}" \
-      '"toolkit\pfi-manifest.exe" \
-          /FILE="${EXE_HDR}" \
-          /NAME="POPFile.utility" \
-          /DESCRIPTION="Silent shutdown utility for POPFile"'
 
   ;-------------------------------------------------------------------------------
   ; Time delay constants used in conjunction with the NSISdl plugin

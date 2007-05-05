@@ -218,13 +218,6 @@
 
   RequestExecutionLevel   user
 
-  !tempfile EXE_HDR
-  !packhdr "${EXE_HDR}" \
-      '"toolkit\pfi-manifest.exe" \
-          /FILE="${EXE_HDR}" \
-          /NAME="POPFile.wizard" \
-          /DESCRIPTION="Add POPFile User wizard"'
-
   ;----------------------------------------------------------------------
   ; Default location for POPFile User Data files (popfile.cfg and others)
   ;

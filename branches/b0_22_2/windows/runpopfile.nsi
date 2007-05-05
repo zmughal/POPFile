@@ -116,7 +116,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.2.6"
+  !define C_PFI_VERSION   "0.2.7"
 
   !define C_OUTFILE       "runpopfile.exe"
 
@@ -140,13 +140,6 @@
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   user
-
-  !tempfile EXE_HDR
-  !packhdr "${EXE_HDR}" \
-      '"toolkit\pfi-manifest.exe" \
-          /FILE="${EXE_HDR}" \
-          /NAME="POPFile.utility" \
-          /DESCRIPTION="Intelligent front-end used to launch POPFile"'
 
 #--------------------------------------------------------------------------
 # Use the standard NSIS list of common Windows Messages

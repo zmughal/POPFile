@@ -110,7 +110,7 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.2.5"
+  !define C_PFI_VERSION  "0.2.6"
 
   !define C_OUTFILE      "monitorcc.exe"
 
@@ -123,13 +123,6 @@
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   user
-
-  !tempfile EXE_HDR
-  !packhdr "${EXE_HDR}" \
-      '"toolkit\pfi-manifest.exe" \
-          /FILE="${EXE_HDR}" \
-          /NAME="POPFile.utility" \
-          /DESCRIPTION="Monitor flat-file or BerkeleyDB corpus conversion"'
 
   ;------------------------------------------------
   ; Define PFI_VERBOSE to get more compiler output

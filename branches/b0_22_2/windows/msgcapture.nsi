@@ -114,7 +114,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.1.5"
+  !define C_VERSION             "0.1.6"
 
   !define C_OUTFILE             "msgcapture.exe"
 
@@ -137,13 +137,6 @@
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   user
-
-  !tempfile EXE_HDR
-  !packhdr "${EXE_HDR}" \
-      '"toolkit\pfi-manifest.exe" \
-          /FILE="${EXE_HDR}" \
-          /NAME="POPFile.utility" \
-          /DESCRIPTION="Capture console messages from POPFile"'
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"
