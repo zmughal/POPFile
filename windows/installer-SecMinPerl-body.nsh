@@ -116,6 +116,9 @@
   SetOutPath "$G_MPLIBDIR\IO\Socket"
   File "${C_PERL_DIR}\lib\IO\Socket\*"
 
+  SetOutPath "$G_MPLIBDIR\List"
+  File "${C_PERL_DIR}\lib\List\Util.pm"
+  
   SetOutPath "$G_MPLIBDIR\MIME"
   File "${C_PERL_DIR}\lib\MIME\*"
 
@@ -149,6 +152,9 @@
 
   SetOutPath "$G_MPLIBDIR\auto\IO"
   File "${C_PERL_DIR}\lib\auto\IO\*"
+
+  SetOutPath "$G_MPLIBDIR\auto\List\Util"
+  File "${C_PERL_DIR}\lib\auto\List\Util\*"
 
   SetOutPath "$G_MPLIBDIR\auto\MIME\Base64"
   File "${C_PERL_DIR}\lib\auto\MIME\Base64\*"
@@ -201,7 +207,7 @@
   ; Install SQLite2 support. The 0.22.5 release is based upon ActivePerl 5.8.8 Build 820
   ; which includes the 3.x flavour of the DBD::SQLite module so we now default to using
   ; DBD::SQLite2 since POPFile 0.22.x is not compatible with SQLite 3.x. The 0.23.0 release
-  ; of POPFile ia expected to use SQLite 3.x.
+  ; of POPFile is expected to use SQLite 3.x.
 
   ; If DBD::SQLite is currently installed, disable it (because we are installing
   ; DBD::SQLite2 which uses a more up-to-date version of the SQLite 2.x library)
