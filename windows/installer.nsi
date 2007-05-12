@@ -235,9 +235,57 @@
 
   ;----------------------------------------------------------------------
   ; Root directory for the Perl files (used when building the installer)
+  ; and the version number and build number required for the minimal Perl
   ;----------------------------------------------------------------------
 
   !define C_PERL_DIR      "C:\Perl"
+  !define C_PERL_VERSION  "5.8.8"
+  !define C_PERL_BUILD    "820"
+  
+  ;----------------------------------------------------------------------
+  ; Recently there have been some significant changes to the structure and
+  ; behaviour of ActivePerl. These changes have affected the way in which
+  ; the minimal Perl is assembled therefore a new compile-time check has
+  ; been introduced to ensure that a suitable ActivePerl installation is
+  ; available for use in preparing the minimal Perl used by POPFile.
+  ;----------------------------------------------------------------------
+
+  !system 'if exist ".\ap-version.nsh" del ".\ap-version.nsh"'
+  !system '".\toolkit\ap-vcheck.exe" ${C_PERL_DIR}'
+  !include /NONFATAL ".\ap-version.nsh"
+  
+  ; The above '!system' call can fail on older (slower/Win9x?) systems so if the expected
+  ; output file is not found we try a safer version of the '!system' call. If this call
+  ; also fails then the NSIS compiler will stop with a fatal error.
+  
+  !ifndef C_AP_STATUS
+    !system 'start /w toolkit\ap-vcheck.exe ${C_PERL_DIR}'
+    !include ".\ap-version.nsh"
+   !endif
+   
+  ; Delete the "include" file after it has been read
+  
+  !delfile ".\ap-version.nsh"
+  
+  ; Now we can check that the location defined in ${C_PERL_DIR} is suitable
+  
+  !if "${C_AP_STATUS}" == "failure"
+    !error "${MB_NL}${MB_NL}Fatal error:${MB_NL}\
+        ${MB_NL}   ActivePerl version check failed${MB_NL}\
+        ${MB_NL}   (${C_AP_ERRORMSG})${MB_NL}"
+  !endif
+  
+  ; For this build of the installer we require an exact match for the ActivePerl version number _and_ build number
+  
+  !if "${C_AP_VERSION}.${C_AP_BUILD}" != "${C_PERL_VERSION}.${C_PERL_BUILD}"
+    !error "${MB_NL}${MB_NL}Fatal error:${MB_NL}\
+        ${MB_NL}   ActivePerl ${C_PERL_VERSION} Build ${C_PERL_BUILD} is required for this installer\
+        ${MB_NL}   but ActivePerl ${C_AP_VERSION} Build ${C_AP_BUILD} has been detected in the\
+        ${MB_NL}   $\"${C_AP_FOLDER}$\" folder${MB_NL}"
+  !endif
+  
+  !echo "${MB_NL}\
+      ${MB_NL}   ActivePerl version ${C_AP_VERSION} Build ${C_AP_BUILD} will be used to prepare the minimal Perl${MB_NL}${MB_NL}"
 
   ;----------------------------------------------------------------------------------
   ; Root directory for the Kakasi package.
