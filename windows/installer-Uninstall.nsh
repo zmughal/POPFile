@@ -685,6 +685,7 @@ skip_Encode:
   RMDir /r "$G_MPLIBDIR\Getopt"
   RMDir /r "$G_MPLIBDIR\HTML"
   RMDir /r "$G_MPLIBDIR\IO"
+  RMDir /r "$G_MPLIBDIR\List"
   RMDir /r "$G_MPLIBDIR\Math"
   RMDir /r "$G_MPLIBDIR\MIME"
   RMDir /r "$G_MPLIBDIR\Scalar"
