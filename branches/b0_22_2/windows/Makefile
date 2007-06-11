@@ -34,10 +34,12 @@ MONITORCC=monitorcc.exe
 STOP_PF=stop_pf.exe
 MSGCAPTURE=msgcapture.exe
 RUNSQLITE=runsqlite.exe
+APVERCHECK=toolkit/ap-vcheck.exe
 
 ALLEXES := $(SETUP) $(RUNPOPFILE) $(ADDUSER)     \
            $(MONITORCC) $(STOP_PF) $(MSGCAPTURE) \
-           $(RUNSQLITE) $(POPFILE_WINDOWS_ZIP)
+           $(APVERCHECK)                         \
+           $(RUNSQLITE) $(POPFILE_WINDOWS_ZIP) 
 
 all: build
 build: $(POPFILE_WINDOWS_ZIP)
@@ -69,6 +71,7 @@ $(SETUP): installer.nsi ; @$(MAKENSIS)
 $(SETUP): $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/Platform/MSWin32.pm $(ENGINE)/skins/*/*.css $(ENGINE)/skins/*/*.gif $(ENGINE)/skins/*/*.thtml $(ENGINE)/v$(POPFILE_VERSION).change
 $(SETUP): $(STOP_PF) $(ENGINE)/popfile.exe $(ENGINE)/popfileb.exe $(ENGINE)/popfileib.exe $(ENGINE)/popfilef.exe $(ENGINE)/popfileif.exe $(ENGINE)/popfile-service.exe
 $(SETUP): $(RUNPOPFILE) $(ADDUSER) $(MONITORCC) $(STOP_PF) $(MSGCAPTURE)
+$(SETUP): $(APVERCHECK)
 $(SETUP): ioG.ini WriteEnvStr.nsh
 $(SETUP): languages/*-pfi.nsh hdr-common.bmp special.bmp remove.ico
 $(SETUP): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
@@ -91,3 +94,5 @@ $(ADDUSER): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
 $(MSGCAPTURE): $(patsubst %.exe,%.nsi,$(MSGCAPTURE))
 $(MSGCAPTURE): hdr-common.bmp
 $(MSGCAPTURE): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
+
+$(APVERCHECK): $(patsubst %.exe,%.nsi,$(APVERCHECK))
