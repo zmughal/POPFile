@@ -5,7 +5,6 @@ REQUIRED	0.0.0	Date::Parse
 REQUIRED	0.0.0	Digest::MD5
 OPTIONAL-Japanese Language Support	0.0.0	Encode
 OPTIONAL-Japanese Language Support	0.0.0	Encode::Guess
-REQUIRED	0.0.0	Fcntl
 REQUIRED	0.0.0	File::Copy
 REQUIRED	0.0.0	Getopt::Long
 REQUIRED	0.0.0	HTML::Tagset
