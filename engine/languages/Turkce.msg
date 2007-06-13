@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -28,7 +28,7 @@ LanguageDirection                       ltr
 ManualLanguage                          en
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 FrequentlyAskedQuestions
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   Uygula
@@ -261,7 +261,7 @@ Magnet_Error3                           Yeni mýknatýs oluþtur: '%s' Kategori: '%
 Magnet_CurrentMagnets                   Þu Anki Mýknatýslar
 Magnet_Message1                         Bu mýknatýslar, postanýn her zaman belirtilen kategori olarak sýnýflandýrýlmasýný saðlayacaktýr.
 Magnet_CreateNew                        Yeni Mýknatýs Oluþtur
-Magnet_Explanation                      <b>Þu tür mýknatýslar mevcuttur:</b> <ul><li><b>Kimden adresi veya isim:</b> Örneðin: Belirli bir adresle eþleþtirmek için zeynel@sirket.com, <br />sirket.com'dan gönderen herkes ile eþleþtirmek için sirket.com, <br />belirli bir kiþiyle eþleþtirmek için Zeynel Abidin Öztürk, tüm Zeynel'ler ile eþleþtirmek için Zeynel yazýn</li><li><b>Kime/Bilgi adres veya adý:</b> Kimden: mýknatýsý gibidir fakat mesajdaki Kime:/Bilgi: adresi içindir</li> <li><b>Konu sözcükleri:</b> Örneðin: Konusunda merhaba bulunan tüm mesajlarla eþleþtirmek için merhaba yazýn</li></ul>
+Magnet_Explanation                      Þu tür mýknatýslar mevcuttur:</b> <ul><li><b>Kimden adresi veya isim:</b> Örneðin: Belirli bir adresle eþleþtirmek için zeynel@sirket.com, <br />sirket.com'dan gönderen herkes ile eþleþtirmek için sirket.com, <br />belirli bir kiþiyle eþleþtirmek için Zeynel Abidin Öztürk, tüm Zeynel'ler ile eþleþtirmek için Zeynel yazýn</li><li><b>Kime/Bilgi adres veya adý:</b> Kimden: mýknatýsý gibidir fakat mesajdaki Kime:/Bilgi: adresi içindir</li> <li><b>Konu sözcükleri:</b> Örneðin: Konusunda merhaba bulunan tüm mesajlarla eþleþtirmek için merhaba yazýn</li></ul>
 Magnet_MagnetType                       Mýknatýs türü
 Magnet_Value                            Deðer
 Magnet_Always                           Her zaman bu kategoriye gider
@@ -361,6 +361,8 @@ Imap_PasswordError                      Lütfen sunucu için bir parola girin!
 Imap_Expunge                            Silinen mesajlarý izlenen klasörlerden kaldýr.
 Imap_Interval                           Güncelleme aralýðý, saniye:
 Imap_IntervalError                      Lütfen 10 ile 3600 saniye arasýnda bir sayý girin.
+Imap_Bytelimit                          Her mesajýn sýnýflandýrýlmasýnda kullanýlacak bayt. Tüm mesaj için 0 girin:
+Imap_BytelimitError                     Lütfen bir sayý girin.
 Imap_RefreshFolders                     Klasör listesini yenile
 Imap_Now                                þimdi!
 Imap_UpdateError1                       Oturum açýlamýyor. Lütfen oturum açma adýný ve parolayý kontrol edin.
@@ -372,6 +374,6 @@ Imap_WatchedFolder                      Ýzlenilen klasör numarasý
 
 Shutdown_Message                        POPFile kapatýldý
 
-Help_Training                           POPFile'ý ilk kullandýðýnýzda o hiçbir bilgiye sahip deðildir ve eðitime ihtiyacý vardýr. POPFile her kategori için mesajlar ile eðitilmelidir. Eðitim, POPFile bir mesajý yanlýþ sýnýflandýrdýðýnda bunu doðru kategori ile tekrar sýnýflandýrarak gerçekleþtirilir. Bunun dýþýnda, posta programýnýzýn mesajlarý POPFile'ýn sýnýflandýrmasýna göre filtrelemesi için ayarlamalýsýnýz. Posta programýnýzýn filtelerini ayarlamak hakkýnda bilgi <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFile Dökümantasyon Projesi</a> adresinde bulunabilir.
+Help_Training                           POPFile'ý ilk kullandýðýnýzda o hiçbir bilgiye sahip deðildir ve eðitime ihtiyacý vardýr. POPFile her kategori için mesajlar ile eðitilmelidir. Eðitim, POPFile bir mesajý yanlýþ sýnýflandýrdýðýnda bunu doðru kategori ile tekrar sýnýflandýrarak gerçekleþtirilir. Bunun dýþýnda, posta programýnýzýn mesajlarý POPFile'ýn sýnýflandýrmasýna göre filtrelemesi için ayarlamalýsýnýz. Posta programýnýzýn filtelerini ayarlamak hakkýnda bilgi <a href="http://getpopfile.org/wiki/FAQ:EmailSorting">POPFile Dökümantasyon Projesi</a> adresinde bulunabilir.
 Help_Bucket_Setup                       POPFile, sýnýflandýrýlmamýþ pseudo-kategorisi dýþýnda en az iki kategori gerektirir. POPFile'ý eþsiz yapan, ikiden fazla, istediðiniz sayýda kategoriye sahip olabilmenizdir. Basit bir kurulum, "spam", "kiþisel", ve "iþ" kategorileri gibi olabilir.
 Help_No_More                            Bunu bir daha gösterme 

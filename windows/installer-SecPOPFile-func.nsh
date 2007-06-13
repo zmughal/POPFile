@@ -3,7 +3,7 @@
 # installer-SecPOPFile-func.nsh --- This 'include' file contains the non-library functions
 #                                   used by the 'installer-SecPOPFile-body.nsh' file.
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -251,6 +251,7 @@ done:
   Push ${L_NEW_GUI}
   Call PFI_ShutdownViaUI
   Pop ${L_RESULT}
+  DetailPrint "PFI_ShutdownViaUI result: ${L_RESULT}"
   StrCmp ${L_RESULT} "success" check_exe
   StrCmp ${L_RESULT} "password?" manual_shutdown
 
@@ -261,6 +262,7 @@ try_old_style:
   Push ${L_OLD_GUI}
   Call PFI_ShutdownViaUI
   Pop ${L_RESULT}
+  DetailPrint "PFI_ShutdownViaUI result: ${L_RESULT}"
   StrCmp ${L_RESULT} "success" check_exe
   Goto manual_shutdown
 

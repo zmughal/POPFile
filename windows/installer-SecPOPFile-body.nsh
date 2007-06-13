@@ -7,7 +7,7 @@
 #                                   The non-library functions used in this file are contained
 #                                   in a separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -193,12 +193,32 @@ save_HKCU_root_sfn:
   File "${C_RELEASE_NOTES}"
   CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_README}.txt" "$G_ROOTDIR\${C_README}.txt"
 
+  ; The experimental 'setup-repack587.exe' installer installed some NSIS-based replacements
+  ; for the non-service EXE files plus renamed versions of the old 0.22.2 EXE files. These
+  ; old ActivePerl 5.8.4 files can now be deleted as this installer contains versions based
+  ; upon a more recent version of ActivePerl (e.g. 0.22.5 is based upon 5.8.8 Build 820).
+
+  Delete "$G_ROOTDIR\popfile-584.exe"
+  Delete "$G_ROOTDIR\popfilef-584.exe"
+  Delete "$G_ROOTDIR\popfileb-584.exe"
+  Delete "$G_ROOTDIR\popfileif-584.exe"
+  Delete "$G_ROOTDIR\popfileib-584.exe"
+  Delete "$G_ROOTDIR\popfile-service-584.exe"
+
+  ; The experimental 'setup-repack587.exe' installer had to use 'perlmsgcap.exe' since the
+  ; NSIS-based replacements were not compatible with the standard "Message Capture" utility
+
+  Delete "$G_ROOTDIR\perlmsgcap.exe"
+
+  ; Install the POPFile EXE files
+
   File "..\engine\popfile.exe"
   File "..\engine\popfilef.exe"
   File "..\engine\popfileb.exe"
   File "..\engine\popfileif.exe"
   File "..\engine\popfileib.exe"
   File "..\engine\popfile-service.exe"
+
   File /nonfatal "/oname=pfi-stopwords.default" "..\engine\stopwords"
 
   File "runpopfile.exe"
@@ -224,13 +244,15 @@ app_paths:
   SetOutPath "$G_ROOTDIR"
 
   File "..\engine\popfile.pl"
-  File "..\engine\popfile-check-setup.pl"
   File "..\engine\popfile.pck"
   File "..\engine\insert.pl"
   File "..\engine\bayes.pl"
   File "..\engine\pipe.pl"
 
   File "..\engine\favicon.ico"
+
+  File "..\engine\pix.gif"
+  File "..\engine\otto.png"
 
   SetOutPath "$G_ROOTDIR\Classifier"
   File "..\engine\Classifier\Bayes.pm"
@@ -267,7 +289,6 @@ install_schema:
 
   SetOutPath "$G_ROOTDIR\POPFile"
   File "..\engine\POPFile\MQ.pm"
-  File "..\engine\POPFile\Database.pm"
   File "..\engine\POPFile\History.pm"
   File "..\engine\POPFile\Loader.pm"
   File "..\engine\POPFile\Logger.pm"
@@ -382,7 +403,7 @@ create_shortcuts:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?FrequentlyAskedQuestions"
+              "http://getpopfile.org/wiki/FAQ"
 
   !ifndef ENGLISH_MODE
       Goto support
@@ -390,7 +411,7 @@ create_shortcuts:
     japanese_faq:
       WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions"
+                  "http://getpopfile.org/wiki/JP:FAQ"
 
     support:
   !endif
@@ -409,7 +430,7 @@ create_shortcuts:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?POPFileDocumentationProject"
+              "http://getpopfile.org/wiki"
 
   !ifndef ENGLISH_MODE
       Goto pfidiagnostic
@@ -417,7 +438,7 @@ create_shortcuts:
     japanese_wiki:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_POPFileDocumentationProject"
+                  "http://getpopfile.org/wiki/jp"
 
     pfidiagnostic:
   !endif
@@ -446,6 +467,8 @@ silent_shutdown:
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" "$G_ROOTDIR\uninstall.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "InstallLocation" "$G_ROOTDIR"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoModify" "1"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
@@ -457,6 +480,8 @@ use_HKLM:
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" "$G_ROOTDIR\uninstall.exe"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "InstallLocation" "$G_ROOTDIR"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoModify" "1"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \

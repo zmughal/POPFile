@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -28,7 +28,7 @@ LanguageDirection                       ltr
 ManualLanguage                          zh-tw
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 FrequentlyAskedQuestions
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   套用
@@ -261,7 +261,7 @@ Magnet_Error3                           建立新的吸鐵 '%s' 於 '%s' 郵筒�
 Magnet_CurrentMagnets                   現用的吸鐵
 Magnet_Message1                         下列的吸鐵會讓信件總是被分類到特定的郵筒裏.
 Magnet_CreateNew                        建立新的吸鐵
-Magnet_Explanation                      <b>有這些類別的吸鐵可以用:</b> <ul><li><b>寄件者地址或名字:</b> 舉例來說: john@company.com 就祇會吻合特定的地址, <br />company.com 會吻合到任何從 company.com 寄出來的人, <br />John Doe 會吻合特定的人, John 會吻合所有的 Johns</li><li><b>收件者/副本地址或名稱:</b> 就跟寄件者一樣: 但是吸鐵祇會針對郵件訊息裏的 To:/Cc: 地址生效</li> <li><b>主旨字詞:</b> 例如: hello 會吻合所有主旨裏有 hello 的郵件訊息</li></ul>
+Magnet_Explanation                      有這些類別的吸鐵可以用:</b> <ul><li><b>寄件者地址或名字:</b> 舉例來說: john@company.com 就祇會吻合特定的地址, <br />company.com 會吻合到任何從 company.com 寄出來的人, <br />John Doe 會吻合特定的人, John 會吻合所有的 Johns</li><li><b>收件者/副本地址或名稱:</b> 就跟寄件者一樣: 但是吸鐵祇會針對郵件訊息裏的 To:/Cc: 地址生效</li> <li><b>主旨字詞:</b> 例如: hello 會吻合所有主旨裏有 hello 的郵件訊息</li></ul>
 Magnet_MagnetType                       吸鐵類別
 Magnet_Value                            值
 Magnet_Always                           總是分到郵筒
@@ -374,6 +374,6 @@ Imap_WatchedFolder                      被監視的郵件匣編號
 
 Shutdown_Message                        POPFile 已經被停掉了
 
-Help_Training                           當妳初次使用 POPFile 時, 她啥也不懂而需要被加以調教. POPFile 的每一個郵筒都需要用郵件訊息來加以調教, 祇有當妳重新把某個被 POPFile 錯誤分類的郵件訊息重新分類到正確的郵筒時, 纔真的是在調教她. 同時妳也得設定妳的郵件用戶端程式, 來按照 POPFile 的分類結果加以過濾郵件訊息. 關於設定用戶端過濾器的資訊可以在 <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFile 文件計畫</a>裏被找到.
+Help_Training                           當妳初次使用 POPFile 時, 她啥也不懂而需要被加以調教. POPFile 的每一個郵筒都需要用郵件訊息來加以調教, 祇有當妳重新把某個被 POPFile 錯誤分類的郵件訊息重新分類到正確的郵筒時, 纔真的是在調教她. 同時妳也得設定妳的郵件用戶端程式, 來按照 POPFile 的分類結果加以過濾郵件訊息. 關於設定用戶端過濾器的資訊可以在 <a href="http://getpopfile.org/wiki/FAQ:EmailSorting">POPFile 文件計畫</a>裏被找到.
 Help_Bucket_Setup                       POPFile 除了未分類 (unclassified) 的假郵筒外, 還需要至少兩個郵筒. 而 POPFile 的獨特之處正在於她對電子郵件的區分更勝於此, 妳甚至可以有任意數量的郵筒. 簡單的設定會是像 "垃圾 (spam)", "個人 (personal)", 和 "工作 (work)" 郵筒.
 Help_No_More                            別再顯示這個說明了

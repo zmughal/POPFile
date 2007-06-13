@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -27,7 +27,7 @@ LanguageDirection                       ltr
 ManualLanguage                          en
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 FrequentlyAskedQuestions
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   Applica
@@ -260,7 +260,7 @@ Magnet_Error3                           Creato il nuovo magnete '%s' per il cest
 Magnet_CurrentMagnets                   Magneti correnti
 Magnet_Message1                         I magneti che seguono fanno s&igrave; che l'email venga sempre classificata nel cesto specificato.
 Magnet_CreateNew                        Crea un nuovo magnete
-Magnet_Explanation                      <b>Sono disponibili i seguenti tipi di magnete:</b> <ul><li><b>Indirizzo o nome del Mittente:</b> Ad es.: john@company.com per individuare un indirizzo specifico, <br />company.com per individuare chiunque spedisca dal dominio company.com, <br />John Doe per individuare una persona specifica, John per individuare tutti i John</li><li><b>Indirizzo o nome di un Destinatario/Cc:</b> Funziona come il magnete sul Mittente ma con l'indirizzo del Destinatario/Cc</li> <li><b>Parole nell'Oggetto:</b> Ad es.: ciao per individuare tutti i messaggi con la parola ciao nell'oggetto</li></ul>
+Magnet_Explanation                      Sono disponibili i seguenti tipi di magnete:</b> <ul><li><b>Indirizzo o nome del Mittente:</b> Ad es.: john@company.com per individuare un indirizzo specifico, <br />company.com per individuare chiunque spedisca dal dominio company.com, <br />John Doe per individuare una persona specifica, John per individuare tutti i John</li><li><b>Indirizzo o nome di un Destinatario/Cc:</b> Funziona come il magnete sul Mittente ma con l'indirizzo del Destinatario/Cc</li> <li><b>Parole nell'Oggetto:</b> Ad es.: ciao per individuare tutti i messaggi con la parola ciao nell'oggetto</li></ul>
 Magnet_MagnetType                       Tipo di magnete
 Magnet_Value                            Valore
 Magnet_Always                           Va sempre nel cesto
@@ -360,6 +360,8 @@ Imap_PasswordError                      Inserisci una password per il server!
 Imap_Expunge                            Elimina messaggi contrassegnati per la cancellazione dalle cartelle sotto controllo.
 Imap_Interval                           Intervallo di aggiornamento in secondi:
 Imap_IntervalError                      Inserisci un intervallo tra 10 e 3600 secondi.
+Imap_Bytelimit                          Byte per messaggio da usare per la classificazione. Inserisci 0 (Null) per il messaggio completo:
+Imap_BytelimitError                     Inserisci un numero.
 Imap_RefreshFolders                     Aggiorna lista delle cartelle
 Imap_Now                                ora!
 Imap_UpdateError1                       Login non riuscito. Verifica il nome per il login e la password.
@@ -371,6 +373,6 @@ Imap_WatchedFolder                      Sotto controllo cartella numero
 
 Shutdown_Message                        POPFile &egrave; stato disattivato
 
-Help_Training                           Quando usi POPFile per la prima volta, non sa niente e necessita di addestramento. POPFile ha bisogno di essere 'allenato' sui messaggi nei vari cesti, l'allenamento si ha quando riclassifichi nel cesto appropriato un messaggio che POPFile ha classificato male. Devi anche settare il tuo client di posta elettronica in modo che filtri i messaggi secondo la classificazione fatta da POPFile. Trovi informazioni su come settare il tuo programma di posta elettronica all'indirizzo <a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions/EmailSorting">POPFile Documentation Project</a>.
+Help_Training                           Quando usi POPFile per la prima volta, non sa niente e necessita di addestramento. POPFile ha bisogno di essere 'allenato' sui messaggi nei vari cesti, l'allenamento si ha quando riclassifichi nel cesto appropriato un messaggio che POPFile ha classificato male. Devi anche settare il tuo client di posta elettronica in modo che filtri i messaggi secondo la classificazione fatta da POPFile. Trovi informazioni su come settare il tuo programma di posta elettronica all'indirizzo <a href="http://getpopfile.org/wiki/FAQ:EmailSorting">POPFile Documentation Project</a>.
 Help_Bucket_Setup                       POPFile richiede che ci siano almeno due cesti oltre allo pseudo-cesto 'unclassified'. Quel che rende POPFile unico &egrave; che pu&ograve; classificare email distribuendole in un numero qualunque di cesti. Un setup semplice pu&ograve; prevedere i cesti "spam", "personale", and a "lavoro" bucket.
 Help_No_More                            Non mostrare pi&ugrave;

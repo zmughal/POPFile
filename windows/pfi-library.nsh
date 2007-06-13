@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2003-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -33,18 +33,17 @@
 #  (1) ADDSSL           defined in add-ons\addssl.nsi (POPFile 'SSL Setup' wizard)
 #  (2) ADDUSER          defined in adduser.nsi ('Add POPFile User' wizard)
 #  (3) BACKUP           defined in backup.nsi (POPFile 'User Data' Backup utility)
-#  (4) DBANALYSER       defined in test\pfidbanalyser.nsi ('POPFile SQLite Database Analyser')
-#  (5) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
-#  (6) IMAPUPDATER      defined in add-ons\updateimap.nsi (POPFile 'IMAP Updater' wizard)
-#  (7) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
-#  (8) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
-#  (9) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-# (10) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-# (11) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-# (12) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (13) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (14) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (15) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+#  (4) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
+#  (5) IMAPUPDATER      defined in add-ons\updateimap.nsi (POPFile 'IMAP Updater' wizard)
+#  (6) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
+#  (7) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
+#  (8) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
+#  (9) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+# (10) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (11) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (12) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (13) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (14) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -58,7 +57,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.1.16"
+  !define C_PFI_LIBRARY_VERSION     "0.2.4"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -142,18 +141,23 @@
   ; Macro used to load the files required for each language:
   ; (1) The MUI_LANGUAGE macro loads the standard MUI text strings for a particular language
   ; (2) '*-pfi.nsh' contains the text strings used for pages, progress reports, logs etc
+  ; (3) Normally the MUI's language selection menu uses the name defined in the MUI language
+  ;     file, however it is possible to override this by supplying an alternative string
+  ;     (the MENUNAME parameter in this macro). At present the only alternative string used
+  ;     is "Nihongo" which replaces "Japanese" to make things easier for non-English-speaking
+  ;     users - see 'pfi-languages.nsh' for details.
 
-!ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
-        !macro PFI_LANG_LOAD LANG
-            !insertmacro MUI_LANGUAGE "${LANG}"
-            !include "..\languages\${LANG}-pfi.nsh"
-        !macroend
-!else
-        !macro PFI_LANG_LOAD LANG
-            !insertmacro MUI_LANGUAGE "${LANG}"
-            !include "languages\${LANG}-pfi.nsh"
-        !macroend
-!endif
+  !macro PFI_LANG_LOAD LANG MENUNAME
+      !if "${MENUNAME}" != "-"
+          !define MUI_${LANG}_LANGNAME "${MENUNAME}"
+      !endif
+      !insertmacro MUI_LANGUAGE "${LANG}"
+      !ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
+          !include "..\languages\${LANG}-pfi.nsh"
+      !else
+          !include "languages\${LANG}-pfi.nsh"
+      !endif
+  !macroend
 
 #--------------------------------------------------------------------------
 #
@@ -515,7 +519,7 @@
 !endif
 
 
-!ifndef ADDSSL & BACKUP
+!ifndef BACKUP
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParameters
     #
@@ -1220,6 +1224,23 @@
 # The !insertmacro PFI_DumpLog "" and !insertmacro PFI_DumpLog "un." commands are included in this file
 # so NSIS scripts can use 'Call PFI_DumpLog' and 'Call un.PFI_DumpLog' without additional preparation.
 #
+#--------------------------------------------------------------------------
+# This macro uses a plugin which is not distributed with the NSIS compiler
+#--------------------------------------------------------------------------
+# This macro uses a special NSIS plugin (DumpLog) to dump the log contents into a text file.
+# Originally a script-based method was used but it could take several seconds to save the log
+# (the plugin saves the file almost instantly).
+#
+# The 'NSIS Wiki' page for the 'DumpLog' plugin (description, example and download links):
+# http://nsis.sourceforge.net/DumpLog_plugin
+#
+# To install this plugin, copy the 'DumpLog.dll' file to the standard NSIS plugins folder
+# (${NSISDIR}\Plugins\). The 'DumpLog' source and example files can be unzipped to the
+# appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
+#
+# Tested with version 1.0 of the 'DumpLog' plugin.
+#--------------------------------------------------------------------------
+#
 # Inputs:
 #         (top of stack)     - the full path of the file where the log will be dumped
 #
@@ -1237,61 +1258,27 @@
 !macro PFI_DumpLog UN
   Function ${UN}PFI_DumpLog
 
-      !ifndef LVM_GETITEMCOUNT
-          !define LVM_GETITEMCOUNT 0x1004
-      !endif
-      !ifndef LVM_GETITEMTEXT
-        !define LVM_GETITEMTEXT 0x102D
-      !endif
+    !define L_LOGFILE   $R9
+    !define L_RESULT    $R8
 
-      Exch $5
-      Push $0
-      Push $1
-      Push $2
-      Push $3
-      Push $4
-      Push $6
+    Exch ${L_LOGFILE}
+    Push ${L_RESULT}
 
-      FindWindow $0 "#32770" "" $HWNDPARENT
-      GetDlgItem $0 $0 1016
-      StrCmp $0 0 error
-      FileOpen $5 $5 "w"
-      StrCmp $5 "" error
-      SendMessage $0 ${LVM_GETITEMCOUNT} 0 0 $6
-      System::Alloc ${NSIS_MAX_STRLEN}
-      Pop $3
-      StrCpy $2 0
-      System::Call "*(i, i, i, i, i, i, i, i, i) i \
-                    (0, 0, 0, 0, 0, r3, ${NSIS_MAX_STRLEN}) .r1"
+    DumpLog::DumpLog "${L_LOGFILE}" .R8
+    StrCmp ${L_RESULT} 0 exit
 
-    loop:
-      StrCmp $2 $6 done
-      System::Call "User32::SendMessageA(i, i, i, i) i \
-                    ($0, ${LVM_GETITEMTEXT}, $2, r1)"
-      System::Call "*$3(&t${NSIS_MAX_STRLEN} .r4)"
-      FileWrite $5 "$4${MB_NL}"
-      IntOp $2 $2 + 1
-      Goto loop
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_SAVELOG_ERROR)\
+        ${MB_NL}${MB_NL}\
+        (${L_LOGFILE})"
 
-    done:
-      FileClose $5
-      System::Free $1
-      System::Free $3
-      Goto exit
+  exit:
+    Pop ${L_RESULT}
+    Pop ${L_LOGFILE}
 
-    error:
-      MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_SAVELOG_ERROR)"
+    !undef L_LOGFILE
+    !undef L_RESULT
 
-    exit:
-      Pop $6
-      Pop $4
-      Pop $3
-      Pop $2
-      Pop $1
-      Pop $0
-      Pop $5
-
-    FunctionEnd
+  FunctionEnd
 !macroend
 
 !ifdef ADDSSL | BACKUP | IMAPUPDATER | INSTALLER | RESTORE
@@ -1528,7 +1515,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDUSER | DBANALYSER | DBSTATUS | INSTALLER | RESTORE
+!ifdef ADDUSER | DBSTATUS | INSTALLER | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetCompleteFPN
     #
@@ -1970,7 +1957,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | DBANALYSER | DBSTATUS | RESTORE | RUNPOPFILE
+!ifdef ADDUSER | BACKUP | DBSTATUS | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDataPath
     #
@@ -2686,7 +2673,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBANALYSER | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParent
     #
@@ -2988,7 +2975,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | DBANALYSER | DBSTATUS
+!ifdef ADDUSER | DBSTATUS
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetSQLdbPathName
     #
@@ -3110,7 +3097,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | DBANALYSER | DBSTATUS | RUNSQLITE | RESTORE
+!ifdef ADDUSER | BACKUP | DBSTATUS | RUNSQLITE | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetSQLiteFormat
     #
@@ -4047,7 +4034,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBANALYSER | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrBackSlash
     #
@@ -4146,7 +4133,7 @@
   FunctionEnd
 !macroend
 
-!ifndef DBANALYSER & IMAPUPDATER & PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
+!ifndef PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckDecimal
     #
@@ -4229,7 +4216,7 @@
   FunctionEnd
 !macroend
 
-!ifndef ADDSSL & DBANALYSER & DBSTATUS & IMAPUPDATER & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef DBSTATUS & IMAPUPDATER & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #

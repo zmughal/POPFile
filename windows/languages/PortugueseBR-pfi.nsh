@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -155,7 +155,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_SHORT      "Criando os atalhos do POPFile..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_LANGS      "Instalando os arquivos de línguas do POPFile..."
 
-; Installation Progress Reports displayed above the progress bar [installer.nsi, adduser.nsh, getssl.nsh]
+; Installation Progress Reports displayed above the progress bar [installer.nsi, adduser.nsi, getssl.nsh]
 
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_ENDSEC     "Clique em Avançar para continuar"
 
@@ -464,7 +464,6 @@
 
 ; Progress reports
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_CHECKINTERNET   "Verificando conexão à Internet..."
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_STARTDOWNLOAD   "Baixando arquivo $G_PLS_FIELD_1 de $G_PLS_FIELD_2"
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILECOPY        "Copiando $G_PLS_FIELD_2 arquivos..."
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILEEXTRACT     "Extraindo arquivos do pacote $G_PLS_FIELD_2..."
@@ -475,7 +474,7 @@
 ; Get SSL: Message Box strings used when installing SSL Support [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_INTERNETCONNECT   "Os arquivos para Suporte SSL serão baixados da Internet${MB_NL}${MB_NL}Por favor conecte na Internet e clique 'OK'${MB_NL}${MB_NL}ou clique 'Cancelar' para cancelar esta parte da instalação"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_CHECKINTERNET     "The SSL Support files will be downloaded from the Internet.${MB_NL}${MB_NL}Your Internet connection seems to be down or disabled.${MB_NL}${MB_NL}Please reconnect and click Retry to resume installation"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_1      "O download do arquivo $G_PLS_FIELD_1 falhou"
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_2      "(erro: $G_PLS_FIELD_2)"
@@ -485,10 +484,20 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "Impossível instalar os arquivos SSL opcionais!${MB_NL}${MB_NL}Para tentar novamente mais tarde, execute o comando${MB_NL}${MB_NL}$G_PLS_FIELD_1 /SSL"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; Get SSL: Strings used when patching SSL.pm from IO::Socket::SSL [getssl.nsh]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPREPAREPATCH      "Downgrading SSL.pm to v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHSTATUS       "SSL.pm patch status: $G_PLS_FIELD_2"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHCOMPLETED    "SSL.pm file has been downgraded to v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHFAILED       "SSL.pm file has not been downgraded to v0.97"
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: NSISdl strings (displayed by the plugin which downloads the SSL files) [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;
-; The NSISdl plugin shows two progress bars, for example:
+; The NSISdl plugin (or the Inetc plugin operating in NSISdl-compatible mode)
+; shows two progress bars, for example:
 ;
 ;     Downloading libeay32.dll
 ;
@@ -735,6 +744,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_TEXT_2    "IMPORTANTE: POR FAVOR FECHE OS CLIENTES DE EMAIL RECONFIGURÁVEIS AGORA${IO_NL}${IO_NL}Esta característica ainda está em desenvolvimento (algumas contas do Outlook podem não serem detectadas).${IO_NL}${IO_NL}Por favor verifique se a reconfiguração foi bem sucedida (antes de usar o cliente de email)."
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_CANCEL    "Reconfiguração do cliente de email cancelada pelo usuário"
+!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_NOMATCHES "No suitable email clients found"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Text used on buttons to skip configuration of email clients [adduser.nsi]
@@ -797,6 +807,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSERVER      "Servidor POP3:"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBUSERNAME    "Nome de usuário POP3:"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOEPORT      "Porta POP3:"
+!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSMTPLOGIN   "SMTP username will be set to ' $G_PLS_FIELD_2'"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOLDVALUE    "correntemente"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBQUESTION    "Reconfigurar esta conta para funcionar com o POPFile ?"
 

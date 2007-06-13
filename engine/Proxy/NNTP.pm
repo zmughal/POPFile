@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Proxy::NNTP;
 
 use Proxy::Proxy;
@@ -127,21 +127,30 @@ sub start
     # item that needs a UI component
 
     $self->register_configuration_item_( 'configuration',
-                                         'nntp_config',
-                                         'nntp-configuration.thtml',
+                                         'nntp_port',
+                                         'nntp-port.thtml',
                                          $self );
-    
+
+    $self->register_configuration_item_( 'configuration',
+                                         'nntp_force_fork',
+                                         'nntp-force-fork.thtml',
+                                         $self );
+
+    $self->register_configuration_item_( 'configuration',
+                                         'nntp_separator',
+                                         'nntp-separator.thtml',
+                                         $self );
+
     $self->register_configuration_item_( 'security',
                                          'nntp_local',
                                          'nntp-security-local.thtml',
-                                         $self );                                         
+                                         $self );
 
     if ( $self->config_( 'welcome_string' ) =~ /^NNTP POPFile \(v\d+\.\d+\.\d+\) server ready$/ ) { # PROFILE BLOCK START
         $self->config_( 'welcome_string', "NNTP POPFile ($self->{version_}) server ready" );        # PROFILE BLOCK STOP
     }
 
-    return $self->SUPER::start();;
-}
+    return $self->SUPER::start();; }
 
 # ----------------------------------------------------------------------------
 #
@@ -305,7 +314,7 @@ sub child__
                     $count += 1;
 
                     my ( $class, $history_file ) =
-                        $self->classifier_()->classify_and_modify( $session,
+                        $self->{classifier__}->classify_and_modify( $session,
                             $news, $client, 0, '', 0 );
                 }
 
@@ -314,7 +323,7 @@ sub child__
 
             # Commands expecting a code + text response
 
-            if ( $command =~
+            if ( $command =~ 
                 /^ *(LIST|HEAD|BODY|NEWGROUPS|NEWNEWS|LISTGROUP|XGTITLE|XINDEX|XHDR|XOVER|XPAT|XROVER|XTHREAD)/i ) {
                 my ( $response, $ok ) = $self->get_response_( $news,
                                             $client, $command);
@@ -341,7 +350,7 @@ sub child__
 
             # Commands expecting a single-line response
 
-            if ( $command =~
+            if ( $command =~ 
                 /^ *(GROUP|STAT|IHAVE|LAST|NEXT|SLAVE|MODE|XPATH)/i ) {
                 $self->get_response_( $news, $client, $command );
                 next;
@@ -416,17 +425,24 @@ sub configure_item
 {
     my ( $self, $name, $templ, $language ) = @_;
 
-    if ( $name eq 'nntp_config' ) {
+    if ( $name eq 'nntp_port' ) {
         $templ->param( 'nntp_port' => $self->config_( 'port' ) );
-        $templ->param( 'nntp_separator' => $self->config_( 'separator' ) );
-        $templ->param( 'nntp_force_fork_on' => $self->config_( 'force_fork' ) );
-    }
-    
-    if ( $name eq 'nntp_local' ) {
-        $templ->param( 'nntp_if_local' => $self->config_( 'local' ) );
     }
 
-    $self->SUPER::configure_item( $name, $templ, $language);
+    # Separator Character widget
+    if ( $name eq 'nntp_separator' ) {
+        $templ->param( 'nntp_separator' => $self->config_( 'separator' ) );
+    }
+
+    if ( $name eq 'nntp_local' ) {
+        $templ->param( 'nntp_if_local' => $self->config_( 'local' ) );
+     }
+
+    if ( $name eq 'nntp_force_fork' ) {
+        $templ->param( 'nntp_force_fork_on' => $self->config_( 'force_fork' ) );
+    }
+
+    #$self->SUPER::configure_item( $name, $language, $session_key );
 }
 
 # ----------------------------------------------------------------------------
@@ -445,43 +461,44 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ($status, $error);
-
-    if ( $name eq 'nntp_config' ) {
-        
+    if ( $name eq 'nntp_port' ) {
         if ( defined $$form{nntp_port} ) {
             if ( ( $$form{nntp_port} >= 1 ) && ( $$form{nntp_port} < 65536 ) ) {
                 $self->config_( 'port', $$form{nntp_port} );
-                $status = sprintf $$language{Configuration_NNTPUpdate}, $self->config_( 'port' );
-             } else {
-                $error = $$language{Configuration_Error3};
+                $templ->param( 'nntp_port_feedback' => sprintf $$language{Configuration_NNTPUpdate}, $self->config_( 'port' ) );
+             } 
+             else {
+                 $templ->param( 'nntp_port_feedback' => "<div class=\"error01\">$$language{Configuration_Error3}</div>" );
              }
         }
+    }
 
+    if ( $name eq 'nntp_separator' ) {
         if ( defined $$form{nntp_separator} ) {
             if ( length($$form{nntp_separator}) == 1 ) {
                 $self->config_( 'separator', $$form{nntp_separator} );
-                $status = sprintf $$language{Configuration_NNTPSepUpdate}, $self->config_( 'separator' );
-            } else {
-               $error = $$language{Configuration_Error1};
+                $templ->param( 'nntp_separator_feedback' => sprintf $$language{Configuration_NNTPSepUpdate}, $self->config_( 'separator' ) );
+            } 
+            else {
+                $templ->param( 'nntp_separator_feedback' => "<div class=\"error01\">\n$$language{Configuration_Error1}</div>\n" );
             }
         }
-
-        if ( defined $$form{nntp_force_fork} ) {
-            $self->config_( 'force_fork', $$form{nntp_force_fork} );
-        }
-        
-        return( $status, $error );
     }
-    
+
     if ( $name eq 'nntp_local' ) {
         if ( defined $$form{nntp_local} ) {
             $self->config_( 'local', $$form{nntp_local} );
         }
-        return( undef, undef);
-    }    
+    }
 
-    return $self->SUPER::validate_item( $name, $templ, $language, $form );
+
+    if ( $name eq 'nntp_force_fork' ) {
+        if ( defined $$form{nntp_force_fork} ) {
+            $self->config_( 'force_fork', $$form{nntp_force_fork} );
+        }
+    }
+
+    # $self->SUPER::validate_item( $name, $language, $form );
 }
 
 1;

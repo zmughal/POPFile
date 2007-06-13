@@ -4,7 +4,7 @@
 #                   POPFile Windows installer when a flat-file or BerkeleyDB corpus
 #                   needs to be converted to the new SQL database format.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -23,18 +23,18 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.22" compiler,
+  ; released 27 November 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef v2.22_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -42,8 +42,6 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
-
-; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date.
 
 #--------------------------------------------------------------------------
 # Run-time command-line switches (used by 'monitorcc.exe')
@@ -112,13 +110,19 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.1.20"
+  !define C_PFI_VERSION  "0.2.6"
 
   !define C_OUTFILE      "monitorcc.exe"
 
   ; Mention the version number in the window title
 
   Caption                "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
   ;------------------------------------------------
   ; Define PFI_VERBOSE to get more compiler output
@@ -141,16 +145,20 @@
 
   VIProductVersion                          "${C_PFI_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Corpus Conversion Monitor"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
   VIAddVersionKey "Build"                   "Multi-Language"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -304,8 +312,16 @@
   ; Macro used to load the files required for each language:
   ; (1) The MUI_LANGUAGE macro loads the standard MUI text strings for a particular language
   ; (2) '*-pfi.nsh' contains the text strings used for pages, progress reports, logs etc
+  ; (3) Normally the MUI's language selection menu uses the name defined in the MUI language
+  ;     file, however it is possible to override this by supplying an alternative string
+  ;     (the MENUNAME parameter in this macro). At present the only alternative string used
+  ;     is "Nihongo" which replaces "Japanese" to make things easier for non-English-speaking
+  ;     users.
 
-  !macro PFI_LANG_LOAD LANG
+  !macro PFI_LANG_LOAD LANG MENUNAME
+    !if "${MENUNAME}" != "-"
+      !define MUI_${LANG}_LANGNAME "${MENUNAME}"
+    !endif
     !insertmacro MUI_LANGUAGE "${LANG}"
     !include "languages\${LANG}-pfi.nsh"
   !macroend
@@ -316,7 +332,7 @@
 
   ; Default language (appears first in the drop-down list)
 
-  !insertmacro PFI_LANG_LOAD "English"
+  !insertmacro PFI_LANG_LOAD "English" "-"
 
   ; Additional languages supported by the utility
 

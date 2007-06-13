@@ -1,39 +1,16 @@
-/*********************************************************/
-/* Main Body */
+H2 {
+  font-size: 14pt;
+  font-weight: normal;
+}
 
 body {
-  background-color: #FFFFFF;
+  background-color: white;
+  border: none;
   font-family: tahoma, sans-serif;
-  font-size: 0.7em;
+  font-size: 8pt;
   font-weight: normal;
   color: #000000;
   margin: 3px;
-}
-
-/*********************************************************/
-/* Shell structure */
-
-.shell, .shellTop {
-  color: #000000;
-  background-color: #EDEDCA;
-  border: 2px #CCCC99 solid;
-  margin: 0;
-  padding: 0;
-  border-collapse: collapse;
-}
-
-.shellStatusMessage { 
-  color: #000000;
-  background-color: #EDEDCA;
-  border: 3px #CCCC99 solid;
-  width: 100%;
-}
-
-.shellErrorMessage { 
-  color: #FF0000;
-  background-color: #EDEDCA;
-  border: 3px #CCCC99 solid;
-  width: 100%;
 }
 
 table.head {
@@ -41,206 +18,191 @@ table.head {
   width: 100%;
 }
 
-td.head {
+.top, .bottom, .borderTopLeft, .borderTop, .borderTopRight, .borderLeft, .borderRight, .borderBottomLeft, .borderBottom, .borderBottomRight {
+  visibility: hidden;
+  display: none;
+}
+
+.head, td.head {
   font-weight: bold;
-  font-size: 1.4em;
+  font-size: 14pt;
+  background-color: #ededca;
   color: #666666;
+  padding-left: 5px;
+}
+
+.shell, .shellTop {
+  border: 2px #cccc99 solid;
+  background-color: #ededca;
+  color: #000000;
+  margin: 0px;
+  padding: 0px;
 }
 
 .head a {
-  font-size: 1.2em;
+  font-size: 12pt;
   font-weight: normal;
-  text-decoration: none;
 }
-
-.head a:hover {
-  text-decoration: underline;
-}
-
-table.footer {
-  width: 100%;
-  color: #666666;
-}
-
-td.footerBody { 
-  text-align: center;
-  padding-left: 5%;
-  padding-right: 5%;
-  font-size: 1em;
-}
-
-.bottomLink {
-  text-decoration: none;
-}
-
-.bottomLink:hover {
-  text-decoration: underline;
-}
-
-td.naked {
-  padding: 0;
-  margin: 0;
-  border: 0;
-}
-
-td.logo2menuSpace {
-  height: 0.8em;
-}
-
-/*********************************************************/
-/* Menu Settings */
 
 .menu {
+  font-size: 12pt;
+  font-weight: normal;
   width: 100%;
-}
-
-.menuSelected {
-  background-color: #CCCC99;
-  padding: 0 2px;
-  margin: 0 2px;
-  width: 15%;
-}
-
-.menuSelected, .menuSelected a {
-  color: #000000;
-  font-size: 1.1em;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.menuStandard {
-  border: 2px solid #CCCC99;
-  border-bottom: none;
-  padding: 0 2px;
-  margin: 0 2px;
-  width: 15%;
-}
-
-.menuStandard, .menuStandard a {
-  background-color: #EDEDCA;
-  color: #0000ff;
-  font-size: 1.1em;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.menuSelected a:hover, .menuStandard a:hover {
-  text-decoration: underline;
 }
 
 .menuIndent {
   width: 5%;
 }
 
-.menuLink {
-  display: block;
-  width: 100%;
+.menuSelected, .menuSelected a {
+  background-color: #cccc99;
+  color: #000000;
+  font-size: 14pt;
+  font-weight: normal;
+  text-decoration: none;
 }
 
-/*********************************************************/
-/* Table Settings */
+td.menuSelected {
+  border-left: 2px solid #cccc99;
+  border-right: 2px solid #cccc99;
+  border-top: 2px solid #cccc99;
+  padding-left: 2px;
+  padding-right: 2px;
+  margin-left: 2px;
+  margin-right: 2px;
+  width: 15%;
+}
+
+.menuStandard, .menuStandard a {
+  background-color: #ededca;
+  color: #0000ff;
+  font-size: 14pt;
+  font-weight: normal;
+  text-decoration: none;
+}
+
+td.menuStandard {
+  border-left: 2px solid #cccc99;
+  border-right: 2px solid #cccc99;
+  border-top: 2px solid #cccc99;
+  padding-left: 2px;
+  padding-right: 2px;
+  margin-left: 2px;
+  margin-right: 2px;
+  width: 15%;
+}
+
+.menuStandard a:hover {
+  text-decoration: underline;
+}
+
+.rowEven {
+  background-color: #ededca;
+  color: #000000;
+}
+
+.rowOdd {
+  background-color: #cccc99;
+  color: #000000;
+}
+
+.rowEven a, .rowOdd a {
+  text-decoration: none;
+}
+
+.rowEven a:hover, .rowOdd a:hover {
+  color: #000000;
+  background-color: #ffffcc;
+}
+
+tr.rowHighlighted {
+  background-color: #cccc99;
+  color: #eeeeee;
+}
 
 table.settingsTable {
-  border: 1px solid #CCCC99;
+  border: 1px solid #cccc99;
   padding: 3px;
   margin: 0px;
 }
 
-td.settingsPanel {
-  border: 1px solid #CCCC99;
-  padding: 3px;
-  margin: 0px;
-}
-
-table.openMessageTable {
-  border: 2px solid #CCCC99;
+table.openMessageTable, table.lookupResultsTable {
+  border: 2px solid Black;
   padding: 2px;
   margin: 0px;
 }
 
-td.openMessageBody {
-  text-align: left;
+td.settingsPanel {
+  border: 1px solid #cccc99;
+  padding: 3px;
+  margin: 0px;
+}
+
+td.naked {
+  padding: 0px; 
+  margin: 0px; 
+  border: none
+}
+
+td.accuracy0to49 {
+  background-color: red;
+  color: black;
+  height: 20px;
+}
+
+td.accuracy50to93 {
+  background-color: yellow;
+  color: black;
+  height: 20px;
+}
+
+td.accuracy94to100 {
+  background-color: green;
+  color: black;
+  height: 20px;
+}
+
+div.error01 {
+  background-color: transparent;
+  color: red;
+  font-size: larger;
+}
+
+div.error02 {
+  background-color: transparent;
+  color: red;
+}
+
+td.historyNavigatorTop {
+  text-align: right;
+  padding-right: 5px;
+}
+
+.historyNavigatorTop a:hover, .historyNavigatorBottom a:hover {
+  background-color: #eeeeee;
+  color: #000000;
 }
 
 td.openMessageCloser {
   text-align: right;
-}
-
-tr.rowEven {
+  background-color: #eeeeee;
   color: #000000;
-  background-color: #EDEDCA;
 }
 
-tr.rowOdd {
-  color: #000000;
-  background-color: #CCCC99;
-}
-
-tr.rowEven a, tr.rowOdd a {
-  text-decoration: none;
-}
-
-tr.rowEven a:hover, tr.rowOdd a:hover {
-  text-decoration: underline;
-}
-
-tr.rowEven:hover, tr.rowOdd:hover {
-  color: #000000;
-  background-color: #FFFFCC;
-}
-
-tr.rowHighlighted {
-  color: #000000;
-  background-color: #B7B7B7;
-}
-
-tr.rowBoundary {
-  background-color: #CCCC99;
-}
-
-table.lookupResultsTable {
-  border: 2px solid #CCCC99;
-}
-
-td.naked {
-  padding: 0;
-  margin: 0;
-  border: 0;
-}
-
-/*********************************************************/
-/* Messages */
-
-div.helpMessage {
-  background-color: #DFDFAF;
-  border: 2px solid #CCCC99;
-  padding: 0.4em;
-}
-
-div.helpMessage form {
-  margin: 0;
-}
-
-/*********************************************************/
-/* Form Labels */
-
-th.historyLabel {
-  text-align: left;
+.historyLabel {
   font-weight: normal;
-  font-size: 1.1em;
+  font-size: 9pt;
   text-decoration: none;
+  padding-left: 1px;
+  padding-right: 2px;
 }
 
-em.historyLabelSort {
+.historyLabel em {
   font-weight: bold;
   font-style: normal;
 }
 
-th.historyLabel a {
-  text-decoration: none;
-}
-
-th.historyLabel a:hover {
+a.historyLabel:hover {
   text-decoration: underline;
 }
 
@@ -272,162 +234,91 @@ th.historyLabel a:hover {
   font-weight: bold;
 }
 
-.bucketsWidgetStateOn, .bucketsWidgetStateOff {
-  font-weight: bold;
-}
-
-.configWidgetStateOn, .configWidgetStateOff {
-  font-weight: bold;
-}
-
-.securityWidgetStateOn, .securityWidgetStateOff {
-  font-weight: bold;
-}
-
-/*********************************************************/
-/* Positioning */
-
-.historyNavigatorTop, .historyNavigatorBottom {
-  text-align: right;
-  vertical-align: top;
-}
-
-.historyNavigatorTop a, .historyNavigatorBottom a {
-  text-decoration: none;
-}
-
-.historyNavigatorTop a:hover, .historyNavigatorBottom a:hover {
-  text-decoration: underline;
-}
-
-.historyNavigatorTop form, .historyNavigatorBottom form {
-  display:inline;
-}
-
-.refreshLink {
-  margin-top: 0.5em;
-}
-
-.magnetsTable caption {
-  text-align: left;
-}
-
-h2.history {
-  margin-top: 0;
-  margin-bottom: 0.2em;
-  font-size: 1.5em;
-  font-weight: normal;
-}
-
-.search {
-  display: inline;
-  float: left;
-  padding-right: 0.4em;
-}
-
-.filter {
-  display: inline;
-}
-
-.removeButtonsTop {
-  padding-bottom: 1em;
-}
-
-.viewHeadings {
-  display: inline;
-}
-
-/*********************************************************/
-/* Config Bar */
-
-.configBar {
-  padding-top: 1em;
-}
-
-.configBarTitle {
-  display: inline;
-  font-size: 1.1em;
-}
-
-.configBarTitle a {
-  border: 2px #CCCC99 solid;
-  padding: 0.3em;
-  padding-bottom: 0;
-  margin-left: 0.3em;
-  background-color: #CCCC99;
-  font-weight: bold;
-  font-size: 1.1em;
-  text-decoration: none;
-}
-
-.configBarTitle a:hover {
-  text-decoration: underline;
-}
-
-.configBarBody {
-  background-color: #DFDFAF;
-  border: 1px solid #CCCC99;
-}
-
-.configBarBody td {
-  border: 1px solid #CCCC99;
-}
-
-.configBarBody form {
-  margin: 0;
-}
-
-.configBarOption {
-  border: 1px solid #CCCC99;
-  margin: 0.3em;
-  padding: 0.3em;
-  display: inline;
-  float: left;
-  min-height: 3em;
-  background-color: #EDEDCA;
-}
-
-.checkLabel {
-  border: 1px solid #CCCC99;
-  white-space: nowrap;
-}
-
-.configBarBody input.submit {
-  margin-top: 0.1em;
-}
-
-.configBarBody label.configurationLabel {
-  display: block;
-}
-
-/*********************************************************/
-/* History Column Controls */
-
-.columnControls {
-  white-space:nowrap;
-  vertical-align: top;
-  width: 10px;
-}
-
-.columnRemove, .columnMove {
-  display: block;
+table.historyWidgetsTop {
   width: 100%;
-  height: 1em;
+  border-top: 2px solid #cccc99;
+  border-bottom: 2px solid #cccc99;
 }
 
-/*********************************************************/
+table.historyWidgetsTop td {
+  padding-left: 20px;
+  font-weight: bold;
+}
+
+table.historyWidgetsBottom {
+  width: 100%;
+  border-bottom: 2px solid #cccc99;
+}
+
+table.historyWidgetsBottom td {
+  padding-left: 20px;
+  font-weight: bold;
+}
+
+table.footer {
+  width: 100%;
+  background-color: #ededca;
+  color: #666666;
+  border-left: 2px solid #cccc99;
+  border-right: 2px solid #cccc99;
+  border-bottom: 2px solid #cccc99;
+}
+
+td.footerBody { 
+  text-align: center;
+  padding-left: 5%;
+  padding-right: 5%;
+  font-size: 8pt;
+  font-weight: bold;
+}
+
+.bottomLink {
+  text-decoration: none;
+}
+
+.bottomLink:hover {
+  background-color: #ffffcc;
+  color: #000000;
+}
 
 input, select, .submit {
   font-family: tahoma, sans-serif;
-  font-size: 1em;
+  font-size: 8pt;
   font-weight: normal;
-  padding: 0;
-  margin: 0;
+  padding: 0px;
+  margin: 0px;
 }
 
 tt {
   font-family: "lucida console", courier, sans-serif;
-  font-size: 1.1em;
+  font-size: 9pt;
   font-weight: normal;
 }
 
+span.bucketsWidgetState {
+  font-weight: bold;
+}
+
+span.configWidgetState {
+  font-weight: bold;
+}
+
+span.securityWidgetState {
+  font-weight: bold;
+}
+
+tr.rowBoundary {
+  background-color: #cccc99;
+}
+
+div.helpMessage {
+  background-color: #DFDFAF;
+  border: 2px solid #CCCC99;
+  padding: 0.4em;
+  padding-bottom: 0;
+}
+
+.menuLink {
+  display: block;
+  width: 100%;
+}

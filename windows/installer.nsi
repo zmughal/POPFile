@@ -20,7 +20,7 @@
 #                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
 #                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2005 John Graham-Cumming
+# Copyright (c) 2002-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -47,18 +47,18 @@
 #  (5) installer-Uninstall.nsh       - source for the POPFile uninstaller (uninstall.exe)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.22" compiler,
+  ; released 27 November 2006. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef v2.22_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -67,16 +67,10 @@
 
   !undef  ${NSIS_VERSION}_found
 
-; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date
-; (if the default multi-language installer is compiled).
-;
-; There may be further warnings which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or
-; more language tables. The 'pfi-languages.nsh' file lists all of the language table codes
-; used by the POPFile installer and other NSIS-based utilities.
-;
-; NOTE: The language selection menu order used in this script assumes that the NSIS MUI
-; 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
-; [see 'SMALL NSIS PATCH REQUIRED' in the 'pfi-languages.nsh' file]
+; Normally no NSIS compiler warnings are expected. However there may be some warnings
+; which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or more language tables.
+; These "PFI_LANG_NSISDL_PLURAL" warnings can be safely ignored (at present only the
+; 'Japanese-pfi.nsh' file generates this warning).
 
 ; INSTALLER SIZE: The LZMA compression method is used to reduce the size of the 'setup.exe'
 ; file by around 25% compared to the default compression method but at the expense of greatly
@@ -169,8 +163,6 @@
 # The Kakasi package and the additional Perl modules almost double the size of the installer
 # (assuming that the default compression method is used). If the command-line switch
 # /DNO_KAKASI is used then a smaller installer can be built by omitting the Japanese support.
-#
-# SMALL NSIS PATCH REQUIRED: See 'pfi-languages.nsh' for details.
 #--------------------------------------------------------------------------
 
   ;------------------------------------------------
@@ -183,7 +175,7 @@
   ; Select LZMA compression to reduce 'setup.exe' size by around 30%
   ;--------------------------------------------------------------------------
 
-  SetCompressor lzma
+  SetCompressor /solid lzma
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -235,11 +227,65 @@
   !define C_README        "v${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.change"
   !define C_RELEASE_NOTES "..\engine\${C_README}"
 
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   admin
+
   ;----------------------------------------------------------------------
   ; Root directory for the Perl files (used when building the installer)
+  ; and the version number and build number required for the minimal Perl
   ;----------------------------------------------------------------------
 
   !define C_PERL_DIR      "C:\Perl"
+  !define C_PERL_VERSION  "5.8.8"
+  !define C_PERL_BUILD    "820"
+  
+  ;----------------------------------------------------------------------
+  ; Recently there have been some significant changes to the structure and
+  ; behaviour of ActivePerl. These changes have affected the way in which
+  ; the minimal Perl is assembled therefore a new compile-time check has
+  ; been introduced to ensure that a suitable ActivePerl installation is
+  ; available for use in preparing the minimal Perl used by POPFile.
+  ;----------------------------------------------------------------------
+
+  !system 'if exist ".\ap-version.nsh" del ".\ap-version.nsh"'
+  !system '".\toolkit\ap-vcheck.exe" ${C_PERL_DIR}'
+  !include /NONFATAL ".\ap-version.nsh"
+  
+  ; The above '!system' call can fail on older (slower/Win9x?) systems so if the expected
+  ; output file is not found we try a safer version of the '!system' call. If this call
+  ; also fails then the NSIS compiler will stop with a fatal error.
+  
+  !ifndef C_AP_STATUS
+    !system 'start /w toolkit\ap-vcheck.exe ${C_PERL_DIR}'
+    !include ".\ap-version.nsh"
+   !endif
+   
+  ; Delete the "include" file after it has been read
+  
+  !delfile ".\ap-version.nsh"
+  
+  ; Now we can check that the location defined in ${C_PERL_DIR} is suitable
+  
+  !if "${C_AP_STATUS}" == "failure"
+    !error "${MB_NL}${MB_NL}Fatal error:${MB_NL}\
+        ${MB_NL}   ActivePerl version check failed${MB_NL}\
+        ${MB_NL}   (${C_AP_ERRORMSG})${MB_NL}"
+  !endif
+  
+  ; For this build of the installer we require an exact match for the ActivePerl version number _and_ build number
+  
+  !if "${C_AP_VERSION}.${C_AP_BUILD}" != "${C_PERL_VERSION}.${C_PERL_BUILD}"
+    !error "${MB_NL}${MB_NL}Fatal error:${MB_NL}\
+        ${MB_NL}   ActivePerl ${C_PERL_VERSION} Build ${C_PERL_BUILD} is required for this installer\
+        ${MB_NL}   but ActivePerl ${C_AP_VERSION} Build ${C_AP_BUILD} has been detected in the\
+        ${MB_NL}   $\"${C_AP_FOLDER}$\" folder${MB_NL}"
+  !endif
+  
+  !echo "${MB_NL}\
+      ${MB_NL}   ActivePerl version ${C_AP_VERSION} Build ${C_AP_BUILD} will be used to prepare the minimal Perl${MB_NL}${MB_NL}"
 
   ;----------------------------------------------------------------------------------
   ; Root directory for the Kakasi package.
@@ -366,10 +412,13 @@
 
   VIProductVersion "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Automatic email classification"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -388,6 +437,7 @@
     !endif
   !endif
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -616,7 +666,7 @@
 
   ; At least one language must be specified for the installer (the default is "English")
 
-  !insertmacro PFI_LANG_LOAD "English"
+  !insertmacro PFI_LANG_LOAD "English" "-"
 
   ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
 
@@ -674,12 +724,17 @@
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
+  ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
+  ReserveFile "${NSISDIR}\Plugins\inetc.dll"
+  ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
+  ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
   ReserveFile "ioG.ini"
   ReserveFile "${C_RELEASE_NOTES}"
+  ReserveFile "SSL_pm.pat"
 
 #--------------------------------------------------------------------------
 # Installer Function: .onInit - installer starts by offering a choice of languages
@@ -1103,13 +1158,15 @@ SectionEnd
     continue:
 
       ;--------------------------------------------------------------------------
-      ; Install Perl modules: base.pm, the entire Encode collection and Text::Kakasi
-      ; (bytes.pm and bytes_heavy.pl are also required but these files became part of
-      ; the standard minimal Perl when support for encrypted cookies was added for 0.23.0)
+      ; Install Perl modules: base.pm, bytes.pm, the Encode collection and Text::Kakasi
+      ; (the requirement for bytes_heavy.pl was added when the minimal Perl was updated
+      ; to use ActivePerl 5.8.7 components)
       ;--------------------------------------------------------------------------
 
       SetOutPath "$G_MPLIBDIR"
       File "${C_PERL_DIR}\lib\base.pm"
+      File "${C_PERL_DIR}\lib\bytes.pm"
+      File "${C_PERL_DIR}\lib\bytes_heavy.pl"
       File "${C_PERL_DIR}\lib\Encode.pm"
 
       SetOutPath "$G_MPLIBDIR\Encode"
@@ -1198,21 +1255,21 @@ Section /o "XMLRPC" SecXMLRPC
   ; Perl modules required to support the POPFile XMLRPC component
 
   SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\site\lib\LWP.pm"
+  File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\re.pm"
-  File "${C_PERL_DIR}\site\lib\URI.pm"
+  File "${C_PERL_DIR}\lib\URI.pm"
 
   SetOutPath "$G_MPLIBDIR\HTTP"
-  File /r "${C_PERL_DIR}\site\lib\HTTP\*"
+  File /r "${C_PERL_DIR}\lib\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\LWP"
-  File /r "${C_PERL_DIR}\site\lib\LWP\*"
+  File /r "${C_PERL_DIR}\lib\LWP\*"
 
   SetOutPath "$G_MPLIBDIR\Net"
-  File "${C_PERL_DIR}\site\lib\Net\HTT*"
+  File "${C_PERL_DIR}\lib\Net\HTT*"
 
   SetOutPath "$G_MPLIBDIR\Net\HTTP"
-  File "${C_PERL_DIR}\site\lib\Net\HTTP\*"
+  File "${C_PERL_DIR}\lib\Net\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\SOAP"
   File /r "${C_PERL_DIR}\site\lib\SOAP\*"
@@ -1221,10 +1278,10 @@ Section /o "XMLRPC" SecXMLRPC
   File /r "${C_PERL_DIR}\lib\Time\*"
 
   SetOutPath "$G_MPLIBDIR\URI"
-  File /r "${C_PERL_DIR}\site\lib\URI\*"
+  File /r "${C_PERL_DIR}\lib\URI\*"
 
   SetOutPath "$G_MPLIBDIR\XML"
-  File /r "${C_PERL_DIR}\site\lib\XML\*"
+  File /r "${C_PERL_DIR}\lib\XML\*"
 
   SetOutPath "$G_MPLIBDIR\XMLRPC"
   File /r "${C_PERL_DIR}\site\lib\XMLRPC\*"
@@ -1319,7 +1376,7 @@ SubSectionEnd
 Section "-StopLog"
 
   SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_PROG_SAVELOG) $(PFI_LANG_TAKE_SEVERAL_SECONDS)"
+  DetailPrint "$(PFI_LANG_PROG_SAVELOG)"
   SetDetailsPrint listonly
   Call PFI_GetDateTimeStamp
   Pop $G_PLS_FIELD_1
