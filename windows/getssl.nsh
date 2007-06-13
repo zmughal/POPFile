@@ -20,6 +20,10 @@
 #                supply IO::Socket::SSL v1.01 which is not compatible with POPFile so a patch
 #                will be applied to downgrade the SSL.pm file to the compatible v0.97 version.
 #
+#                POPFile 0.22.5 uses a new minimal Perl and at the time of its release there
+#                was no need to patch any of the SSL Support files from the University of
+#                Winnipeg repository.
+#
 #                Starting with the 0.22.5 release any patches required to make the SSL Support
 #                files compatible with POPFile will be downloaded from the POPFile web site.
 #                This will avoid the need to rebuild the installer and the 'SSL Setup' wizard
@@ -144,7 +148,11 @@
 #--------------------------------------------------------------------------
 
   !define C_PATCH_WEBSITE     "http://getpopfile.org/ssl-patch"
-  !define C_PATCH_CTRL_FILE   "0.22.x.pcf"
+  !ifdef INSTALLER
+      !define C_PATCH_CTRL_FILE   "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
+  !else
+      !define C_PATCH_CTRL_FILE   "0.22.x.pcf"
+  !endif
   !define C_MD5SUMS_FILE      "MD5SUMS"
 
 #--------------------------------------------------------------------------
@@ -241,7 +249,7 @@
   !ifdef ADDSSL
 
       ; Assume we will use the built-in SSL files which are compatible with pre-0.22.3 releases
-      ; (these SSL support files do not require any patches to make them POPFIle-compatible)
+      ; (these SSL support files do not require any patches to make them POPFile-compatible)
 
         StrCpy $G_SSL_SOURCE "${C_BUILTIN}"
         StrCpy $G_PATCH_SOURCE "${C_BUILTIN}"
@@ -535,15 +543,17 @@ check_if_patches_required:
 use_default_patches:
 
   ; Failed to download POPFile's SSL Patch Control file or the MD5 sums
-
+  
   StrCpy $G_PATCH_SOURCE "${C_BUILTIN}"
   DetailPrint "Unable to download data from POPFile website, using built-in SSL patches instead"
   DetailPrint ""
 
   SetDetailsPrint none
   !ifdef INSTALLER
-      File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "0.22.x.pcf"
-      File /nonfatal "/oname=$PLUGINSDIR\SSL_pm.pat" "SSL_pm.pat"
+      File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "${C_PATCH_CTRL_FILE}"
+      
+      ; 0.22.5 release does not need any SSL patches so "SSL_pm.pat" is not needed here
+      
   !else
       File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "..\0.22.x.pcf"
       File /nonfatal "/oname=$PLUGINSDIR\SSL_pm.pat" "..\SSL_pm.pat"
@@ -683,7 +693,7 @@ FunctionEnd
 # (a) positions 1 to 32 contain a 32 character hexadecimal number (line starts in column 1)
 # (b) column 33 is a space character
 # (c) column 34 is the text/binary flag (' ' = text, '*' = binary)
-# (d) column 35 is the first character of the filename (fiename terminates with end-of-line)
+# (d) column 35 is the first character of the filename (filename terminates with end-of-line)
 #
 # Inputs:
 #         (top of stack)     - name (without the path) of the file whose MD5 sum we seek
@@ -832,7 +842,7 @@ FunctionEnd
 Function EOL2CRLF
 
   !define L_FILENAME    $R9   ; name of input file (assumed to be in $PLUGINSDIR)
-  !define L_SOURCE      $R8   ; handle used ot access the input file
+  !define L_SOURCE      $R8   ; handle used to access the input file
   !define L_TARGET      $R7   ; handle used to access the output file
   !define L_TEMP        $R6
 
@@ -996,9 +1006,14 @@ Function ApplyPatches
 
   DetailPrint ""
   DetailPrint ""
+  StrCmp ${L_LISTSIZE} "0" no_patches
   StrCmp ${L_LISTSIZE} "1" single_patch
   DetailPrint "Apply ${L_LISTSIZE} SSL patches..."
   Goto start_patching
+
+no_patches:
+  DetailPrint "No POPFile SSL patches are required"
+  Goto all_done
 
 single_patch:
   DetailPrint "Apply the SSL patch..."
