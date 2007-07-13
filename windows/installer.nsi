@@ -99,6 +99,24 @@
 # makensis.exe /DC_POPFILE_MAJOR_VERSION=0 /DC_POPFILE_MINOR_VERSION=21 /DC_POPFILE_REVISION=1 /DC_POPFILE_RC installer.nsi
 #--------------------------------------------------------------------------
 
+  ;------------------------------------------------
+  ; This script requires the 'UAC' NSIS plugin
+  ;------------------------------------------------
+
+  ; The new 'User Account Control' (UAC) feature in Windows Vista makes it difficult to install
+  ; POPFile from a 'standard' user account. This script uses a special NSIS plugin (UAC) which
+  ; allows the 'POPFile program files' part of the installation to be run at the 'admin' level
+  ; and the user-specific POPFile configuration part to be run at the 'user' level.
+  ;
+  ; The 'NSIS Wiki' page for the 'UAC' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/UAC_plug-in
+  ;
+  ; To compile this script, copy the 'UAC.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'UAC' source and example files can be unzipped to the
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with version v0.0.6b of the 'UAC' plugin.
+
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
 #--------------------------------------------------------------------------
@@ -229,9 +247,25 @@
 
   ;--------------------------------------------------------------------------
   ; Windows Vista expects to find a manifest specifying the execution level
+  ;
+  ; The POPFile installer has two stages; the first stage (setup.exe) installs the
+  ; POPFile program and then calls the second stage (adduser.exe) to configure POPFile
+  ; for the current user.
+  ;
+  ; The first stage has to be able to write to the default installation folder
+  ; (C:\Program Files\POPFile, or its equivalent) and be able to create/update
+  ; some HKLM registry entries so it requires 'administrator' privileges. The
+  ; second stage creates user-specific environment variables and HKCU registry
+  ; entries so it requires 'current user' privileges.
+  ;
+  ; A special NSIS plugin (UAC) is used to allow these two stages of the
+  ; installer to run with the required privileges. Although this script is
+  ; used to create the 'administrator' privileges stage of the installer
+  ; the UAC plugin requires this script to specify 'user' instead of 'admin'
+  ; when requesting the execution level.
   ;--------------------------------------------------------------------------
 
-  RequestExecutionLevel   admin
+  RequestExecutionLevel   user
 
   ;----------------------------------------------------------------------
   ; Root directory for the Perl files (used when building the installer)
@@ -241,7 +275,7 @@
   !define C_PERL_DIR      "C:\Perl"
   !define C_PERL_VERSION  "5.8.8"
   !define C_PERL_BUILD    "820"
-  
+
   ;----------------------------------------------------------------------
   ; Recently there have been some significant changes to the structure and
   ; behaviour of ActivePerl. These changes have affected the way in which
@@ -253,37 +287,37 @@
   !system 'if exist ".\ap-version.nsh" del ".\ap-version.nsh"'
   !system '".\toolkit\ap-vcheck.exe" ${C_PERL_DIR}'
   !include /NONFATAL ".\ap-version.nsh"
-  
+
   ; The above '!system' call can fail on older (slower/Win9x?) systems so if the expected
   ; output file is not found we try a safer version of the '!system' call. If this call
   ; also fails then the NSIS compiler will stop with a fatal error.
-  
+
   !ifndef C_AP_STATUS
     !system 'start /w toolkit\ap-vcheck.exe ${C_PERL_DIR}'
     !include ".\ap-version.nsh"
    !endif
-   
+
   ; Delete the "include" file after it has been read
-  
+
   !delfile ".\ap-version.nsh"
-  
+
   ; Now we can check that the location defined in ${C_PERL_DIR} is suitable
-  
+
   !if "${C_AP_STATUS}" == "failure"
     !error "${MB_NL}${MB_NL}Fatal error:${MB_NL}\
         ${MB_NL}   ActivePerl version check failed${MB_NL}\
         ${MB_NL}   (${C_AP_ERRORMSG})${MB_NL}"
   !endif
-  
+
   ; For this build of the installer we require an exact match for the ActivePerl version number _and_ build number
-  
+
   !if "${C_AP_VERSION}.${C_AP_BUILD}" != "${C_PERL_VERSION}.${C_PERL_BUILD}"
     !error "${MB_NL}${MB_NL}Fatal error:${MB_NL}\
         ${MB_NL}   ActivePerl ${C_PERL_VERSION} Build ${C_PERL_BUILD} is required for this installer\
         ${MB_NL}   but ActivePerl ${C_AP_VERSION} Build ${C_AP_BUILD} has been detected in the\
         ${MB_NL}   $\"${C_AP_FOLDER}$\" folder${MB_NL}"
   !endif
-  
+
   !echo "${MB_NL}\
       ${MB_NL}   ActivePerl version ${C_AP_VERSION} Build ${C_AP_BUILD} will be used to prepare the minimal Perl${MB_NL}${MB_NL}"
 
@@ -734,13 +768,45 @@
   ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
   ReserveFile "ioG.ini"
   ReserveFile "${C_RELEASE_NOTES}"
-  ReserveFile "SSL_pm.pat"
+  ReserveFile "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
+;  ReserveFile "SSL_pm.pat"     ; 0.22.5 does not need any SSL patches so there's no need for a built-in copy
 
 #--------------------------------------------------------------------------
 # Installer Function: .onInit - installer starts by offering a choice of languages
 #--------------------------------------------------------------------------
 
 Function .onInit
+
+  ; Use the UAC plugin to ensure that this installer runs with 'administrator' privileges
+  ; (UAC = Vista's new "User Account Control" feature).
+  ;
+  ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
+
+UAC_Elevate:
+  UAC::RunElevated
+  StrCmp 1223 $0 UAC_ElevationAborted   ; UAC dialog aborted by user?
+  StrCmp 0 $0 0 UAC_Err                 ; Error?
+  StrCmp 1 $1 0 UAC_Success             ; Are we the real deal or just the wrapper?
+  Quit
+
+UAC_Err:
+  MessageBox mb_iconstop "Unable to elevate , error $0"
+  Abort
+
+UAC_ElevationAborted:
+  MessageBox mb_iconstop "This installer requires admin access, aborting!"
+  Abort
+
+UAC_Success:
+  # if $0==0 && $1==0, UAC not supported (Probably <NT6), run as normal?
+  # if $0==0 && $1==3, we can try to elevate again
+  # if $0==0 && $3==1, we are a member of the admin group (Any OS)
+  StrCmp 1 $3 continue                ; Admin?
+  StrCmp 3 $1 0 UAC_ElevationAborted  ; Try again?
+  MessageBox mb_iconstop "This installer requires admin access, try again"
+  goto UAC_Elevate
+
+continue:
 
   ; The reason why '.onInit' preserves the registers it uses is that it makes debugging easier!
 
@@ -789,6 +855,27 @@ close_files:
   !undef L_INPUT_FILE_HANDLE
   !undef L_OUTPUT_FILE_HANDLE
   !undef L_TEMP
+
+FunctionEnd
+
+
+#--------------------------------------------------------------------------
+# Installer Function: .OnInstFailed               (required by UAC plugin)
+#--------------------------------------------------------------------------
+
+Function .OnInstFailed
+
+  UAC::Unload     ; Must call unload!
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: .OnInstSuccess              (required by UAC plugin)
+#--------------------------------------------------------------------------
+
+Function .OnInstSuccess
+
+  UAC::Unload     ; Must call unload!
 
 FunctionEnd
 
@@ -857,9 +944,16 @@ continue:
   !endif
 
   StrCpy $G_SSL_ONLY "0"    ; assume a full installation is required
-  Call PFI_GetParameters
-  Pop ${L_RESERVED}
-  StrCmp ${L_RESERVED} "/SSL" 0 exit
+  Call PFI_GetParameters    ; The UAC plugin may modify the command-line
+  Push "/SSL"               ; so we need to check for "/SSL" anywhere on
+  Call PFI_StrStr           ; the command-line (instead of assuming the
+  Pop ${L_RESERVED}         ; command-line is either /SSL or empty)
+  StrCmp ${L_RESERVED} "" exit
+  StrCpy ${L_RESERVED} ${L_RESERVED} 5
+  StrCmp ${L_RESERVED} "/SSL" sslonly
+  StrCmp ${L_RESERVED} "/SSL " 0 exit
+
+sslonly:
   StrCpy $G_SSL_ONLY "1"    ; just download and install the SSL support files
 
 exit:
@@ -1981,12 +2075,17 @@ Function InstallUserData
   ; 'setup.exe' installer.
   ; [Future builds may pass more than just a command-line switch to the wizard]
 
+  ; Use the UAC plugin to ensure that adduser.exe runs with 'current user' privileges
+  ; (UAC = Vista's new "User Account Control" feature).
+  ;
+  ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
+
   IfRebootFlag special_case
-  Exec '"$G_ROOTDIR\adduser.exe" /install'
+  UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/install" ""
   Abort
 
 special_case:
-  Exec '"$G_ROOTDIR\adduser.exe" /installreboot'
+  UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/installreboot" ""
   Abort
 
 exit:

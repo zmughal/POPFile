@@ -148,6 +148,7 @@
 #--------------------------------------------------------------------------
 
   !define C_PATCH_WEBSITE     "http://getpopfile.org/ssl-patch"
+  
   !ifdef INSTALLER
       !define C_PATCH_CTRL_FILE   "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
   !else
@@ -553,6 +554,7 @@ use_default_patches:
       File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "${C_PATCH_CTRL_FILE}"
       
       ; 0.22.5 release does not need any SSL patches so "SSL_pm.pat" is not needed here
+      ; File /nonfatal "/oname=$PLUGINSDIR\SSL_pm.pat" "SSL_pm.pat"
       
   !else
       File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "..\0.22.x.pcf"
