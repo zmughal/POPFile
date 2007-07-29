@@ -56,6 +56,37 @@
 
 Function un.onInit
 
+  ; Use the UAC plugin to ensure that this uninstaller runs with 'administrator' privileges
+  ; (UAC = Vista's new "User Account Control" feature).
+  ;
+  ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
+
+UAC_Elevate:
+  UAC::RunElevated
+  StrCmp 1223 $0 UAC_ElevationAborted   ; UAC dialog aborted by user?
+  StrCmp 0 $0 0 UAC_Err                 ; Error?
+  StrCmp 1 $1 0 UAC_Success             ; Are we the real deal or just the wrapper?
+  Quit
+
+UAC_Err:
+  MessageBox mb_iconstop "Unable to elevate , error $0"
+  Abort
+
+UAC_ElevationAborted:
+  MessageBox mb_iconstop "This uninstaller requires admin access, aborting!"
+  Abort
+
+UAC_Success:
+  # if $0==0 && $1==0, UAC not supported (Probably <NT6), run as normal?
+  # if $0==0 && $1==3, we can try to elevate again
+  # if $0==0 && $3==1, we are a member of the admin group (Any OS)
+  StrCmp 1 $3 continue                ; Admin?
+  StrCmp 3 $1 0 UAC_ElevationAborted  ; Try again?
+  MessageBox mb_iconstop "This uninstaller requires admin access, try again"
+  goto UAC_Elevate
+
+continue:
+
   ; Retrieve the language used when POPFile was installed, and use it for the uninstaller
   ; (if the language entry is not found in the registry, a 'language selection' dialog is shown)
 
@@ -116,6 +147,26 @@ get_usertype:
   StrCpy $G_WINUSERTYPE "Unknown"
 
 start_uninstall:
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: un.OnUninstFailed               (required by UAC plugin)
+#--------------------------------------------------------------------------
+
+Function un.OnUninstFailed
+
+  UAC::Unload     ; Must call unload!
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: un.OnUninstSuccess              (required by UAC plugin)
+#--------------------------------------------------------------------------
+
+Function un.OnUninstSuccess
+
+  UAC::Unload     ; Must call unload!
+
 FunctionEnd
 
 #--------------------------------------------------------------------------
@@ -429,7 +480,7 @@ Section "un.POPFile Core" UnSecCore
   Delete "$G_ROOTDIR\adduser.exe"
   Delete "$G_ROOTDIR\runsqlite.exe"
   Delete "$G_ROOTDIR\sqlite.exe"
-  
+
   Delete "$G_ROOTDIR\msgcapture.exe"
   Delete "$G_ROOTDIR\pfidbstatus.exe"
   Delete "$G_ROOTDIR\pfidiag.exe"
