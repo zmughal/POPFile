@@ -103,7 +103,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.5"
+  !define C_VERSION   "0.1.6"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -1607,6 +1607,7 @@ FunctionEnd
 
   !define C_LVM_GETITEMCOUNT        0x1004
   !define C_LVM_ENSUREVISIBLE       0x1013
+  !define C_LVM_COUNTPERPAGE        0x1028
 
 #--------------------------------------------------------------------------
 # Installer Function: ScrollToShowPaths
@@ -1627,9 +1628,11 @@ FunctionEnd
 
 Function ScrollToShowPaths
 
-  !define L_TEMP      $R9
-  !define L_TOPROW    $R8   ; item index of the line we want to be at the top of the window
+  !define L_DLG_ITEM    $R9   ; the dialog item we are going to manipulate
+  !define L_TEMP        $R8
+  !define L_TOPROW      $R7   ; item index of the line we want to be at the top of the window
 
+  Push ${L_DLG_ITEM}
   Push ${L_TEMP}
   Push ${L_TOPROW}
 
@@ -1638,13 +1641,24 @@ Function ScrollToShowPaths
   ; the POPFile program and 'User Data' folder locations (on the assumption that
   ; this is the information most users will want to find first).
 
+  FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
+  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x3F8      ; This is the Control ID of the details view
+
+  ; Check how many lines can be shown in the details view
+
+  SendMessage ${L_DLG_ITEM} ${C_LVM_COUNTPERPAGE} 0 0 ${L_TEMP}
+
+  ; The important information for the simple report is held in rows 10 to 19 (starting from 0)
+
+  StrCpy ${L_TOPROW} 10   ; index of the "Current UserName" row in the simple report
+  IntCmp ${L_TEMP} 10 getrowcount getrowcount
   StrCpy ${L_TOPROW} 9    ; index of the blank line immediately before "Current UserName"
 
-  ; Check how many 'details' lines there are
+getrowcount:
 
-  FindWindow ${L_TEMP} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_TEMP} ${L_TEMP} 0x3F8          ; This is the Control ID of the details view
-  SendMessage ${L_TEMP} ${C_LVM_GETITEMCOUNT} 0 0 ${L_TEMP}
+  ; Check how many 'details' lines there are in the report
+
+  SendMessage ${L_DLG_ITEM} ${C_LVM_GETITEMCOUNT} 0 0 ${L_TEMP}
 
   ; No point in trying to display a non-existent line
 
@@ -1652,14 +1666,14 @@ Function ScrollToShowPaths
 
   ; Scroll up (in effect) to show Current UserName, Program folder & User Data folder entries
 
-  FindWindow ${L_TEMP} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_TEMP} ${L_TEMP} 0x3F8           ; This is the Control ID of the details view
-  SendMessage ${L_TEMP} ${C_LVM_ENSUREVISIBLE} ${L_TOPROW} 0
+  SendMessage ${L_DLG_ITEM} ${C_LVM_ENSUREVISIBLE} ${L_TOPROW} 0
 
 exit:
   Pop ${L_TOPROW}
   Pop ${L_TEMP}
+  Pop ${L_DLG_ITEM}
 
+  !undef L_DLG_ITEM
   !undef L_TEMP
   !undef L_TOPROW
 
