@@ -746,14 +746,26 @@ Function .onInit
   Call PFI_GetParameters
   Pop $G_PFISETUP
   StrCpy $G_PFIFLAG $G_PFISETUP 9
-  StrCmp $G_PFIFLAG "/restore=" special_case
-  StrCmp $G_PFISETUP "/install" special_case
+  StrCmp $G_PFIFLAG "/restore=" restore_case
+  StrCmp $G_PFISETUP "/install" install_case
   StrCmp $G_PFISETUP "/installreboot" 0 normal_startup
   SetRebootFlag true
 
-special_case:
+install_case:
   ReadRegStr $LANGUAGE \
+             "HKLM" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
+  Goto extract_files
+
+restore_case:
+  ReadRegStr $G_PFIFLAG \
              "HKCU" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
+  StrCmp $G_PFIFLAG "" try_installer_language
+  StrCpy $LANGUAGE $G_PFIFLAG
+  Goto extract_files
+
+try_installer_language:
+  ReadRegStr $LANGUAGE \
+             "HKLM" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
   Goto extract_files
 
 normal_startup:
