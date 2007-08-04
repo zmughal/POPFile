@@ -103,7 +103,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.6"
+  !define C_VERSION   "0.1.7"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -546,6 +546,28 @@ enter_section:
   Pop ${L_TEMP}
 
   !undef L_TEMP
+
+next_section:
+SectionEnd
+
+
+;--------------------------------------------------------------------------
+; Section: Location of temporary files
+;--------------------------------------------------------------------------
+
+Section "Location of temporary files"
+
+  StrCmp $G_DIAG_MODE "full" enter_section next_section
+
+enter_section:
+
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "Location used to store temporary files"
+  DetailPrint "------------------------------------------------------------"
+
+  DetailPrint ""
+  DetailPrint "$$TEMP folder path = < $TEMP >"
+  DetailPrint ""
 
 next_section:
 SectionEnd
