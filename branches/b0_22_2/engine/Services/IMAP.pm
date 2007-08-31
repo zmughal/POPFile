@@ -2233,9 +2233,16 @@ sub validate_item
                     my $imap = $self->connect( $self->config_( 'hostname' ), $self->config_( 'port' ) );
                     if ( defined $imap ) {
                         if ( $self->login( $imap ) ) {;
-                            $self->get_mailbox_list( $imap );
-                            $self->logout( $imap );
-                            $templ->param( IMAP_update_list_failed => '' );
+                            eval {
+                                $self->get_mailbox_list( $imap );
+                            };
+                            if ( $@ ) {
+                                $templ->param( IMAP_update_list_failed => 'Lost the connection to the server while trying to update the list of mailboxes. Please try again and/or check your connection settings.' );
+                            }
+                            else {
+                                $self->logout( $imap );
+                                $templ->param( IMAP_update_list_failed => '' );
+                            }
                         }
                         else {
                             $templ->param( IMAP_update_list_failed => 'Could not login. Verify your login name and password, please.' );
