@@ -1,4 +1,4 @@
-.jp 2
+.jp 3
 charset:iso-2022-jp 1
 encoding:7bit 1
 ezweb 2
@@ -22,15 +22,13 @@ header:To 1
 header:X-EdMax-Uidl 1
 header:X-UIDL 1
 jst 1
-ne.jp 2
-subject:xfb 1
+ne.jp 3
 to:.jp 1
 to:ne.jp 1
 to:xxx.ne.jp 1
 to:xxxx@xxx.ne.jp 1
-xxx 3
-xxx.ne.jp 1
-xxxx 1
-xxxx@xxx.ne.jp 1
+xxx 2
+xxx.ne.jp 2
+xxxx@xxx.ne.jp 2
 xxxxxx@ezweb.ne.jp 1
 xxxxxxxx 2

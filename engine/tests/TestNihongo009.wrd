@@ -1,8 +1,7 @@
-.jp 1
+.jp 2
 aaa 1
 charset:iso-2022-jp 4
-click 1
-co.jp 1
+co.jp 2
 from:.jp 1
 from:co.jp 1
 from:info_click3004@yahoo.co.jp 1
@@ -20,8 +19,7 @@ html:comment 1
 html:fontsize2 8
 html:invalidtag 2
 index 6
-info 1
-info_click3004@yahoo.co.jp 1
+info_click3004@yahoo.co.jp 2
 jst 1
 shift_jis 1
 subject:¤Ç¤¹ 1
@@ -36,8 +34,7 @@ to:.com 1
 to:example.com 1
 to:test@example.com 1
 url 1
-yahoo 1
-yahoo.co.jp 1
+yahoo.co.jp 2
 zeroro 6
 £È£Ð 1
 £Ï£Ë 1
