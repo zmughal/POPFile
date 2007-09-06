@@ -1147,7 +1147,7 @@ sub advanced_page
         } else {
                 if ( $self->config_( 'language' ) =~ /^Nihongo$/ ) {
                no locale;
-               $word =~ /^($euc_jp)/;
+               $word =~ /^($euc_jp)/o;
                $c = $1;
             } else {
                $word =~ /^(.)/;
@@ -2464,7 +2464,9 @@ sub history_page
 
             if ( $self->config_( 'language' ) eq 'Nihongo' ) {
                 # Remove wrong characters as euc-jp.
-                $$row[4] =~ s/\G((?:$euc_jp)*)([\x80-\xFF](?=(?:$euc_jp)*))?/$1/og;
+                for my $i (1..4) {
+                    $$row[$i] =~ s/\G((?:$euc_jp)*)([\x80-\xFF](?=(?:$euc_jp)*))?/$1/og;
+                }
             }
 
             $row_data{History_Arrived}       = $self->pretty_date__( $$row[7] );
@@ -2536,8 +2538,9 @@ sub shorten__
     my ( $self, $string, $length ) = @_;
 
     if ( length($string)>$length) {
-       $string =~ /(.{$length})/;
-       $string = "$1...";
+        $string =~ /(.{$length})/;
+        $1 =~ /((?:$euc_jp)*)/o if ( $self->config_( 'language' ) eq 'Nihongo' );
+        $string = "$1...";
     }
 
     return $string;
