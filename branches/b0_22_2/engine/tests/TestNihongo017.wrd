@@ -4,13 +4,12 @@
 #ff0000 14
 #ff00ff 1
 #ff9900 6
-.jp 29
+.jp 30
 .org 2
-18kin.jp 29
+18kin.jp 30
 av.18kin.jp 24
 charset:iso-2022-jp 3
-delmail 1
-delmail@18kin.jp 3
+delmail@18kin.jp 4
 dvd 2
 e-dm.org 2
 encoding:7bit 1
@@ -18,7 +17,8 @@ encoding:quotedprintable 1
 from:.jp 1
 from:18kin.jp 1
 from:delmail@18kin.jp 1
-from:£±£¸¶Øjapan 1
+from:£±£¸¶Ø 1
+from:japan 1
 header:Content-Transfer-Encoding 2
 header:Content-Type 2
 header:Content-type 1
@@ -52,7 +52,7 @@ html:imgwidth630 2
 html:td 44
 japan 2
 jst 1
-kin 2
+kin 1
 news 4
 subject:test 1
 to:.com 1
