@@ -3,7 +3,7 @@
 # adduser-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the NSIS
 #                           script (adduser.nsi) used to build the 'Add POPFile User' wizard.
 #
-# Copyright (c) 2005-2006 John Graham-Cumming
+# Copyright (c) 2005-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -219,6 +219,7 @@ Section "un.Shutdown POPFile" UnSecShutdown
 
   Push ${L_EXE}
   Call un.PFI_WaitUntilUnlocked
+  Push "${C_EXE_END_MARKER}"
   Push ${L_EXE}
   Call un.PFI_CheckIfLocked
   Pop ${L_EXE}
