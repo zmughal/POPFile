@@ -110,7 +110,7 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.2.6"
+  !define C_PFI_VERSION  "0.2.7"
 
   !define C_OUTFILE      "monitorcc.exe"
 
@@ -135,6 +135,16 @@
 #--------------------------------------------------------------------------
 
   !include "MUI.nsh"
+
+#--------------------------------------------------------------------------
+# Include private library functions and macro definitions
+#--------------------------------------------------------------------------
+
+  ; Avoid compiler warnings by disabling the functions and definitions we do not use
+
+  !define MONITORCC
+
+  !include "pfi-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the utility's EXE file)
@@ -297,35 +307,6 @@
 # Language Support for the utility
 #--------------------------------------------------------------------------
 
-  ;--------------------------------------------------------------------------
-  ; Used in the '*-pfi.nsh' files to define the text strings for the utility
-  ;--------------------------------------------------------------------------
-
-  !macro PFI_LANG_STRING NAME VALUE
-    LangString ${NAME} ${LANG_${PFI_LANG}} "${VALUE}"
-  !macroend
-
-  ;--------------------------------------------------------------------------
-  ; Used in this file to define the languages to be supported
-  ;--------------------------------------------------------------------------
-
-  ; Macro used to load the files required for each language:
-  ; (1) The MUI_LANGUAGE macro loads the standard MUI text strings for a particular language
-  ; (2) '*-pfi.nsh' contains the text strings used for pages, progress reports, logs etc
-  ; (3) Normally the MUI's language selection menu uses the name defined in the MUI language
-  ;     file, however it is possible to override this by supplying an alternative string
-  ;     (the MENUNAME parameter in this macro). At present the only alternative string used
-  ;     is "Nihongo" which replaces "Japanese" to make things easier for non-English-speaking
-  ;     users.
-
-  !macro PFI_LANG_LOAD LANG MENUNAME
-    !if "${MENUNAME}" != "-"
-      !define MUI_${LANG}_LANGNAME "${MENUNAME}"
-    !endif
-    !insertmacro MUI_LANGUAGE "${LANG}"
-    !include "languages\${LANG}-pfi.nsh"
-  !macroend
-
   ;-----------------------------------------
   ; Select the languages to be supported by the utility
   ;-----------------------------------------
@@ -359,7 +340,8 @@
   ; for BZIP2 and LZMA compression)
 
   !insertmacro MUI_RESERVEFILE_LANGDLL
-
+  ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
+  ReserveFile "${NSISDIR}\Plugins\System.dll"
 
 #--------------------------------------------------------------------------
 # Installer Function: .onInit - utility offers a choice of languages if no registry data found
@@ -399,7 +381,7 @@ Function PFIGUIInit
   Abort
 
 continue:
-  Call GetParameters
+  Call PFI_GetParameters
   Pop $G_INIFILE_PATH
   StrCmp $G_INIFILE_PATH "" 0 got_param
   MessageBox MB_OK|MB_ICONINFORMATION "$(PFI_LANG_CONVERT_PRIVATE)"
@@ -824,8 +806,9 @@ update_display:
 same_bucket:
   IntCmp $G_ELAPSED_TIME ${L_NEXT_EXECHECK} 0 delete_last_entry 0
   IntOp ${L_NEXT_EXECHECK} ${L_NEXT_EXECHECK} + 1
+  Push "${C_EXE_END_MARKER}"
   Push "${L_CONVERTEXE}"
-  Call CheckIfLocked
+  Call PFI_CheckIfLocked
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "" not_running
 
@@ -894,115 +877,6 @@ all_converted:
 
 SectionEnd
 
-
-#--------------------------------------------------------------------------
-# Installer Function: GetParameters
-#
-# Returns the command-line parameters (if any) supplied when the installer was started
-#
-# Inputs:
-#         none
-# Outputs:
-#         (top of stack)     - all of the parameters supplied on the command line (may be "")
-#
-# Usage:
-#
-#         Call GetParameters
-#         Pop $R0
-#
-#         ($R0 will hold everything found on the command-line after the 'monitorcc.exe' part)
-#
-#--------------------------------------------------------------------------
-
-Function GetParameters
-
-  Push $R0
-  Push $R1
-  Push $R2
-  Push $R3
-
-  StrCpy $R2 1
-  StrLen $R3 $CMDLINE
-
-  ; Check for quote or space
-
-  StrCpy $R0 $CMDLINE $R2
-  StrCmp $R0 '"' 0 +3
-  StrCpy $R1 '"'
-  Goto loop
-
-  StrCpy $R1 " "
-
-loop:
-  IntOp $R2 $R2 + 1
-  StrCpy $R0 $CMDLINE 1 $R2
-  StrCmp $R0 $R1 get
-  StrCmp $R2 $R3 get
-  Goto loop
-
-get:
-  IntOp $R2 $R2 + 1
-  StrCpy $R0 $CMDLINE 1 $R2
-  StrCmp $R0 " " get
-  StrCpy $R0 $CMDLINE "" $R2
-
-  Pop $R3
-  Pop $R2
-  Pop $R1
-  Exch $R0
-
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# Installer Function: CheckIfLocked
-#
-# Checks if a particular file (an EXE file, for example) is being used. If the specified file
-# is no longer in use, this function returns an empty string (otherwise it returns the input
-# parameter unchanged).
-#
-# Inputs:
-#         (top of stack)     - the full pathname of the file to be checked
-#
-# Outputs:
-#         (top of stack)     - if file is no longer in use, an empty string ("") is returned
-#                              otherwise the input string is returned
-#
-#  Usage:
-#
-#         Push "C:\Program Files\POPFile\wperl.exe"
-#         Call CheckIfLocked
-#         Pop $R0
-#
-#        (if the file is no longer in use, $R0 will be "")
-#        (if the file is still being used, $R0 will be "C:\Program Files\POPFile\wperl.exe")
-#--------------------------------------------------------------------------
-
-Function CheckIfLocked
-  !define L_EXE           $R9   ; full path to the file (normally an EXE file) to be checked
-  !define L_FILE_HANDLE   $R8
-
-  Exch ${L_EXE}
-  Push ${L_FILE_HANDLE}
-
-  IfFileExists "${L_EXE}" 0 unlocked_exit
-  SetFileAttributes "${L_EXE}" NORMAL
-
-  ClearErrors
-  FileOpen ${L_FILE_HANDLE} "${L_EXE}" a
-  FileClose ${L_FILE_HANDLE}
-  IfErrors exit
-
-unlocked_exit:
-  StrCpy ${L_EXE} ""
-
-exit:
-  Pop ${L_FILE_HANDLE}
-  Exch ${L_EXE}
-
-  !undef L_EXE
-  !undef L_FILE_HANDLE
-FunctionEnd
 
 #--------------------------------------------------------------------------
 # End of 'MonitorCC.nsi'
