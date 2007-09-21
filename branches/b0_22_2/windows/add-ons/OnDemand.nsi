@@ -47,6 +47,25 @@
 
   !undef  ${NSIS_VERSION}_found
 
+  ;--------------------------------------------------
+  ; This script requires the 'LockedList' NSIS plugin
+  ;--------------------------------------------------
+
+  ; In order to allow this utility to check if a particular executable file is in use
+  ; a special NSIS plugin (LockedList) is used. This plugin replaces the previous
+  ; detection method because the old method always reported that a file was locked if
+  ; the utility was run by a user without administrator rights (even if the file in
+  ; question was not in use).
+  ;
+  ; The 'NSIS Wiki' page for the 'LockedList' plugin (description and download links):
+  ; http://nsis.sourceforge.net/LockedList_plug-in
+  ;
+  ; To compile this script, copy the 'LockedList.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be unzipped to the
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with version v0.3 RC2 (15:36, 13 July 2007) of the 'LockedList' plugin.
+
 #-------------------------------------------------------------------------------------------
 # Parameters are supplied via an INI file stored in the same folder as this utility:
 #
@@ -60,26 +79,28 @@
 #
 # Notes:
 #
-#       (optional) identifies settings which can be left out of the INI file
-#
 #   (1) 'Executable' is the full pathname of the email client program
 #
-#   (2) (optional) 'Parameters' specifies any optional parameters to be passed
-#       to the email client (e.g. Eudora can be told where to find its configuration data)
+#   (2) 'Parameters' specifies any optional parameters to be passed to the email
+#       client (e.g. Eudora can be told where to find its configuration data)
 #
-#   (3) (optional) 'StartupDelay' specifies the delay (in seconds) between starting
-#       POPFile and starting the email client. If this parameter is not supplied a
-#       delay of zero is assumed. This value should only contain the digits 0 to 9.
+#   (3) 'StartupDelay' specifies the delay (in seconds) between starting POPFile
+#       and starting the email client. If this parameter is not supplied a delay
+#       of zero is assumed. The delay value should only contain the digits 0 to 9.
 #
-#   (4) (optional) 'StopPOPFile' can be either "yes" or "no". If this parameter is
-#       missing POPFile will be shutdown when the email client exits.
+#   (4) StopPOPFile' can be either "yes" or "no". If this parameter is missing
+#       then "no" is assumed so POPFile will be shut down when the email client exits.
+#
+# The INI file must specify the 'Executable' parameter. If any of the other parameters
+# are missing then default values will be used.
+#
 #-------------------------------------------------------------------------------------------
 
   ;--------------------------------------------------------------------------
-  ; Select standard LZMA compression (to generate smallest EXE file)
+  ; Select "one block" LZMA compression (to generate smallest EXE file)
   ;--------------------------------------------------------------------------
 
-  SetCompressor lzma
+  SetCompressor /SOLID lzma
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -97,7 +118,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  ; This build is for use with POPFile 0.21.0 (or later) installer-created installations
+  ; This build is for use with installer-created installations of POPFile 0.21.0 or later
 
   !define C_PFI_PRODUCT  "POPFile"
 
@@ -121,7 +142,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.0.5"
+  !define C_VERSION   "0.0.7"
 
   ; Specify the icon file for the utility
 
@@ -138,6 +159,31 @@
   RequestExecutionLevel   user
 
 #--------------------------------------------------------------------------
+# User Registers (Global)
+#--------------------------------------------------------------------------
+
+  ; This script uses 'User Variables' (with names starting with 'G_') to hold GLOBAL data.
+
+  ;--------------------------------------------------------------------------
+  ; General purpose
+  ;--------------------------------------------------------------------------
+
+  Var G_TEMP           ; general purpose global variable
+
+  ;--------------------------------------------------------------------------
+  ; Used in the 'CheckIfExeLocked' function to simply stack handling
+  ;--------------------------------------------------------------------------
+
+  Var G_EXETOCHECK     ; fullpath to an executable file to be checked by the LockedList plugin
+  Var G_FILE_HANDLE    ; used when target system is not Windows NT4 or later
+
+  ;--------------------------------------------------------------------------
+  ; Marker used by the 'CheckIfExeLocked' function to detect the end of the input data
+  ;--------------------------------------------------------------------------
+
+  !define C_EXE_END_MARKER  "/EndOfExeList"
+
+#--------------------------------------------------------------------------
 
   ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
   ; representing the following values: Major.Minor.Release.Build
@@ -148,8 +194,9 @@
 
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of \
+                                             John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Run POPFile and Mail Client together"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -236,10 +283,20 @@ edit_client:
   Goto read_client_path
 
 start_popfile:
+  ReadRegStr $INSTDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN"
+  StrCmp $INSTDIR "" try_HKLM
+  StrCmp $INSTDIR "Not supported" 0 got_path
   ReadRegStr $INSTDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
-  StrCmp  $INSTDIR "" 0 got_path
+  StrCmp $INSTDIR "" 0 got_path
+
+try_HKLM:
+  ReadRegStr $INSTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN"
+  StrCmp $INSTDIR "" popfile_not_found
+  StrCmp $INSTDIR "Not supported" 0 got_path
   ReadRegStr $INSTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
-  StrCmp  $INSTDIR "" 0 got_path
+  StrCmp $INSTDIR "" 0 got_path
+
+popfile_not_found:
   MessageBox MB_OK|MB_ICONEXCLAMATION "Error: Unable to find compatible version of POPFile"
   Goto error_exit
 
@@ -249,31 +306,12 @@ got_path:
   Goto error_exit
 
 check_if_POPFile_running:
+  Push "${C_EXE_END_MARKER}"
   Push "$INSTDIR\popfileb.exe"
-  Call CheckIfExeLocked
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" 0 exit
-
   Push "$INSTDIR\popfilef.exe"
-  Call CheckIfExeLocked
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" 0 exit
-
   Push "$INSTDIR\popfileib.exe"
-  Call CheckIfExeLocked
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" 0 exit
-
   Push "$INSTDIR\popfileif.exe"
-  Call CheckIfExeLocked
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" 0 exit
-
   Push "$INSTDIR\perl.exe"
-  Call CheckIfExeLocked
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" 0 exit
-
   Push "$INSTDIR\wperl.exe"
   Call CheckIfExeLocked
   Pop ${L_RESULT}
@@ -306,7 +344,7 @@ FunctionEnd
 
 Function Start_MailClient
 
-  !define C_MAX_DELAY          300    ; delay is in seconds so '300' represents 5 minutes
+  !define C_MAX_DELAY           300   ; delay is in seconds so '300' represents 5 minutes
 
   !define L_CLIENT_EXEPATH      $R9   ; fullpathname of the email client program
   !define L_CLIENT_PARAMS       $R8   ; parameters (if any) to be supplied to email client
@@ -327,15 +365,14 @@ Function Start_MailClient
   StrCmp ${L_RESULT} "" invalid_delay_supplied
   IntCmp ${L_STARTUP_DELAY} 0 start_client invalid_delay_supplied
   IntCmp ${L_STARTUP_DELAY} ${C_MAX_DELAY} use_delay use_delay
-  MessageBox MB_OK|MB_ICONINFORMATION "Maximum StartupDelay is ${C_MAX_DELAY} seconds\
-      ${MB_NL}${MB_NL}\
-      The INI file has 'StartupDelay=${L_STARTUP_DELAY}'\
-      ${MB_NL}${MB_NL}\
-      (see $EXEDIR\${C_INIFILE})"
-  Goto start_client
+  StrCpy $G_TEMP "Maximum StartupDelay is ${C_MAX_DELAY} seconds"
+  Goto display_delay_msg
 
 invalid_delay_supplied:
-  MessageBox MB_OK|MB_ICONINFORMATION "StartupDelay range is 0 to ${C_MAX_DELAY} (in seconds)\
+  StrCpy $G_TEMP "StartupDelay range is 0 to ${C_MAX_DELAY} (in seconds)"
+
+display_delay_msg:
+  MessageBox MB_OK|MB_ICONINFORMATION "$G_TEMP\
       ${MB_NL}${MB_NL}\
       The INI file has 'StartupDelay=${L_STARTUP_DELAY}'\
       ${MB_NL}${MB_NL}\
@@ -391,6 +428,8 @@ Function Shutdown_POPFile
   !define L_RESULT   $R4
   !define L_STOP_PF  $R3    ; StopPOPFile setting extracted from the utility's INI file
   !define L_TEXTEND  $R2    ; used to ensure correct handling of lines longer than 1023 chars
+                            ; (the standard NSIS compiler has a limit of 1023 characters;
+                            ; if a higher limit is required there is a special build available)
 
   Push ${L_CFG}
   Push ${L_EXE}
@@ -470,12 +509,36 @@ done:
   StrCmp ${L_RESULT} "password?" manual_shutdown
 
 check_exe:
-  Push ${L_EXE}
-  Call WaitUntilExeUnlocked
-  Push ${L_EXE}
+  Push "${C_EXE_END_MARKER}"
+  Push "$INSTDIR\popfileb.exe"
+  Push "$INSTDIR\popfilef.exe"
+  Push "$INSTDIR\popfileib.exe"
+  Push "$INSTDIR\popfileif.exe"
+  Push "$INSTDIR\perl.exe"
+  Push "$INSTDIR\wperl.exe"
   Call CheckIfExeLocked
   Pop ${L_EXE}
   StrCmp ${L_EXE} "" exit
+  StrCpy ${L_PARAM} 0
+  StrCpy ${L_RESULT} ""
+  StrLen ${L_TEXTEND} ${L_EXE}
+
+nameloop:
+  IntOp ${L_PARAM} ${L_PARAM} + 1
+  IntCmp ${L_PARAM} ${L_TEXTEND} 0 0 gotname
+  StrCpy ${L_RESULT} ${L_EXE} 1 -${L_PARAM}
+  StrCmp ${L_RESULT} "\" 0 nameloop
+  IntOp ${L_PARAM} ${L_PARAM} - 1
+  StrCpy ${L_EXE} ${L_EXE} "" -${L_PARAM}
+
+gotname:
+  Push "$INSTDIR\${L_EXE}"
+  Call WaitUntilExeUnlocked
+  Push "${C_EXE_END_MARKER}"
+  Push "$INSTDIR\${L_EXE}"
+  Call CheckIfExeLocked
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "" exit
 
 manual_shutdown:
   MessageBox MB_OK|MB_ICONEXCLAMATION "Unable to shutdown POPFile automatically"
@@ -532,51 +595,126 @@ FunctionEnd
 # General Purpose Function: CheckIfExeLocked
 #--------------------------------------------------------------------------
 #
-# This function checks if a particular executable file (an EXE file) is being used.
-# If the specified EXE file is no longer in use, this function returns an empty string
-# (otherwise it returns the input parameter unchanged).
+# There are several different ways to run POPFile so this function accepts a list
+# of full pathnames to the executable files which are to be checked. The list is
+# passed via the stack with a marker string being used to mark the end of the list.
+#
+# The LockedList plugin returns the results on the stack, sandwiched between "/start"
+# and "/end" markers ("/start" appears at the top of the stack). If no files are locked,
+# the plugin simply returns both markers on the stack:
+#         (top of stack)       /start
+#         (top of stack - 1)   /end
+#
+# Note that if an executable was started using an SFN path then the plugin must also
+# be given the SFN path (if the plugin is supplied with the equivalent LFN path then
+# it will fail to detect if the executable is locked). As a further complication, if
+# a locked file is found the plugin returns the LFN format even if the input list of
+# executable files used the SFN format.
+#
+# Unfortunately the 'LockedList' plugin relies upon OS features only found in
+# Windows NT4 or later so older systems such as Win9x must be treated as special
+# cases.
+#
+# If none of the specified files is locked then an empty string is returned,
+# otherwise the function returns the first locked file it detects.
 #
 # Inputs:
-#         (top of stack)     - the full path of the EXE file to be checked
+#         (top of stack)           - full path of EXE file to be checked
+#         (top of stack - 1)       - full path of EXE file to be checked
+#          ...
+#         (top of stack - n)       - full path of EXE file to be checked
+#         (top of stack - (n + 1)) - end-of-data marker (see C_EXE_END_MARKER definition)
 #
 # Outputs:
-#         (top of stack)     - if file is no longer in use, an empty string ("") is returned
-#                              otherwise the input string is returned
+#         (top of stack)           - if none of the files is in use, an empty string ("")
+#                                    is returned, otherwise the path to the first locked
+#                                    file found is returned
 #
 #  Usage:
 #
+#         Push "/EndOfExeList"
 #         Push "$INSTDIR\wperl.exe"
 #         Call CheckIfExeLocked
 #         Pop $R0
 #
 #        (if the file is no longer in use, $R0 will be "")
-#        (if the file is still being used, $R0 will be "$INSTDIR\wperl.exe")
 #--------------------------------------------------------------------------
 
 Function CheckIfExeLocked
-  !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
-  !define L_FILE_HANDLE   $R8
 
-  Exch ${L_EXE}
-  Push ${L_FILE_HANDLE}
+  Call AtLeastWinNT4
+  Pop $G_TEMP
+  StrCmp $G_TEMP "0" specialcase
 
-  IfFileExists "${L_EXE}" 0 unlocked_exit
-  SetFileAttributes "${L_EXE}" NORMAL
+  ; The target system provides the features required by the LockedList plugin
 
+  StrCpy $G_TEMP "emptylist"
+
+get_exe_path:
+  Pop $G_EXETOCHECK
+  StrCmp $G_EXETOCHECK "${C_EXE_END_MARKER}" start_search
+  IfFileExists "$G_EXETOCHECK" 0 get_exe_path
+  StrCpy $G_TEMP "gotlist"
+  LockedList::AddModule /NOUNLOAD "$G_EXETOCHECK"
+  Goto get_exe_path
+
+start_search:
+  StrCmp $G_TEMP "emptylist" nothing_to_report
+  LockedList::SilentSearch
+
+  StrCpy $G_EXETOCHECK ""
+  Pop $G_TEMP
+  StrCmp $G_TEMP "/start" get_search_result
+  MessageBox MB_OK|MB_ICONEXCLAMATION "Unexpected result from LockedList plugin\
+      ${MB_NL}${MB_NL}\
+      ($G_TEMP)"
+  Abort
+
+get_search_result:
+  Pop $G_TEMP           ; get "process ID" (or "/end" marker, if no more data)
+  StrCmp $G_TEMP "/end" end_of_locked_list
+  StrCmp $G_EXETOCHECK "" 0 skip_result
+  Pop $G_EXETOCHECK           ; get the "path to executable" result
+  Goto skip_window_caption
+
+skip_result:
+  Pop $G_TEMP           ; ignore the "path to executable" result
+
+skip_window_caption:
+  Pop $G_TEMP           ; ignore the "window caption" result
+  goto get_search_result
+
+nothing_to_report:
+  StrCpy $G_EXETOCHECK ""
+
+end_of_locked_list:
+  Push $G_EXETOCHECK
+  Goto exit
+
+  ; Windows 95, 98, ME and NT3.x are treated as special cases
+  ; (because they do not support the LockedList plugin)
+
+specialcase:
+  StrCpy $G_TEMP ""
+
+loop:
+  Pop $G_EXETOCHECK
+  StrCmp $G_EXETOCHECK "${C_EXE_END_MARKER}" allread
+  StrCmp $G_TEMP "" 0 loop
+  IfFileExists "$G_EXETOCHECK" 0 loop
+  SetFileAttributes "$G_EXETOCHECK" NORMAL
   ClearErrors
-  FileOpen ${L_FILE_HANDLE} "${L_EXE}" a
-  FileClose ${L_FILE_HANDLE}
-  IfErrors exit
+  FileOpen $G_FILE_HANDLE "$G_EXETOCHECK" a
+  FileClose $G_FILE_HANDLE
+  IfErrors 0 loop
+  StrCpy $G_TEMP "$G_EXETOCHECK"
+  Goto loop
 
-unlocked_exit:
-  StrCpy ${L_EXE} ""
+allread:
+  StrCpy $G_EXETOCHECK $G_TEMP
+  Push $G_EXETOCHECK
 
- exit:
-  Pop ${L_FILE_HANDLE}
-  Exch ${L_EXE}
-
-  !undef L_EXE
-  !undef L_FILE_HANDLE
+exit:
 FunctionEnd
 
 
@@ -588,6 +726,10 @@ FunctionEnd
 #
 # It may take a little while for POPFile to shutdown so this function waits in a loop until
 # the specified EXE file is no longer in use. A timeout is used to avoid an infinite loop.
+#
+# Note: If the CheckIfExeLocked function is run on NT4 or higher it will use the LockedList
+# plugin which means the function's return value may not match any of the input data supplied
+# to the function (e.g. if a SFN path is supplied the return value will use LFN format).
 #
 # Inputs:
 #         (top of stack)     - the full path of the EXE file to be checked
@@ -605,7 +747,7 @@ FunctionEnd
 Function WaitUntilExeUnlocked
 
   !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
-  !define L_FILE_HANDLE   $R8
+  !define L_RESULT        $R8
   !define L_TIMEOUT       $R7   ; used to avoid an infinite loop
 
   ;-----------------------------------------------------------
@@ -623,29 +765,29 @@ Function WaitUntilExeUnlocked
   ;-----------------------------------------------------------
 
   Exch ${L_EXE}
-  Push ${L_FILE_HANDLE}
+  Push ${L_RESULT}
   Push ${L_TIMEOUT}
 
   IfFileExists "${L_EXE}" 0 exit_now
-  SetFileAttributes "${L_EXE}" NORMAL
   StrCpy ${L_TIMEOUT} ${C_SHUTDOWN_LIMIT}
 
 check_if_unlocked:
   Sleep ${C_SHUTDOWN_DELAY}
-  ClearErrors
-  FileOpen ${L_FILE_HANDLE} "${L_EXE}" a
-  FileClose ${L_FILE_HANDLE}
-  IfErrors 0 exit_now
+  Push "${C_EXE_END_MARKER}"
+  Push ${L_EXE}
+  Call CheckIfExeLocked
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "" exit_now
   IntOp ${L_TIMEOUT} ${L_TIMEOUT} - 1
   IntCmp ${L_TIMEOUT} 0 exit_now exit_now check_if_unlocked
 
  exit_now:
   Pop ${L_TIMEOUT}
-  Pop ${L_FILE_HANDLE}
+  Pop ${L_RESULT}
   Pop ${L_EXE}
 
   !undef L_EXE
-  !undef L_FILE_HANDLE
+  !undef L_RESULT
   !undef L_TIMEOUT
 
 FunctionEnd
@@ -663,6 +805,7 @@ FunctionEnd
 # will be the "POPFile has shut down" one. However if the UI is password protected then NSISdl
 # will receive a page requesting the UI password instead of the "POPFile has shut down" page.
 #
+# The layout and content of the HTML page depends upon the UI language and UI skin selection.
 # To avoid the need to parse the HTML page downloaded by NSISdl, we make a second attempt to
 # download the POPFile Shutdown page. If POPFile has shutdown then this second call will fail
 # or it will download an empty page (i.e. one which is 0 bytes long). If the second NSISdl call
@@ -676,13 +819,13 @@ FunctionEnd
 # Outputs:
 #         (top of stack)       - string containing one of the following result codes:
 #
-#                                "success"    (meaning UI shutdown request appeared to work)
+#                                "success"    (i.e. UI shutdown request appeared to work)
 #
-#                                "failure"    (meaning UI shutdown request failed)
+#                                "failure"    (i.e. UI shutdown request failed)
 #
-#                                "password?"  (meaning failure: UI may be password protected)
+#                                "password?"  (i.e. failure - UI may be password protected)
 #
-#                                "badport"    (meaning failure: invalid UI port supplied)
+#                                "badport"    (i.e. failure - invalid UI port supplied)
 #
 # Usage:
 #
@@ -890,6 +1033,7 @@ exit:
 
 FunctionEnd
 
+
 #--------------------------------------------------------------------------
 # General Purpose Function: TrimNewlines
 #--------------------------------------------------------------------------
@@ -930,6 +1074,56 @@ no_trim_needed:
   Pop $R2
   Pop $R1
   Exch $R0
+FunctionEnd
+
+
+#--------------------------------------------------------------------------
+# General Purpose Function: AtLeastWinNT4
+#--------------------------------------------------------------------------
+#
+# This function is used to detect if we are running on Windows NT4 or later
+#
+# Inputs:
+#         (none)
+#
+# Outputs:
+#         (top of stack)   - 0 if Win9x or WinME, 1 if Win NT4 or higher
+#
+# Usage:
+#
+#         Call AtLeastWinNT4
+#         Pop $R0
+#
+#         ($R0 at this point is "0" if running on Win95, Win98, WinME or NT3.x)
+#
+#--------------------------------------------------------------------------
+
+Function AtLeastWinNT4
+
+  !define L_RESULT  $R9
+  !define L_TEMP    $R8
+
+  Push ${L_RESULT}
+  Push ${L_TEMP}
+
+  ClearErrors
+  ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  IfErrors preNT4system
+  StrCpy ${L_TEMP} ${L_RESULT} 1
+  StrCmp ${L_TEMP} '3' preNT4system
+  StrCpy ${L_RESULT} "1"
+  Goto exit
+
+preNT4system:
+  StrCpy ${L_RESULT} "0"
+
+exit:
+  Pop ${L_TEMP}
+  Exch ${L_RESULT}
+
+  !undef L_RESULT
+  !undef L_TEMP
+
 FunctionEnd
 
 #--------------------------------------------------------------------------
