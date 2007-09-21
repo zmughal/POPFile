@@ -103,7 +103,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 18 January 2007 15:52:34
+  ; Tested with the inetc.dll plugin timestamped 11 August 2007 19:06:24
 
   ;------------------------------------------------
   ; This script requires the 'md5dll' NSIS plugin
@@ -264,7 +264,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.9"
+  !define C_PFI_VERSION  "0.2.11"
 
   ; Mention the wizard's version number in the window title
 
@@ -570,6 +570,7 @@
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
   ReserveFile "${NSISDIR}\Plugins\inetc.dll"
+  ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
   ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
@@ -919,6 +920,7 @@ check_exe:
   Push ${L_EXE}
   Call PFI_WaitUntilUnlocked
   DetailPrint "Checking if '${L_EXE}' is still locked after NSISdl request..."
+  Push "${C_EXE_END_MARKER}"
   Push ${L_EXE}
   Call PFI_CheckIfLocked
   Pop ${L_EXE}
