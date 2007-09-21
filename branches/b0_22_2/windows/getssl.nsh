@@ -67,7 +67,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' documentation, example & source files can be unzipped
   ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 18 January 2007 15:52:34
+  ; Tested with the inetc.dll plugin timestamped 11 August 2007 19:06:24
 
   ;------------------------------------------------
   ; This script requires the 'md5dll' NSIS plugin
@@ -148,7 +148,7 @@
 #--------------------------------------------------------------------------
 
   !define C_PATCH_WEBSITE     "http://getpopfile.org/ssl-patch"
-  
+
   !ifdef INSTALLER
       !define C_PATCH_CTRL_FILE   "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
   !else
@@ -544,7 +544,7 @@ check_if_patches_required:
 use_default_patches:
 
   ; Failed to download POPFile's SSL Patch Control file or the MD5 sums
-  
+
   StrCpy $G_PATCH_SOURCE "${C_BUILTIN}"
   DetailPrint "Unable to download data from POPFile website, using built-in SSL patches instead"
   DetailPrint ""
@@ -552,10 +552,10 @@ use_default_patches:
   SetDetailsPrint none
   !ifdef INSTALLER
       File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "${C_PATCH_CTRL_FILE}"
-      
+
       ; 0.22.5 release does not need any SSL patches so "SSL_pm.pat" is not needed here
       ; File /nonfatal "/oname=$PLUGINSDIR\SSL_pm.pat" "SSL_pm.pat"
-      
+
   !else
       File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "..\0.22.x.pcf"
       File /nonfatal "/oname=$PLUGINSDIR\SSL_pm.pat" "..\SSL_pm.pat"
