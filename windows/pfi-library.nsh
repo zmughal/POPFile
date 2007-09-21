@@ -36,14 +36,15 @@
 #  (4) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
 #  (5) IMAPUPDATER      defined in add-ons\updateimap.nsi (POPFile 'IMAP Updater' wizard)
 #  (6) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
-#  (7) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
-#  (8) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-#  (9) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-# (10) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-# (11) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (12) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (13) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (14) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+#  (7) MONITORCC        defined in MonitorCC.nsi (the corpus conversion monitor)
+#  (8) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
+#  (9) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
+# (10) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+# (11) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (12) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (13) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (14) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (15) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -57,7 +58,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.2.4"
+  !define C_PFI_LIBRARY_VERSION     "0.3.0"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -90,6 +91,12 @@
 
   !define C_UI_URL    "localhost"
 ##  !define C_UI_URL    "127.0.0.1"
+
+#--------------------------------------------------------------------------
+# Marker used by the 'PFI_CheckIfLocked' function to detect the end of the input data
+#--------------------------------------------------------------------------
+
+  !define C_EXE_END_MARKER  "/EndOfExeList"
 
 #--------------------------------------------------------------------------
 #
@@ -950,6 +957,10 @@
 #
 # Macro-based Functions which may be used by the installer and uninstaller (in alphabetic order)
 #
+#    Macro:                PFI_AtLeastWinNT4
+#    Installer Function:   PFI_AtLeastWinNT4
+#    Uninstaller Function: un.PFI_AtLeastWinNT4
+#
 #    Macro:                PFI_CheckIfLocked
 #    Installer Function:   PFI_CheckIfLocked
 #    Uninstaller Function: un.PFI_CheckIfLocked
@@ -1072,18 +1083,118 @@
 #
 #==============================================================================================
 
+#--------------------------------------------------------------------------
+# Macro: PFI_AtLeastWinNT4
+#
+# The installation process and the uninstall process may both need a function which
+# detects if we are running on Windows NT4 or later. This macro makes maintenance easier
+# by ensuring that both processes use identical functions, with the only difference being
+# their names.
+#
+# NOTE:
+# The !insertmacro PFI_AtLeastWinNT4 "" and !insertmacro PFI_AtLeastWinNT4 "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_AtLeastWinNT4'
+# and 'Call un.PFI_AtLeastWinNT4' without additional preparation.
+#
+# Inputs:
+#         (none)
+#
+# Outputs:
+#         (top of stack)   - 0 if Win9x or WinME, 1 if Win NT4 or higher
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Call PFI_AtLeastWinNT4
+#         Pop $R0
+#
+#         ($R0 at this point is "0" if running on Win95, Win98, WinME or NT3.x)
+#--------------------------------------------------------------------------
+
+!macro PFI_AtLeastWinNT4 UN
+  Function ${UN}PFI_AtLeastWinNT4
+
+    !define L_RESULT  $R9
+    !define L_TEMP    $R8
+
+    Push ${L_RESULT}
+    Push ${L_TEMP}
+
+    ClearErrors
+    ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+    IfErrors preNT4system
+    StrCpy ${L_TEMP} ${L_RESULT} 1
+    StrCmp ${L_TEMP} '3' preNT4system
+    StrCpy ${L_RESULT} "1"
+    Goto exit
+
+  preNT4system:
+    StrCpy ${L_RESULT} "0"
+
+  exit:
+    Pop ${L_TEMP}
+    Exch ${L_RESULT}
+
+    !undef L_RESULT
+    !undef L_TEMP
+
+  FunctionEnd
+!macroend
+
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | MONITORCC | RESTORE
+      #--------------------------------------------------------------------------
+      # Installer Function: PFI_AtLeastWinNT4
+      #
+      # This function is used during the installation process
+      #--------------------------------------------------------------------------
+
+      !insertmacro PFI_AtLeastWinNT4 ""
+!endif
+
+!ifdef ADDUSER | INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_AtLeastWinNT4
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_AtLeastWinNT4 "un."
+!endif
+
 
 #--------------------------------------------------------------------------
-# Macro: CheckIfLocked
+# Macro: PFI_CheckIfLocked
 #
 # The installation process and the uninstall process may both use a function which checks if
 # a particular executable file (an EXE file) is being used. This macro makes maintenance easier
 # by ensuring that both processes use identical functions, with the only difference being their
 # names.
 #
-# The EXE file to be checked depends upon the version of POPFile in use and upon how it has
-# been configured. If the specified EXE file is no longer in use, this function returns an empty
-# string (otherwise it returns the input parameter unchanged).
+# There are several different ways to run POPFile so the PFI_CheckIfLocked function accepts a list
+# of full pathnames to the executable files which are to be checked (to make it easier to check
+# the various ways in which POPFile can be run). This list is passed via the stack, with a marker
+# string being used to mark the end of the list.
+#
+# Normally the LockedList plugin will be used to check if any of the specified executable files is
+# is use. This plugin returns its results on the stack, sandwiched between "/start" and "/end" markers
+# ("/start" appears at the top of the stack). If no files are locked, the plugin simply returns both
+# markers on the stack:
+#
+#         (top of stack)       /start
+#         (top of stack - 1)   /end
+#
+# Note that if an executable was started using an SFN path then the plugin must also
+# be given the SFN path (if the plugin is only supplied with the equivalent LFN path
+# then it will fail to detect if the executable is locked).
+#
+# As a further complication, if a locked file is found the plugin returns the LFN format
+# even if the input list of executable files used the SFN format.
+#
+# Unfortunately the 'LockedList' plugin relies upon OS features only found in
+# Windows NT4 or later so older systems such as Win9x must be treated as special
+# cases.
+#
+# If none of the specified files is locked then an empty string is returned,
+# otherwise the function returns the path to the first locked file it detects.
 #
 # NOTE:
 # The !insertmacro PFI_CheckIfLocked "" and !insertmacro PFI_CheckIfLocked "un." commands are included
@@ -1091,51 +1202,132 @@
 # without additional preparation.
 #
 # Inputs:
-#         (top of stack)     - the full path of the EXE file to be checked
+#         (top of stack)           - full path of EXE file to be checked
+#         (top of stack - 1)       - full path of EXE file to be checked
+#          ...
+#         (top of stack - n)       - full path of EXE file to be checked
+#         (top of stack - (n + 1)) - end-of-data marker (see C_EXE_END_MARKER definition)
 #
 # Outputs:
-#         (top of stack)     - if file is no longer in use, an empty string ("") is returned
-#                              otherwise the input string is returned
+#         (top of stack)           - if none of the files is in use, an empty string ("")
+#                                    is returned, otherwise the path to the first locked
+#                                    file found is returned
 #
 # Usage (after macro has been 'inserted'):
 #
+#         Push "/EndOfExeList"
 #         Push "$INSTDIR\wperl.exe"
 #         Call PFI_CheckIfLocked
 #         Pop $R0
 #
 #        (if the file is no longer in use, $R0 will be "")
-#        (if the file is still being used, $R0 will be "$INSTDIR\wperl.exe")
 #--------------------------------------------------------------------------
 
 !macro PFI_CheckIfLocked UN
   Function ${UN}PFI_CheckIfLocked
-    !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
-    !define L_FILE_HANDLE   $R8
 
-    Exch ${L_EXE}
-    Push ${L_FILE_HANDLE}
+    !ifndef PFI_CheckIfLocked
 
-    IfFileExists "${L_EXE}" 0 unlocked_exit
-    SetFileAttributes "${L_EXE}" NORMAL
+        !define PFI_CheckIfLocked
 
+        var /GLOBAL G_CIL_EXE
+        var /GLOBAL G_CIL_FILE
+        var /GLOBAL G_CIL_FLAG
+        var /GLOBAL G_CIL_TEMP
+
+    !endif
+
+    Call ${UN}PFI_AtLeastWinNT4
+    Pop $G_CIL_FLAG
+    StrCmp $G_CIL_FLAG "0" specialcase
+
+    ; The target system provides the features required by the LockedList plugin
+
+    StrCpy $G_CIL_FLAG "emptylist"
+
+  get_exe_path:
+    Pop $G_CIL_EXE
+    StrCmp $G_CIL_EXE "${C_EXE_END_MARKER}" start_search
+    IfFileExists "$G_CIL_EXE" 0 get_exe_path
+    StrCpy $G_CIL_FLAG "gotlist"
+
+    ; LockedList plugin searches for _exact_ path match so we need to supply LFN and SFN paths
+    ; (note that when the SFN path is supplied, the filename part of the path is NOT given in
+    ; the SFN format, so "popfileif.exe" is NOT replaced by something like "POPFIL~2.EXE")
+
+    GetFullPathName $G_CIL_FILE "$G_CIL_EXE"
+    LockedList::AddModule /NOUNLOAD "$G_CIL_FILE"
+    Push $G_CIL_FILE
+    Call ${UN}PFI_GetParent
+    Pop $G_CIL_EXE
+    StrLen $G_CIL_TEMP $G_CIL_EXE
+    IntOp $G_CIL_TEMP $G_CIL_TEMP + 1
+    StrCpy $G_CIL_FILE $G_CIL_FILE "" $G_CIL_TEMP
+    GetFullPathName /SHORT $G_CIL_EXE "$G_CIL_EXE"
+    LockedList::AddModule /NOUNLOAD "$G_CIL_EXE\$G_CIL_FILE"
+    Goto get_exe_path
+
+  start_search:
+    StrCmp $G_CIL_FLAG "emptylist" nothing_to_report
+    LockedList::SilentSearch
+
+    StrCpy $G_CIL_EXE ""
+    Pop $G_CIL_TEMP
+    StrCmp $G_CIL_TEMP "/start" get_search_result
+    MessageBox MB_OK|MB_ICONEXCLAMATION "Unexpected result from LockedList plugin\
+        ${MB_NL}${MB_NL}\
+        ($G_CIL_TEMP)"
+    Abort
+
+  get_search_result:
+    Pop $G_CIL_TEMP           ; get "process ID" (or "/end" marker, if no more data)
+    StrCmp $G_CIL_TEMP "/end" end_of_locked_list
+    StrCmp $G_CIL_EXE "" 0 skip_result
+    Pop $G_CIL_EXE           ; get the "path to executable" result
+    Goto skip_window_caption
+
+  skip_result:
+    Pop $G_CIL_TEMP           ; ignore the "path to executable" result
+
+  skip_window_caption:
+    Pop $G_CIL_TEMP           ; ignore the "window caption" result
+    goto get_search_result
+
+  nothing_to_report:
+    StrCpy $G_CIL_EXE ""
+
+  end_of_locked_list:
+    Push $G_CIL_EXE
+    Goto exit
+
+    ; Windows 95, 98, ME and NT3.x are treated as special cases
+    ; (because they do not support the LockedList plugin)
+
+  specialcase:
+    StrCpy $G_CIL_FLAG ""
+
+  loop:
+    Pop $G_CIL_EXE
+    StrCmp $G_CIL_EXE "${C_EXE_END_MARKER}" allread
+    StrCmp $G_CIL_FLAG "" 0 loop
+    IfFileExists "$G_CIL_EXE" 0 loop
+    SetFileAttributes "$G_CIL_EXE" NORMAL
     ClearErrors
-    FileOpen ${L_FILE_HANDLE} "${L_EXE}" a
-    FileClose ${L_FILE_HANDLE}
-    IfErrors exit
+    FileOpen $G_CIL_FILE "$G_CIL_EXE" a
+    FileClose $G_CIL_FILE
+    IfErrors 0 loop
+    StrCpy $G_CIL_FLAG "$G_CIL_EXE"
+    Goto loop
 
-  unlocked_exit:
-    StrCpy ${L_EXE} ""
+  allread:
+    StrCpy $G_CIL_EXE $G_CIL_FLAG
+    Push $G_CIL_EXE
 
-   exit:
-    Pop ${L_FILE_HANDLE}
-    Exch ${L_EXE}
-
-    !undef L_EXE
-    !undef L_FILE_HANDLE
+  exit:
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | MONITORCC | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_CheckIfLocked
     #
@@ -1343,48 +1535,29 @@
     Push ${L_RESULT}
     Exch
 
-    DetailPrint "Checking '${L_PATH}\popfileb.exe' ..."
+    Push "${C_EXE_END_MARKER}"
 
-    Push "${L_PATH}\popfileb.exe"  ; runs POPFile in the background
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    DetailPrint "Checking '${L_PATH}\popfileb.exe' ..."
+    Push "${L_PATH}\popfileb.exe"     ; runs POPFile in the background
 
     DetailPrint "Checking '${L_PATH}\popfileib.exe' ..."
-
-    Push "${L_PATH}\popfileib.exe" ; runs POPFile in the background with system tray icon
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    Push "${L_PATH}\popfileib.exe"    ; runs POPFile in the background with system tray icon
 
     DetailPrint "Checking '${L_PATH}\popfilef.exe' ..."
-
-    Push "${L_PATH}\popfilef.exe"  ; runs POPFile in the foreground/console window/DOS box
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    Push "${L_PATH}\popfilef.exe"     ; runs POPFile in the foreground/console window/DOS box
 
     DetailPrint "Checking '${L_PATH}\popfileif.exe' ..."
-
-    Push "${L_PATH}\popfileif.exe" ; runs POPFile in the foreground with system tray icon
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    Push "${L_PATH}\popfileif.exe"    ; runs POPFile in the foreground with system tray icon
 
     DetailPrint "Checking '${L_PATH}\wperl.exe' ..."
-
-    Push "${L_PATH}\wperl.exe"     ; runs POPFile in the background (using popfile.pl)
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    Push "${L_PATH}\wperl.exe"        ; runs POPFile in the background (using popfile.pl)
 
     DetailPrint "Checking '${L_PATH}\perl.exe' ..."
+    Push "${L_PATH}\perl.exe"         ; runs POPFile in the foreground (using popfile.pl)
 
-    Push "${L_PATH}\perl.exe"      ; runs POPFile in the foreground (using popfile.pl)
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
 
-   exit:
     Pop ${L_PATH}
     Exch ${L_RESULT}              ; return full path to a locked file or an empty string
 
@@ -2246,7 +2419,7 @@
   FunctionEnd
 !macroend
 
-!ifndef RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef MONITORCC & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDateTimeStamp
     #
@@ -2443,7 +2616,7 @@
   FunctionEnd
 !macroend
 
-!ifndef RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef MONITORCC & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetLocalTime
     #
@@ -2673,7 +2846,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParent
     #
@@ -2683,7 +2856,7 @@
     !insertmacro PFI_GetParent ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_GetParent
     #
@@ -3318,6 +3491,7 @@
     Push ${L_RESULT}
 
     DetailPrint "Checking '${L_PATH}\pfimsgcapture.exe' ..."
+    Push "${C_EXE_END_MARKER}"
     Push "${L_PATH}\pfimsgcapture.exe"
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
@@ -3336,6 +3510,7 @@
 
   pfi_util_a:
     DetailPrint "Checking '${L_PATH}\msgcapture.exe' ..."
+    Push "${C_EXE_END_MARKER}"
     Push "${L_PATH}\msgcapture.exe"
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
@@ -3354,6 +3529,7 @@
 
   pfi_util_b:
     DetailPrint "Checking '${L_PATH}\stop_pf.exe' ..."
+    Push "${C_EXE_END_MARKER}"
     Push "${L_PATH}\stop_pf.exe"
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
@@ -3372,6 +3548,7 @@
 
   pfi_util_c:
     DetailPrint "Checking '${L_PATH}\pfidiag.exe' ..."
+    Push "${C_EXE_END_MARKER}"
     Push "${L_PATH}\pfidiag.exe"
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
@@ -4133,7 +4310,7 @@
   FunctionEnd
 !macroend
 
-!ifndef PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
+!ifndef MONITORCC & PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckDecimal
     #
@@ -4216,7 +4393,7 @@
   FunctionEnd
 !macroend
 
-!ifndef DBSTATUS & IMAPUPDATER & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef DBSTATUS & IMAPUPDATER & MONITORCC & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #
@@ -4287,7 +4464,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MSGCAPTURE & PFIDIAG & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR_AUW
+!ifndef MONITORCC & MSGCAPTURE & PFIDIAG & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_TrimNewlines
     #
@@ -4341,7 +4518,7 @@
 !macro PFI_WaitUntilUnlocked UN
   Function ${UN}PFI_WaitUntilUnlocked
     !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
-    !define L_FILE_HANDLE   $R8
+    !define L_RESULT        $R8
     !define L_TIMEOUT       $R7   ; used to avoid an infinite loop
 
     ;-----------------------------------------------------------
@@ -4359,29 +4536,29 @@
     ;-----------------------------------------------------------
 
     Exch ${L_EXE}
-    Push ${L_FILE_HANDLE}
+    Push ${L_RESULT}
     Push ${L_TIMEOUT}
 
     IfFileExists "${L_EXE}" 0 exit_now
-    SetFileAttributes "${L_EXE}" NORMAL
     StrCpy ${L_TIMEOUT} ${C_SHUTDOWN_LIMIT}
 
   check_if_unlocked:
     Sleep ${C_SHUTDOWN_DELAY}
-    ClearErrors
-    FileOpen ${L_FILE_HANDLE} "${L_EXE}" a
-    FileClose ${L_FILE_HANDLE}
-    IfErrors 0 exit_now
+    Push "${C_EXE_END_MARKER}"
+    Push "${L_EXE}"
+    Call ${UN}PFI_CheckIfLocked
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "" exit_now
     IntOp ${L_TIMEOUT} ${L_TIMEOUT} - 1
     IntCmp ${L_TIMEOUT} 0 exit_now exit_now check_if_unlocked
 
    exit_now:
     Pop ${L_TIMEOUT}
-    Pop ${L_FILE_HANDLE}
+    Pop ${L_RESULT}
     Pop ${L_EXE}
 
     !undef L_EXE
-    !undef L_FILE_HANDLE
+    !undef L_RESULT
     !undef L_TIMEOUT
   FunctionEnd
 !macroend
