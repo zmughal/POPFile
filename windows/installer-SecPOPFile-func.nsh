@@ -3,7 +3,7 @@
 # installer-SecPOPFile-func.nsh --- This 'include' file contains the non-library functions
 #                                   used by the 'installer-SecPOPFile-body.nsh' file.
 #
-# Copyright (c) 2005-2006 John Graham-Cumming
+# Copyright (c) 2005-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -128,6 +128,30 @@ FunctionEnd
 #--------------------------------------------------------------------------
 
 Function MakeRootDirSafe
+
+  ; Use HKLM as a simple workaround for the case where installer is started by a non-admin user
+
+  Push $G_ROOTDIR
+
+  ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
+  StrCmp $G_ROOTDIR "" 0 check_folder_exists
+  MessageBox MB_OK|MB_ICONEXCLAMATION "Internal Error: UAC_RootDir not defined\
+      ${MB_NL}${MB_NL}\
+      Click OK to continue"
+  ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
+  StrCmp $G_ROOTDIR "" try_other_entries
+  MessageBox MB_OK|MB_ICONINFORMATION "Good News: UAC_RootDir now defined"
+  Goto check_folder_exists
+
+try_other_entries:    ; ???
+  ReadRegStr $G_ROOTDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
+  StrCmp $G_ROOTDIR "" 0 check_folder_exists
+  ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
+
+check_folder_exists:
+  DeleteRegValue HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
+
+  ; If we are upgrading an existing installation we need to ensure it is not running
 
   IfFileExists "$G_ROOTDIR\*.exe" 0 nothing_to_check
 
@@ -272,6 +296,7 @@ check_exe:
   Push ${L_EXE}
   Call PFI_WaitUntilUnlocked
   DetailPrint "Checking if '${L_EXE}' is still locked after NSISdl request..."
+  Push "${C_EXE_END_MARKER}"
   Push ${L_EXE}
   Call PFI_CheckIfLocked
   Pop ${L_EXE}
@@ -313,6 +338,7 @@ check_pfi_utils:
   !undef L_TEXTEND
 
 nothing_to_check:
+  Pop $G_ROOTDIR
 FunctionEnd
 
 #--------------------------------------------------------------------------
