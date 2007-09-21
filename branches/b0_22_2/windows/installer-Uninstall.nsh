@@ -69,21 +69,18 @@ UAC_Elevate:
   Quit
 
 UAC_Err:
-  MessageBox mb_iconstop "Unable to elevate , error $0"
+  MessageBox MB_OK|MB_ICONSTOP "Unable to elevate , error $0"
   Abort
 
 UAC_ElevationAborted:
-  MessageBox mb_iconstop "This uninstaller requires admin access, aborting!"
+  MessageBox MB_OK|MB_ICONSTOP "This uninstaller requires admin access, aborting!"
   Abort
 
 UAC_Success:
-  # if $0==0 && $1==0, UAC not supported (Probably <NT6), run as normal?
-  # if $0==0 && $1==3, we can try to elevate again
-  # if $0==0 && $3==1, we are a member of the admin group (Any OS)
   StrCmp 1 $3 continue                ; Admin?
-  StrCmp 3 $1 0 UAC_ElevationAborted  ; Try again?
-  MessageBox mb_iconstop "This uninstaller requires admin access, try again"
-  goto UAC_Elevate
+  StrCmp 3 $1 0 UAC_ElevationAborted  ; Try again or abort?
+  MessageBox MB_OK|MB_ICONSTOP "This uninstaller requires admin access, try again" ; Inform user...
+  goto UAC_Elevate                    ; ... and try again
 
 continue:
 
@@ -100,53 +97,8 @@ continue:
   StrCpy $G_ROOTDIR   "$INSTDIR"
   StrCpy $G_MPLIBDIR  "$INSTDIR\lib"
 
-  ; Starting with 0.21.0 the registry is used to store the location of the 'User Data'
-  ; (if setup.exe or adduser.exe was used to create/update the 'User Data' for this user)
+  Call un.SetGlobalUserVariables
 
-  ReadRegStr $G_USERDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
-  StrCmp $G_USERDIR "" 0 got_user_path
-
-  ; Pre-release versions of the 0.21.0 installer used a sub-folder for the default user data
-
-  StrCpy $G_USERDIR "$INSTDIR\user"
-
-  ; If we are uninstalling an upgraded installation, the default user data may be in $INSTDIR
-  ; instead of $INSTDIR\user
-
-  IfFileExists "$G_USERDIR\popfile.cfg" got_user_path
-  StrCpy $G_USERDIR   "$INSTDIR"
-
-got_user_path:
-
-  ; Email settings are stored on a 'per user' basis therefore we need to know which user is
-  ; running the uninstaller (e.g. so we can check ownership of any local 'User Data' we find)
-
-  ClearErrors
-  UserInfo::GetName
-  IfErrors 0 got_name
-
-  ; Assume Win9x system, so user has 'Admin' rights
-  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
-
-  StrCpy $G_WINUSERNAME "UnknownUser"
-  StrCpy $G_WINUSERTYPE "Admin"
-  Goto start_uninstall
-
-got_name:
-  Pop $G_WINUSERNAME
-  StrCmp $G_WINUSERNAME "" 0 get_usertype
-  StrCpy $G_WINUSERNAME "UnknownUser"
-
-get_usertype:
-  UserInfo::GetAccountType
-  Pop $G_WINUSERTYPE
-  StrCmp $G_WINUSERTYPE "Admin" start_uninstall
-  StrCmp $G_WINUSERTYPE "Power" start_uninstall
-  StrCmp $G_WINUSERTYPE "User" start_uninstall
-  StrCmp $G_WINUSERTYPE "Guest" start_uninstall
-  StrCpy $G_WINUSERTYPE "Unknown"
-
-start_uninstall:
 FunctionEnd
 
 #--------------------------------------------------------------------------
@@ -197,17 +149,12 @@ Section "un.Uninstall Begin" UnSecBegin
 
   Push ${L_TEMP}
 
-  ReadINIStr ${L_TEMP} "$G_USERDIR\install.ini" "Settings" "Owner"
-  StrCmp ${L_TEMP} "" section_exit
-  StrCmp ${L_TEMP} $G_WINUSERNAME section_exit
+  ; Access the POPFile User Data for the user who started the uninstaller
+  ; (use the UAC plugin in case this was a non-admin user)
 
-  MessageBox MB_YESNO|MB_ICONSTOP|MB_DEFBUTTON2 \
-      "$(PFI_LANG_UN_MBDIFFUSER_1) ('${L_TEMP}') !\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_UN_MBNOTFOUND_2)" IDYES section_exit
-  Abort "$(PFI_LANG_UN_ABORT_1)"
+  GetFunctionAddress ${L_TEMP} un.Uninstall_Begin
+  UAC::ExecCodeSegment ${L_TEMP}
 
-section_exit:
   Pop ${L_TEMP}
 
   !undef L_TEMP
@@ -281,17 +228,9 @@ SectionEnd
 
 Section "un.Shutdown POPFile" UnSecShutdown
 
-  !define L_CFG         $R9   ; used as file handle
-  !define L_EXE         $R8   ; full path of the EXE to be monitored
-  !define L_LNE         $R7   ; a line from popfile.cfg
-  !define L_TEMP        $R6
-  !define L_TEXTEND     $R5   ; used to ensure correct handling of lines longer than 1023 chars
+  !define L_TEMP        $R9
 
-  Push ${L_CFG}
-  Push ${L_EXE}
-  Push ${L_LNE}
   Push ${L_TEMP}
-  Push ${L_TEXTEND}
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_UN_PROG_SHUTDOWN)"
@@ -309,64 +248,17 @@ Section "un.Shutdown POPFile" UnSecShutdown
 
   Push $G_ROOTDIR
   Call un.PFI_FindLockedPFE
-  Pop ${L_EXE}
-  StrCmp ${L_EXE} "" check_pfi_utils
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "" check_pfi_utils
 
   ; The program files we are about to remove are in use so we need to shut POPFile down
 
-  IfFileExists "$G_USERDIR\popfile.cfg" 0 manual_shutdown
-
-  ; Use the UI port setting in the configuration file to shutdown POPFile
-
-  StrCpy $G_GUI ""
-
-  FileOpen ${L_CFG} "$G_USERDIR\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LNE}
-  StrCmp ${L_LNE} "" ui_port_done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LNE} "$\n" loop
-
-  StrCpy ${L_TEMP} ${L_LNE} 10
-  StrCmp ${L_TEMP} "html_port " 0 check_eol
-  StrCpy $G_GUI ${L_LNE} 5 10
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-ui_port_done:
-  FileClose ${L_CFG}
-
-  StrCmp $G_GUI "" manual_shutdown
-  Push $G_GUI
-  Call un.PFI_TrimNewlines
-  Call un.PFI_StrCheckDecimal
-  Pop $G_GUI
-  StrCmp $G_GUI "" manual_shutdown
-  DetailPrint "$(PFI_LANG_UN_LOG_SHUTDOWN) $G_GUI"
-  DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-  Push $G_GUI
-  Call un.PFI_ShutdownViaUI
-  Pop ${L_TEMP}
-  StrCmp ${L_TEMP} "success" check_pfi_utils
+  GetFunctionAddress ${L_TEMP} un.Shutdown_POPFile
+  UAC::ExecCodeSegment ${L_TEMP}
+  Goto check_pfi_utils
 
 manual_shutdown:
-  StrCpy $G_PLS_FIELD_1 "POPFile"
-  DetailPrint "Unable to shutdown $G_PLS_FIELD_1 automatically - manual intervention requested"
-  MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST "$(PFI_LANG_MBMANSHUT_1)\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBMANSHUT_2)\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBMANSHUT_3)"
+  Call un.RequestManualShutdown
 
   ; Assume user has managed to shutdown POPFile
 
@@ -378,17 +270,9 @@ check_pfi_utils:
   DetailPrint " "
   SetDetailsPrint listonly
 
-  Pop ${L_TEXTEND}
   Pop ${L_TEMP}
-  Pop ${L_LNE}
-  Pop ${L_EXE}
-  Pop ${L_CFG}
 
-  !undef L_CFG
-  !undef L_EXE
-  !undef L_LNE
   !undef L_TEMP
-  !undef L_TEXTEND
 
 SectionEnd
 
@@ -843,6 +727,203 @@ Section "un.Uninstall End" UnSecEnd
 exit:
   SetDetailsPrint both
 SectionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: 'un.SetGlobalUserVariables'
+#
+# Used to initialise (or re-initialise) the following global variables:
+#
+# (1) $G_USERDIR      - full path to the folder containing the 'popfile.cfg' file
+# (2) $G_WINUSERNAME  - current Windows user login name
+# (3) $G_WINUSERTYPE  - user group ('Admin', 'Power', 'User', 'Guest' or 'Unknown')
+#
+# (this helps avoid problems when the uninstaller is started by a non-admin user)
+#--------------------------------------------------------------------------
+
+Function un.SetGlobalUserVariables
+
+  ; Starting with 0.21.0 the registry is used to store the location of the 'User Data'
+  ; (if setup.exe or adduser.exe was used to create/update the 'User Data' for this user)
+
+  ReadRegStr $G_USERDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
+  StrCmp $G_USERDIR "" 0 got_user_path
+
+  ; Pre-release versions of the 0.21.0 installer used a sub-folder for the default user data
+
+  StrCpy $G_USERDIR "$INSTDIR\user"
+
+  ; If we are uninstalling an upgraded installation, the default user data may be in $INSTDIR
+  ; instead of $INSTDIR\user
+
+  IfFileExists "$G_USERDIR\popfile.cfg" got_user_path
+  StrCpy $G_USERDIR   "$INSTDIR"
+
+got_user_path:
+
+  ; Email settings are stored on a 'per user' basis therefore we need to know which user is
+  ; running the uninstaller (e.g. so we can check ownership of any local 'User Data' we find)
+
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
+
+  ; Assume Win9x system, so user has 'Admin' rights
+  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
+
+  StrCpy $G_WINUSERNAME "UnknownUser"
+  StrCpy $G_WINUSERTYPE "Admin"
+  Goto function_exit
+
+got_name:
+  Pop $G_WINUSERNAME
+  StrCmp $G_WINUSERNAME "" 0 get_usertype
+  StrCpy $G_WINUSERNAME "UnknownUser"
+
+get_usertype:
+  UserInfo::GetAccountType
+  Pop $G_WINUSERTYPE
+  StrCmp $G_WINUSERTYPE "Admin" function_exit
+  StrCmp $G_WINUSERTYPE "Power" function_exit
+  StrCmp $G_WINUSERTYPE "User"  function_exit
+  StrCmp $G_WINUSERTYPE "Guest" function_exit
+  StrCpy $G_WINUSERTYPE "Unknown"
+
+function_exit:
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: 'un.Uninstall_Begin' (called by 'un.Uninstall Begin' section)
+#
+# Used to check ownership before starting the uninstall process
+#--------------------------------------------------------------------------
+
+Function un.Uninstall_Begin
+
+  !define L_TEMP        $R9
+
+  Push ${L_TEMP}
+
+  ; Ensure we access the data belonging to the user who started the uninstaller
+
+  Call un.SetGlobalUserVariables
+
+  ReadINIStr ${L_TEMP} "$G_USERDIR\install.ini" "Settings" "Owner"
+  StrCmp ${L_TEMP} "" function_exit
+  StrCmp ${L_TEMP} $G_WINUSERNAME function_exit
+
+  MessageBox MB_YESNO|MB_ICONSTOP|MB_DEFBUTTON2 \
+      "$(PFI_LANG_UN_MBDIFFUSER_1) ('${L_TEMP}') !\
+      ${MB_NL}${MB_NL}\
+      $(PFI_LANG_UN_MBNOTFOUND_2)" IDYES function_exit
+  Abort "$(PFI_LANG_UN_ABORT_1)"
+
+function_exit:
+  Pop ${L_TEMP}
+
+  !undef L_TEMP
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: 'un.Shutdown_POPFile' (called by 'un.Shutdown POPFile' section)
+#--------------------------------------------------------------------------
+
+Function un.Shutdown_POPFile
+
+  !define L_CFG         $R9   ; used as file handle
+  !define L_LNE         $R8   ; a line from popfile.cfg
+  !define L_TEMP        $R7
+  !define L_TEXTEND     $R6   ; used to ensure correct handling of lines longer than 1023 chars
+
+  Push ${L_CFG}
+  Push ${L_LNE}
+  Push ${L_TEMP}
+  Push ${L_TEXTEND}
+
+  ; Ensure we access the data belonging to the user who started the uninstaller
+
+  Call un.SetGlobalUserVariables
+
+  ; The program files we are about to remove are in use so we need to shut POPFile down
+
+  IfFileExists "$G_USERDIR\popfile.cfg" 0 manual_shutdown
+
+  ; Use the UI port setting in the configuration file to shutdown POPFile
+
+  StrCpy $G_GUI ""
+
+  FileOpen ${L_CFG} "$G_USERDIR\popfile.cfg" r
+
+found_eol:
+  StrCpy ${L_TEXTEND} "<eol>"
+
+loop:
+  FileRead ${L_CFG} ${L_LNE}
+  StrCmp ${L_LNE} "" ui_port_done
+  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
+  StrCmp ${L_LNE} "$\n" loop
+
+  StrCpy ${L_TEMP} ${L_LNE} 10
+  StrCmp ${L_TEMP} "html_port " 0 check_eol
+  StrCpy $G_GUI ${L_LNE} 5 10
+
+  ; Now read file until we get to end of the current line
+  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
+
+check_eol:
+  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
+  StrCmp ${L_TEXTEND} "$\n" found_eol
+  StrCmp ${L_TEXTEND} "$\r" found_eol loop
+
+ui_port_done:
+  FileClose ${L_CFG}
+
+  StrCmp $G_GUI "" manual_shutdown
+  Push $G_GUI
+  Call un.PFI_TrimNewlines
+  Call un.PFI_StrCheckDecimal
+  Pop $G_GUI
+  StrCmp $G_GUI "" manual_shutdown
+  DetailPrint "$(PFI_LANG_UN_LOG_SHUTDOWN) $G_GUI"
+  DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
+  Push $G_GUI
+  Call un.PFI_ShutdownViaUI
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "success" function_exit
+
+manual_shutdown:
+  Call un.RequestManualShutdown
+
+  ; Assume user has managed to shutdown POPFile
+
+function_exit:
+  Pop ${L_TEXTEND}
+  Pop ${L_TEMP}
+  Pop ${L_LNE}
+  Pop ${L_CFG}
+
+  !undef L_CFG
+  !undef L_LNE
+  !undef L_TEMP
+  !undef L_TEXTEND
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: 'un.RequestManualShutdown'
+#--------------------------------------------------------------------------
+
+Function un.RequestManualShutdown
+
+  StrCpy $G_PLS_FIELD_1 "POPFile"
+  DetailPrint "Unable to shutdown $G_PLS_FIELD_1 automatically - manual intervention requested"
+  MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST "$(PFI_LANG_MBMANSHUT_1)\
+      ${MB_NL}${MB_NL}\
+      $(PFI_LANG_MBMANSHUT_2)\
+      ${MB_NL}${MB_NL}\
+      $(PFI_LANG_MBMANSHUT_3)"
+
+FunctionEnd
 
 #--------------------------------------------------------------------------
 # End of 'installer-Uninstall.nsh'
