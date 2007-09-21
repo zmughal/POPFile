@@ -760,6 +760,7 @@
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
   ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
   ReserveFile "${NSISDIR}\Plugins\inetc.dll"
+  ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
   ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"

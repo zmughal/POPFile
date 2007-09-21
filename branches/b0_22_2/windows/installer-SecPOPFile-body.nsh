@@ -121,9 +121,15 @@ rootdir_exists:
 
 continue:
 
+  ; Use HKLM as a simple workaround for the case where installer is started by a non-admin user
+  ; (the MakeRootDirSafe function will use this HKLM data to re-initialise $G_ROOTDIR)
+
+  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir" "$G_ROOTDIR"
+
   ; If we are installing over a previous version, ensure that version is not running
 
-  Call MakeRootDirSafe
+  GetFunctionAddress ${L_TEMP} MakeRootDirSafe
+  UAC::ExecCodeSegment ${L_TEMP}
 
   ; Starting with 0.21.0, a new structure is used for the minimal Perl (to enable POPFile to
   ; be started from any folder, once POPFILE_ROOT and POPFILE_USER have been initialized)
