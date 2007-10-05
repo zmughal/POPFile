@@ -2236,6 +2236,11 @@ FunctionEnd
 # to the newer DBD::SQLite2 package. This change lets POPFile use the most recent SQLite 2.x
 # libraries (POPFile cannot use SQLite3.x libraries yet). If upgrading an installation that
 # currently uses DBD::SQLite then change the configuration in popfile.cfg to use DBD::SQLite2.
+#
+# The 0.22.6 release introduced the ability to select the parser used to split Japanese text
+# into words. Previous releases only supported the 'Kakasi' parser but 0.22.6 offers a choice
+# of 'Kakasi', 'MeCab' or 'Internal', controlled by the new 'bayes_nihongo_parser' parameter.
+# Valid values for this new popfile.cfg parameter are kakasi, mecab or internal.
 #--------------------------------------------------------------------------
 
 Function CheckExistingConfigData
@@ -2251,6 +2256,7 @@ Function CheckExistingConfigData
   !define L_LANG_OLD  $R1     ; old style UI lang parameter
   !define L_TEXTEND   $R0     ; used to ensure correct handling of lines longer than 1023 chars
   !define L_SKIN      $9      ; current skin setting
+  !define L_PARSER    $8      ; current Nihongo parser setting (introduced in 0.22.6 release)
 
   Push ${L_CFG}
   Push ${L_CLEANCFG}
@@ -2263,6 +2269,7 @@ Function CheckExistingConfigData
   Push ${L_LANG_OLD}
   Push ${L_TEXTEND}
   Push ${L_SKIN}
+  Push ${L_PARSER}
 
   StrCpy $G_POP3 ""
   StrCpy $G_GUI ""
@@ -2273,6 +2280,8 @@ Function CheckExistingConfigData
 
   StrCpy ${L_LANG_NEW} ""
   StrCpy ${L_LANG_OLD} ""
+
+  StrCpy ${L_PARSER} ""
 
   ; See if we can get the current pop3 and gui port from an existing configuration.
   ; There may be more than one entry for these ports in the file - use the last one found
@@ -2307,6 +2316,9 @@ loop:
   StrCpy ${L_CMPRE} ${L_LNE} 16
   StrCmp ${L_CMPRE} "windows_console " got_console
   StrCmp ${L_CMPRE} "bayes_dbconnect " got_dbconnect
+
+  StrCpy ${L_CMPRE} ${L_LNE} 21
+  StrCmp ${L_CMPRE} "bayes_nihongo_parser " got_parser
 
   ; do not transfer any UI language settings to the copy of popfile.cfg
 
@@ -2348,6 +2360,10 @@ got_dbconnect:
   StrCpy ${L_CMPRE} ${L_CMPRE} "" 11
   StrCpy ${L_LNE} "bayes_dbconnect dbi:SQLite2:${L_CMPRE}"
   Goto copy_lne
+
+got_parser:
+  StrCpy ${L_PARSER} ${L_LNE} "" 21
+  Goto loop
 
 got_lang_new:
   StrCpy ${L_LANG_NEW} ${L_LNE} "" 14
@@ -2425,11 +2441,28 @@ check_trayicon:
   StrCmp ${L_TRAYICON} "0" found_trayicon
   StrCmp ${L_TRAYICON} "1" found_trayicon
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "?"
-  Goto close_cleancopy
+  Goto check_parser
 
 found_trayicon:
   FileWrite ${L_CLEANCFG} "windows_trayicon ${L_TRAYICON}${MB_NL}"
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "${L_TRAYICON}"
+
+check_parser:
+  StrCmp ${L_PARSER} "" parser_not_previously_defined
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "NihongoParser" "${L_PARSER}"
+  ReadRegStr ${L_CMPRE} HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
+  StrCmp ${L_CMPRE} "" retain_setting
+  StrCpy ${L_PARSER} ${L_CMPRE}
+
+retain_setting:
+  FileWrite ${L_CLEANCFG} "bayes_nihongo_parser ${L_PARSER}${MB_NL}"
+  Goto close_cleancopy
+
+parser_not_previously_defined:
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "NihongoParser" "?"
+  ReadRegStr ${L_CMPRE} HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
+  StrCmp ${L_CMPRE} "" close_cleancopy
+  FileWrite ${L_CLEANCFG} "bayes_nihongo_parser ${L_CMPRE}${MB_NL}"
 
 close_cleancopy:
   FileClose ${L_CLEANCFG}
@@ -2520,6 +2553,7 @@ default_gui:
   StrCpy $G_GUI "8081"
 
 ports_ok:
+  Pop ${L_PARSER}
   Pop ${L_SKIN}
   Pop ${L_TEXTEND}
   Pop ${L_LANG_OLD}
@@ -2543,6 +2577,7 @@ ports_ok:
   !undef L_LANG_OLD
   !undef L_TEXTEND
   !undef L_SKIN
+  !undef L_PARSER
 
 FunctionEnd
 
