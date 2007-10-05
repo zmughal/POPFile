@@ -103,7 +103,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.7"
+  !define C_VERSION   "0.1.8"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -291,6 +291,34 @@
 
     continue_${PFI_UNIQUE_ID}:
   !macroend
+
+  ;---------------------------------------------------------------------------
+  ; Differentiate between a non-existent and an empty MeCab environment variable
+  ; (this variable is only defined if the MeCab software has been installed)
+  ;---------------------------------------------------------------------------
+
+  !macro CHECK_MECAB REGISTER ENV_VARIABLE MESSAGE
+
+      !insertmacro PFI_UNIQUE_ID
+
+      ClearErrors
+      ReadEnvStr "${REGISTER}" "${ENV_VARIABLE}"
+      StrCmp "${REGISTER}" "" 0 show_value_${PFI_UNIQUE_ID}
+      IfErrors 0 show_value_${PFI_UNIQUE_ID}
+      IfFileExists "$G_EXPECTED_ROOT\mecab\*.*" MeCab_${PFI_UNIQUE_ID}
+      DetailPrint "${MESSAGE}= ><   (this is OK)"
+      Goto continue_${PFI_UNIQUE_ID}
+
+    MeCab_${PFI_UNIQUE_ID}:
+      DetailPrint "${MESSAGE}= ><"
+      Goto continue_${PFI_UNIQUE_ID}
+
+    show_value_${PFI_UNIQUE_ID}:
+      DetailPrint "${MESSAGE}= < ${REGISTER} >"
+
+    continue_${PFI_UNIQUE_ID}:
+  !macroend
+
 
 #--------------------------------------------------------------------------
 # Configure the MUI pages
@@ -745,8 +773,12 @@ enter_section:
   StrCpy ${L_REGDATA} ${L_REGDATA}${L_TEMP}
   DetailPrint "HKLM: MRI Version = < ${L_REGDATA} >"
 
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "InstallPath" "HKLM: InstallPath "
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "RootDir_LFN" "HKLM: RootDir_LFN "
+  DetailPrint ""
+  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "NihongoParser" "HKLM: NewParser   "
+  DetailPrint ""
+
+  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "InstallPath"   "HKLM: InstallPath "
+  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "RootDir_LFN"   "HKLM: RootDir_LFN "
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_ROOT ${L_REGDATA}
@@ -1080,11 +1112,13 @@ enter_section:
 
   !define L_ITAIJIDICTPATH  $R9   ; current Kakasi environment variable
   !define L_KANWADICTPATH   $R8   ; current Kakasi environment variable
-  !define L_POPFILE_ROOT    $R7   ; current value of POPFILE_ROOT environment variable
-  !define L_TEMP            $R6
+  !define L_MECABRC         $R7   ; current MeCab environment variable
+  !define L_POPFILE_ROOT    $R6   ; current value of POPFILE_ROOT environment variable
+  !define L_TEMP            $R5
 
   Push ${L_ITAIJIDICTPATH}
   Push ${L_KANWADICTPATH}
+  Push ${L_MECABRC}
   Push ${L_POPFILE_ROOT}
   Push ${L_TEMP}
 
@@ -1175,7 +1209,7 @@ check_kakasi:
   !insertmacro CHECK_KAKASI "${L_KANWADICTPATH}"  "KANWADICTPATH"  "'KANWADICTPATH'   "
   DetailPrint ""
 
-  StrCmp $G_DIAG_MODE "simple" section_end
+  StrCmp $G_DIAG_MODE "simple" check_mecab
 
   StrCmp ${L_ITAIJIDICTPATH} "" check_other_kakaksi
   StrCpy ${L_TEMP} ""
@@ -1187,7 +1221,7 @@ display_itaiji_result:
 
 check_other_kakaksi:
   StrCmp ${L_KANWADICTPATH} "" 0 check_kanwa
-  StrCmp ${L_ITAIJIDICTPATH} "" section_end exit_with_blank_line
+  StrCmp ${L_ITAIJIDICTPATH} "" check_mecab kakasi_blank_line
 
 check_kanwa:
   StrCpy ${L_TEMP} ""
@@ -1197,17 +1231,36 @@ check_kanwa:
 display_kanwa_result:
   DetailPrint "'kanwadict'  file = ${L_TEMP}found"
 
+kakasi_blank_line:
+  DetailPrint ""
+
+check_mecab:
+  !insertmacro CHECK_MECAB "${L_MECABRC}" "MECABRC" "'MECABRC'         "
+  DetailPrint ""
+
+  StrCmp $G_DIAG_MODE "simple" section_end
+
+  StrCmp ${L_MECABRC} "" exit_with_blank_line
+  StrCpy ${L_TEMP} ""
+  IfFileExists "${L_MECABRC}" display_mecab_result
+  StrCpy ${L_TEMP} "not "
+
+display_mecab_result:
+  DetailPrint "'mecabrc'    file = ${L_TEMP}found"
+
 exit_with_blank_line:
   DetailPrint ""
 
 section_end:
   Pop ${L_TEMP}
   Pop ${L_POPFILE_ROOT}
+  Pop ${L_MECABRC}
   Pop ${L_KANWADICTPATH}
   Pop ${L_ITAIJIDICTPATH}
 
   !undef L_ITAIJIDICTPATH
   !undef L_KANWADICTPATH
+  !undef L_MECABRC
   !undef L_POPFILE_ROOT
   !undef L_TEMP
 
