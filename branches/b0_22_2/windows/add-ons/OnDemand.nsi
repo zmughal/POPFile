@@ -142,7 +142,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.0.7"
+  !define C_VERSION   "0.0.8"
 
   ; Specify the icon file for the utility
 
