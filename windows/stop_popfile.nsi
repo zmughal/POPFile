@@ -122,7 +122,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.6.5"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.6.6"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
@@ -258,8 +258,10 @@ usage:
     ${MB_NL}          IF ERRORLEVEL 1 GOTO FAILED\
     ${MB_NL}          ECHO Shutdown succeeded\
     ${MB_NL}          GOTO DONE\
+    ${MB_NL}\
     ${MB_NL}          :FAILED\
     ${MB_NL}          ECHO **** Shutdown failed ****\
+    ${MB_NL}\
     ${MB_NL}          :DONE\
     ${MB_NL}${MB_NL}\
     Distributed under the terms of the GNU General Public License (GPL) v2."
@@ -442,42 +444,49 @@ SectionEnd
 Function GetNextParam
 
   !define L_CHAR      $R9                     ; a character from the input list
-  !define L_LIST      $R8                     ; input list of parameters (may be empty)
-  !define L_PARAM     $R7                     ; the first parameter found
+  !define L_LENGTH    $R8                     ; use string length to determine if end-of-string reached
+  !define L_LIST      $R7                     ; input list of parameters (may be empty)
+  !define L_PARAM     $R6                     ; the first parameter found
 
   Exch ${L_LIST}
   Push ${L_PARAM}
   Push ${L_CHAR}
+  Push ${L_LENGTH}
 
   StrCpy ${L_PARAM} ""
 
 loop_L:
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCpy ${L_LIST} ${L_LIST} "" 1             ; remove char from input list
   StrCmp ${L_CHAR} " " loop_L
 
 loop_P:
   StrCpy ${L_PARAM} ${L_PARAM}${L_CHAR}
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCpy ${L_LIST} ${L_LIST} "" 1
   StrCmp ${L_CHAR} " " 0 loop_P               ; loop until a space is found
 
 loop_T:
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCmp ${L_CHAR} " " 0 done
   StrCpy ${L_LIST} ${L_LIST} "" 1             ; remove trailing spaces
   Goto loop_T
 
 done:
+  Pop ${L_LENGTH}
   Pop ${L_CHAR}
   Exch ${L_PARAM}                             ; put parameter on stack (may be "")
   Exch
   Exch ${L_LIST}                              ; put revised list on stack (may be "")
 
   !undef L_CHAR
+  !undef L_LENGTH
   !undef L_LIST
   !undef L_PARAM
 
