@@ -577,6 +577,51 @@ section_exit:
 SectionEnd
 
 #--------------------------------------------------------------------------
+# Uninstaller Section: 'un.MeCab'
+#--------------------------------------------------------------------------
+
+Section "un.MeCab" UnSecMeCab
+
+  !define L_TEMP        $R9
+
+  Push ${L_TEMP}
+
+  IfFileExists "$INSTDIR\mecab\*.*" 0 section_exit
+
+  SetDetailsPrint textonly
+  DetailPrint " "
+  SetDetailsPrint listonly
+
+  RMDir /r "$INSTDIR\mecab"
+
+  ;Delete Environment Variables
+
+  Push "MECABRC"
+  Call un.PFI_DeleteEnvStr
+
+  ; If the 'all users' environment variables refer to this installation, remove them too
+
+  ReadEnvStr ${L_TEMP} "MECABRC"
+  Push ${L_TEMP}
+  Push $INSTDIR
+  Call un.PFI_StrStr
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "" section_exit
+  Push "MECABRC"
+  Call un.PFI_DeleteEnvStrNTAU
+
+section_exit:
+  SetDetailsPrint textonly
+  DetailPrint " "
+  SetDetailsPrint listonly
+
+  Pop ${L_TEMP}
+
+  !undef L_TEMP
+
+SectionEnd
+
+#--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Minimal Perl'
 #--------------------------------------------------------------------------
 
