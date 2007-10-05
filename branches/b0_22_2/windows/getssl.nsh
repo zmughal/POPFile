@@ -199,7 +199,9 @@
 
   Var G_SSL_FILEURL        ; full URL used to download SSL file
 
-  Var G_PLS_FIELD_2        ; used to customise translated text strings
+  !ifdef ADDSSL
+      Var G_PLS_FIELD_2        ; used to customise translated text strings
+  !endif
 
   Var G_PATCH_SOURCE       ; indicated the source of the SSL patches we are to apply
                            ; (the possible values are either ${C_BUILTIN} or ${C_INTERNET})
@@ -391,7 +393,16 @@
       DetailPrint "$(PFI_LANG_PROG_CHECKIFRUNNING) $(PFI_LANG_TAKE_SEVERAL_SECONDS)"
       SetDetailsPrint listonly
       DetailPrint ""
-      Call MakeRootDirSafe
+
+      ; Use HKLM as a simple workaround for the case where installer is started by a non-admin user
+      ; (the MakeRootDirSafe function will use this HKLM data to re-initialise $G_ROOTDIR)
+
+      WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir" "$G_ROOTDIR"
+
+      ; If we are installing over a previous version, ensure that version is not running
+
+      GetFunctionAddress ${L_RESULT} MakeRootDirSafe
+      UAC::ExecCodeSegment ${L_RESULT}
   !endif
 
 install_SSL_support:
@@ -637,7 +648,9 @@ SectionEnd
 #         (top of stack)     - status returned by the download plugin
 #--------------------------------------------------------------------------
 
-  !define C_NSISDL_TRANSLATIONS "/TRANSLATE '$(PFI_LANG_NSISDL_DOWNLOADING)' '$(PFI_LANG_NSISDL_CONNECTING)' '$(PFI_LANG_NSISDL_SECOND)' '$(PFI_LANG_NSISDL_MINUTE)' '$(PFI_LANG_NSISDL_HOUR)' '$(PFI_LANG_NSISDL_PLURAL)' '$(PFI_LANG_NSISDL_PROGRESS)' '$(PFI_LANG_NSISDL_REMAINING)'"
+  !ifdef ADDSSL
+      !define C_NSISDL_TRANSLATIONS "/TRANSLATE '$(PFI_LANG_NSISDL_DOWNLOADING)' '$(PFI_LANG_NSISDL_CONNECTING)' '$(PFI_LANG_NSISDL_SECOND)' '$(PFI_LANG_NSISDL_MINUTE)' '$(PFI_LANG_NSISDL_HOUR)' '$(PFI_LANG_NSISDL_PLURAL)' '$(PFI_LANG_NSISDL_PROGRESS)' '$(PFI_LANG_NSISDL_REMAINING)'"
+  !endif
 
 Function GetSSLFile
 
@@ -786,44 +799,63 @@ Function StrCheckHexadecimal
   !define VALID_DIGIT     "0123456789abcdef"    ; accept only these digits
   !define BAD_OFFSET      16                    ; length of VALID_DIGIT string
 
-  Exch $0   ; The input string
-  Push $1   ; Holds the result: either "" (if input is invalid) or the input string (if valid)
-  Push $2   ; A character from the input string
-  Push $3   ; The offset to a character in the "validity check" string
-  Push $4   ; A character from the "validity check" string
-  Push $5   ; Holds the current "validity check" string
+  !define L_STRING        $0   ; The input string
+  !define L_RESULT        $1   ; Holds the result: either "" (if input is invalid) or the input string (if valid)
+  !define L_CURRENT       $2   ; A character from the input string
+  !define L_OFFSET        $3   ; The offset to a character in the "validity check" string
+  !define L_VALIDCHAR     $4   ; A character from the "validity check" string
+  !define L_VALIDLIST     $5   ; Holds the current "validity check" string
+  !define L_CHARSLEFT     $6   ; To cater for MBCS input strings, terminate when end of string reached, not when a null byte reached
 
-  StrCpy $1 ""
+  Exch ${L_STRING}
+  Push ${L_RESULT}
+  Push ${L_CURRENT}
+  Push ${L_OFFSET}
+  Push ${L_VALIDCHAR}
+  Push ${L_VALIDLIST}
+  Push ${L_CHARSLEFT}
+
+  StrCpy ${L_RESULT} ""
 
 next_input_char:
-  StrCpy $2 $0 1                ; Get the next character from the input string
-  StrCmp $2 "" done
-  StrCpy $5 ${VALID_DIGIT}$2    ; Add it to end of "validity check" to guarantee a match
-  StrCpy $0 $0 "" 1
-  StrCpy $3 -1
+  StrLen ${L_CHARSLEFT} ${L_STRING}
+  StrCmp ${L_CHARSLEFT} 0 done
+  StrCpy ${L_CURRENT} ${L_STRING} 1                   ; Get the next character from the input string
+  StrCpy ${L_VALIDLIST} ${VALID_DIGIT}${L_CURRENT}  ; Add it to end of "validity check" to guarantee a match
+  StrCpy ${L_STRING} ${L_STRING} "" 1
+  StrCpy ${L_OFFSET} -1
 
 next_valid_char:
-  IntOp $3 $3 + 1
-  StrCpy $4 $5 1 $3             ; Extract next "valid" character (from "validity check" string)
-  StrCmp $2 $4 0 next_valid_char
-  IntCmp $3 ${BAD_OFFSET} invalid 0 invalid  ; If match is with the char we added, input is bad
-  StrCpy $1 $1$4                ; Add "valid" character to the result
+  IntOp ${L_OFFSET} ${L_OFFSET} + 1
+  StrCpy ${L_VALIDCHAR} ${L_VALIDLIST} 1 ${L_OFFSET}    ; Extract next "valid" char (from "validity check" string)
+  StrCmp ${L_CURRENT} ${L_VALIDCHAR} 0 next_valid_char
+  IntCmp ${L_OFFSET} ${BAD_OFFSET} invalid 0 invalid    ; If match is with the char we added, input is bad
+  StrCpy ${L_RESULT} ${L_RESULT}${L_VALIDCHAR}          ; Add "valid" character to the result
   goto next_input_char
 
 invalid:
-  StrCpy $1 ""
+  StrCpy ${L_RESULT} ""
 
 done:
-  StrCpy $0 $1      ; Result is either a string of hexadecimal digits or ""
-  Pop $5
-  Pop $4
-  Pop $3
-  Pop $2
-  Pop $1
-  Exch $0           ; Place result on top of the stack
+  StrCpy ${L_STRING} ${L_RESULT}  ; Result is either a string of hexadecimal digits or ""
+  Pop ${L_CHARSLEFT}
+  Pop ${L_VALIDLIST}
+  Pop ${L_VALIDCHAR}
+  Pop ${L_OFFSET}
+  Pop ${L_CURRENT}
+  Pop ${L_RESULT}
+  Exch ${L_STRING}                ; Place result on top of the stack
 
   !undef VALID_DIGIT
   !undef BAD_OFFSET
+
+  !undef L_STRING
+  !undef L_RESULT
+  !undef L_CURRENT
+  !undef L_OFFSET
+  !undef L_VALIDCHAR
+  !undef L_VALIDLIST
+  !undef L_CHARSLEFT
 
 FunctionEnd
 
