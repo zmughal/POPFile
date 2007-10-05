@@ -45,6 +45,7 @@
 #  (3) installer-SecPOPFile-func.nsh - functions used by the above 'include' file
 #  (4) installer-SecMinPerl-body.nsh - body of section used to install the basic minimal Perl
 #  (5) installer-Uninstall.nsh       - source for the POPFile uninstaller (uninstall.exe)
+#  (6) getssl.nsh                    - section & functions used to download the SSL support files
 #--------------------------------------------------------------------------
 
   ; This version of the script has been tested with the "NSIS v2.22" compiler,
@@ -128,13 +129,6 @@
 # /DENGLISH_MODE when compiling the installer. This switch only affects the language used by
 # the installer, it does not affect which files get installed.
 #
-# /DNO_KAKASI
-#
-# When the default compression mode is used to compile the installer, the Kakasi package and
-# the additional Perl components it requires cause the installer to almost double in size.
-# If the /DNO_KAKASI command-line switch is used, the installer will be built without these
-# additional packages so the compile time and the installer size will be greatly reduced.
-#
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
@@ -170,17 +164,29 @@
 #--------------------------------------------------------------------------
 # Support for Japanese text processing
 #
-# This version of the installer installs the Kakasi package and the Text::Kakasi Perl module
-# used by POPFile when processing Japanese text. Further information about Kakasi, including
-# 'download' links for the Kakasi package and the Text::Kakasi Perl module, can be found at
-# http://kakasi.namazu.org/
+# Japanese text does not use spaces between words so POPFile uses a parser to split the text
+# into words so the text can be analysed properly. POPFile 0.22.5 (and earlier) only supported
+# one parser (Kakasi) for Japanese text. Starting with the 0.22.6 release a choice of three
+# parsers is offered: Kakasi, MeCab and Internal.
+#
+# The 'Kakasi' parser is suggested as the default parser for new installations as it offers
+# a reasonable compromise between accuracy and speed. 'MeCab' uses much larger dictionaries
+# than Kakasi (about 40 MB instead of about 2 MB) and is therefore more accurate at parsing.
+# The 'Internal' parser does not use dictionaries so it is less accurate but it is faster
+# than the other two parsers.
+#
+# Further information about Kakasi, including 'download' links for the Kakasi package and the
+# Text::Kakasi Perl module, can be found at http://kakasi.namazu.org/
+# (ActivePerl's PPM4 can also be used to download and install the Text::Kakasi Perl module).
+#
+# Further information about MeCab can be found at http://sourceforge.net/projects/mecab
+# Since the MeCab package is much larger than the Kakasi one, the installation files are not
+# included in the installer. If the MeCab parser is selected then the MeCab files (about 13 MB)
+# will be downloaded from the POPFile project's website during the installation.
 #
 # This version of the installer also installs the complete Perl 'Encode' collection of modules
 # to complete the Japanese support requirements.
 #
-# The Kakasi package and the additional Perl modules almost double the size of the installer
-# (assuming that the default compression method is used). If the command-line switch
-# /DNO_KAKASI is used then a smaller installer can be built by omitting the Japanese support.
 #--------------------------------------------------------------------------
 
   ;------------------------------------------------
@@ -192,6 +198,8 @@
   ;--------------------------------------------------------------------------
   ; Select LZMA compression to reduce 'setup.exe' size by around 30%
   ;--------------------------------------------------------------------------
+
+;;  SetCompress off
 
   SetCompressor /solid lzma
 
@@ -366,6 +374,10 @@
   Var G_WINUSERNAME        ; current Windows user login name
   Var G_WINUSERTYPE        ; user group ('Admin', 'Power', 'User', 'Guest' or 'Unknown')
 
+  Var G_PARSER             ; used to indicate which Nihongo (Japanese) parser is to be installed
+                           ; (1) Internal, (2) Kakasi (the default), or (3) MeCab
+                           ; (if "MeCab" is selected then it will be downloaded during the install)
+
   Var G_SSL_ONLY           ; 1 = SSL-only installation, 0 = normal installation
 
   Var G_PLS_FIELD_1        ; used to customize translated text strings
@@ -458,17 +470,9 @@
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
   !ifndef ENGLISH_MODE
-    !ifndef NO_KAKASI
-      VIAddVersionKey "Build"               "Multi-Language installer (with Kakasi)"
-    !else
-      VIAddVersionKey "Build"               "Multi-Language installer (without Kakasi)"
-    !endif
+      VIAddVersionKey "Build"               "Multi-Language installer"
   !else
-    !ifndef NO_KAKASI
-      VIAddVersionKey "Build"               "English-Mode installer (with Kakasi)"
-    !else
-      VIAddVersionKey "Build"               "English-Mode installer (without Kakasi)"
-    !endif
+      VIAddVersionKey "Build"               "English-Mode installer"
   !endif
 
   VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
@@ -608,6 +612,12 @@
 ##  !define MUI_LICENSEPAGE_RADIOBUTTONS
 
   !insertmacro MUI_PAGE_LICENSE               "..\engine\license"
+
+  ;---------------------------------------------------
+  ; Installer Page - Allow user to select the "Nihongo" parser, if "Nihongo" language selected
+  ;---------------------------------------------------
+
+  Page custom ChooseParser HandleParserSelection
 
   ;---------------------------------------------------
   ; Installer Page - Select Components to be installed
@@ -767,7 +777,9 @@
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
+  ReserveFile "${NSISDIR}\Plugins\ZipDLL.dll"
   ReserveFile "ioG.ini"
+  ReserveFile "ioP.ini"
   ReserveFile "${C_RELEASE_NOTES}"
   ReserveFile "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
 ;  ReserveFile "SSL_pm.pat"     ; 0.22.5 does not need any SSL patches so there's no need for a built-in copy
@@ -826,6 +838,7 @@ continue:
   !endif
 
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioG.ini"
+  !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioP.ini"
   File "/oname=$PLUGINSDIR\${C_README}" "${C_RELEASE_NOTES}"
 
   ; Ensure the release notes are in a format which the standard Windows NOTEPAD.EXE can use.
@@ -936,13 +949,12 @@ notes_ignored:
 
 continue:
 
-  !ifndef NO_KAKASI
+  ; If 'Nihongo' (Japanese) language has been selected for the installer, ensure the
+  ; 'Nihongo Parser' entry is shown on the COMPONENTS page to confirm that a parser will
+  ; be installed. The "Nihongo Parser Selection" page appears immediately before the
+  ; COMPONENTS page.
 
-      ; Ensure the 'Kakasi' section is selected if 'Japanese' has been chosen
-
-      Call HandleKakasi
-
-  !endif
+  Call ShowOrHideNihongoParser
 
   StrCpy $G_SSL_ONLY "0"    ; assume a full installation is required
   Call PFI_GetParameters    ; The UAC plugin may modify the command-line
@@ -1177,113 +1189,443 @@ Section "Languages" SecLangs
 
 SectionEnd
 
-!ifndef NO_KAKASI
-    #--------------------------------------------------------------------------
-    # Installer Section: (optional) Kakasi component
-    #
-    # This component is automatically installed if 'Japanese' has been selected
-    # as the language for the installer. Normally this component is not seen in
-    # the 'Components' list, but if an English-mode installer is built this
-    # component will be made visible to allow it to be selected by the user.
-    #--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Installer Section: Nihongo Parser component (listed on COMPONENTS page when
+# Nihongo language selected, otherwise it is hidden by the 'ShowOrHideNihongoParser'
+# function)
+#
+# Note that this section must always be executed and must always come before
+# the sections for the 'Kakasi', 'MeCab' and 'Internal' Nihongo parsers
+#--------------------------------------------------------------------------
 
-    Section "Kakasi" SecKakasi
+Section "Nihongo Parser" SecParser
 
-      !insertmacro SECTIONLOG_ENTER "Kakasi"
+  SectionIn RO
 
-      !define L_RESERVED  $0    ; used in system.dll call
+  !insertmacro SECTIONLOG_ENTER "Nihongo Parser"
 
-      Push ${L_RESERVED}
+  DeleteRegValue HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
 
-      ;--------------------------------------------------------------------------
-      ; Install Kakasi package
-      ;--------------------------------------------------------------------------
+  !insertmacro SECTIONLOG_EXIT "Nihongo Parser"
 
-      SetOutPath "$G_ROOTDIR"
-      File /r "${C_KAKASI_DIR}\kakasi"
+SectionEnd
 
-      ; Add Environment Variables for Kakasi
 
-      Push "ITAIJIDICTPATH"
-      Push "$G_ROOTDIR\kakasi\share\kakasi\itaijidict"
+#--------------------------------------------------------------------------
+# Installer Section: (optional) Kakasi component (one of the three Nihongo parsers supported)
+#
+# Although the COMPONENTS page will show a 'Nihongo Parser' component when the installer
+# language is set to 'Nihongo', the individual parser components are never shown there.
+#--------------------------------------------------------------------------
 
-      StrCmp $G_WINUSERTYPE "Admin" all_users_1
-      Call PFI_WriteEnvStr
-      Goto next_var
+Section "-Kakasi" SecKakasi
 
-    all_users_1:
-      Call PFI_WriteEnvStrNTAU
+  !insertmacro SECTIONLOG_ENTER "Kakasi"
 
-    next_var:
-      Push "KANWADICTPATH"
-      Push "$G_ROOTDIR\kakasi\share\kakasi\kanwadict"
+  StrCmp $G_PARSER "kakasi" 0 skip_section
 
-      StrCmp $G_WINUSERTYPE "Admin" all_users_2
-      Call PFI_WriteEnvStr
-      Goto set_env
+  !define L_RESERVED  $0    ; used in system.dll call
 
-    all_users_2:
-      Call PFI_WriteEnvStrNTAU
+  Push ${L_RESERVED}
 
-    set_env:
-      IfRebootFlag set_vars_now
+  ;--------------------------------------------------------------------------
+  ; Install Kakasi package
+  ;--------------------------------------------------------------------------
 
-      ; Running on a non-Win9x system which already has the correct Kakaksi environment data
-      ; or running on a non-Win9x system
+  SetOutPath "$G_ROOTDIR"
+  File /r "${C_KAKASI_DIR}\kakasi"
 
-      Call PFI_IsNT
-      Pop ${L_RESERVED}
-      StrCmp ${L_RESERVED} "0" continue
+  ; Add Environment Variables for Kakasi
 
-      ; Running on a non-Win9x system so we ensure the Kakasi environment variables
-      ; are updated to match this installation
+  Push "ITAIJIDICTPATH"
+  Push "$G_ROOTDIR\kakasi\share\kakasi\itaijidict"
 
-    set_vars_now:
-      System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
-                    i("ITAIJIDICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\itaijidict").r0'
-      StrCmp ${L_RESERVED} 0 0 itaiji_set_ok
-      MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (ITAIJIDICTPATH)"
+  StrCmp $G_WINUSERTYPE "Admin" all_users_1
+  Call PFI_WriteEnvStr
+  Goto next_var
 
-    itaiji_set_ok:
-      System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
-                    i("KANWADICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\kanwadict").r0'
-      StrCmp ${L_RESERVED} 0 0 continue
-      MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (KANWADICTPATH)"
+all_users_1:
+  Call PFI_WriteEnvStrNTAU
 
-    continue:
+next_var:
+  Push "KANWADICTPATH"
+  Push "$G_ROOTDIR\kakasi\share\kakasi\kanwadict"
 
-      ;--------------------------------------------------------------------------
-      ; Install Perl modules: base.pm, bytes.pm, the Encode collection and Text::Kakasi
-      ; (the requirement for bytes_heavy.pl was added when the minimal Perl was updated
-      ; to use ActivePerl 5.8.7 components)
-      ;--------------------------------------------------------------------------
+  StrCmp $G_WINUSERTYPE "Admin" all_users_2
+  Call PFI_WriteEnvStr
+  Goto set_env
 
-      SetOutPath "$G_MPLIBDIR"
-      File "${C_PERL_DIR}\lib\base.pm"
-      File "${C_PERL_DIR}\lib\bytes.pm"
-      File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-      File "${C_PERL_DIR}\lib\Encode.pm"
+all_users_2:
+  Call PFI_WriteEnvStrNTAU
 
-      SetOutPath "$G_MPLIBDIR\Encode"
-      File /r "${C_PERL_DIR}\lib\Encode\*"
+set_env:
+  IfRebootFlag set_vars_now
 
-      SetOutPath "$G_MPLIBDIR\auto\Encode"
-      File /r "${C_PERL_DIR}\lib\auto\Encode\*"
+  ; Running on a non-Win9x system which already has the correct Kakasi environment data
+  ; or running on a non-Win9x system
 
-      SetOutPath "$G_MPLIBDIR\Text"
-      File "${C_PERL_DIR}\site\lib\Text\Kakasi.pm"
+  Call PFI_IsNT
+  Pop ${L_RESERVED}
+  StrCmp ${L_RESERVED} "0" continue
 
-      SetOutPath "$G_MPLIBDIR\auto\Text\Kakasi"
-      File "${C_PERL_DIR}\site\lib\auto\Text\Kakasi\*"
+  ; Running on a non-Win9x system so we ensure the Kakasi environment variables
+  ; are updated to match this installation
 
-      Pop ${L_RESERVED}
+set_vars_now:
+  System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
+                i("ITAIJIDICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\itaijidict").r0'
+  StrCmp ${L_RESERVED} 0 0 itaiji_set_ok
+  MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (ITAIJIDICTPATH)"
 
-      !undef L_RESERVED
+itaiji_set_ok:
+  System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
+                i("KANWADICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\kanwadict").r0'
+  StrCmp ${L_RESERVED} 0 0 continue
+  MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (KANWADICTPATH)"
 
-      !insertmacro SECTIONLOG_EXIT "Kakasi"
+continue:
 
-    SectionEnd
-!endif
+  ;--------------------------------------------------------------------------
+  ; Install Perl modules: base.pm, bytes.pm, the Encode collection and Text::Kakasi
+  ; (the requirement for bytes_heavy.pl was added when the minimal Perl was updated
+  ; to use ActivePerl 5.8.7 components)
+  ;--------------------------------------------------------------------------
+
+  SetOutPath "$G_MPLIBDIR"
+  File "${C_PERL_DIR}\lib\base.pm"
+  File "${C_PERL_DIR}\lib\bytes.pm"
+  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
+  File "${C_PERL_DIR}\lib\Encode.pm"
+
+  SetOutPath "$G_MPLIBDIR\Encode"
+  File /r "${C_PERL_DIR}\lib\Encode\*"
+
+  SetOutPath "$G_MPLIBDIR\auto\Encode"
+  File /r "${C_PERL_DIR}\lib\auto\Encode\*"
+
+  SetOutPath "$G_MPLIBDIR\Text"
+  File "${C_PERL_DIR}\site\lib\Text\Kakasi.pm"
+
+  SetOutPath "$G_MPLIBDIR\auto\Text\Kakasi"
+  File "${C_PERL_DIR}\site\lib\auto\Text\Kakasi\*"
+
+  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser" "$G_PARSER"
+
+  Pop ${L_RESERVED}
+
+  !undef L_RESERVED
+
+ skip_section:
+  !insertmacro SECTIONLOG_EXIT "Kakasi"
+
+SectionEnd
+
+#--------------------------------------------------------------------------
+# Installer Section: (optional) MeCab component (one of the three Nihongo parsers supported)
+#
+# Although the COMPONENTS page will show a 'Nihongo Parser' component when the installer
+# language is set to 'Nihongo', the individual parser components are never shown there.
+#--------------------------------------------------------------------------
+
+  !define C_NPD_MECAB_PERL    "http://idisk.mac.com/amatubu/Public/MeCab/MeCab.tar.gz"
+  !define C_NPD_MECAB_DICT    "http://idisk.mac.com/amatubu/Public/MeCab/mecab-ipadic.zip"
+
+  Var G_MECAB_FILEURL         ; full URL used to download a MeCab file
+
+  Var G_PLS_FIELD_2           ; used to customise translated text strings
+
+  ;--------------------------------------------------------------------------
+  ; Minimal Perl Requirements for "MeCab" package appear to be:
+  ;
+  ; (1) the 'Encode' package, as required by Kakasi (no surprise there)
+  ;
+  ; (2) bytes.pm (and presumably 'bytes_heavy.pl' as they go together)
+  ;
+  ; (3) possibly need 'Base.pm' too as that is needed for 'Kakasi' ???
+  ;
+  ; Assume similar requirements also for the Internal parser as it has to decode
+  ; Japanese characters. This suggests all three parsers share a common set of
+  ; minimal Perl needs so perhaps it is time to come up with a new approach to
+  ; assembling and installing the additional minimal Perl components?
+  ;--------------------------------------------------------------------------
+
+Section "-MeCab" SecMeCab
+
+  !insertmacro SECTIONLOG_ENTER "MeCab"
+
+  StrCmp $G_PARSER "mecab" 0 skip_section
+
+  ; The main installer does not contain the MeCab support files so we provide an estimate
+  ; which includes a slack space allowance (based upon the development system's statistics)
+
+  AddSize 43000
+
+  !define L_RESERVED  $0          ; used in system.dll call
+
+  !define L_RESULT          $R0   ; result from 'GetSSLFile' function or the 'untgz' plugin
+                                  ; WARNING: The 'untgz' plugin is hard-coded to use $R0
+
+  !define L_DLG_ITEM        $R1   ; used to disable/enable the "Show Details" button
+  !define L_LISTSIZE        $R2   ; number of patches to be applied
+
+  Push ${L_RESERVED}
+  Push ${L_RESULT}
+  Push ${L_DLG_ITEM}
+  Push ${L_LISTSIZE}
+
+  ; Unlike the NSISdl plugin shipped with NSIS, the Inetc plugin leaves the "Show Details"
+  ; button in view so we temporarily disable it during the download to avoid a messy display
+  ; (if the user has already clicked the button then they'll just need to put up with the mess)
+  ;
+  ; In order to avoid screen flicker effects as a result of downloading several files, we
+  ; disable the button "for the duration" instead of disabling/enabling it for every transfer
+
+  FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
+  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x403
+  EnableWindow ${L_DLG_ITEM} 0
+
+  ; Download the MeCab archives
+
+  Push "${C_NPD_MECAB_PERL}"
+  Call GetMeCabFile
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "OK" 0 installer_error_exit
+
+  Push "${C_NPD_MECAB_DICT}"
+  Call GetMeCabFile
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "OK" 0 installer_error_exit
+
+  ; Now install the files required for the MeCab parser
+
+  StrCpy $G_PLS_FIELD_1 "$G_ROOTDIR\lib"
+  DetailPrint ""
+  CreateDirectory $G_PLS_FIELD_1
+  SetDetailsPrint both
+  StrCpy $G_PLS_FIELD_2 "MeCab.tar.gz"
+  DetailPrint "$(PFI_LANG_PROG_FILEEXTRACT)"
+  SetDetailsPrint listonly
+  untgz::extractFile -j -d "$G_PLS_FIELD_1" "$PLUGINSDIR\MeCab.tar.gz" "MeCab.pm"
+  StrCmp ${L_RESULT} "success" 0 error_exit
+
+  DetailPrint ""
+  StrCpy $G_PLS_FIELD_1 "$G_ROOTDIR\lib\auto\MeCab"
+  DetailPrint ""
+  CreateDirectory $G_PLS_FIELD_1
+  SetDetailsPrint both
+  StrCpy $G_PLS_FIELD_2 "MeCab.tar.gz"
+  DetailPrint "$(PFI_LANG_PROG_FILEEXTRACT)"
+  SetDetailsPrint listonly
+  untgz::extractV -j -d "$G_PLS_FIELD_1" "$PLUGINSDIR\MeCab.tar.gz" -i "MeCab.bs" "MeCab.dll" --
+  StrCmp ${L_RESULT} "success" check_bs_file
+
+error_exit:
+  SetDetailsPrint listonly
+  DetailPrint ""
+  SetDetailsPrint both
+  DetailPrint "$(PFI_LANG_MB_UNPACKFAIL)"
+  SetDetailsPrint listonly
+  DetailPrint ""
+  MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_MB_UNPACKFAIL)"
+
+  ; Enable the "Show Details" button now that we have stopped downloading files
+
+  EnableWindow ${L_DLG_ITEM} 1
+
+installer_error_exit:
+  Push $R1    ; No need to preserve $R0 here as it is known as ${L_RESULT} in this 'Section'
+
+  ; The first system call gets the full pathname (returned in $R0) and the second call
+  ; extracts the filename (and possibly the extension) part (returned in $R1)
+
+  System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024)'
+  System::Call 'comdlg32::GetFileTitleA(t R0, t .R1, i 1024)'
+  StrCpy $G_PLS_FIELD_1 $R1
+
+  !define C_NPLS_REPEATMECAB  "Unable to install the MeCab files!${MB_NL}${MB_NL}To try again later, run the command${MB_NL}${MB_NL}$G_PLS_FIELD_1"
+
+  MessageBox MB_OK|MB_ICONEXCLAMATION "${C_NPLS_REPEATMECAB}"
+
+  Pop $R1
+  Goto exit
+
+check_bs_file:
+
+  ; 'untgz' versions earlier than 1.0.6 (released 28 November 2004) are unable to extract
+  ; empty files so this script creates the empty 'MeCab.bs' file if necessary
+
+  IfFileExists "$G_PLS_FIELD_1\MeCab.bs" unpack_dictionaries
+  File "/oname=$G_PLS_FIELD_1\MeCab.bs" "zerobyte.file"
+
+unpack_dictionaries:
+  DetailPrint ""
+  ZipDLL::extractall "$PLUGINSDIR\mecab-ipadic.zip" "$G_ROOTDIR"
+  Pop ${L_RESULT}
+  DetailPrint ""
+  DetailPrint "Unzip result = ${L_RESULT}"
+
+  ; Add the Environment Variable for MeCab
+
+  Push "MECABRC"
+  Push "$G_ROOTDIR\mecab\etc\mecabrc"
+
+  StrCmp $G_WINUSERTYPE "Admin" all_users_1
+  Call PFI_WriteEnvStr
+  Goto set_env
+
+all_users_1:
+  Call PFI_WriteEnvStrNTAU
+
+set_env:
+  IfRebootFlag set_vars_now
+
+  ; Running on a non-Win9x system which already has the correct MeCab environment data
+  ; or running on a non-Win9x system
+
+  Call PFI_IsNT
+  Pop ${L_RESERVED}
+  StrCmp ${L_RESERVED} "0" update_minPerl
+
+  ; Running on a non-Win9x system so we ensure the MeCab environment variable
+  ; is updated to match this installation
+
+set_vars_now:
+  System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
+                i("MECABRC", "$G_ROOTDIR\mecab\etc\mecabrc").r0'
+  StrCmp ${L_RESERVED} 0 0 update_minPerl
+  MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (MECABRC)"
+
+update_minPerl:
+
+  ;--------------------------------------------------------------------------
+  ; Install additional Perl modules: base.pm, bytes.pm and the Encode collection
+  ;--------------------------------------------------------------------------
+
+  SetOutPath "$G_MPLIBDIR"
+  File "${C_PERL_DIR}\lib\base.pm"
+  File "${C_PERL_DIR}\lib\bytes.pm"
+  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
+  File "${C_PERL_DIR}\lib\Encode.pm"
+
+  SetOutPath "$G_MPLIBDIR\Encode"
+  File /r "${C_PERL_DIR}\lib\Encode\*"
+
+  SetOutPath "$G_MPLIBDIR\auto\Encode"
+  File /r "${C_PERL_DIR}\lib\auto\Encode\*"
+
+  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser" "$G_PARSER"
+
+exit:
+  SetDetailsPrint textonly
+  DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
+  SetDetailsPrint listonly
+
+  Pop ${L_LISTSIZE}
+  Pop ${L_DLG_ITEM}
+  Pop ${L_RESULT}
+  Pop ${L_RESERVED}
+
+  !undef L_RESERVED
+
+  !undef L_RESULT
+
+  !undef L_DLG_ITEM
+  !undef L_LISTSIZE
+
+skip_section:
+  !insertmacro SECTIONLOG_EXIT "MeCab"
+
+SectionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: GetMeCabFile
+#
+# Inputs:
+#         (top of stack)     - full URL used to download the MeCab file
+# Outputs:
+#         (top of stack)     - status returned by the download plugin
+#--------------------------------------------------------------------------
+
+  !define C_NSISDL_TRANSLATIONS "/TRANSLATE '$(PFI_LANG_NSISDL_DOWNLOADING)' '$(PFI_LANG_NSISDL_CONNECTING)' '$(PFI_LANG_NSISDL_SECOND)' '$(PFI_LANG_NSISDL_MINUTE)' '$(PFI_LANG_NSISDL_HOUR)' '$(PFI_LANG_NSISDL_PLURAL)' '$(PFI_LANG_NSISDL_PROGRESS)' '$(PFI_LANG_NSISDL_REMAINING)'"
+
+Function GetMeCabFile
+
+  Pop $G_MECAB_FILEURL
+
+  StrCpy $G_PLS_FIELD_1 $G_MECAB_FILEURL
+  Push $G_PLS_FIELD_1
+  Call PFI_StrBackSlash
+  Call PFI_GetParent
+  Pop $G_PLS_FIELD_2
+  StrLen $G_PLS_FIELD_2 $G_PLS_FIELD_2
+  IntOp $G_PLS_FIELD_2 $G_PLS_FIELD_2 + 1
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1" "" $G_PLS_FIELD_2
+  StrCpy $G_PLS_FIELD_2 "$G_MECAB_FILEURL" $G_PLS_FIELD_2
+  DetailPrint ""
+  DetailPrint "$(PFI_LANG_PROG_STARTDOWNLOAD)"
+
+  !define C_NPLS_CHECKINTERNET  "The MeCab files will be downloaded from the Internet.${MB_NL}${MB_NL}Your Internet connection seems to be down or disabled.${MB_NL}${MB_NL}Please reconnect and click Retry to resume installation"
+
+  inetc::get /CAPTION "Internet Download" /RESUME "${C_NPLS_CHECKINTERNET}" ${C_NSISDL_TRANSLATIONS} "$G_MECAB_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1" /END
+  Pop $G_PLS_FIELD_2
+
+  StrCmp $G_PLS_FIELD_2 "OK" file_received
+  SetDetailsPrint both
+  DetailPrint "$(PFI_LANG_MB_NSISDLFAIL_1)"
+  SetDetailsPrint listonly
+  DetailPrint "$(PFI_LANG_MB_NSISDLFAIL_2)"
+  MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_NSISDLFAIL_1)${MB_NL}$(PFI_LANG_MB_NSISDLFAIL_2)"
+  SetDetailsPrint listonly
+  DetailPrint ""
+
+file_received:
+  Push $G_PLS_FIELD_2
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Section: (optional) Internal component (one of the three Nihongo parsers supported)
+#
+# Although the COMPONENTS page will show a 'Nihongo Parser' component when the installer
+# language is set to 'Nihongo', the individual parser components are never shown there.
+#--------------------------------------------------------------------------
+
+Section "-Internal" SecInternalParser
+
+  !insertmacro SECTIONLOG_ENTER "Internal Parser"
+
+  StrCmp $G_PARSER "internal" 0 skip_section
+
+  SetDetailsPrint textonly
+  DetailPrint "Internal parser selected during installation"
+  SetDetailsPrint listonly
+
+  ;--------------------------------------------------------------------------
+  ; Install Perl modules: base.pm, bytes.pm and the Encode collection
+  ;--------------------------------------------------------------------------
+
+  SetOutPath "$G_MPLIBDIR"
+  File "${C_PERL_DIR}\lib\base.pm"
+  File "${C_PERL_DIR}\lib\bytes.pm"
+  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
+  File "${C_PERL_DIR}\lib\Encode.pm"
+
+  SetOutPath "$G_MPLIBDIR\Encode"
+  File /r "${C_PERL_DIR}\lib\Encode\*"
+
+  SetOutPath "$G_MPLIBDIR\auto\Encode"
+  File /r "${C_PERL_DIR}\lib\auto\Encode\*"
+
+  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser" "$G_PARSER"
+
+  SetDetailsPrint textonly
+  DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
+  SetDetailsPrint listonly
+
+skip_section:
+  !insertmacro SECTIONLOG_EXIT "Internal Parser"
+
+SectionEnd
 
 SubSection /e "Optional modules" SubSecOptional
 
@@ -1507,16 +1849,30 @@ save_log:
 SectionEnd
 
 #--------------------------------------------------------------------------
+# The strings used in connection with the installation of the "Nihongo Parser"
+# are only provided in two languages: Japanese (for the normal multi-language
+# build of the installer) and English (for the special "English-only" build).
+# Therefore the necessary strings are simply defined as constants in separate
+# files, only one of which is included at build time (instead of putting the
+# strings in the *-pfi.nsh files used for all of the other translated text).
+#--------------------------------------------------------------------------
+
+  !ifdef ENGLISH_MODE
+      !include "languages\English-parser.nsh"
+  !else
+      !include "languages\Japanese-parser.nsh"
+#      !include "languages\English-parser.nsh"
+  !endif
+
+#--------------------------------------------------------------------------
 # Component-selection page descriptions
-#
-# There is no need to provide any translations for the 'SecKakasi' description
-# because it is only visible when the installer is built in ENGLISH_MODE.
 #--------------------------------------------------------------------------
 
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecPOPFile}     $(DESC_SecPOPFile)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSkins}       $(DESC_SecSkins)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecLangs}       $(DESC_SecLangs)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecParser}      "${C_NPLS_DESC_SecParser}"
     !insertmacro MUI_DESCRIPTION_TEXT ${SubSecOptional} $(DESC_SubSecOptional)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecNNTP}        $(DESC_SecNNTP)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSMTP}        $(DESC_SecSMTP)
@@ -1524,35 +1880,61 @@ SectionEnd
     !insertmacro MUI_DESCRIPTION_TEXT ${SecIMAP}        $(DESC_SecIMAP)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSOCKS}       $(DESC_SecSOCKS)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSSL}         $(DESC_SecSSL)
-    !ifndef NO_KAKASI
-      !insertmacro MUI_DESCRIPTION_TEXT ${SecKakasi} "Kakasi (used to process Japanese email)"
-    !endif
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
-!ifndef NO_KAKASI
-    #--------------------------------------------------------------------------
-    # Installer Function: HandleKakasi
-    #
-    # This function ensures that when 'Japanese' has been selected as the language
-    # for the installer, the 'Kakasi' section is invisibly selected for installation
-    # (if any other language is selected, we do not select the invisible 'Kakasi' section).
-    #
-    # If the installer is built in ENGLISH_MODE then the 'Kakasi' section will be visible
-    # to allow it to be selected if it is required.
-    #--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Installer Function: ShowOrHideNihongoParser
+#
+# (called by 'PFIGUIInit', our custom '.onGUIInit' function)
+#
+# This function ensures that when 'Nihongo' (Japanese) has been selected as the
+# language for the installer, 'Nihongo Parser' appears in the list of components.
+#
+# If any other language is selected, this component is hidden from view and the
+# three parser sections are disabled (i.e. unselected so nothing gets installed).
+#
+# The default parser is 'Kakasi', as used by POPFile 0.22.5 and earlier releases,
+# and this default is set up here, including the initial state of the three
+# radio buttons used on the "Choose Parser" custom page.
+#
+# Note that the 'Nihongo Parser' section is _always_ executed, even if the user
+# does not select the 'Nihongo' language.
+#--------------------------------------------------------------------------
 
-    Function HandleKakasi
+Function ShowOrHideNihongoParser
 
+  !ifndef ENGLISH_MODE
+
+      StrCmp $LANGUAGE ${LANG_JAPANESE} select_default_parser
+
+      ; The user has not selected 'Nihongo' language for this installation so there
+      ; is no need to install a Nihongo parser. Make the 'Nihongo Parser' component
+      ; invisible and disable the three sections used to install the Nihongo parsers.
+
+      StrCpy $G_PARSER ""
+      SectionSetText ${SecParser} ""            ; this makes the component invisible
       !insertmacro UnselectSection ${SecKakasi}
+      Goto deselect_other_parsers
 
-      !ifndef ENGLISH_MODE
-            SectionSetText ${SecKakasi} ""            ; this makes the component invisible
-            StrCmp $LANGUAGE ${LANG_JAPANESE} 0 exit
-            !insertmacro SelectSection ${SecKakasi}
-          exit:
-      !endif
-    FunctionEnd
-!endif
+    select_default_parser:
+
+  !endif
+
+  StrCpy $G_PARSER "kakasi"
+  !insertmacro SelectSection ${SecKakasi}
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 1" "State" "1"
+
+  !ifndef ENGLISH_MODE
+    deselect_other_parsers:
+  !endif
+
+  !insertmacro UnselectSection ${SecMeCab}
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 2" "State" "0"
+
+  !insertmacro UnselectSection ${SecInternalParser}
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 3" "State" "0"
+
+FunctionEnd
 
 #--------------------------------------------------------------------------
 # Installer Function: CheckPerlRequirementsPage
@@ -1605,6 +1987,85 @@ exit:
 
   !undef L_TEMP
 
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: ChooseParser
+#
+# Unlike English and many other languages, Japanese text does not use spaces to separate
+# the words so POPFile has to use a parser in order to analyse the words in a Japanese
+# message. The 0.22.6 release of POPFile is the first to offer a choice of parser (previous
+# releases of POPFile always used the "Kakasi" parser).
+#
+# Three parsers are currently supported: Internal, Kakasi and MeCab. The installer contains
+# all of the files needed for the first two but the MeCab parser uses a large dictionary
+# (a 12 MB download) which will be downloaded during installation if MeCab is selected.
+#--------------------------------------------------------------------------
+
+Function ChooseParser
+
+  !ifndef ENGLISH_MODE
+
+      ; If 'Nihongo' (Japanese) has been selected then we need to let the user choose which parser to install
+
+      StrCmp $LANGUAGE ${LANG_JAPANESE} choose_parser
+      StrCpy $G_PARSER ""
+      Goto exit
+
+    choose_parser:
+
+  !endif
+
+  StrCmp $G_SSL_ONLY "1" exit    ; if we are only installing SSL support there is no need to display this page
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 1" "Text" "${C_NPLS_Option_Kakasi}"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 2" "Text" "${C_NPLS_Option_MeCab}"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 3" "Text" "${C_NPLS_Option_Internal}"
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 5" "Text" "${C_NPLS_Note}"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 6" "Text" "${C_NPLS_Link}"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 6" "State" "${C_NPLS_Link}"
+
+  Push '"${C_NPLS_DESC_Kakasi}"'
+  Call NSIS2IO
+  Pop $G_PLS_FIELD_1
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 4" "State" "$G_PLS_FIELD_1"
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 4" "Flags" "${C_NPLS_DESC_Flags}"
+
+  !insertmacro MUI_HEADER_TEXT "${C_NPLS_HEADER_ChooseParser}" "${C_NPLS_DESC_ChooseParser}"
+
+  !insertmacro MUI_INSTALLOPTIONS_DISPLAY "ioP.ini"
+
+  StrCmp $G_PARSER "kakasi"   enable_Kakasi
+  StrCmp $G_PARSER "mecab"    enable_MeCab
+  StrCmp $G_PARSER "internal" enable_Internal
+  MessageBox MB_OK|MB_ICONEXCLAMATION "Internal Error:\
+      ${MB_NL}${MB_NL}\
+      Unexpected $$G_PARSER value ('$G_PARSER')\
+      ${MB_NL}${MB_NL}\
+      Defaulting to 'Kakasi' parser"
+  StrCpy $G_PARSER "kakasi"
+  Goto enable_Kakasi
+
+enable_Internal:
+ !insertmacro UnselectSection ${SecKakasi}
+ !insertmacro UnselectSection ${SecMeCab}
+ !insertmacro SelectSection ${SecInternalParser}
+  Goto exit
+
+enable_Kakasi:
+ !insertmacro SelectSection ${SecKakasi}
+ !insertmacro UnselectSection ${SecMeCab}
+ !insertmacro UnselectSection ${SecInternalParser}
+  Goto exit
+
+enable_MeCab:
+ !insertmacro UnselectSection ${SecKakasi}
+ !insertmacro SelectSection ${SecMeCab}
+ !insertmacro UnselectSection ${SecInternalParser}
+
+exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
@@ -1688,13 +2149,21 @@ check_langs:
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_EXTRALANGS)"
 
 check_kakasi:
-  !ifndef NO_KAKASI
-      !insertmacro PFI_SectionNotSelected ${SecKakasi} end_basic
-      StrCpy ${L_TEMP} ""
-      StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_KAKASI)"
+  !insertmacro PFI_SectionNotSelected ${SecKakasi} check_mecab
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}${C_NPLS_SUMMARY_KAKASI}"
 
-    end_basic:
-  !endif
+check_mecab:
+  !insertmacro PFI_SectionNotSelected ${SecMeCab} check_internal
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}${C_NPLS_SUMMARY_MECAB}"
+
+check_internal:
+  !insertmacro PFI_SectionNotSelected ${SecInternalParser} end_basic
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}${C_NPLS_SUMMARY_INTERNAL}"
+
+end_basic:
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${L_TEMP}${IO_NL}${IO_NL}\
       $(PFI_LANG_SUMMARY_OPTIONLIST)"
 
@@ -1821,6 +2290,54 @@ no_banner:
 FunctionEnd
 
 #--------------------------------------------------------------------------
+# Installer Function: HandleParserSelection
+# (the "leave" function for the Nihongo Parser selection page)
+#
+# Used to handle user input on the Nihongo Parser selection page.
+#--------------------------------------------------------------------------
+
+Function HandleParserSelection
+
+  !define L_SELECTION   $R9
+
+  Push ${L_SELECTION}
+
+  !insertmacro MUI_INSTALLOPTIONS_READ ${L_SELECTION} "ioP.ini" "Settings" "State"
+
+  StrCmp ${L_SELECTION} 0 done    ; "Next" button clicked
+
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioP.ini" "Field 4" "HWND"
+  StrCmp ${L_SELECTION} 1 kakasi
+  StrCmp ${L_SELECTION} 2 mecab
+  StrCmp ${L_SELECTION} 3 internal
+  Goto return_to_page
+
+kakasi:
+  StrCpy $G_PARSER "kakasi"
+  SendMessage $G_DLGITEM ${WM_SETTEXT} 1 "STR:${C_NPLS_DESC_Kakasi}"
+  Goto return_to_page
+
+mecab:
+  StrCpy $G_PARSER "mecab"
+  SendMessage $G_DLGITEM ${WM_SETTEXT} 1 "STR:${C_NPLS_DESC_MeCab}"
+  Goto return_to_page
+
+internal:
+  StrCpy $G_PARSER "internal"
+  SendMessage $G_DLGITEM ${WM_SETTEXT} 1 "STR:${C_NPLS_DESC_Internal}"
+
+return_to_page:
+  Pop ${L_SELECTION}
+  Abort
+
+done:
+  Pop ${L_SELECTION}
+
+  !undef L_SELECTION
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
 # Installer Function: CheckSSLOnlyFlag
 # (the "pre" function for the COMPONENTS selection page)
 #
@@ -1836,9 +2353,9 @@ Function CheckSSLOnlyFlag
   !insertmacro UnselectSection ${SecMinPerl}
   !insertmacro UnselectSection ${SecSkins}
   !insertmacro UnselectSection ${SecLangs}
-  !ifndef NO_KAKASI
-    !insertmacro UnselectSection ${SecKakasi}
-  !endif
+  !insertmacro UnselectSection ${SecKakasi}
+  !insertmacro UnselectSection ${SecMeCab}
+  !insertmacro UnselectSection ${SecInternalParser}
   !insertmacro UnselectSection ${SecNNTP}
   !insertmacro UnselectSection ${SecSMTP}
   !insertmacro UnselectSection ${SecXMLRPC}
@@ -2205,47 +2722,93 @@ FunctionEnd
 #         Call NSIS2IO
 #         Pop $R0
 #
-#         ($R0 will now hold "C:\\Install\\Workshop\\restore"
-#          to make InstallOptions display "C:\Install\Workshop\restore"
-#          instead of "C:\Install\Workshop
-#          estore")
+#         $R0 will now hold "C:\\Install\\Workshop\\restore"
+#         to make InstallOptions display "C:\Install\Workshop\restore" on one line
+#         instead of using two lines to display the string like this:
+#             C:\Install\Workshop
+#             estore
 #
 #--------------------------------------------------------------------------
 
 Function NSIS2IO
-  Exch $0               ; The source
-  Push $1               ; The output
-  Push $2               ; Temporary char
-  StrCpy $1 ""          ; Initialise the output
+
+  !define L_STRING      $R0   ; the string to be converted
+  !define L_LENGTH      $R1   ; length of string
+  !define L_OFFSET      $R2   ; current character offset (offset 0 = first character)
+  !define L_CURRENT     $R3   ; current character(s) from string
+  !define L_CONVERTED   $R4   ; InstallOptions equivalent character-pair
+
+  Exch ${L_STRING}
+  Push ${L_LENGTH}
+  Push ${L_OFFSET}
+  Push ${L_CURRENT}
+  Push ${L_CONVERTED}
+
+  ; Get length of input string (use length so we can cope with MBCS strings;
+  ; the previous version of this function looped through the string until
+  ; a null byte ("") was found - this resulted in the truncation of some
+  ; MBCS strings)
+
+  StrLen ${L_LENGTH} ${L_STRING}
+
+  StrCpy ${L_OFFSET} -1
+
+  ; Loop until end of string is reached
 
 loop:
-  StrCpy $2 $0 1        ; Get the next source char
-  StrCmp $2 "" done     ; Abort when none left
-  StrCpy $0 $0 "" 1     ; Remove it from the source
-  StrCmp $2 "\" "" +3   ; Back-slash?
-  StrCpy $1 "$1\\"
+  IntOp ${L_OFFSET} ${L_OFFSET} + 1
+  IntCmp ${L_OFFSET} ${L_LENGTH} exit 0 exit
+
+  ; Get the next character from the string
+
+  StrCpy ${L_CURRENT} ${L_STRING} 1 ${L_OFFSET}
+
+  ; Check if this is one of the characters that needs to be converted
+
+  StrCmp ${L_CURRENT} "$\r" carriagereturn
+  StrCmp ${L_CURRENT} "$\n" linefeed
+  StrCmp ${L_CURRENT} "$\t" tab
+  StrCmp ${L_CURRENT} "\"   backslash
   Goto loop
 
-  StrCmp $2 "$\r" "" +3 ; Carriage return?
-  StrCpy $1 "$1\r"
+carriagereturn:
+  StrCpy ${L_CONVERTED} "\r"
+  Goto replace_char
+
+linefeed:
+  StrCpy ${L_CONVERTED} "\n"
+  Goto replace_char
+
+tab:
+  StrCpy ${L_CONVERTED} "\t"
+  Goto replace_char
+
+backslash:
+  StrCpy ${L_CONVERTED} "\\"
+
+replace_char:
+  StrCpy ${L_CURRENT} ${L_STRING} ${L_OFFSET}
+  IntOp ${L_OFFSET} ${L_OFFSET} + 1
+  StrCpy ${L_STRING} ${L_STRING} "" ${L_OFFSET}
+  StrCpy ${L_STRING} "${L_CURRENT}${L_CONVERTED}${L_STRING}"
+  IntOp ${L_LENGTH} ${L_LENGTH} + 1
   Goto loop
 
-  StrCmp $2 "$\n" "" +3 ; Line feed?
-  StrCpy $1 "$1\n"
-  Goto loop
+  ; Return "InstallOptions-safe" string
 
-  StrCmp $2 "$\t" "" +3 ; Tab?
-  StrCpy $1 "$1\t"
-  Goto loop
+exit:
+  Pop ${L_CONVERTED}
+  Pop ${L_CURRENT}
+  Pop ${L_OFFSET}
+  Pop ${L_LENGTH}
+  Exch ${L_STRING}
 
-  StrCpy $1 "$1$2"      ; Anything else
-  Goto loop
+  !undef L_STRING
+  !undef L_LENGTH
+  !undef L_OFFSET
+  !undef L_CURRENT
+  !undef L_CONVERTED
 
-done:
-  StrCpy $0 $1
-  Pop $2
-  Pop $1
-  Exch $0
 FunctionEnd
 
 #--------------------------------------------------------------------------

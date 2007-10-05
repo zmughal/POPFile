@@ -4,7 +4,7 @@
 #                     used by 'installer.nsi' when installing/uninstalling the
 #                     'Kakasi' package.
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -40,7 +40,7 @@
   !define MB_NL     "$\r$\n"
 !endif
 
-!ifndef ADDUSER & NO_KAKASI
+!ifndef ADDUSER
     #--------------------------------------------------------------------------
     # Installer Function: PFI_WriteEnv
     #
