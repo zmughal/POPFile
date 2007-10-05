@@ -58,7 +58,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.0"
+  !define C_PFI_LIBRARY_VERSION     "0.3.1"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -925,15 +925,18 @@
 
     Function PFI_StrStripLZS
 
-      !define L_CHAR      $R9
-      !define L_STRING    $R8
+      !define L_CHAR      $R9   ; current character
+      !define L_LIMIT     $R8   ; use string length (instead of a null) to detect end-of-string
+      !define L_STRING    $R7   ; the string to be processed
 
       Exch ${L_STRING}
       Push ${L_CHAR}
+      Push ${L_LIMIT}
 
     loop:
+      StrLen ${L_LIMIT} ${L_STRING}
+      StrCmp ${L_LIMIT} 0 done
       StrCpy ${L_CHAR} ${L_STRING} 1
-      StrCmp ${L_CHAR} "" done
       StrCmp ${L_CHAR} " " strip_char
       StrCmp ${L_CHAR} "0" strip_char
       Goto done
@@ -943,10 +946,12 @@
       Goto loop
 
     done:
+      Pop ${L_LIMIT}
       Pop ${L_CHAR}
       Exch ${L_STRING}
 
       !undef L_CHAR
+      !undef L_LIMIT
       !undef L_STRING
 
     FunctionEnd
@@ -4265,47 +4270,66 @@
 !macro PFI_StrCheckDecimal UN
   Function ${UN}PFI_StrCheckDecimal
 
-    !define DECIMAL_DIGIT    "0123456789"   ; accept only these digits
-    !define BAD_OFFSET       10             ; length of DECIMAL_DIGIT string
+    !define DECIMAL_DIGIT   "0123456789"   ; accept only these digits
+    !define BAD_OFFSET      10             ; length of DECIMAL_DIGIT string
 
-    Exch $0   ; The input string
-    Push $1   ; Holds the result: either "" (if input is invalid) or the input string (if valid)
-    Push $2   ; A character from the input string
-    Push $3   ; The offset to a character in the "validity check" string
-    Push $4   ; A character from the "validity check" string
-    Push $5   ; Holds the current "validity check" string
+    !define L_STRING        $0   ; The input string
+    !define L_RESULT        $1   ; Holds the result: either "" (if input is invalid) or the input string (if valid)
+    !define L_CURRENT       $2   ; A character from the input string
+    !define L_OFFSET        $3   ; The offset to a character in the "validity check" string
+    !define L_VALIDCHAR     $4   ; A character from the "validity check" string
+    !define L_VALIDLIST     $5   ; Holds the current "validity check" string
+    !define L_CHARSLEFT     $6   ; To cater for MBCS input strings, terminate when end of string reached, not when a null byte reached
 
-    StrCpy $1 ""
+    Exch ${L_STRING}
+    Push ${L_RESULT}
+    Push ${L_CURRENT}
+    Push ${L_OFFSET}
+    Push ${L_VALIDCHAR}
+    Push ${L_VALIDLIST}
+    Push ${L_CHARSLEFT}
+
+    StrCpy ${L_RESULT} ""
 
   next_input_char:
-    StrCpy $2 $0 1                ; Get the next character from the input string
-    StrCmp $2 "" done
-    StrCpy $5 ${DECIMAL_DIGIT}$2  ; Add it to end of "validity check" to guarantee a match
-    StrCpy $0 $0 "" 1
-    StrCpy $3 -1
+    StrLen ${L_CHARSLEFT} ${L_STRING}
+    StrCmp ${L_CHARSLEFT} 0 done
+    StrCpy ${L_CURRENT} ${L_STRING} 1                   ; Get the next character from the input string
+    StrCpy ${L_VALIDLIST} ${DECIMAL_DIGIT}${L_CURRENT}  ; Add it to end of "validity check" to guarantee a match
+    StrCpy ${L_STRING} ${L_STRING} "" 1
+    StrCpy ${L_OFFSET} -1
 
   next_valid_char:
-    IntOp $3 $3 + 1
-    StrCpy $4 $5 1 $3             ; Extract next "valid" character (from "validity check" string)
-    StrCmp $2 $4 0 next_valid_char
-    IntCmp $3 ${BAD_OFFSET} invalid 0 invalid  ; If match is with the char we added, input is bad
-    StrCpy $1 $1$4                ; Add "valid" character to the result
+    IntOp ${L_OFFSET} ${L_OFFSET} + 1
+    StrCpy ${L_VALIDCHAR} ${L_VALIDLIST} 1 ${L_OFFSET}    ; Extract next "valid" char (from "validity check" string)
+    StrCmp ${L_CURRENT} ${L_VALIDCHAR} 0 next_valid_char
+    IntCmp ${L_OFFSET} ${BAD_OFFSET} invalid 0 invalid    ; If match is with the char we added, input is bad
+    StrCpy ${L_RESULT} ${L_RESULT}${L_VALIDCHAR}          ; Add "valid" character to the result
     goto next_input_char
 
   invalid:
-    StrCpy $1 ""
+    StrCpy ${L_RESULT} ""
 
   done:
-    StrCpy $0 $1      ; Result is either a string of decimal digits or ""
-    Pop $5
-    Pop $4
-    Pop $3
-    Pop $2
-    Pop $1
-    Exch $0           ; place result on top of the stack
+    StrCpy ${L_STRING} ${L_RESULT}  ; Result is either a string of decimal digits or ""
+    Pop ${L_CHARSLEFT}
+    Pop ${L_VALIDLIST}
+    Pop ${L_VALIDCHAR}
+    Pop ${L_OFFSET}
+    Pop ${L_CURRENT}
+    Pop ${L_RESULT}
+    Exch ${L_STRING}                ; Place result on top of the stack
 
     !undef DECIMAL_DIGIT
     !undef BAD_OFFSET
+
+    !undef L_STRING
+    !undef L_RESULT
+    !undef L_CURRENT
+    !undef L_OFFSET
+    !undef L_VALIDCHAR
+    !undef L_VALIDLIST
+    !undef L_CHARSLEFT
 
   FunctionEnd
 !macroend
@@ -4363,34 +4387,67 @@
 !macro PFI_StrStr UN
   Function ${UN}PFI_StrStr
 
-    Exch $R1    ; Make $R1 the "needle", Top of stack = old$R1, haystack
-    Exch        ; Top of stack = haystack, old$R1
-    Exch $R2    ; Make $R2 the "haystack", Top of stack = old$R2, old$R1
+    !define L_NEEDLE            $R1   ; the string we are trying to match
+    !define L_HAYSTACK          $R2   ; the string in which we search for a match
+    !define L_NEEDLE_LENGTH     $R3
+    !define L_HAYSTACK_LIMIT    $R4
+    !define L_HAYSTACK_OFFSET   $R5   ; the first character has an offset of zero
+    !define L_SUBSTRING         $R6   ; a string that might match the 'needle' string
 
-    Push $R3    ; Length of the needle
-    Push $R4    ; Counter
-    Push $R5    ; Temp
+    Exch ${L_NEEDLE}
+    Exch
+    Exch ${L_HAYSTACK}
+    Push ${L_NEEDLE_LENGTH}
+    Push ${L_HAYSTACK_LIMIT}
+    Push ${L_HAYSTACK_OFFSET}
+    Push ${L_SUBSTRING}
 
-    StrLen $R3 $R1
-    StrCpy $R4 0
+    StrLen ${L_NEEDLE_LENGTH} ${L_NEEDLE}
+    StrLen ${L_HAYSTACK_LIMIT} ${L_HAYSTACK}
+
+    ; If 'needle' is longer than 'haystack' then return empty string
+    ; (to show 'needle' was not found in 'haystack')
+
+    IntCmp ${L_NEEDLE_LENGTH} ${L_HAYSTACK_LIMIT} 0 0 not_found
+
+    ; Adjust the search limit as there is no point in testing substrings
+    ; which are known to be shorter than the length of the 'needle' string
+
+    IntOp ${L_HAYSTACK_LIMIT} ${L_HAYSTACK_LIMIT} - ${L_NEEDLE_LENGTH}
+
+    ; The first character is at offset 0
+
+    StrCpy ${L_HAYSTACK_OFFSET} 0
 
   loop:
-    StrCpy $R5 $R2 $R3 $R4
-    StrCmp $R5 $R1 done
-    StrCmp $R5 "" done
-    IntOp $R4 $R4 + 1
-    Goto loop
+    StrCpy ${L_SUBSTRING} ${L_HAYSTACK} ${L_NEEDLE_LENGTH} ${L_HAYSTACK_OFFSET}
+    StrCmp ${L_SUBSTRING} ${L_NEEDLE} match_found
+    IntOp ${L_HAYSTACK_OFFSET} ${L_HAYSTACK_OFFSET} + 1
+    IntCmp ${L_HAYSTACK_OFFSET} ${L_HAYSTACK_LIMIT} loop loop 0
 
-  done:
-    StrCpy $R1 $R2 "" $R4
+  not_found:
+    StrCpy ${L_NEEDLE} ""
+    Goto exit
 
-    Pop $R5
-    Pop $R4
-    Pop $R3
+  match_found:
+    StrCpy ${L_NEEDLE} ${L_HAYSTACK} "" ${L_HAYSTACK_OFFSET}
 
-    Pop $R2
-    Exch $R1
-  FunctionEnd
+  exit:
+    Pop ${L_SUBSTRING}
+    Pop ${L_HAYSTACK_OFFSET}
+    Pop ${L_HAYSTACK_LIMIT}
+    Pop ${L_NEEDLE_LENGTH}
+    Pop ${L_HAYSTACK}
+    Exch ${L_NEEDLE}
+
+    !undef L_NEEDLE
+    !undef L_HAYSTACK
+    !undef L_NEEDLE_LENGTH
+    !undef L_HAYSTACK_LIMIT
+    !undef L_HAYSTACK_OFFSET
+    !undef L_SUBSTRING
+
+    FunctionEnd
 !macroend
 
 !ifndef DBSTATUS & IMAPUPDATER & MONITORCC & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
