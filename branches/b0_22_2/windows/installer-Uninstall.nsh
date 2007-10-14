@@ -49,6 +49,13 @@
 #                                                                                   #
 #####################################################################################
 
+#--------------------------------------------------------------------------
+# User Registers (Global)
+#--------------------------------------------------------------------------
+
+  ; This script uses 'User Variables' (with names starting with 'G_') to hold GLOBAL data.
+
+  Var G_UNINST_MODE        ; Uninstaller mode ("change" or "uninstall")
 
 #--------------------------------------------------------------------------
 # Initialise the uninstaller
@@ -99,10 +106,13 @@ continue:
 
   Call un.SetGlobalUserVariables
 
+  !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioP.ini"
+  !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioUM.ini"
+
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: un.OnUninstFailed               (required by UAC plugin)
+# Uninstaller Function: un.OnUninstFailed               (required by UAC plugin)
 #--------------------------------------------------------------------------
 
 Function un.OnUninstFailed
@@ -112,7 +122,7 @@ Function un.OnUninstFailed
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: un.OnUninstSuccess              (required by UAC plugin)
+# Uninstaller Function: un.OnUninstSuccess              (required by UAC plugin)
 #--------------------------------------------------------------------------
 
 Function un.OnUninstSuccess
@@ -122,7 +132,244 @@ Function un.OnUninstSuccess
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Uninstaller Sections (this build uses all of these and executes them in the order shown)
+# Uninstaller Function: un.PFIGUIInit
+# (custom un.onGUIInit function)
+#
+# Used to complete the initialization of the installer.
+# This code was moved from '.onInit' in order to permit the use of language-specific strings
+# (the selected language is not available inside the '.onInit' function)
+#--------------------------------------------------------------------------
+
+Function un.PFIGUIInit
+
+  !define L_RESERVED      $1    ; used in the system.dll call
+
+  !define L_OPTIONLIST    $R9
+  !define L_PARAMETER     $R8
+
+  Push ${L_RESERVED}
+  Push ${L_OPTIONLIST}
+  Push ${L_PARAMETER}
+
+  ; Ensure only one copy of this installer is running
+
+  System::Call 'kernel32::CreateMutexA(i 0, i 0, t "OnlyOnePFI_mutex") i .r1 ?e'
+  Pop ${L_RESERVED}
+  StrCmp ${L_RESERVED} 0 mutex_ok
+  MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_INSTALLER_MUTEX)"
+  Abort
+
+mutex_ok:
+
+  ; If 'Nihongo' (Japanese) language has been selected for the installer, ensure the
+  ; 'Nihongo Parser' entry is shown on the COMPONENTS page to confirm that a parser will
+  ; be installed. The "Nihongo Parser Selection" page appears immediately before the
+  ; COMPONENTS page.
+
+  Call un.ShowOrHideNihongoParser
+
+  ; If the mode option has been supplied on the command-line
+  ; preset the appropriate radiobutton, otherwise deselect both.
+  ;
+  ; The UAC plugin may modify the command-line so we need to
+  ; check for the option anywhere on the command-line (instead
+  ; of assuming the command-line is empty or only contains
+  ; the /MODIFY or /UNINSTALL option)
+
+  Call un.PFI_GetParameters
+  Pop ${L_OPTIONLIST}
+
+  Push ${L_OPTIONLIST}
+  Push "/UNINSTALL"
+  Call un.PFI_StrStr
+  Pop ${L_PARAMETER}
+  StrCmp ${L_PARAMETER} "" try_modify
+  StrCpy ${L_PARAMETER} ${L_PARAMETER} 11
+  StrCmp ${L_PARAMETER} "/UNINSTALL" uninstall_mode
+  StrCmp ${L_PARAMETER} "/UNINSTALL " uninstall_mode
+
+try_modify:
+  Push ${L_OPTIONLIST}
+  Push "/MODIFY"
+  Call un.PFI_StrStr
+  Pop ${L_PARAMETER}
+  StrCmp ${L_PARAMETER} "" undefined_mode
+  StrCpy ${L_PARAMETER} ${L_PARAMETER} 8
+  StrCmp ${L_PARAMETER} "/MODIFY" modify_mode
+  StrCmp ${L_PARAMETER} "/MODIFY " modify_mode
+
+undefined_mode:
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 1" "State" 0
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 2" "State" 0
+  Goto insert_lang_strings
+
+modify_mode:
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 1" "State" 1
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 2" "State" 0
+  Goto insert_lang_strings
+
+uninstall_mode:
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 1" "State" 0
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 2" "State" 1
+
+insert_lang_strings:
+
+  ; Insert appropriate language strings into the custom page's INI file
+
+  Call un.SelectMode_Init
+
+  Pop ${L_PARAMETER}
+  Pop ${L_OPTIONLIST}
+
+  Pop ${L_RESERVED}
+
+  !undef L_OPTIONLIST
+  !undef L_PARAMETER
+
+  !undef L_RESERVED
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.SelectMode_Init
+#
+# This function adds language texts to the INI file for the custom page used
+# to select the uninstaller mode (to make the custom page use the language
+# selected by the user for the installer)
+#--------------------------------------------------------------------------
+
+Function un.SelectMode_Init
+
+  ; Ensure custom page matches the selected language (left-to-right or right-to-left order)
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Settings" "RTL" "$(^RTL)"
+
+  ; Identify and describe the two radio buttons used to select the uninstaller mode
+
+  !insertmacro PFI_IO_TEXT "ioUM.ini" "1" "$(PFI_LANG_UN_IO_MODE_RADIO)"
+  !insertmacro PFI_IO_TEXT "ioUM.ini" "3" "$(PFI_LANG_UN_IO_MODE_LABEL)"
+
+  !insertmacro PFI_IO_TEXT "ioUM.ini" "2" "$(PFI_LANG_UN_IO_UNINST_RADIO)"
+  !insertmacro PFI_IO_TEXT "ioUM.ini" "4" "$(PFI_LANG_UN_IO_UNINST_LABEL)"
+
+FunctionEnd
+
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.SelectMode
+#
+# Starting with the 1.0.0 release the POPFile uninstaller offers two modes:
+# (1) Change the existing installation (add SSL Support, change the Nihongo parser)
+# (2) Uninstall the POPFile program
+#--------------------------------------------------------------------------
+
+Function un.SelectMode
+
+  !define L_RESULT  $R9
+
+  Push ${L_RESULT}
+
+  ; Ensure custom page matches the selected language (left-to-right or right-to-left order)
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Settings" "RTL" "$(^RTL)"
+
+  !insertmacro MUI_HEADER_TEXT "$(PFI_LANG_UN_MODE_TITLE)" "$(PFI_LANG_UN_MODE_SUBTITLE)"
+
+loop:
+  !insertmacro MUI_INSTALLOPTIONS_DISPLAY_RETURN "ioUM.ini"
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "success" check_selection
+  Abort
+
+check_selection:
+  !insertmacro MUI_INSTALLOPTIONS_READ "$G_UNINST_MODE " "ioUM.ini" "Field 1" "State"
+  StrCmp $G_UNINST_MODE 0 try_other_button
+  StrCpy $G_UNINST_MODE "change"
+  Goto exit
+
+try_other_button:
+  !insertmacro MUI_INSTALLOPTIONS_READ "$G_UNINST_MODE " "ioUM.ini" "Field 2" "State"
+  StrCmp $G_UNINST_MODE 0 loop
+  StrCpy $G_UNINST_MODE "uninstall"
+
+exit:
+  Pop ${L_RESULT}
+
+  !undef L_RESULT
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.ComponentsCheckModeFlag
+#
+# The "pre" function for the uninstaller's COMPONENTS page
+# which is only shown when modifying the existing installation
+#--------------------------------------------------------------------------
+
+Function un.ComponentsCheckModeFlag
+
+  StrCmp $G_UNINST_MODE "change" exit
+  StrCmp $G_UNINST_MODE "uninstall" skip_page
+  MessageBox MB_OK "Internal Error: unexpected mode ($G_UNINST_MODE)"
+
+skip_page:
+  Abort
+
+exit:
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.DirectoryCheckModeFlag
+#
+# The "pre" function for the uninstaller's DIRECTORY page
+# which is only shown when modifying the existing installation
+#--------------------------------------------------------------------------
+
+Function un.DirectoryCheckModeFlag
+
+  StrCmp $G_UNINST_MODE "change" exit
+  Abort
+
+exit:
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.UninstallCheckModeFlag
+#
+# The "pre" function for the uninstaller's confirmation page
+# which is only shown when uninstalling the POPFile program
+#--------------------------------------------------------------------------
+
+Function un.UninstallCheckModeFlag
+
+  StrCmp $G_UNINST_MODE "uninstall" exit
+  StrCmp $G_UNINST_MODE "change" skip_page
+  MessageBox MB_OK "Internal Error: unexpected mode ($G_UNINST_MODE)"
+
+skip_page:
+  Abort
+
+exit:
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Sections used to modify an existing installation (executed in the order shown)
+#
+#  (0) Custom Page (SelectMode) offering "Modify" or "Uninstall" options
+#
+#  (1) un.Uninstall Begin    - requests confirmation if appropriate
+#  (2) un.Shutdown POPFile   - shutdown POPFile if necessary (to avoid the need to reboot)
+#  (3) un.AddSSLSupport      - downloads and installs the SSL support files
+#  (4) un.Nihongo Parser     - offers a choice of 3 parsers (Kakasi, MeCab and internal)
+#  (5) un.Kakasi             - installs Kakasi package and creates its environment variables
+#  (6) un.MeCab              - downloads and installs MeCab package and its environment variables
+#  (7) un.Internal           - installs support for the internal parser
+#
+# Note: Only one of the three Nihongo parsers can be added at a time (re-run to add more)
+#--------------------------------------------------------------------------
+# Sections used to uninstall POPFile (executed in the order shown)
+#
+#  (0) Custom Page (SelectMode) offering "Modify" or "Uninstall" options
 #
 #  (1) un.Uninstall Begin    - requests confirmation if appropriate
 #  (2) un.Local User Data    - looks for and removes 'User Data' from the PROGRAM folder
@@ -132,10 +379,11 @@ FunctionEnd
 #  (6) un.Skins              - uninstall POPFile skins
 #  (7) un.Languages          - uninstall POPFile UI languages
 #  (8) un.QuickStart Guide   - uninstall POPFile English QuickStart Guide
-#  (9) un.Kakasi             - uninstall Kakasi package and remove its environment variables
-# (10) un.Minimal Perl       - uninstall minimal Perl, including all of the optional modules
-# (11) un.Registry Entries   - remove 'Add/Remove Program' data and other registry entries
-# (12) un.Uninstall End      - remove remaining files/folders (if it is safe to do so)
+#  (9) un.Remove Kakasi      - uninstall Kakasi package and remove its environment variables
+# (10) un.Remove MeCab       - uninstall MeCab package and remove its environment variables
+# (11) un.Minimal Perl       - uninstall minimal Perl, including all of the optional modules
+# (12) un.Registry Entries   - remove 'Add/Remove Program' data and other registry entries
+# (13) un.Uninstall End      - remove remaining files/folders (if it is safe to do so)
 #
 #--------------------------------------------------------------------------
 
@@ -143,7 +391,7 @@ FunctionEnd
 # Uninstaller Section: 'un.Uninstall Begin' (the first section in the uninstaller)
 #--------------------------------------------------------------------------
 
-Section "un.Uninstall Begin" UnSecBegin
+Section "-un.Uninstall Begin" UnSecBegin
 
   !define L_TEMP        $R9
 
@@ -169,7 +417,9 @@ SectionEnd
 # POPFile (to restore any email settings changed by the installer).
 #--------------------------------------------------------------------------
 
-Section "un.Local User Data" UnSecUserData
+Section "-un.Local User Data" UnSecUserData
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   !define L_RESULT    $R9
 
@@ -220,13 +470,14 @@ section_exit:
 
   !undef L_RESULT
 
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Shutdown POPFile'
 #--------------------------------------------------------------------------
 
-Section "un.Shutdown POPFile" UnSecShutdown
+Section "-un.Shutdown POPFile" UnSecShutdown
 
   !define L_TEMP        $R9
 
@@ -277,10 +528,53 @@ check_pfi_utils:
 SectionEnd
 
 #--------------------------------------------------------------------------
+# Uninstaller Section: 'un.SecSSL'
+#--------------------------------------------------------------------------
+
+  !insertmacro HANDLE_ADDING_SSL_SUPPORT
+
+#--------------------------------------------------------------------------
+# Uninstaller Section: 'un.Nihongo Parser'
+#--------------------------------------------------------------------------
+
+  !insertmacro SECTION_NIHONGO_PARSER "un."
+
+#--------------------------------------------------------------------------
+# Uninstaller Section: 'un.Kakasi'
+#--------------------------------------------------------------------------
+
+  !insertmacro SECTION_KAKASI "un."
+
+#--------------------------------------------------------------------------
+# Uninstaller Section: 'un.MeCab'
+#--------------------------------------------------------------------------
+
+  !insertmacro SECTION_MECAB "un."
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.GetMeCabFile
+#
+# Inputs:
+#         (top of stack)     - full URL used to download the MeCab file
+# Outputs:
+#         (top of stack)     - status returned by the download plugin
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_GETMECABFILE "un."
+
+#--------------------------------------------------------------------------
+# Uninstaller Section: 'un.Internal'
+#--------------------------------------------------------------------------
+
+  !insertmacro SECTION_INTERNALPARSER "un."
+
+#--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Start Menu Entries'
 #--------------------------------------------------------------------------
 
-Section "un.Start Menu Entries" UnSecStartMenu
+Section "-un.Start Menu Entries" UnSecStartMenu
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   !define L_TEMP  $R9
 
@@ -338,6 +632,7 @@ exit:
 
   !undef L_TEMP
 
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
@@ -349,7 +644,9 @@ SectionEnd
 # more of the early versions of POPFile.
 #--------------------------------------------------------------------------
 
-Section "un.POPFile Core" UnSecCore
+Section "-un.POPFile Core" UnSecCore
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_UN_PROG_CORE)"
@@ -437,13 +734,16 @@ continue:
   DetailPrint " "
   SetDetailsPrint listonly
 
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Skins'
 #--------------------------------------------------------------------------
 
-Section "un.Skins" UnSecSkins
+Section "-un.Skins" UnSecSkins
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_UN_PROG_SKINS)"
@@ -485,13 +785,16 @@ Section "un.Skins" UnSecSkins
   DetailPrint " "
   SetDetailsPrint listonly
 
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Languages'
 #--------------------------------------------------------------------------
 
-Section "un.Languages" UnSecLangs
+Section "-un.Languages" UnSecLangs
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   SetDetailsPrint textonly
   DetailPrint " "
@@ -504,13 +807,16 @@ Section "un.Languages" UnSecLangs
   DetailPrint " "
   SetDetailsPrint listonly
 
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.QuickStart Guide'
 #--------------------------------------------------------------------------
 
-Section "un.QuickStart Guide" UnSecQuickGuide
+Section "-un.QuickStart Guide" UnSecQuickGuide
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   SetDetailsPrint textonly
   DetailPrint " "
@@ -525,13 +831,16 @@ Section "un.QuickStart Guide" UnSecQuickGuide
   DetailPrint " "
   SetDetailsPrint listonly
 
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Kakasi'
 #--------------------------------------------------------------------------
 
-Section "un.Kakasi" UnSecKakasi
+Section "-un.Remove Kakasi" UnSecRemoveKakasi
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   !define L_TEMP        $R9
 
@@ -574,13 +883,16 @@ section_exit:
 
   !undef L_TEMP
 
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
-# Uninstaller Section: 'un.MeCab'
+# Uninstaller Section: 'un.RemoveMeCab'
 #--------------------------------------------------------------------------
 
-Section "un.MeCab" UnSecMeCab
+Section "-un.Remove MeCab" UnSecRemoveMeCab
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   !define L_TEMP        $R9
 
@@ -594,7 +906,7 @@ Section "un.MeCab" UnSecMeCab
 
   RMDir /r "$INSTDIR\mecab"
 
-  ;Delete Environment Variables
+  ; Delete Environment Variables
 
   Push "MECABRC"
   Call un.PFI_DeleteEnvStr
@@ -619,13 +931,16 @@ section_exit:
 
   !undef L_TEMP
 
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Minimal Perl'
 #--------------------------------------------------------------------------
 
-Section "un.Minimal Perl" UnSecMinPerl
+Section "-un.Minimal Perl" UnSecMinPerl
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_UN_PROG_PERL)"
@@ -683,13 +998,16 @@ skip_Encode:
   DetailPrint " "
   SetDetailsPrint listonly
 
+skip_Section:
 SectionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Registry Entries'
 #--------------------------------------------------------------------------
 
-Section "un.Registry Entries" UnSecRegistry
+Section "-un.Registry Entries" UnSecRegistry
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   !define L_REGDATA $R9
 
@@ -733,6 +1051,8 @@ section_exit:
   Pop ${L_REGDATA}
 
   !undef L_REGDATA
+
+skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
@@ -743,7 +1063,9 @@ SectionEnd
 # user to make another attempt at restoring the email settings.
 #--------------------------------------------------------------------------
 
-Section "un.Uninstall End" UnSecEnd
+Section "-un.Uninstall End" UnSecEnd
+
+  StrCmp $G_UNINST_MODE "change" skip_section
 
   Delete "$G_ROOTDIR\install.log.*"
   Delete "$G_ROOTDIR\install.log"
@@ -771,6 +1093,8 @@ Section "un.Uninstall End" UnSecEnd
 
 exit:
   SetDetailsPrint both
+
+skip_Section:
 SectionEnd
 
 #--------------------------------------------------------------------------
@@ -834,6 +1158,71 @@ get_usertype:
   StrCpy $G_WINUSERTYPE "Unknown"
 
 function_exit:
+FunctionEnd
+
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.ShowOrHideNihongoParser
+#
+# (called by 'un.PFIGUIInit', our custom 'un.onGUIInit' function)
+#
+# This function ensures that when 'Nihongo' (Japanese) has been selected as the
+# language for the installer, 'Nihongo Parser' appears in the list of components.
+#
+# If any other language is selected, this component is hidden from view and the
+# three parser sections are disabled (i.e. unselected so nothing gets installed).
+#
+# The default parser is 'Kakasi', as used by POPFile 0.22.5 and earlier releases,
+# and this default is set up here, including the initial state of the three
+# radio buttons used on the "Choose Parser" custom page.
+#
+# Note that the 'Nihongo Parser' section is _always_ executed, even if the user
+# does not select the 'Nihongo' language.
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_SHOW_OR_HIDE_NIHONGO_PARSER "un."
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: 'un.MakeDirectoryPageReadOnly'
+#
+# (the "pre" function for the uninstaller's DIRECTORY page)
+#--------------------------------------------------------------------------
+
+Function un.MakeDirectoryPageReadOnly
+
+  ; Make the DIRECTORY path read-only
+
+  FindWindow $G_DLGITEM "#32770" "" $HWNDPARENT
+  GetDlgItem $G_DLGITEM $G_DLGITEM "1019"
+  EnableWindow $G_DLGITEM 0
+
+  ; Disable the BROWSE button
+
+  FindWindow $G_DLGITEM "#32770" "" $HWNDPARENT
+  GetDlgItem $G_DLGITEM $G_DLGITEM "1001"
+  EnableWindow $G_DLGITEM 0
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: 'un.AdjustUninstHeaderText'
+#
+# (the "show" function for the uninstaller's INSTFILES page)
+#--------------------------------------------------------------------------
+
+Function un.AdjustUninstHeaderText
+
+  StrCmp $G_UNINST_MODE "uninstall" exit
+
+  ; Override the standard "Installing..." page header when we are MODIFYING the installation
+
+  GetDlgItem $G_DLGITEM $HWNDPARENT 1037  ; Header Title Text
+  SendMessage $G_DLGITEM ${WM_SETTEXT} 0 "STR:$(MUI_TEXT_INSTALLING_TITLE)"
+
+  GetDlgItem $G_DLGITEM $HWNDPARENT 1038  ; Header SubTitle Text
+  SendMessage $G_DLGITEM ${WM_SETTEXT} 0 "STR:$(PFI_LANG_UN_INST_SUBTITLE)"
+
+exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
@@ -969,6 +1358,30 @@ Function un.RequestManualShutdown
       $(PFI_LANG_MBMANSHUT_3)"
 
 FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.ChooseParser
+#
+# Unlike English and many other languages, Japanese text does not use spaces to separate
+# the words so POPFile has to use a parser in order to analyse the words in a Japanese
+# message. The 1.0.0 release of POPFile is the first to offer a choice of parser (previous
+# releases of POPFile always used the "Kakasi" parser).
+#
+# Three parsers are currently supported: Internal, Kakasi and MeCab. The installer contains
+# all of the files needed for the first two but the MeCab parser uses a large dictionary
+# (a 12 MB download) which will be downloaded during installation if MeCab is selected.
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_CHOOSEPARSER "un."
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.HandleParserSelection
+# (the "leave" function for the Nihongo Parser selection page)
+#
+# Used to handle user input on the Nihongo Parser selection page.
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_HANDLE_PARSER_SELECTION "un."
 
 #--------------------------------------------------------------------------
 # End of 'installer-Uninstall.nsh'

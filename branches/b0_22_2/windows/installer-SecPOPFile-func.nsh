@@ -36,9 +36,19 @@
 # The following functions are only used by the 'installer-SecPOPFile-body.nsh' file:
 #
 #     CheckHostsFile
-#     MakeRootDirSafe
 #     MinPerlRestructure
 #     SkinsRestructure
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# The following functions are used by the 'installer-SecPOPFile-body.nsh' file
+# and the 'getssl.nsh' file:
+#
+#     MakeRootDirSafe
+#     un.MakeRootDirSafe
+#
+# (this is a macro-based function, to ensure that the installer and uninstaller
+# use identical functions)
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
@@ -115,230 +125,6 @@ exit:
   !undef L_LOCALHOST
   !undef L_TEMP
 
-FunctionEnd
-
-#--------------------------------------------------------------------------
-# Installer Function: MakeRootDirSafe
-#
-# If we are installing on top of a previous installation, we try to shut it down
-# (to allow the files to be overwritten without requiring a reboot)
-#
-# We also need to check if any of the PFI utilities are running (to avoid Abort/Retry/Ignore
-# messages or the need to reboot in order to update them)
-#--------------------------------------------------------------------------
-
-Function MakeRootDirSafe
-
-  ; Use HKLM as a simple workaround for the case where installer is started by a non-admin user
-
-  Push $G_ROOTDIR
-
-  ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
-  StrCmp $G_ROOTDIR "" 0 check_folder_exists
-  MessageBox MB_OK|MB_ICONEXCLAMATION "Internal Error: UAC_RootDir not defined\
-      ${MB_NL}${MB_NL}\
-      Click OK to continue"
-  ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
-  StrCmp $G_ROOTDIR "" try_other_entries
-  MessageBox MB_OK|MB_ICONINFORMATION "Good News: UAC_RootDir now defined"
-  Goto check_folder_exists
-
-try_other_entries:    ; ???
-  ReadRegStr $G_ROOTDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
-  StrCmp $G_ROOTDIR "" 0 check_folder_exists
-  ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
-
-check_folder_exists:
-  DeleteRegValue HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
-
-  ; If we are upgrading an existing installation we need to ensure it is not running
-
-  IfFileExists "$G_ROOTDIR\*.exe" 0 nothing_to_check
-
-  !define L_CFG      $R9    ; file handle
-  !define L_EXE      $R8    ; name of EXE file to be monitored
-  !define L_LINE     $R7
-  !define L_NEW_GUI  $R6
-  !define L_OLD_GUI  $R5
-  !define L_PARAM    $R4
-  !define L_RESULT   $R3
-  !define L_TEXTEND  $R2    ; used to ensure correct handling of lines longer than 1023 chars
-
-  Push ${L_CFG}
-  Push ${L_EXE}
-  Push ${L_LINE}
-  Push ${L_NEW_GUI}
-  Push ${L_OLD_GUI}
-  Push ${L_PARAM}
-  Push ${L_RESULT}
-  Push ${L_TEXTEND}
-
-  ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
-  ; to allow POPFile to be run as a Windows service.
-
-  Push "POPFile"
-  Call PFI_ServiceRunning
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "true" manual_shutdown
-
-  ; If we are about to overwrite an existing version which is still running,
-  ; then one of the EXE files will be 'locked' which means we have to shutdown POPFile.
-  ;
-  ; POPFile v0.20.0 and later may be using 'popfileb.exe', 'popfilef.exe', 'popfileib.exe',
-  ; 'popfileif.exe', 'perl.exe' or 'wperl.exe'.
-  ;
-  ; Earlier versions of POPFile use only 'perl.exe' or 'wperl.exe'.
-
-  Push $G_ROOTDIR
-  Call PFI_FindLockedPFE
-  Pop ${L_EXE}
-  StrCmp ${L_EXE} "" check_pfi_utils
-
-  ; The program files we are about to update are in use so we need to shut POPFile down
-
-  DetailPrint "... it is locked."
-
-  ; Attempt to discover which POPFile UI port is used by the current user, so we can issue
-  ; a shutdown request. The following cases are considered:
-  ;
-  ; (a) upgrading a 0.21.0 or later installation and runpopfile.exe was used to start POPFile,
-  ;     so POPFile is using environment variables which match the HKCU RootDir_SFN and
-  ;     UserDir_SFN registry data (or HKCU RootDir_LFN and UserDir_LFN if short file names are
-  ;     not supported)
-  ;
-  ; (b) upgrading a pre-0.21.0 installation, so popfile.cfg is in the $G_ROOTDIR folder. Need to
-  ;     look for old-style and new-style UI port specifications just like the old installer did.
-
-  ReadRegStr ${L_CFG} HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
-  StrCmp ${L_CFG} "" try_root_dir
-  IfFileExists "${L_CFG}\popfile.cfg" check_cfg_file
-
-try_root_dir:
-  IfFileExists "$G_ROOTDIR\popfile.cfg" 0 manual_shutdown
-  StrCpy ${L_CFG} "$G_ROOTDIR"
-
-check_cfg_file:
-  StrCpy ${L_NEW_GUI} ""
-  StrCpy ${L_OLD_GUI} ""
-
-  ; See if we can get the current gui port from an existing configuration.
-  ; There may be more than one entry for this port in the file - use the last one found
-  ; (but give priority to any "html_port" entry).
-
-  FileOpen  ${L_CFG} "${L_CFG}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LINE}
-  StrCmp ${L_LINE} "" done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LINE} "$\n" loop
-
-  StrCpy ${L_PARAM} ${L_LINE} 10
-  StrCmp ${L_PARAM} "html_port " got_html_port
-
-  StrCpy ${L_PARAM} ${L_LINE} 8
-  StrCmp ${L_PARAM} "ui_port " got_ui_port
-  Goto check_eol
-
-got_ui_port:
-  StrCpy ${L_OLD_GUI} ${L_LINE} 5 8
-  Goto check_eol
-
-got_html_port:
-  StrCpy ${L_NEW_GUI} ${L_LINE} 5 10
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-done:
-  FileClose ${L_CFG}
-
-  Push ${L_NEW_GUI}
-  Call PFI_TrimNewlines
-  Pop ${L_NEW_GUI}
-
-  Push ${L_OLD_GUI}
-  Call PFI_TrimNewlines
-  Pop ${L_OLD_GUI}
-
-  StrCmp ${L_NEW_GUI} "" try_old_style
-  DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_NEW_GUI} [new style port]"
-  DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-  Push ${L_NEW_GUI}
-  Call PFI_ShutdownViaUI
-  Pop ${L_RESULT}
-  DetailPrint "PFI_ShutdownViaUI result: ${L_RESULT}"
-  StrCmp ${L_RESULT} "success" check_exe
-  StrCmp ${L_RESULT} "password?" manual_shutdown
-
-try_old_style:
-  StrCmp ${L_OLD_GUI} "" manual_shutdown
-  DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_OLD_GUI} [old style port]"
-  DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-  Push ${L_OLD_GUI}
-  Call PFI_ShutdownViaUI
-  Pop ${L_RESULT}
-  DetailPrint "PFI_ShutdownViaUI result: ${L_RESULT}"
-  StrCmp ${L_RESULT} "success" check_exe
-  Goto manual_shutdown
-
-check_exe:
-  DetailPrint "Waiting for '${L_EXE}' to unlock after NSISdl request..."
-  DetailPrint "Please be patient, this may take more than 30 seconds"
-  Push ${L_EXE}
-  Call PFI_WaitUntilUnlocked
-  DetailPrint "Checking if '${L_EXE}' is still locked after NSISdl request..."
-  Push "${C_EXE_END_MARKER}"
-  Push ${L_EXE}
-  Call PFI_CheckIfLocked
-  Pop ${L_EXE}
-  StrCmp ${L_EXE} "" unlocked_now
-
-manual_shutdown:
-  StrCpy $G_PLS_FIELD_1 "POPFile"
-  DetailPrint "Unable to shutdown $G_PLS_FIELD_1 automatically - manual intervention requested"
-  MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST "$(PFI_LANG_MBMANSHUT_1)\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBMANSHUT_2)\
-      ${MB_NL}${MB_NL}\
-      $(PFI_LANG_MBMANSHUT_3)"
-  Goto check_pfi_utils
-
-unlocked_now:
-  DetailPrint "File is now unlocked"
-
-check_pfi_utils:
-  Push $G_ROOTDIR
-  Call PFI_RequestPFIUtilsShutdown
-
-  Pop ${L_TEXTEND}
-  Pop ${L_RESULT}
-  Pop ${L_PARAM}
-  Pop ${L_OLD_GUI}
-  Pop ${L_NEW_GUI}
-  Pop ${L_LINE}
-  Pop ${L_EXE}
-  Pop ${L_CFG}
-
-  !undef L_CFG
-  !undef L_EXE
-  !undef L_LINE
-  !undef L_NEW_GUI
-  !undef L_OLD_GUI
-  !undef L_PARAM
-  !undef L_RESULT
-  !undef L_TEXTEND
-
-nothing_to_check:
-  Pop $G_ROOTDIR
 FunctionEnd
 
 #--------------------------------------------------------------------------
@@ -508,6 +294,240 @@ all_done_now:
 
 exit:
 FunctionEnd
+
+#--------------------------------------------------------------------------
+# Macro: Make_RootDir_Safe
+#
+# If we are installing on top of a previous installation or modifying an existing
+# installation, we try to shut it down (to allow the files to be overwritten without
+# requiring a reboot)
+#
+# We also need to check if any of the PFI utilities shipped with POPFile are running
+# (to avoid Abort/Retry/Ignore messages or the need to reboot in order to update them)
+#
+# This macro makes maintenance easier by ensuring that both processes use identical
+# functions, with the only difference being their names.
+#--------------------------------------------------------------------------
+
+!macro MAKE_ROOTDIR_SAFE UN
+  Function ${UN}MakeRootDirSafe
+
+    ; Use HKLM as a simple workaround for the case where installer is started by a non-admin user
+
+    Push $G_ROOTDIR
+
+    ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
+    StrCmp $G_ROOTDIR "" 0 check_folder_exists
+    MessageBox MB_OK|MB_ICONEXCLAMATION "Internal Error: UAC_RootDir not defined\
+        ${MB_NL}${MB_NL}\
+        Click OK to continue"
+    ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
+    StrCmp $G_ROOTDIR "" try_other_entries
+    MessageBox MB_OK|MB_ICONINFORMATION "Good News: UAC_RootDir now defined"
+    Goto check_folder_exists
+
+  try_other_entries:    ; ???
+    ReadRegStr $G_ROOTDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
+    StrCmp $G_ROOTDIR "" 0 check_folder_exists
+    ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
+
+  check_folder_exists:
+    DeleteRegValue HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
+
+    ; If we are upgrading an existing installation we need to ensure it is not running
+
+    IfFileExists "$G_ROOTDIR\*.exe" 0 nothing_to_check
+
+    !define L_CFG      $R9    ; file handle
+    !define L_EXE      $R8    ; name of EXE file to be monitored
+    !define L_LINE     $R7
+    !define L_NEW_GUI  $R6
+    !define L_OLD_GUI  $R5
+    !define L_PARAM    $R4
+    !define L_RESULT   $R3
+    !define L_TEXTEND  $R2    ; used to ensure correct handling of lines longer than 1023 chars
+
+    Push ${L_CFG}
+    Push ${L_EXE}
+    Push ${L_LINE}
+    Push ${L_NEW_GUI}
+    Push ${L_OLD_GUI}
+    Push ${L_PARAM}
+    Push ${L_RESULT}
+    Push ${L_TEXTEND}
+
+    ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
+    ; to allow POPFile to be run as a Windows service.
+
+    Push "POPFile"
+    Call ${UN}PFI_ServiceRunning
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "true" manual_shutdown
+
+    ; If we are about to overwrite an existing version which is still running,
+    ; then one of the EXE files will be 'locked' which means we have to shutdown POPFile.
+    ;
+    ; POPFile v0.20.0 and later may be using 'popfileb.exe', 'popfilef.exe', 'popfileib.exe',
+    ; 'popfileif.exe', 'perl.exe' or 'wperl.exe'.
+    ;
+    ; Earlier versions of POPFile use only 'perl.exe' or 'wperl.exe'.
+
+    Push $G_ROOTDIR
+    Call ${UN}PFI_FindLockedPFE
+    Pop ${L_EXE}
+    StrCmp ${L_EXE} "" check_pfi_utils
+
+    ; The program files we are about to update are in use so we need to shut POPFile down
+
+    DetailPrint "... oen of them is locked."
+
+    ; Attempt to discover which POPFile UI port is used by the current user, so we can issue
+    ; a shutdown request. The following cases are considered:
+    ;
+    ; (a) upgrading a 0.21.0 or later installation and runpopfile.exe was used to start POPFile,
+    ;     so POPFile is using environment variables which match the HKCU RootDir_SFN and
+    ;     UserDir_SFN registry data (or HKCU RootDir_LFN and UserDir_LFN if short file names are
+    ;     not supported)
+    ;
+    ; (b) upgrading a pre-0.21.0 installation, so popfile.cfg is in the $G_ROOTDIR folder. Need to
+    ;     look for old-style and new-style UI port specifications just like the old installer did.
+
+    ReadRegStr ${L_CFG} HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
+    StrCmp ${L_CFG} "" try_root_dir
+    IfFileExists "${L_CFG}\popfile.cfg" check_cfg_file
+
+  try_root_dir:
+    IfFileExists "$G_ROOTDIR\popfile.cfg" 0 manual_shutdown
+    StrCpy ${L_CFG} "$G_ROOTDIR"
+
+  check_cfg_file:
+    StrCpy ${L_NEW_GUI} ""
+    StrCpy ${L_OLD_GUI} ""
+
+    ; See if we can get the current gui port from an existing configuration.
+    ; There may be more than one entry for this port in the file - use the last one found
+    ; (but give priority to any "html_port" entry).
+
+    FileOpen  ${L_CFG} "${L_CFG}\popfile.cfg" r
+
+  found_eol:
+    StrCpy ${L_TEXTEND} "<eol>"
+
+  loop:
+    FileRead ${L_CFG} ${L_LINE}
+    StrCmp ${L_LINE} "" done
+    StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
+    StrCmp ${L_LINE} "$\n" loop
+
+    StrCpy ${L_PARAM} ${L_LINE} 10
+    StrCmp ${L_PARAM} "html_port " got_html_port
+
+    StrCpy ${L_PARAM} ${L_LINE} 8
+    StrCmp ${L_PARAM} "ui_port " got_ui_port
+    Goto check_eol
+
+  got_ui_port:
+    StrCpy ${L_OLD_GUI} ${L_LINE} 5 8
+    Goto check_eol
+
+  got_html_port:
+    StrCpy ${L_NEW_GUI} ${L_LINE} 5 10
+
+    ; Now read file until we get to end of the current line
+    ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
+
+  check_eol:
+    StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
+    StrCmp ${L_TEXTEND} "$\n" found_eol
+    StrCmp ${L_TEXTEND} "$\r" found_eol loop
+
+  done:
+    FileClose ${L_CFG}
+
+    Push ${L_NEW_GUI}
+    Call ${UN}PFI_TrimNewlines
+    Pop ${L_NEW_GUI}
+
+    Push ${L_OLD_GUI}
+    Call ${UN}PFI_TrimNewlines
+    Pop ${L_OLD_GUI}
+
+    StrCmp ${L_NEW_GUI} "" try_old_style
+    DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_NEW_GUI} [new style port]"
+    DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
+    Push ${L_NEW_GUI}
+    Call ${UN}PFI_ShutdownViaUI
+    Pop ${L_RESULT}
+    DetailPrint "PFI_ShutdownViaUI result: ${L_RESULT}"
+    StrCmp ${L_RESULT} "success" check_exe
+    StrCmp ${L_RESULT} "password?" manual_shutdown
+
+  try_old_style:
+    StrCmp ${L_OLD_GUI} "" manual_shutdown
+    DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_OLD_GUI} [old style port]"
+    DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
+    Push ${L_OLD_GUI}
+    Call ${UN}PFI_ShutdownViaUI
+    Pop ${L_RESULT}
+    DetailPrint "PFI_ShutdownViaUI result: ${L_RESULT}"
+    StrCmp ${L_RESULT} "success" check_exe
+    Goto manual_shutdown
+
+  check_exe:
+    DetailPrint "Waiting for '${L_EXE}' to unlock after NSISdl request..."
+    DetailPrint "Please be patient, this may take more than 30 seconds"
+    Push ${L_EXE}
+    Call ${UN}PFI_WaitUntilUnlocked
+    DetailPrint "Checking if '${L_EXE}' is still locked after NSISdl request..."
+    Push "${C_EXE_END_MARKER}"
+    Push ${L_EXE}
+    Call ${UN}PFI_CheckIfLocked
+    Pop ${L_EXE}
+    StrCmp ${L_EXE} "" unlocked_now
+
+  manual_shutdown:
+    StrCpy $G_PLS_FIELD_1 "POPFile"
+    DetailPrint "Unable to shutdown $G_PLS_FIELD_1 automatically - manual intervention requested"
+    MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST "$(PFI_LANG_MBMANSHUT_1)\
+        ${MB_NL}${MB_NL}\
+        $(PFI_LANG_MBMANSHUT_2)\
+        ${MB_NL}${MB_NL}\
+        $(PFI_LANG_MBMANSHUT_3)"
+    Goto check_pfi_utils
+
+  unlocked_now:
+    DetailPrint "File is now unlocked"
+
+  check_pfi_utils:
+    Push $G_ROOTDIR
+    Call ${UN}PFI_RequestPFIUtilsShutdown
+
+    Pop ${L_TEXTEND}
+    Pop ${L_RESULT}
+    Pop ${L_PARAM}
+    Pop ${L_OLD_GUI}
+    Pop ${L_NEW_GUI}
+    Pop ${L_LINE}
+    Pop ${L_EXE}
+    Pop ${L_CFG}
+
+    !undef L_CFG
+    !undef L_EXE
+    !undef L_LINE
+    !undef L_NEW_GUI
+    !undef L_OLD_GUI
+    !undef L_PARAM
+    !undef L_RESULT
+    !undef L_TEXTEND
+
+  nothing_to_check:
+    Pop $G_ROOTDIR
+  FunctionEnd
+!macroend
+
+  !insertmacro MAKE_ROOTDIR_SAFE ""
+
+  !insertmacro MAKE_ROOTDIR_SAFE "un."
 
 #--------------------------------------------------------------------------
 # End of 'installer-SecPOPFile-func.nsh'
