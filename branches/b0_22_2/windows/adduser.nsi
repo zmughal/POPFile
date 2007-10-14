@@ -2237,8 +2237,8 @@ FunctionEnd
 # libraries (POPFile cannot use SQLite3.x libraries yet). If upgrading an installation that
 # currently uses DBD::SQLite then change the configuration in popfile.cfg to use DBD::SQLite2.
 #
-# The 0.22.6 release introduced the ability to select the parser used to split Japanese text
-# into words. Previous releases only supported the 'Kakasi' parser but 0.22.6 offers a choice
+# The 1.0.0 release introduced the ability to select the parser used to split Japanese text
+# into words. Previous releases only supported the 'Kakasi' parser but 1.0.0 offers a choice
 # of 'Kakasi', 'MeCab' or 'Internal', controlled by the new 'bayes_nihongo_parser' parameter.
 # Valid values for this new popfile.cfg parameter are kakasi, mecab or internal.
 #--------------------------------------------------------------------------
@@ -2256,7 +2256,7 @@ Function CheckExistingConfigData
   !define L_LANG_OLD  $R1     ; old style UI lang parameter
   !define L_TEXTEND   $R0     ; used to ensure correct handling of lines longer than 1023 chars
   !define L_SKIN      $9      ; current skin setting
-  !define L_PARSER    $8      ; current Nihongo parser setting (introduced in 0.22.6 release)
+  !define L_PARSER    $8      ; current Nihongo parser setting (introduced in 1.0.0 release)
 
   Push ${L_CFG}
   Push ${L_CLEANCFG}
