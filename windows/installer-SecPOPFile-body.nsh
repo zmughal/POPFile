@@ -467,29 +467,35 @@ silent_shutdown:
 
   ; Create entry in the Control Panel's "Add/Remove Programs" list
 
-  StrCmp $G_WINUSERTYPE "Admin" use_HKLM
-
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "UninstallString" "$G_ROOTDIR\uninstall.exe"
+              "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "InstallLocation" "$G_ROOTDIR"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoModify" "1"
+              "NoModify" "0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "ModifyPath" '"$G_ROOTDIR\uninstall.exe" /MODIFY'
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoElevateOnModify" "1"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoRepair" "1"
-  Goto end_section
 
-use_HKLM:
+  StrCmp $G_WINUSERTYPE "Admin" 0 end_section
+
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "UninstallString" "$G_ROOTDIR\uninstall.exe"
+              "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "InstallLocation" "$G_ROOTDIR"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoModify" "1"
+              "NoModify" "0"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "ModifyPath" '"$G_ROOTDIR\uninstall.exe" /MODIFY'
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoElevateOnModify" "1"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoRepair" "1"
 
