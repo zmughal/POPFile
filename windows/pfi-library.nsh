@@ -58,7 +58,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.1"
+  !define C_PFI_LIBRARY_VERSION     "0.3.4"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -410,7 +410,6 @@
 # Functions used only during 'installation' (i.e. not used by any 'uninstall' operations):
 #
 #    Installer Function: PFI_GetIEVersion
-#    Installer Function: PFI_GetParameters
 #    Installer Function: PFI_GetRoot
 #    Installer Function: PFI_GetSeparator
 #    Installer Function: PFI_GetSFNStatus
@@ -521,66 +520,6 @@
 
       !undef L_REGDATA
       !undef L_TEMP
-
-    FunctionEnd
-!endif
-
-
-!ifndef BACKUP
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_GetParameters
-    #
-    # Returns the command-line parameters (if any) supplied when the installer was started
-    #
-    # Inputs:
-    #         none
-    # Outputs:
-    #         (top of stack)     - all of the parameters supplied on the command line (may be "")
-    #
-    # Usage:
-    #         Call PFI_GetParameters
-    #         Pop $R0
-    #
-    #         (if 'setup.exe /SSL' was used to start the installer, $R0 will hold '/SSL')
-    #
-    #--------------------------------------------------------------------------
-
-    Function PFI_GetParameters
-
-      Push $R0
-      Push $R1
-      Push $R2
-      Push $R3
-
-      StrCpy $R2 1
-      StrLen $R3 $CMDLINE
-
-      ; Check for quote or space
-
-      StrCpy $R0 $CMDLINE $R2
-      StrCmp $R0 '"' 0 +3
-      StrCpy $R1 '"'
-      Goto loop
-
-      StrCpy $R1 " "
-
-    loop:
-      IntOp $R2 $R2 + 1
-      StrCpy $R0 $CMDLINE 1 $R2
-      StrCmp $R0 $R1 get
-      StrCmp $R2 $R3 get
-      Goto loop
-
-    get:
-      IntOp $R2 $R2 + 1
-      StrCpy $R0 $CMDLINE 1 $R2
-      StrCmp $R0 " " get
-      StrCpy $R0 $CMDLINE "" $R2
-
-      Pop $R3
-      Pop $R2
-      Pop $R1
-      Exch $R0
 
     FunctionEnd
 !endif
@@ -1017,6 +956,10 @@
 #    Macro:                PFI_GetMessagesPath
 #    Installer Function:   PFI_GetMessagesPath
 #    Uninstaller Function: un.PFI_GetMessagesPath
+#
+#    Macro:                PFI_GetParameters
+#    Installer Function:   PFI_GetParameters
+#    Uninstaller Function: un.PFI_GetParameters
 #
 #    Macro:                PFI_GetParent
 #    Installer Function:   PFI_GetParent
@@ -2795,6 +2738,95 @@
 
 
 #--------------------------------------------------------------------------
+# Macro: PFI_GetParameters
+#
+# The installation process and the uninstall process may need a function which extracts
+# the parameters (if any) supplied on the command-line. This macro makes maintenance
+# easier by ensuring that both processes use identical functions, with the only difference
+# being their names.
+#
+# NOTE:
+# The !insertmacro PFI_GetParameters "" and !insertmacro PFI_GetParameters "un." commands are
+# included in this file so the NSIS script can use 'Call PFI_GetParameters' and
+# 'Call un.PFI_GetParameters' without additional preparation.
+#
+# Inputs:
+#         none
+#
+# Outputs:
+#         top of stack)     - all of the parameters supplied on the command line (may be "")
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Call PFI_GetParameters
+#         Pop $R0
+#
+#         (if 'setup.exe /SSL' was used to start the installer, $R0 will hold '/SSL')
+#--------------------------------------------------------------------------
+
+!macro PFI_GetParameters UN
+  Function ${UN}PFI_GetParameters
+
+      Push $R0
+      Push $R1
+      Push $R2
+      Push $R3
+
+      StrCpy $R2 1
+      StrLen $R3 $CMDLINE
+
+      ; Check for quote or space
+
+      StrCpy $R0 $CMDLINE $R2
+      StrCmp $R0 '"' 0 +3
+      StrCpy $R1 '"'
+      Goto loop
+
+      StrCpy $R1 " "
+
+    loop:
+      IntOp $R2 $R2 + 1
+      StrCpy $R0 $CMDLINE 1 $R2
+      StrCmp $R0 $R1 get
+      StrCmp $R2 $R3 get
+      Goto loop
+
+    get:
+      IntOp $R2 $R2 + 1
+      StrCpy $R0 $CMDLINE 1 $R2
+      StrCmp $R0 " " get
+      StrCpy $R0 $CMDLINE "" $R2
+
+      Pop $R3
+      Pop $R2
+      Pop $R1
+      Exch $R0
+
+    FunctionEnd
+!macroend
+
+!ifndef BACKUP
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_GetParameters
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_GetParameters ""
+!endif
+
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_GetParameters
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_GetParameters "un."
+!endif
+
+
+#--------------------------------------------------------------------------
 # Macro: PFI_GetParent
 #
 # The installation process and the uninstall process may both use a function which extracts the
@@ -4226,7 +4258,7 @@
     !insertmacro PFI_StrBackSlash ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_StrBackSlash
     #
@@ -4630,7 +4662,7 @@
     !insertmacro PFI_WaitUntilUnlocked ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_WaitUntilUnlocked
     #
