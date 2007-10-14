@@ -76,6 +76,18 @@
 !define C_NPLS_SUMMARY_MECAB       "日本語処理プログラム（「MeCab」がダウンロード・インストールされます）"
 !define C_NPLS_SUMMARY_INTERNAL    "日本語処理プログラム（「内蔵パーサ」が使用されます）"
 
+;-------------------------------------------------------------------------------------------
+; Standard MUI Page - INSTFILES (messages displayed when attempting to download the MeCab files)
+;-------------------------------------------------------------------------------------------
+
+; Message shown if internet connection does not appear to be working
+
+!define C_NPLS_CHECKINTERNET       "The MeCab files will be downloaded from the Internet.${MB_NL}${MB_NL}Your Internet connection seems to be down or disabled.${MB_NL}${MB_NL}Please reconnect and click Retry to resume installation"
+
+; Message shown if unable to download and install the MeCab files)
+
+!define C_NPLS_REPEATMECAB         "Unable to install the MeCab files!${MB_NL}${MB_NL}To try again later, run the command${MB_NL}${MB_NL}$G_PLS_FIELD_1${MB_NL}${MB_NL}or use 'Add/Remove Programs' entry for POPFile"
+
 #--------------------------------------------------------------------------
 # End of 'Japanese-parser.nsh'
 #--------------------------------------------------------------------------
