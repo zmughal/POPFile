@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2004-2006 John Graham-Cumming
+# Copyright (c) 2004-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -357,8 +357,58 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MINPERL_MBREMOLD     "Delete everything in old minimal Perl folder before installing the new version ?${MB_NL}${MB_NL}($G_PLS_FIELD_1)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; POPFile Installer: Custom Page - Select uninstaller mode [installer.nsi]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; Page Title and Sub-title displayed in the page header of the uninstaller's first page
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_TITLE        "Select POPFile uninstaller mode"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_SUBTITLE     "Modify or uninstall the installation in the $INSTDIR folder"
+
+; Text for the MODIFY mode radio-button and the label underneath it
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "Modify the existing POPFile installation"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(e.g. add SSL Support)"
+
+; Text for the UNINSTALL mode radio-button and the label underneath it
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_RADIO   "Uninstall the POPFile program"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_LABEL   "(remove all of the POPFile program files from the computer)"
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; POPFile Installer: Standard MUI Page - UNPAGE_DIRECTORY [installer.nsi]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; Page Title/Sub-Title shown in the page header
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TITLE         "Location of existing POPFile installation"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_SUBTITLE      "This is where the selected POPFile components will be installed"
+
+; Text explaining what this page shows
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "Setup will modify the POPFile installation in this folder by adding extra components to it. To change the component selection, click the Back button. $_CLICK"
+
+; Text shown above the box showing the folder where the extra components will be installed
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TEXT_DESTN    "Destination folder for the new POPFile components"
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_INSTFILES [installer.nsi]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; Page Sub-title displayed when MODIFYING the installation (one of the standard MUI strings is used for the Title)
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_SUBTITLE     "Please wait while $(^NameDA) is being updated"
+
+; Page Title and Sub-Title shown instead of the default "Uninstallation complete..." page header
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_TITLE     "Add/Remove operation complete"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_SUBTITLE  "Add/Remove operation was completed successfully."
+
+; Page Title and Sub-Title shown instead of the default "Uninstallation Aborted..." page header
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_TITLE    "Add/Remove operation aborted"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_SUBTITLE "Add/Remove operation was not completed successfully."
 
 ; Uninstall Progress Reports displayed above the progress bar
 
