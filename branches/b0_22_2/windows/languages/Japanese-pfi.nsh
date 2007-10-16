@@ -27,7 +27,7 @@
 #--------------------------------------------------------------------------
 #
 # Translation created by: Junya Ishihara (UTF-8: E79FB3 E58E9F E6B7B3 E4B99F) (jishiha at users.sourceforge.net)
-# Translation updated by: Junya Ishihara (UTF-8: E79FB3 E58E9F E6B7B3 E4B99F) (jishiha at users.sourceforge.net)
+# Translation updated by: Naoki IIMURA (UTF-8: E38184 E38184 E38280 E38289 E381AA E3818A E3818D) (amatubu at users.sourceforge.net)
 #
 #--------------------------------------------------------------------------
 # String Formatting (applies to PFI_LANG_*_MB* text used for message boxes):
@@ -169,7 +169,7 @@
 
 ; Installation Log Messages [installer.nsi, addssl.nsi]
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_SAVELOG         "Saving install log file..."
+!insertmacro PFI_LANG_STRING PFI_LANG_PROG_SAVELOG         "インストールログファイルを保存しています..."
 
 ; Message Box text strings [installer.nsi, adduser.nsi, pfi-library.nsh]
 
@@ -223,7 +223,7 @@
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MBRELNOTES_1         "POPFile のリリースノートを表示しますか？"
-!insertmacro PFI_LANG_STRING PFI_LANG_MBRELNOTES_2         "アップグレードの場合は「Yes」を推奨します。(アップグレードの前にバックアップを取ることを推奨します。)"
+!insertmacro PFI_LANG_STRING PFI_LANG_MBRELNOTES_2         "アップグレードの場合は「はい」を推奨します。(アップグレードの前にバックアップを取ることを推奨します。)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - WELCOME [installer.nsi]
@@ -354,7 +354,7 @@
 
 ; Message box used to get permission to delete the old minimal Perl before installing the new one
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MINPERL_MBREMOLD     "新しいバージョンをインストールする前に、以前の最小バージョンのPerlフォルダ以下の全てのファイルを削除してもよいですか?${MB_NL}${MB_NL}($G_PLS_FIELD_1)"
+!insertmacro PFI_LANG_STRING PFI_LANG_MINPERL_MBREMOLD     "新しいバージョンをインストールする前に、以前の最小バージョンの Perl フォルダ以下の全てのファイルを削除してもよいですか?${MB_NL}${MB_NL}($G_PLS_FIELD_1)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Custom Page - Select uninstaller mode [installer.nsi]
@@ -362,18 +362,18 @@
 
 ; Page Title and Sub-title displayed in the page header of the uninstaller's first page
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_TITLE        "Select POPFile uninstaller mode"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_SUBTITLE     "Modify or uninstall the installation in the $INSTDIR folder"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_TITLE        "POPFile アンインストーラの動作モードの選択"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_SUBTITLE     "$INSTDIR フォルダにインストールされている POPFile を変更もしくはアンインストールします"
 
 ; Text for the MODIFY mode radio-button and the label underneath it
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "Modify the existing POPFile installation"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(e.g. add SSL Support, change the Nihongo parser)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "すでにインストールされている POPFile の変更"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(例 : SSL サポートを追加したり日本語パーサを変更したりします)"
 
 ; Text for the UNINSTALL mode radio-button and the label underneath it
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_RADIO   "Uninstall the POPFile program"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_LABEL   "(remove all of the POPFile program files from the computer)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_RADIO   "POPFile プログラムのアンインストール"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_LABEL   "(コンピュータから POPFile プログラムをすべて削除します)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_DIRECTORY [installer.nsi]
@@ -381,16 +381,16 @@
 
 ; Page Title/Sub-Title shown in the page header
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TITLE         "Location of existing POPFile installation"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_SUBTITLE      "This is where the selected POPFile components will be installed"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TITLE         "すでに POPFile がインストールされている場所"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_SUBTITLE      "選択された POPFile コンポーネントがインストールされる場所です"
 
 ; Text explaining what this page shows
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "Setup will modify the POPFile installation in this folder by adding extra components to it. To change the component selection, click the Back button. $_CLICK"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "セットアップは追加コンポーネントをこのフォルダにインストールされている POPFile に追加します。コンポーネントを選択しなおす場合は、戻るボタンをクリックしてください。 $_CLICK"
 
 ; Text shown above the box showing the folder where the extra components will be installed
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TEXT_DESTN    "Destination folder for the new POPFile components"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TEXT_DESTN    "新しい POPFile コンポーネントのインストール先フォルダ"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_INSTFILES [installer.nsi]
@@ -398,17 +398,17 @@
 
 ; Page Sub-title displayed when MODIFYING the installation (one of the standard MUI strings is used for the Title)
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_SUBTITLE     "Please wait while $(^NameDA) is being updated"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_SUBTITLE     "$(^NameDA) がアップデートされるまでの間しばらくお待ちください"
 
 ; Page Title and Sub-Title shown instead of the default "Uninstallation complete..." page header
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_TITLE     "Add/Remove operation complete"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_SUBTITLE  "Add/Remove operation was completed successfully."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_TITLE     "追加／削除処理が完了しました"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_SUBTITLE  "追加／削除処理は正常に完了しました。"
 
 ; Page Title and Sub-Title shown instead of the default "Uninstallation Aborted..." page header
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_TITLE    "Add/Remove operation aborted"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_SUBTITLE "Add/Remove operation was not completed successfully."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_TITLE    "追加／削除処理は失敗しました"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_SUBTITLE "追加／削除処理は正常に完了しませんでした。"
 
 ; Uninstall Progress Reports displayed above the progress bar
 
@@ -424,7 +424,7 @@
 
 ; Message Box text strings
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "POPFile ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(残したいファイルがあれば No をクリックして下さい。)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "POPFile ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(残したいファイルがあれば いいえ をクリックして下さい。)"
 
 
 ###########################################################################
@@ -524,23 +524,23 @@
 ; Get SSL: Message Box strings used when installing SSL Support [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_CHECKINTERNET     "The SSL Support files will be downloaded from the Internet.${MB_NL}${MB_NL}Your Internet connection seems to be down or disabled.${MB_NL}${MB_NL}Please reconnect and click Retry to resume installation"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_CHECKINTERNET     "SSL 用のファイルはインターネットからダウンロードされます。${MB_NL}${MB_NL}インターネット接続がダウンしているか無効になっているようです。${MB_NL}${MB_NL}インストールを続けるには接続しなおしてから Retry をクリックしてください"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_1      "$G_PLS_FIELD_1 ファイルをダウンロードできませんでした。"
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_2      "(エラー: $G_PLS_FIELD_2)"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_UNPACKFAIL        "$G_PLS_FIELD_1 フォルダに対するインストール作業中にエラーが検出されました。"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "SSL用のファイルをインストールできませんでした。${MB_NL}${MB_NL}再度インストールを試みるには、後で次のコマンドを実行してください。${MB_NL}${MB_NL}$G_PLS_FIELD_1 /SSL"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "SSL 用のファイルをインストールできませんでした。${MB_NL}${MB_NL}再度インストールを試みるには、後で次のコマンドを実行してください。${MB_NL}${MB_NL}$G_PLS_FIELD_1 /SSL"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: Strings used when patching SSL.pm from IO::Socket::SSL [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_SSLPREPAREPATCH      "Downgrading SSL.pm to v0.97"
-!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHSTATUS       "SSL.pm patch status: $G_PLS_FIELD_2"
-!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHCOMPLETED    "SSL.pm file has been downgraded to v0.97"
-!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHFAILED       "SSL.pm file has not been downgraded to v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPREPAREPATCH      "SSL.pm を v0.97 にダウングレードしています"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHSTATUS       "SSL.pm パッチステータス: $G_PLS_FIELD_2"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHCOMPLETED    "SSL.pm ファイルは v0.97 にダウングレードされました"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHFAILED       "SSL.pm ファイルは v0.97 にダウングレードされませんでした"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: NSISdl strings (displayed by the plugin which downloads the SSL files) [getssl.nsh]
@@ -637,8 +637,8 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_A           "POPFile 'stopwords' は以前にインストールされたファイルです。"
 !insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_B           "アップデートしてもよろしいですか？"
-!insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_C           "アップデートするには「Yes」をクリックして下さい。(古いファイルは次の名前で保存されます: 'stopwords.bak')"
-!insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_D           "古いファイルを残すには「No」をクリックして下さい。(新しいファイルは次の名前で保存されます: 'stopwords.default')"
+!insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_C           "アップデートするには「はい」をクリックして下さい。(古いファイルは次の名前で保存されます: 'stopwords.bak')"
+!insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_D           "古いファイルを残すには「いいえ」をクリックして下さい。(新しいファイルは次の名前で保存されます: 'stopwords.default')"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MBCORPUS_1           "古い corpus をバックアップ中にエラーが見つかりました。"
 
@@ -771,7 +771,7 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBDONE_A         "$G_PLS_FIELD_1 個のバケツが POPFile 用に作成されました。"
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBDONE_B         "これらのバケツを使うよう POPFile を設定してもよろしいですか？"
-!insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBDONE_C         "バケツの選択を変更するには「No」をクリックして下さい。"
+!insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBDONE_C         "バケツの選択を変更するには「いいえ」をクリックして下さい。"
 
 ; TempTranslationNote: PFI_LANG_CBP_MBMAKERR_A = PFI_LANG_CBP_MBMAKERR_1 + " $G_PLS_FIELD_1 " + PFI_LANG_CBP_MBMAKERR_2 + " $G_PLS_FIELD_2 " + PFI_LANG_CBP_MBMAKERR_3
 ; TempTranslationNote: PFI_LANG_CBP_MBMAKERR_B = PFI_LANG_CBP_MBMAKERR_4
@@ -794,7 +794,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_TEXT_2    "重要: 自動的に設定変更できるメールクライアントについては、今すぐシャットダウンして下さい。${IO_NL}${IO_NL}この機能はまだ開発途中の機能です。(例えばいくつかの Outlook アカウントは検出されないかもしれません。)${IO_NL}メールクライアントを使用する前に設定変更がうまくいったかどうか確認して下さい。"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_CANCEL    "メールクライアントの設定変更はキャンセルされました。"
-!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_NOMATCHES "No suitable email clients found"
+!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_NOMATCHES "設定変更が可能なメールクライアントが見つかりませんでした"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Text used on buttons to skip configuration of email clients [adduser.nsi]
@@ -1007,10 +1007,10 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_1         "いくつかのメールクライアントの設定を元に戻すことができませんでした！"
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_2         "(詳細については $INSTDIR フォルダを参照してください。)"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_3         "'No' をクリックすればエラーを無視して全てを削除します。"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_4         "'Yes' をクリックすればデータは保存されます。(これは、後でまた再試行する時のためです。)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_3         "'いいえ' をクリックすればエラーを無視して全てを削除します。"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_4         "'はい' をクリックすればデータは保存されます。(これは、後でまた再試行する時のためです。)"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_2        "POPFile「ユーザーデータ」ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_USERDIR${MB_NL}${MB_NL}(残したいファイルがあれば No をクリックして下さい。)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_2        "POPFile「ユーザーデータ」ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_USERDIR${MB_NL}${MB_NL}(残したいファイルがあれば いいえ をクリックして下さい。)"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBDELMSGS_1       "'Recent Messages' ディレクトリ中の全てのファイルを削除しますか？"
 

@@ -82,11 +82,11 @@
 
 ; Message shown if internet connection does not appear to be working
 
-!define C_NPLS_CHECKINTERNET       "The MeCab files will be downloaded from the Internet.${MB_NL}${MB_NL}Your Internet connection seems to be down or disabled.${MB_NL}${MB_NL}Please reconnect and click Retry to resume installation"
+!define C_NPLS_CHECKINTERNET       "MeCab のファイルはインターネットからダウンロードされます。${MB_NL}${MB_NL}インターネット接続がダウンしているか無効になっているようです。${MB_NL}${MB_NL}インストールを続けるには接続しなおしてから Retry をクリックしてください"
 
 ; Message shown if unable to download and install the MeCab files)
 
-!define C_NPLS_REPEATMECAB         "Unable to install the MeCab files!${MB_NL}${MB_NL}To try again later, run the command${MB_NL}${MB_NL}$G_PLS_FIELD_1${MB_NL}${MB_NL}or use 'Add/Remove Programs' entry for POPFile"
+!define C_NPLS_REPEATMECAB         "MeCab のファイルをインストールできませんでした!${MB_NL}${MB_NL}再度インストールを試みるには、後で次のコマンド${MB_NL}${MB_NL}$G_PLS_FIELD_1${MB_NL}${MB_NL}を実行するか、「プログラムの追加と削除」の POPFile の項目を使用してください"
 
 #--------------------------------------------------------------------------
 # End of 'Japanese-parser.nsh'
