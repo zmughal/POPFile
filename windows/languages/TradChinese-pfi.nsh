@@ -420,6 +420,12 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "Do you want to remove all files in your POPFile directory?${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(If you have anything you created that you want to keep, click No)"
 
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; POPFile Installer: Standard MUI Page - UNPAGE_FINISH [installer.nsi]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TITLE      "Completing the $(^NameDA) Component Add/Remove Wizard"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TEXT       "Click Finish to close this wizard."
 
 ###########################################################################
 ###########################################################################
@@ -525,7 +531,7 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_UNPACKFAIL        "Error detected while installing files in $G_PLS_FIELD_1 folder"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "Unable to install the optional SSL files!${MB_NL}${MB_NL}To try again later, run the command${MB_NL}${MB_NL}$G_PLS_FIELD_1 /SSL"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "Unable to install the optional SSL files!${MB_NL}${MB_NL}To try again later use the 'Add/Remove Programs' entry${MB_NL}${MB_NL}for POPFile ${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}${C_POPFILE_RC}"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: Strings used when patching SSL.pm from IO::Socket::SSL [getssl.nsh]
