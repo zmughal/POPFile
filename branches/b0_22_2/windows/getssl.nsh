@@ -156,10 +156,10 @@
 # POPFile web site.
 #--------------------------------------------------------------------------
 
-  ; Temporarily use the "downloads" directory on the project's "new" server:
-  
-  !define C_PATCH_WEBSITE     "http://h1212143.stratoserver.net/downloads"
-  
+  ; Temporarily use the "anonymous" URL for the project's new server:
+
+  !define C_PATCH_WEBSITE     "http://h1212143.stratoserver.net/installer/ssl-patch"
+
 ;;  !define C_PATCH_WEBSITE     "http://getpopfile.org/ssl-patch"
 
   !ifdef INSTALLER
@@ -492,17 +492,8 @@
 
     !ifdef INSTALLER
       installer_error_exit:
-        Push $R1    ; No need to preserve $R0 here as it is known as ${L_RESULT} in this 'Section'
-
-        ; The first system call gets the full pathname (returned in $R0) and the second call
-        ; extracts the filename (and possibly the extension) part (returned in $R1)
-
-        System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024)'
-        System::Call 'comdlg32::GetFileTitleA(t R0, t .R1, i 1024)'
-        StrCpy $G_PLS_FIELD_1 $R1
+        StrCpy $G_PLS_FIELD_1 "(undefined)"
         MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_REPEATSSL)"
-
-        Pop $R1
         Goto exit
     !else
         Call PFI_GetDateTimeStamp
@@ -1295,7 +1286,7 @@
 
 
 #--------------------------------------------------------------------------
-# Code block to be used when installing POPFile (i.e. used in setup.exe)
+# Code block to be used when modifying POPFile (i.e. used in uninstaller.exe)
 #--------------------------------------------------------------------------
 
 !macro HANDLE_ADDING_SSL_SUPPORT
