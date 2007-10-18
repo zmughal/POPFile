@@ -86,7 +86,7 @@
 
 ; Message shown if unable to download and install the MeCab files)
 
-!define C_NPLS_REPEATMECAB         "Unable to install the MeCab files!${MB_NL}${MB_NL}To try again later, run the command${MB_NL}${MB_NL}$G_PLS_FIELD_1${MB_NL}${MB_NL}or use 'Add/Remove Programs' entry for POPFile"
+!define C_NPLS_REPEATMECAB         "Unable to install the MeCab files!${MB_NL}${MB_NL}To try again later use the 'Add/Remove Programs' entry${MB_NL}${MB_NL}for POPFile ${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}${C_POPFILE_RC}"
 
 #--------------------------------------------------------------------------
 # End of 'English-parser.nsh'
