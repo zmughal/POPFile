@@ -426,6 +426,13 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "Você quer remover todos os arquivos da sua pasta do POPFile ?${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(Se você tiver qualquer coisa que você criou e quer manter, clique Não)"
 
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; POPFile Installer: Standard MUI Page - UNPAGE_FINISH [installer.nsi]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TITLE      "Completing the $(^NameDA) Component Add/Remove Wizard"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TEXT       "Click Finish to close this wizard."
+
 ###########################################################################
 ###########################################################################
 
