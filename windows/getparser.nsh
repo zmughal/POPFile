@@ -97,13 +97,13 @@
 # are to big to include in the POPFile installer)
 #--------------------------------------------------------------------------
 
-  ; Temporarily use the "downloads" directory on the project's "new" server:
-  
-  !define C_NPD_MECAB_PERL    "http://h1212143.stratoserver.net/downloads/MeCab.tar.gz"
-  !define C_NPD_MECAB_DICT    "http://h1212143.stratoserver.net/downloads/mecab-ipadic.zip"
+  ; Temporarily use the "anonymous" URL of the project's new server:
 
-;;  !define C_NPD_MECAB_PERL    "http://getpopfile.org/parser/MeCab.tar.gz"
-;;  !define C_NPD_MECAB_DICT    "http://getpopfile.org/parser/mecab-ipadic.zip"
+  !define C_NPD_MECAB_PERL    "http://h1212143.stratoserver.net/installer/nihongo/mecab/MeCab.tar.gz"
+  !define C_NPD_MECAB_DICT    "http://h1212143.stratoserver.net/installer/nihongo/mecab/mecab-ipadic.zip"
+
+;;  !define C_NPD_MECAB_PERL    "http://getpopfile.org/installer/nihongo/mecab/MeCab.tar.gz"
+;;  !define C_NPD_MECAB_DICT    "http://getpopfile.org/installer/nihongo/mecab/mecab-ipadic.zip"
 
 #--------------------------------------------------------------------------
 # User Registers (Global)
@@ -178,6 +178,57 @@
 
 
 #--------------------------------------------------------------------------
+# Macro: NIHONGO_PERL_SUPPORT
+#
+# When processing 'Nihongo' (i.e. Japanese) text POPFile needs some Perl
+# packages which are not part of the basic minimal Perl. All three parsers
+# are assumed to have similar Perl requirements so we install more or less
+# the same extra Perl packages for each parser (hence this macro).
+#
+# In order to keep the size of the uninstaller down (and thus reduce the
+# overall size of the installer) we only install these extra Perl packages
+# when _installing_ POPFile. When the uninstaller is used to _change_ the
+# selected Nihongo parser an error message asking the user to re-run the
+# installer is shown if it looks like these extra Perl packages are missing
+# from the existing installation.
+#--------------------------------------------------------------------------
+
+!macro NIHONGO_PERL_SUPPORT PARSER
+
+    !if '${UN}' != 'un.'
+
+        ;--------------------------------------------------------------------------
+        ; Install Perl modules: base.pm, bytes.pm, the Encode collection and,
+        ; if relevant, Text::Kakasi (the requirement for bytes_heavy.pl was
+        ; added when the minimal Perl was updated to use ActivePerl 5.8.7)
+        ;--------------------------------------------------------------------------
+
+        SetOutPath "$G_MPLIBDIR"
+        File "${C_PERL_DIR}\lib\base.pm"
+        File "${C_PERL_DIR}\lib\bytes.pm"
+        File "${C_PERL_DIR}\lib\bytes_heavy.pl"
+        File "${C_PERL_DIR}\lib\Encode.pm"
+
+        SetOutPath "$G_MPLIBDIR\Encode"
+        File /r "${C_PERL_DIR}\lib\Encode\*"
+
+        SetOutPath "$G_MPLIBDIR\auto\Encode"
+        File /r "${C_PERL_DIR}\lib\auto\Encode\*"
+
+    !endif
+
+    !if '${PARSER}' == 'kakasi'
+        SetOutPath "$G_MPLIBDIR\Text"
+        File "${C_PERL_DIR}\site\lib\Text\Kakasi.pm"
+
+        SetOutPath "$G_MPLIBDIR\auto\Text\Kakasi"
+        File "${C_PERL_DIR}\site\lib\auto\Text\Kakasi\*"
+    !endif
+
+!macroend
+
+
+#--------------------------------------------------------------------------
 # Macro: SECTION_KAKASI
 #
 # The installation process and the uninstall process both need a section which
@@ -243,7 +294,7 @@
 
     Call ${UN}PFI_IsNT
     Pop ${L_RESERVED}
-    StrCmp ${L_RESERVED} "0" continue
+    StrCmp ${L_RESERVED} "0" update_minPerl
 
     ; Running on a non-Win9x system so we ensure the Kakasi environment variables
     ; are updated to match this installation
@@ -257,36 +308,20 @@
   itaiji_set_ok:
     System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
                   i("KANWADICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\kanwadict").r0'
-    StrCmp ${L_RESERVED} 0 0 continue
+    StrCmp ${L_RESERVED} 0 0 update_minPerl
     MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (KANWADICTPATH)"
 
-  continue:
-
-    ;--------------------------------------------------------------------------
-    ; Install Perl modules: base.pm, bytes.pm, the Encode collection and Text::Kakasi
-    ; (the requirement for bytes_heavy.pl was added when the minimal Perl was updated
-    ; to use ActivePerl 5.8.7 components)
-    ;--------------------------------------------------------------------------
-
-    SetOutPath "$G_MPLIBDIR"
-    File "${C_PERL_DIR}\lib\base.pm"
-    File "${C_PERL_DIR}\lib\bytes.pm"
-    File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-    File "${C_PERL_DIR}\lib\Encode.pm"
-
-    SetOutPath "$G_MPLIBDIR\Encode"
-    File /r "${C_PERL_DIR}\lib\Encode\*"
-
-    SetOutPath "$G_MPLIBDIR\auto\Encode"
-    File /r "${C_PERL_DIR}\lib\auto\Encode\*"
-
-    SetOutPath "$G_MPLIBDIR\Text"
-    File "${C_PERL_DIR}\site\lib\Text\Kakasi.pm"
-
-    SetOutPath "$G_MPLIBDIR\auto\Text\Kakasi"
-    File "${C_PERL_DIR}\site\lib\auto\Text\Kakasi\*"
+  update_minPerl:
+    !insertmacro NIHONGO_PERL_SUPPORT "kakasi"
 
     WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser" "$G_PARSER"
+    DetailPrint ""
+    DetailPrint "'NihongoParser' setting in registry (HKLM) updated to '$G_PARSER'"
+
+    SetDetailsPrint textonly
+    DetailPrint ""
+    DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
+    SetDetailsPrint listonly
 
     Pop ${L_RESERVED}
 
@@ -343,6 +378,13 @@
     Push ${L_RESULT}
     Push ${L_DLG_ITEM}
     Push ${L_LISTSIZE}
+
+    ; Install the necessary extra Perl packages required by the MeCab parser. If there is a
+    ; problem downloading or installing the MeCab parser then POPFile will automatically
+    ; use the internal parser instead. Since the internal parser requires the same set of
+    ; extra Perl packages, we install them now in order to keep the MeCab install code simple.
+
+    !insertmacro NIHONGO_PERL_SUPPORT "mecab"
 
     ; Unlike the NSISdl plugin shipped with NSIS, the Inetc plugin leaves the "Show Details"
     ; button in view so we temporarily disable it during the download to avoid a messy display
@@ -404,18 +446,8 @@
     EnableWindow ${L_DLG_ITEM} 1
 
   installer_error_exit:
-    Push $R1    ; No need to preserve $R0 here as it is known as ${L_RESULT} in this 'Section'
-
-    ; The first system call gets the full pathname (returned in $R0) and the second call
-    ; extracts the filename (and possibly the extension) part (returned in $R1)
-
-    System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024)'
-    System::Call 'comdlg32::GetFileTitleA(t R0, t .R1, i 1024)'
-    StrCpy $G_PLS_FIELD_1 $R1
-
+    StrCpy $G_PLS_FIELD_1 "(undefined)"
     MessageBox MB_OK|MB_ICONEXCLAMATION "${C_NPLS_REPEATMECAB}"
-
-    Pop $R1
     Goto exit
 
   check_bs_file:
@@ -453,7 +485,7 @@
 
     Call ${UN}PFI_IsNT
     Pop ${L_RESERVED}
-    StrCmp ${L_RESERVED} "0" update_minPerl
+    StrCmp ${L_RESERVED} "0" set_parser_in_registry
 
     ; Running on a non-Win9x system so we ensure the MeCab environment variable
     ; is updated to match this installation
@@ -461,31 +493,17 @@
   set_vars_now:
     System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
                   i("MECABRC", "$G_ROOTDIR\mecab\etc\mecabrc").r0'
-    StrCmp ${L_RESERVED} 0 0 update_minPerl
+    StrCmp ${L_RESERVED} 0 0 set_parser_in_registry
     MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (MECABRC)"
 
-  update_minPerl:
-
-    ;--------------------------------------------------------------------------
-    ; Install additional Perl modules: base.pm, bytes.pm and the Encode collection
-    ;--------------------------------------------------------------------------
-
-    SetOutPath "$G_MPLIBDIR"
-    File "${C_PERL_DIR}\lib\base.pm"
-    File "${C_PERL_DIR}\lib\bytes.pm"
-    File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-    File "${C_PERL_DIR}\lib\Encode.pm"
-
-    SetOutPath "$G_MPLIBDIR\Encode"
-    File /r "${C_PERL_DIR}\lib\Encode\*"
-
-    SetOutPath "$G_MPLIBDIR\auto\Encode"
-    File /r "${C_PERL_DIR}\lib\auto\Encode\*"
-
+  set_parser_in_registry:
     WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser" "$G_PARSER"
+    DetailPrint ""
+    DetailPrint "'NihongoParser' setting in registry (HKLM) updated to '$G_PARSER'"
 
   exit:
     SetDetailsPrint textonly
+    DetailPrint ""
     DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
     SetDetailsPrint listonly
 
@@ -532,32 +550,20 @@
     !endif
 
     !insertmacro SECTIONLOG_ENTER "Internal Parser"
-
     StrCmp $G_PARSER "internal" 0 do_nothing
 
     SetDetailsPrint textonly
-    DetailPrint "Internal parser selected during installation"
+    DetailPrint "Internal parser selected"
     SetDetailsPrint listonly
 
-    ;--------------------------------------------------------------------------
-    ; Install Perl modules: base.pm, bytes.pm and the Encode collection
-    ;--------------------------------------------------------------------------
-
-    SetOutPath "$G_MPLIBDIR"
-    File "${C_PERL_DIR}\lib\base.pm"
-    File "${C_PERL_DIR}\lib\bytes.pm"
-    File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-    File "${C_PERL_DIR}\lib\Encode.pm"
-
-    SetOutPath "$G_MPLIBDIR\Encode"
-    File /r "${C_PERL_DIR}\lib\Encode\*"
-
-    SetOutPath "$G_MPLIBDIR\auto\Encode"
-    File /r "${C_PERL_DIR}\lib\auto\Encode\*"
+    !insertmacro NIHONGO_PERL_SUPPORT "internal"
 
     WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser" "$G_PARSER"
+    DetailPrint ""
+    DetailPrint "'NihongoParser' setting in registry (HKLM) updated to '$G_PARSER'"
 
     SetDetailsPrint textonly
+    DetailPrint ""
     DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
     SetDetailsPrint listonly
 
@@ -669,15 +675,17 @@
 # If any other language is selected, this component is hidden from view and the
 # three parser sections are disabled (i.e. unselected so nothing gets installed).
 #
-# The default parser is 'Kakasi', as used by POPFile 0.22.5 and earlier releases,
-# and this default is set up here, including the initial state of the three
-# radio buttons used on the "Choose Parser" custom page.
+# For a clean installation the default parser is 'Kakasi', as used by POPFile
+# 0.22.5 and earlier releases. If, however, a previous Nihongo parser selection
+# is found in the registry it will be used as the default when initialising the
+# "Choose Nihongo Parser" page's radiobuttons.
 #
 # Note that the 'Nihongo Parser' section is _always_ executed, even if the user
 # does not select the 'Nihongo' language.
 #
 # Note also that when an English-only build of the installer or uninstaller is
-# used then 'Nihongo Parser' must appear in the COMPONENTS page.
+# used then 'Nihongo Parser' must appear in the COMPONENTS page otherwise there
+# would be no way to install a Nihongo parser.
 #
 # This macro makes maintenance easier by ensuring that both processes use identical
 # functions, with the only difference being their names.
@@ -686,30 +694,10 @@
 !macro FUNCTION_SHOW_OR_HIDE_NIHONGO_PARSER UN
   Function ${UN}ShowOrHideNihongoParser
 
-    !ifndef ENGLISH_MODE
+    ; Reset (clear) all parser selection data
 
-        StrCmp $LANGUAGE ${LANG_JAPANESE} select_default_parser
-
-        ; The user has not selected 'Nihongo' language for this installation so there
-        ; is no need to install a Nihongo parser. Make the 'Nihongo Parser' component
-        ; invisible and disable the three sections used to install the Nihongo parsers.
-
-        StrCpy $G_PARSER ""
-        SectionSetText ${${UN}SecParser} ""            ; this makes the component invisible
-        !insertmacro UnselectSection ${${UN}SecKakasi}
-        Goto deselect_other_parsers
-
-      select_default_parser:
-
-    !endif
-
-    StrCpy $G_PARSER "kakasi"
-    !insertmacro SelectSection ${${UN}SecKakasi}
-    !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 1" "State" "1"
-
-    !ifndef ENGLISH_MODE
-      deselect_other_parsers:
-    !endif
+    !insertmacro UnselectSection ${${UN}SecKakasi}
+    !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 1" "State" "0"
 
     !insertmacro UnselectSection ${${UN}SecMeCab}
     !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 2" "State" "0"
@@ -717,6 +705,38 @@
     !insertmacro UnselectSection ${${UN}SecInternalParser}
     !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 3" "State" "0"
 
+    !ifndef ENGLISH_MODE
+        StrCmp $LANGUAGE ${LANG_JAPANESE} select_default_parser
+        StrCpy $G_PARSER ""                            ; Do not install a Nihongo parser
+        SectionSetText ${${UN}SecParser} ""            ; This makes the component invisible
+        Goto exit
+
+      select_default_parser:
+    !endif
+
+    ; Use the most recently installed Nihongo parser as the default selection (if possible)
+
+    ReadRegStr $G_PARSER HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
+    StrCmp $G_PARSER "mecab" mecab
+    StrCmp $G_PARSER "internal" internal
+
+    ; Use 'Kakasi' as the default selection
+
+    StrCpy $G_PARSER "kakasi"
+    !insertmacro SelectSection ${${UN}SecKakasi}
+    !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 1" "State" "1"
+    Goto exit
+
+  mecab:
+    !insertmacro SelectSection ${${UN}SecMeCab}
+    !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 2" "State" "1"
+    Goto exit
+
+  internal:
+    !insertmacro SelectSection ${${UN}SecInternalParser}
+    !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 3" "State" "1"
+
+  exit:
   FunctionEnd
 !macroend
 
@@ -739,6 +759,9 @@
 
 !macro FUNCTION_CHOOSEPARSER UN
   Function ${UN}ChooseParser
+    !if '${UN}' == 'un.'
+      StrCmp $G_UNINST_MODE "uninstall" exit
+    !endif
 
     !ifndef ENGLISH_MODE
 
