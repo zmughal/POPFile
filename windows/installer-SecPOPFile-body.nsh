@@ -128,6 +128,8 @@ continue:
 
   ; If we are installing over a previous version, ensure that version is not running
 
+  DetailPrint "Use UAC plugin to call 'MakeRootDirSafe' function"
+
   GetFunctionAddress ${L_TEMP} MakeRootDirSafe
   UAC::ExecCodeSegment ${L_TEMP}
 
