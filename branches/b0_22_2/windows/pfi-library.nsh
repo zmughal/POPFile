@@ -58,7 +58,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.4"
+  !define C_PFI_LIBRARY_VERSION     "0.3.5"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1431,13 +1431,15 @@
     !insertmacro PFI_DumpLog ""
 !endif
 
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.PFI_DumpLog
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_DumpLog
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
 
-;!insertmacro PFI_DumpLog "un."
+    !insertmacro PFI_DumpLog "un."
+!endif
 
 
 #--------------------------------------------------------------------------
@@ -2377,7 +2379,7 @@
     !insertmacro PFI_GetDateTimeStamp ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_GetDateTimeStamp
     #
@@ -2574,7 +2576,7 @@
     !insertmacro PFI_GetLocalTime ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_GetLocalTime
     #
