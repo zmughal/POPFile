@@ -530,13 +530,17 @@
 
   !define MUI_WELCOMEFINISHPAGE_BITMAP        "special.bmp"
 
+  !define MUI_UNWELCOMEFINISHPAGE_BITMAP      "special.bmp"
+
   ;----------------------------------------------------------------
-  ;  Interface Settings - Installer FINISH Page Interface Settings
+  ;  Interface Settings - Installer/Uninstaller FINISH Page Interface Settings
   ;----------------------------------------------------------------
 
   ; Debug aid: Hide the installation log but let user display it (using "Show details" button)
 
   !define MUI_FINISHPAGE_NOAUTOCLOSE
+
+  !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
   ;----------------------------------------------------------------
   ;  Interface Settings - Abort Warning Settings
@@ -776,6 +780,24 @@
 
   !insertmacro MUI_UNPAGE_INSTFILES
 
+  ;---------------------------------------------------
+  ; Uninstaller Page - FINISH
+  ;---------------------------------------------------
+
+  ; Override the standard "Uninstall complete" text
+
+  !define MUI_FINISHPAGE_TITLE                    "$(PFI_LANG_UN_FINISH_TITLE)"
+  !define MUI_FINISHPAGE_TEXT                     "$(PFI_LANG_UN_FINISH_TEXT)"
+  !define MUI_FINISHPAGE_TITLE_3LINES
+
+  ; If we need a reboot then we might have been modifying the installation
+  ; so override the standard "reboot to complete the uninstall" text
+  ; (Quick fix: this is less confusing than having the wrong text on an uninstall)
+
+  !define MUI_FINISHPAGE_TEXT_REBOOT              "$(MUI_TEXT_FINISH_INFO_REBOOT)"
+
+  !insertmacro MUI_UNPAGE_FINISH
+
 #--------------------------------------------------------------------------
 # Language Support for the installer and uninstaller
 #--------------------------------------------------------------------------
@@ -809,7 +831,6 @@
       !include "languages\English-parser.nsh"
   !else
       !include "languages\Japanese-parser.nsh"
-#      !include "languages\English-parser.nsh"
   !endif
 
 #--------------------------------------------------------------------------
@@ -866,12 +887,14 @@
   ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
+  ReserveFile "${NSISDIR}\Plugins\UAC.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
   ReserveFile "${NSISDIR}\Plugins\ZipDLL.dll"
   ReserveFile "ioG.ini"
   ReserveFile "ioP.ini"
+  ReserveFile "ioUM.ini"
   ReserveFile "${C_RELEASE_NOTES}"
   ReserveFile "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
 ;  ReserveFile "SSL_pm.pat"     ; 0.22.5 does not need any SSL patches so there's no need for a built-in copy
