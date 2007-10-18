@@ -112,6 +112,69 @@ continue:
 FunctionEnd
 
 #--------------------------------------------------------------------------
+# Uninstaller Function: 'un.SetGlobalUserVariables'
+#
+# Used to initialise (or re-initialise) the following global variables:
+#
+# (1) $G_USERDIR      - full path to the folder containing the 'popfile.cfg' file
+# (2) $G_WINUSERNAME  - current Windows user login name
+# (3) $G_WINUSERTYPE  - user group ('Admin', 'Power', 'User', 'Guest' or 'Unknown')
+#
+# (this helps avoid problems when the uninstaller is started by a non-admin user)
+#--------------------------------------------------------------------------
+
+Function un.SetGlobalUserVariables
+
+  ; Starting with 0.21.0 the registry is used to store the location of the 'User Data'
+  ; (if setup.exe or adduser.exe was used to create/update the 'User Data' for this user)
+
+  ReadRegStr $G_USERDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
+  StrCmp $G_USERDIR "" 0 got_user_path
+
+  ; Pre-release versions of the 0.21.0 installer used a sub-folder for the default user data
+
+  StrCpy $G_USERDIR "$INSTDIR\user"
+
+  ; If we are uninstalling an upgraded installation, the default user data may be in $INSTDIR
+  ; instead of $INSTDIR\user
+
+  IfFileExists "$G_USERDIR\popfile.cfg" got_user_path
+  StrCpy $G_USERDIR   "$INSTDIR"
+
+got_user_path:
+
+  ; Email settings are stored on a 'per user' basis therefore we need to know which user is
+  ; running the uninstaller (e.g. so we can check ownership of any local 'User Data' we find)
+
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
+
+  ; Assume Win9x system, so user has 'Admin' rights
+  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
+
+  StrCpy $G_WINUSERNAME "UnknownUser"
+  StrCpy $G_WINUSERTYPE "Admin"
+  Goto function_exit
+
+got_name:
+  Pop $G_WINUSERNAME
+  StrCmp $G_WINUSERNAME "" 0 get_usertype
+  StrCpy $G_WINUSERNAME "UnknownUser"
+
+get_usertype:
+  UserInfo::GetAccountType
+  Pop $G_WINUSERTYPE
+  StrCmp $G_WINUSERTYPE "Admin" function_exit
+  StrCmp $G_WINUSERTYPE "Power" function_exit
+  StrCmp $G_WINUSERTYPE "User"  function_exit
+  StrCmp $G_WINUSERTYPE "Guest" function_exit
+  StrCpy $G_WINUSERTYPE "Unknown"
+
+function_exit:
+FunctionEnd
+
+#--------------------------------------------------------------------------
 # Uninstaller Function: un.OnUninstFailed               (required by UAC plugin)
 #--------------------------------------------------------------------------
 
@@ -358,12 +421,14 @@ FunctionEnd
 #  (0) Custom Page (SelectMode) offering "Modify" or "Uninstall" options
 #
 #  (1) un.Uninstall Begin    - requests confirmation if appropriate
-#  (2) un.Shutdown POPFile   - shutdown POPFile if necessary (to avoid the need to reboot)
-#  (3) un.AddSSLSupport      - downloads and installs the SSL support files
-#  (4) un.Nihongo Parser     - offers a choice of 3 parsers (Kakasi, MeCab and internal)
-#  (5) un.Kakasi             - installs Kakasi package and creates its environment variables
-#  (6) un.MeCab              - downloads and installs MeCab package and its environment variables
-#  (7) un.Internal           - installs support for the internal parser
+#  (2) un.StartLog           - generates a log showing the actions performed
+#  (3) un.Shutdown POPFile   - shutdown POPFile if necessary (to avoid the need to reboot)
+#  (4) un.AddSSLSupport      - downloads and installs the SSL support files
+#  (5) un.Nihongo Parser     - offers a choice of 3 parsers (Kakasi, MeCab and internal)
+#  (6) un.Kakasi             - installs Kakasi package and creates its environment variables
+#  (7) un.MeCab              - downloads and installs MeCab package and its environment variables
+#  (8) un.Internal           - installs support for the internal parser
+#  (9) un.StopLog            - saves the log file (up to 3 previous versions retained)
 #
 # Note: Only one of the three Nihongo parsers can be added at a time (re-run to add more)
 #--------------------------------------------------------------------------
@@ -372,18 +437,19 @@ FunctionEnd
 #  (0) Custom Page (SelectMode) offering "Modify" or "Uninstall" options
 #
 #  (1) un.Uninstall Begin    - requests confirmation if appropriate
-#  (2) un.Local User Data    - looks for and removes 'User Data' from the PROGRAM folder
-#  (3) un.Shutdown POPFile   - shutdown POPFile if necessary (to avoid the need to reboot)
-#  (4) un.Start Menu Entries - remove StartUp shortcuts and Start Menu entries
-#  (5) un.POPFile Core       - uninstall POPFile PROGRAM files
-#  (6) un.Skins              - uninstall POPFile skins
-#  (7) un.Languages          - uninstall POPFile UI languages
-#  (8) un.QuickStart Guide   - uninstall POPFile English QuickStart Guide
-#  (9) un.Remove Kakasi      - uninstall Kakasi package and remove its environment variables
-# (10) un.Remove MeCab       - uninstall MeCab package and remove its environment variables
-# (11) un.Minimal Perl       - uninstall minimal Perl, including all of the optional modules
-# (12) un.Registry Entries   - remove 'Add/Remove Program' data and other registry entries
-# (13) un.Uninstall End      - remove remaining files/folders (if it is safe to do so)
+#  (2) un.StartLog           - generates a log showing the actions performed
+#  (3) un.Local User Data    - looks for and removes 'User Data' from the PROGRAM folder
+#  (4) un.Shutdown POPFile   - shutdown POPFile if necessary (to avoid the need to reboot)
+#  (5) un.Start Menu Entries - remove StartUp shortcuts and Start Menu entries
+#  (6) un.POPFile Core       - uninstall POPFile PROGRAM files
+#  (7) un.Skins              - uninstall POPFile skins
+#  (8) un.Languages          - uninstall POPFile UI languages
+#  (9) un.QuickStart Guide   - uninstall POPFile English QuickStart Guide
+# (10) un.Remove Kakasi      - uninstall Kakasi package and remove its environment variables
+# (11) un.Remove MeCab       - uninstall MeCab package and remove its environment variables
+# (12) un.Minimal Perl       - uninstall minimal Perl, including all of the optional modules
+# (13) un.Registry Entries   - remove 'Add/Remove Program' data and other registry entries
+# (14) un.Uninstall End      - remove remaining files/folders (if it is safe to do so)
 #
 #--------------------------------------------------------------------------
 
@@ -400,12 +466,40 @@ Section "-un.Uninstall Begin" UnSecBegin
   ; Access the POPFile User Data for the user who started the uninstaller
   ; (use the UAC plugin in case this was a non-admin user)
 
+  DetailPrint "Use UAC plugin to get the 'real' user data"
+
   GetFunctionAddress ${L_TEMP} un.Uninstall_Begin
   UAC::ExecCodeSegment ${L_TEMP}
 
   Pop ${L_TEMP}
 
   !undef L_TEMP
+
+SectionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Section: 'un.StartLog' (this must be the second section)
+#
+# Creates the log header with information about this run of the uninstaller
+#--------------------------------------------------------------------------
+
+Section "-un.StartLog"
+
+  SetDetailsPrint listonly
+
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "$(^Name) v${C_PFI_VERSION} Uninstaller Log"
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "Command-line: $CMDLINE"
+  DetailPrint "$$INSTDIR    : $INSTDIR"
+  DetailPrint "User Details: $G_WINUSERNAME ($G_WINUSERTYPE)"
+  DetailPrint "PFI Language: $LANGUAGE"
+  DetailPrint "------------------------------------------------------------"
+  Call un.PFI_GetDateTimeStamp
+  Pop $G_PLS_FIELD_1
+  DetailPrint "Uninstaller started $G_PLS_FIELD_1"
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint ""
 
 SectionEnd
 
@@ -504,6 +598,8 @@ Section "-un.Shutdown POPFile" UnSecShutdown
 
   ; The program files we are about to remove are in use so we need to shut POPFile down
 
+  DetailPrint "Use UAC plugin to call 'un.Shutdown_POPFile' function"
+
   GetFunctionAddress ${L_TEMP} un.Shutdown_POPFile
   UAC::ExecCodeSegment ${L_TEMP}
   Goto check_pfi_utils
@@ -520,6 +616,7 @@ check_pfi_utils:
   SetDetailsPrint textonly
   DetailPrint " "
   SetDetailsPrint listonly
+  DetailPrint ""
 
   Pop ${L_TEMP}
 
@@ -1025,14 +1122,14 @@ Section "-un.Registry Entries" UnSecRegistry
 
   ReadRegStr ${L_REGDATA} HKCU \
       "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
-  StrCmp ${L_REGDATA} "$G_ROOTDIR\uninstall.exe" 0 section_exit
+  StrCmp ${L_REGDATA} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 section_exit
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}"
   Goto section_exit
 
 check_HKLM_data:
   ReadRegStr ${L_REGDATA} HKLM \
       "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
-  StrCmp ${L_REGDATA} "$G_ROOTDIR\uninstall.exe" 0 other_reg_data
+  StrCmp ${L_REGDATA} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 other_reg_data
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}"
 
 other_reg_data:
@@ -1056,7 +1153,7 @@ skip_section:
 SectionEnd
 
 #--------------------------------------------------------------------------
-# Uninstaller Section: 'un.Uninstall End' (this is the final section in the uninstaller)
+# Uninstaller Section: 'un.Uninstall End' (this is the penultimate section in the uninstaller)
 #
 # Used to terminate the uninstaller - offers to remove any files/folders left behind.
 # If any 'User Data' is left in the PROGRAM folder then we preserve it to allow the
@@ -1067,6 +1164,8 @@ Section "-un.Uninstall End" UnSecEnd
 
   StrCmp $G_UNINST_MODE "change" skip_section
 
+  Delete "$G_ROOTDIR\modify.log.*"
+  Delete "$G_ROOTDIR\modify.log"
   Delete "$G_ROOTDIR\install.log.*"
   Delete "$G_ROOTDIR\install.log"
   Delete "$G_ROOTDIR\Uninstall.exe"
@@ -1098,68 +1197,45 @@ skip_Section:
 SectionEnd
 
 #--------------------------------------------------------------------------
-# Uninstaller Function: 'un.SetGlobalUserVariables'
+# Uninstaller Section: StopLog (this must be the very last section)
 #
-# Used to initialise (or re-initialise) the following global variables:
-#
-# (1) $G_USERDIR      - full path to the folder containing the 'popfile.cfg' file
-# (2) $G_WINUSERNAME  - current Windows user login name
-# (3) $G_WINUSERTYPE  - user group ('Admin', 'Power', 'User', 'Guest' or 'Unknown')
-#
-# (this helps avoid problems when the uninstaller is started by a non-admin user)
+# Finishes the log file and saves it (making backups of up to 3 previous logs)
 #--------------------------------------------------------------------------
 
-Function un.SetGlobalUserVariables
+Section "-un.StopLog"
 
-  ; Starting with 0.21.0 the registry is used to store the location of the 'User Data'
-  ; (if setup.exe or adduser.exe was used to create/update the 'User Data' for this user)
+  StrCmp $G_UNINST_MODE "uninstall" skip_section
 
-  ReadRegStr $G_USERDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
-  StrCmp $G_USERDIR "" 0 got_user_path
+  SetDetailsPrint textonly
+  DetailPrint "$(PFI_LANG_PROG_SAVELOG)"
+  SetDetailsPrint listonly
+  Call un.PFI_GetDateTimeStamp
+  Pop $G_PLS_FIELD_1
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "Uninstaller (/MODIFY mode) finished $G_PLS_FIELD_1"
+  DetailPrint "------------------------------------------------------------"
 
-  ; Pre-release versions of the 0.21.0 installer used a sub-folder for the default user data
+  ; Save a log showing what was installed
 
-  StrCpy $G_USERDIR "$INSTDIR\user"
+  !insertmacro PFI_BACKUP_123_DP "$G_ROOTDIR" "modify.log"
+  Push "$G_ROOTDIR\modify.log"
+  Call un.PFI_DumpLog
+  DetailPrint "Log report saved in '$G_ROOTDIR\modify.log'"
+  SetDetailsPrint textonly
+  DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
+  SetDetailsPrint listonly
 
-  ; If we are uninstalling an upgraded installation, the default user data may be in $INSTDIR
-  ; instead of $INSTDIR\user
+skip_Section:
+SectionEnd
 
-  IfFileExists "$G_USERDIR\popfile.cfg" got_user_path
-  StrCpy $G_USERDIR   "$INSTDIR"
+#--------------------------------------------------------------------------
+# Component-selection page descriptions
+#--------------------------------------------------------------------------
 
-got_user_path:
-
-  ; Email settings are stored on a 'per user' basis therefore we need to know which user is
-  ; running the uninstaller (e.g. so we can check ownership of any local 'User Data' we find)
-
-  ClearErrors
-  UserInfo::GetName
-  IfErrors 0 got_name
-
-  ; Assume Win9x system, so user has 'Admin' rights
-  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
-
-  StrCpy $G_WINUSERNAME "UnknownUser"
-  StrCpy $G_WINUSERTYPE "Admin"
-  Goto function_exit
-
-got_name:
-  Pop $G_WINUSERNAME
-  StrCmp $G_WINUSERNAME "" 0 get_usertype
-  StrCpy $G_WINUSERNAME "UnknownUser"
-
-get_usertype:
-  UserInfo::GetAccountType
-  Pop $G_WINUSERTYPE
-  StrCmp $G_WINUSERTYPE "Admin" function_exit
-  StrCmp $G_WINUSERTYPE "Power" function_exit
-  StrCmp $G_WINUSERTYPE "User"  function_exit
-  StrCmp $G_WINUSERTYPE "Guest" function_exit
-  StrCpy $G_WINUSERTYPE "Unknown"
-
-function_exit:
-FunctionEnd
-
+  !insertmacro MUI_UNFUNCTION_DESCRIPTION_BEGIN
+    !insertmacro MUI_DESCRIPTION_TEXT ${un.SecSSL}         $(DESC_SecSSL)
+    !insertmacro MUI_DESCRIPTION_TEXT ${un.SecParser}      "${C_NPLS_DESC_SecParser}"
+  !insertmacro MUI_UNFUNCTION_DESCRIPTION_END
 
 #--------------------------------------------------------------------------
 # Uninstaller Function: un.ShowOrHideNihongoParser
