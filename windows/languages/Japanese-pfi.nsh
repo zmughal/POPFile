@@ -426,6 +426,12 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "POPFile ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(残したいファイルがあれば いいえ をクリックして下さい。)"
 
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; POPFile Installer: Standard MUI Page - UNPAGE_FINISH [installer.nsi]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TITLE      "Completing the $(^NameDA) Component Add/Remove Wizard"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TEXT       "Click Finish to close this wizard."
 
 ###########################################################################
 ###########################################################################
