@@ -386,7 +386,7 @@
 
 ; Text explaining what this page shows
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "セットアップは追加コンポーネントをこのフォルダにインストールされている POPFile に追加します。コンポーネントを選択しなおす場合は、戻るボタンをクリックしてください。 $_CLICK"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "セットアップはこのフォルダにインストールされている POPFile にコンポーネントを追加します。コンポーネントを選択しなおす場合は、戻るボタンをクリックしてください。 $_CLICK"
 
 ; Text shown above the box showing the folder where the extra components will be installed
 
@@ -430,8 +430,8 @@
 ; POPFile Installer: Standard MUI Page - UNPAGE_FINISH [installer.nsi]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TITLE      "Completing the $(^NameDA) Component Add/Remove Wizard"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TEXT       "Click Finish to close this wizard."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TITLE      "$(^NameDA) コンポーネントの追加／削除ウィザードの終了"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TEXT       "完了 をクリックしてこのウィザードを閉じてください。"
 
 ###########################################################################
 ###########################################################################
@@ -537,7 +537,7 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_UNPACKFAIL        "$G_PLS_FIELD_1 フォルダに対するインストール作業中にエラーが検出されました。"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "SSL 用のファイルをインストールできませんでした。${MB_NL}${MB_NL}再度インストールを試みるには、後で次のコマンドを実行してください。${MB_NL}${MB_NL}$G_PLS_FIELD_1 /SSL"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "SSL 用のファイルをインストールできませんでした。${MB_NL}${MB_NL}再度インストールを試みるには、「プログラムの追加と削除」の${MB_NL}${MB_NL}POPFile ${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}${C_POPFILE_RC} の項目を使用してください"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: Strings used when patching SSL.pm from IO::Socket::SSL [getssl.nsh]

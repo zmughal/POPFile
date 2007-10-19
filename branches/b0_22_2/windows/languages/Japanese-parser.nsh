@@ -86,7 +86,7 @@
 
 ; Message shown if unable to download and install the MeCab files)
 
-!define C_NPLS_REPEATMECAB         "MeCab のファイルをインストールできませんでした!${MB_NL}${MB_NL}再度インストールを試みるには、後で次のコマンド${MB_NL}${MB_NL}$G_PLS_FIELD_1${MB_NL}${MB_NL}を実行するか、「プログラムの追加と削除」の POPFile の項目を使用してください"
+!define C_NPLS_REPEATMECAB         "MeCab のファイルをインストールできませんでした!${MB_NL}${MB_NL}再度インストールを試みるには、「プログラムの追加と削除」の${MB_NL}${MB_NL}POPFile ${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}${C_POPFILE_RC} の項目を使用してください"
 
 #--------------------------------------------------------------------------
 # End of 'Japanese-parser.nsh'
