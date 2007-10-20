@@ -367,7 +367,7 @@
 
 ; Text for the MODIFY mode radio-button and the label underneath it
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "すでにインストールされている POPFile の変更"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "インストールされている POPFile の変更"
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(例 : SSL サポートを追加したり日本語パーサを変更したりします)"
 
 ; Text for the UNINSTALL mode radio-button and the label underneath it
@@ -381,12 +381,12 @@
 
 ; Page Title/Sub-Title shown in the page header
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TITLE         "すでに POPFile がインストールされている場所"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TITLE         "POPFile がインストールされている場所"
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_SUBTITLE      "選択された POPFile コンポーネントがインストールされる場所です"
 
 ; Text explaining what this page shows
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "セットアップはこのフォルダにインストールされている POPFile にコンポーネントを追加します。コンポーネントを選択しなおす場合は、戻るボタンをクリックしてください。 $_CLICK"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "セットアップは以下のフォルダにインストールされている POPFile にコンポーネントを追加します。コンポーネントを選択しなおす場合は、戻るボタンをクリックしてください。 $_CLICK"
 
 ; Text shown above the box showing the folder where the extra components will be installed
 
