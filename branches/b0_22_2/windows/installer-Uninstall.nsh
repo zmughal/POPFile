@@ -598,7 +598,7 @@ Section "-un.Shutdown POPFile" UnSecShutdown
 
   ; The program files we are about to remove are in use so we need to shut POPFile down
 
-  DetailPrint "Use UAC plugin to call 'un.Shutdown_POPFile' function"
+  DetailPrint "Use UAC plugin to call 'un.Shutdown_POPFile' function (${L_TEMP})"
 
   GetFunctionAddress ${L_TEMP} un.Shutdown_POPFile
   UAC::ExecCodeSegment ${L_TEMP}
