@@ -58,7 +58,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.5"
+  !define C_PFI_LIBRARY_VERSION     "0.3.6"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1178,9 +1178,9 @@
 
         !define PFI_CheckIfLocked
 
-        var /GLOBAL G_CIL_EXE
         var /GLOBAL G_CIL_FILE
         var /GLOBAL G_CIL_FLAG
+        var /GLOBAL G_CIL_PATH
         var /GLOBAL G_CIL_TEMP
 
     !endif
@@ -1191,35 +1191,37 @@
 
     ; The target system provides the features required by the LockedList plugin
 
-    StrCpy $G_CIL_FLAG "emptylist"
+    StrCpy $G_CIL_FLAG ""
 
   get_exe_path:
-    Pop $G_CIL_EXE
-    StrCmp $G_CIL_EXE "${C_EXE_END_MARKER}" start_search
-    IfFileExists "$G_CIL_EXE" 0 get_exe_path
-    StrCpy $G_CIL_FLAG "gotlist"
+    Pop $G_CIL_PATH
+    StrCmp $G_CIL_PATH "${C_EXE_END_MARKER}" list_exhausted
+    StrCmp $G_CIL_FLAG "" 0 get_exe_path
+    IfFileExists "$G_CIL_PATH" 0 get_exe_path
 
-    ; LockedList plugin searches for _exact_ path match so we need to supply LFN and SFN paths
-    ; (note that when the SFN path is supplied, the filename part of the path is NOT given in
-    ; the SFN format, so "popfileif.exe" is NOT replaced by something like "POPFIL~2.EXE")
+    ; Normally the POPFile programs are started using a hybrid path, where the filename
+    ; is given in LFN rather than SFN form but the remainder of the path is in SFN form.
+    ;
+    ; For example instead of using the pathname "C:\Program Files\POPFile\popfileif.exe"
+    ; or the pathname "C:\PROGRA~1\POPFILE\POPFIL~2.EXE" to start the program, the hybrid
+    ; pathname "C:\PROGRA~1\POPFILE\popfileif.exe" is used.
+    ;
+    ; These hybrid pathnames cause problems because the LockedList plugin searches for
+    ; an exact match with the specified pathame. As a workaround we use the plugin's
+    ; special "filename only" mode to find, for example, "popfileif.exe" and then
+    ; analyse the results to see if any match the path in which we are interested.
 
-    GetFullPathName $G_CIL_FILE "$G_CIL_EXE"
-    LockedList::AddModule /NOUNLOAD "$G_CIL_FILE"
+    Push $G_CIL_PATH
+    Call ${UN}PFI_GetCompleteFPN
+    Pop $G_CIL_FILE
     Push $G_CIL_FILE
     Call ${UN}PFI_GetParent
-    Pop $G_CIL_EXE
-    StrLen $G_CIL_TEMP $G_CIL_EXE
+    Pop $G_CIL_PATH
+    StrLen $G_CIL_TEMP $G_CIL_PATH
     IntOp $G_CIL_TEMP $G_CIL_TEMP + 1
     StrCpy $G_CIL_FILE $G_CIL_FILE "" $G_CIL_TEMP
-    GetFullPathName /SHORT $G_CIL_EXE "$G_CIL_EXE"
-    LockedList::AddModule /NOUNLOAD "$G_CIL_EXE\$G_CIL_FILE"
-    Goto get_exe_path
-
-  start_search:
-    StrCmp $G_CIL_FLAG "emptylist" nothing_to_report
+    LockedList::AddModule /NOUNLOAD "\$G_CIL_FILE"
     LockedList::SilentSearch
-
-    StrCpy $G_CIL_EXE ""
     Pop $G_CIL_TEMP
     StrCmp $G_CIL_TEMP "/start" get_search_result
     MessageBox MB_OK|MB_ICONEXCLAMATION "Unexpected result from LockedList plugin\
@@ -1230,8 +1232,11 @@
   get_search_result:
     Pop $G_CIL_TEMP           ; get "process ID" (or "/end" marker, if no more data)
     StrCmp $G_CIL_TEMP "/end" end_of_locked_list
-    StrCmp $G_CIL_EXE "" 0 skip_result
-    Pop $G_CIL_EXE           ; get the "path to executable" result
+    StrCmp $G_CIL_FLAG "" 0 skip_result
+    Call ${UN}PFI_GetCompleteFPN
+    Pop $G_CIL_TEMP           ; get the full "path to executable"
+    StrCmp $G_CIL_TEMP "$G_CIL_PATH\$G_CIL_FILE" 0 skip_window_caption
+    StrCpy $G_CIL_FLAG $G_CIL_TEMP
     Goto skip_window_caption
 
   skip_result:
@@ -1239,13 +1244,13 @@
 
   skip_window_caption:
     Pop $G_CIL_TEMP           ; ignore the "window caption" result
-    goto get_search_result
-
-  nothing_to_report:
-    StrCpy $G_CIL_EXE ""
+    Goto get_search_result
 
   end_of_locked_list:
-    Push $G_CIL_EXE
+    Goto get_exe_path
+
+  list_exhausted:
+    Push $G_CIL_FLAG
     Goto exit
 
     ; Windows 95, 98, ME and NT3.x are treated as special cases
@@ -1255,21 +1260,20 @@
     StrCpy $G_CIL_FLAG ""
 
   loop:
-    Pop $G_CIL_EXE
-    StrCmp $G_CIL_EXE "${C_EXE_END_MARKER}" allread
+    Pop $G_CIL_PATH
+    StrCmp $G_CIL_PATH "${C_EXE_END_MARKER}" allread
     StrCmp $G_CIL_FLAG "" 0 loop
-    IfFileExists "$G_CIL_EXE" 0 loop
-    SetFileAttributes "$G_CIL_EXE" NORMAL
+    IfFileExists "$G_CIL_PATH" 0 loop
+    SetFileAttributes "$G_CIL_PATH" NORMAL
     ClearErrors
-    FileOpen $G_CIL_FILE "$G_CIL_EXE" a
+    FileOpen $G_CIL_FILE "$G_CIL_PATH" a
     FileClose $G_CIL_FILE
     IfErrors 0 loop
-    StrCpy $G_CIL_FLAG "$G_CIL_EXE"
+    StrCpy $G_CIL_FLAG "$G_CIL_PATH"
     Goto loop
 
   allread:
-    StrCpy $G_CIL_EXE $G_CIL_FLAG
-    Push $G_CIL_EXE
+    Push $G_CIL_FLAG
 
   exit:
   FunctionEnd
@@ -1507,6 +1511,7 @@
 
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
+    DetailPrint "${UN}PFI_CheckIfLocked returned '${L_RESULT}'"
 
     Pop ${L_PATH}
     Exch ${L_RESULT}              ; return full path to a locked file or an empty string
@@ -1638,7 +1643,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDUSER | DBSTATUS | INSTALLER | RESTORE
+!ifdef ADDUSER | DBSTATUS | INSTALLER | MONITORCC | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetCompleteFPN
     #
@@ -1648,14 +1653,15 @@
     !insertmacro PFI_GetCompleteFPN ""
 !endif
 
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.PFI_GetCompleteFPN
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
+!ifdef ADDUSER | INSTALLER
+  #--------------------------------------------------------------------------
+  # Uninstaller Function: un.PFI_GetCompleteFPN
+  #
+  # This function is used during the uninstall process
+  #--------------------------------------------------------------------------
 
-;!insertmacro PFI_GetCompleteFPN "un."
-
+  !insertmacro PFI_GetCompleteFPN "un."
+!endif
 
 #--------------------------------------------------------------------------
 # Macro: PFI_GetCorpusPath

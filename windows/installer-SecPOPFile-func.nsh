@@ -379,7 +379,7 @@ FunctionEnd
 
     ; The program files we are about to update are in use so we need to shut POPFile down
 
-    DetailPrint "... one of them is locked."
+    DetailPrint "'${L_EXE}' appears to be locked."
 
     ; Attempt to discover which POPFile UI port is used by the current user, so we can issue
     ; a shutdown request. The following cases are considered:
