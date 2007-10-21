@@ -38,13 +38,14 @@
 #  (6) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
 #  (7) MONITORCC        defined in MonitorCC.nsi (the corpus conversion monitor)
 #  (8) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
-#  (9) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-# (10) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-# (11) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-# (12) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (13) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (14) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (15) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+#  (9) ONDEMAND         defined in add-ons\OnDemand.nsi (starts POPFile & email client together)
+# (10) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
+# (11) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+# (12) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (13) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (14) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (15) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (16) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -58,7 +59,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.6"
+  !define C_PFI_LIBRARY_VERSION     "0.3.7"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1088,7 +1089,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | MONITORCC | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | MONITORCC | ONDEMAND | RESTORE
       #--------------------------------------------------------------------------
       # Installer Function: PFI_AtLeastWinNT4
       #
@@ -1112,30 +1113,51 @@
 #--------------------------------------------------------------------------
 # Macro: PFI_CheckIfLocked
 #
-# The installation process and the uninstall process may both use a function which checks if
-# a particular executable file (an EXE file) is being used. This macro makes maintenance easier
-# by ensuring that both processes use identical functions, with the only difference being their
-# names.
+# The installation process and the uninstall process may both require a function
+# which checks if a particular executable file (an EXE file) is being used. This
+# macro makes maintenance easier by ensuring that both processes use identical
+# functions, with the only difference being their names.
 #
-# There are several different ways to run POPFile so the PFI_CheckIfLocked function accepts a list
-# of full pathnames to the executable files which are to be checked (to make it easier to check
-# the various ways in which POPFile can be run). This list is passed via the stack, with a marker
-# string being used to mark the end of the list.
+# There are several different ways to run POPFile so this function accepts a list
+# of full pathnames to the executable files which are to be checked (to make it
+# easier to check the various ways in which POPFile can be run). This list is
+# passed via the stack, with a marker string being used to mark the list's end.
 #
-# Normally the LockedList plugin will be used to check if any of the specified executable files is
-# is use. This plugin returns its results on the stack, sandwiched between "/start" and "/end" markers
-# ("/start" appears at the top of the stack). If no files are locked, the plugin simply returns both
-# markers on the stack:
+# Normally the LockedList plugin will be used to check if any of the specified
+# executable files is use. This plugin returns its results on the stack,
+# sandwiched between "/start" and "/end" markers ("/start" appears at the top
+# of the stack). If no files are locked, the plugin simply returns both of these
+# markers on the stack, like this:
 #
-#         (top of stack)       /start
-#         (top of stack - 1)   /end
+#         (top of stack)            /start
+#         (top of stack - 1)        /end
 #
-# Note that if an executable was started using an SFN path then the plugin must also
-# be given the SFN path (if the plugin is only supplied with the equivalent LFN path
-# then it will fail to detect if the executable is locked).
+# Note that the format of the path supplied to the plugin is important. If a program
+# was started from a 'hybrid' path using a mixture of SFN and LFN names, such as
+# "C:\PROGRA~1\POPFILE\popfileib.exe", and the plugin is given the equivalent LFN
+# path ("C:\Program Files\POPFile\popfileib.exe") then the plugin will fail to detect
+# if this particular executable is locked.
 #
-# As a further complication, if a locked file is found the plugin returns the LFN format
-# even if the input list of executable files used the SFN format.
+# To avoid these LFN/SFN problems we use the plugin's special "filename only" mode by
+# supplying the file name without the path. In this mode the plugin returns a list of
+# paths to any running processes that match the filename so all we have to do is loop
+# through the results looking for a match.
+#
+#------------------------------------------------------------------------------------
+#
+# The 'NSIS Wiki' page for the 'LockedList' plugin (description and download links) is
+# http://nsis.sourceforge.net/LockedList_plug-in
+#
+# To compile this script, copy the 'LockedList.dll' file to the standard NSIS plugins
+# folder (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be
+# unzipped to the appropriate ${NSISDIR} sub-folders if you wish, but this step is
+# entirely optional.
+#
+# Tested using LockedList plugin v0.4 (RC2) timestamped 27 September 2007 19:42
+# (this is the first version to support the new "filename only" mode which we use)
+#
+# The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
+#------------------------------------------------------------------------------------
 #
 # Unfortunately the 'LockedList' plugin relies upon OS features only found in
 # Windows NT4 or later so older systems such as Win9x must be treated as special
@@ -1145,15 +1167,15 @@
 # otherwise the function returns the path to the first locked file it detects.
 #
 # NOTE:
-# The !insertmacro PFI_CheckIfLocked "" and !insertmacro PFI_CheckIfLocked "un." commands are included
-# in this file so the NSIS script can use 'Call PFI_CheckIfLocked' and 'Call un.PFI_CheckIfLocked'
-# without additional preparation.
+# The !insertmacro PFI_CheckIfLocked "" & !insertmacro PFI_CheckIfLocked "un." commands
+# are included in this file so the NSIS script can use 'Call PFI_CheckIfLocked' and
+# 'Call un.PFI_CheckIfLocked' without additional preparation.
 #
 # Inputs:
-#         (top of stack)           - full path of EXE file to be checked
-#         (top of stack - 1)       - full path of EXE file to be checked
+#         (top of stack)           - full path of an EXE file to be checked
+#         (top of stack - 1)       - full path of an EXE file to be checked
 #          ...
-#         (top of stack - n)       - full path of EXE file to be checked
+#         (top of stack - n)       - full path of an EXE file to be checked
 #         (top of stack - (n + 1)) - end-of-data marker (see C_EXE_END_MARKER definition)
 #
 # Outputs:
@@ -1279,7 +1301,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | MONITORCC | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | MONITORCC | ONDEMAND | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_CheckIfLocked
     #
@@ -1643,7 +1665,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDUSER | DBSTATUS | INSTALLER | MONITORCC | RESTORE
+!ifdef ADDUSER | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetCompleteFPN
     #
@@ -2375,7 +2397,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef MONITORCC & ONDEMAND & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDateTimeStamp
     #
@@ -2463,7 +2485,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE | STOP_POPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | ONDEMAND | RESTORE | STOP_POPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetFileSize
     #
@@ -2572,7 +2594,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef MONITORCC & ONDEMAND & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetLocalTime
     #
@@ -2813,7 +2835,7 @@
     FunctionEnd
 !macroend
 
-!ifndef BACKUP
+!ifndef BACKUP & ONDEMAND
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParameters
     #
@@ -2891,7 +2913,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParent
     #
@@ -4177,7 +4199,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | ONDEMAND | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_ShutdownViaUI
     #
@@ -4490,7 +4512,7 @@
     FunctionEnd
 !macroend
 
-!ifndef DBSTATUS & IMAPUPDATER & MONITORCC & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef DBSTATUS & IMAPUPDATER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #
@@ -4660,7 +4682,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | INSTALLER
+!ifdef ADDSSL | ADDUSER | INSTALLER | ONDEMAND
     #--------------------------------------------------------------------------
     # Installer Function: PFI_WaitUntilUnlocked
     #
