@@ -64,7 +64,7 @@
   ; (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with version v0.3 RC2 (15:36, 13 July 2007) of the 'LockedList' plugin.
+  ; Tested using LockedList plugin v0.4 (RC2) timestamped 27 September 2007 19:42
 
 #-------------------------------------------------------------------------------------------
 # Parameters are supplied via an INI file stored in the same folder as this utility:
@@ -123,12 +123,6 @@
   !define C_PFI_PRODUCT  "POPFile"
 
   ;--------------------------------------------------------------------------
-  ; The URL used to access the POPFile User Interface (UI)
-  ;--------------------------------------------------------------------------
-
-  !define C_UI_URL    "127.0.0.1"
-
-  ;--------------------------------------------------------------------------
   ; Specify filename for the EXE and INI files
   ;--------------------------------------------------------------------------
 
@@ -142,7 +136,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.0.8"
+  !define C_VERSION   "0.0.9"
 
   ; Specify the icon file for the utility
 
@@ -170,18 +164,15 @@
 
   Var G_TEMP           ; general purpose global variable
 
-  ;--------------------------------------------------------------------------
-  ; Used in the 'CheckIfExeLocked' function to simply stack handling
-  ;--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Include private library functions and macro definitions
+#--------------------------------------------------------------------------
 
-  Var G_EXETOCHECK     ; fullpath to an executable file to be checked by the LockedList plugin
-  Var G_FILE_HANDLE    ; used when target system is not Windows NT4 or later
+  ; Avoid compiler warnings by disabling the functions and definitions we do not use
 
-  ;--------------------------------------------------------------------------
-  ; Marker used by the 'CheckIfExeLocked' function to detect the end of the input data
-  ;--------------------------------------------------------------------------
+  !define ONDEMAND
 
-  !define C_EXE_END_MARKER  "/EndOfExeList"
+  !include "..\pfi-library.nsh"
 
 #--------------------------------------------------------------------------
 
@@ -313,7 +304,7 @@ check_if_POPFile_running:
   Push "$INSTDIR\popfileif.exe"
   Push "$INSTDIR\perl.exe"
   Push "$INSTDIR\wperl.exe"
-  Call CheckIfExeLocked
+  Call PFI_CheckIfLocked
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" 0 exit
 
@@ -360,7 +351,7 @@ Function Start_MailClient
   ReadINIStr ${L_STARTUP_DELAY} "$EXEDIR\${C_INIFILE}" "Settings" "StartupDelay"
   StrCmp ${L_STARTUP_DELAY} "" start_client
   Push ${L_STARTUP_DELAY}
-  Call StrCheckDecimal
+  Call PFI_StrCheckDecimal
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" invalid_delay_supplied
   IntCmp ${L_STARTUP_DELAY} 0 start_client invalid_delay_supplied
@@ -498,12 +489,12 @@ done:
   FileClose ${L_CFG}
 
   Push ${L_NEW_GUI}
-  Call TrimNewlines
+  Call PFI_TrimNewlines
   Pop ${L_NEW_GUI}
 
   StrCmp ${L_NEW_GUI} "" manual_shutdown
   Push ${L_NEW_GUI}
-  Call ShutdownSilently
+  Call PFI_ShutdownViaUI
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "success" check_exe
   StrCmp ${L_RESULT} "password?" manual_shutdown
@@ -516,7 +507,7 @@ check_exe:
   Push "$INSTDIR\popfileif.exe"
   Push "$INSTDIR\perl.exe"
   Push "$INSTDIR\wperl.exe"
-  Call CheckIfExeLocked
+  Call PFI_CheckIfLocked
   Pop ${L_EXE}
   StrCmp ${L_EXE} "" exit
   StrCpy ${L_PARAM} 0
@@ -533,10 +524,10 @@ nameloop:
 
 gotname:
   Push "$INSTDIR\${L_EXE}"
-  Call WaitUntilExeUnlocked
+  Call PFI_WaitUntilUnlocked
   Push "${C_EXE_END_MARKER}"
   Push "$INSTDIR\${L_EXE}"
-  Call CheckIfExeLocked
+  Call PFI_CheckIfLocked
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" exit
 
@@ -590,560 +581,6 @@ exit:
 
 FunctionEnd
 
-
-#--------------------------------------------------------------------------
-# General Purpose Function: CheckIfExeLocked
-#--------------------------------------------------------------------------
-#
-# There are several different ways to run POPFile so this function accepts a list
-# of full pathnames to the executable files which are to be checked. The list is
-# passed via the stack with a marker string being used to mark the end of the list.
-#
-# The LockedList plugin returns the results on the stack, sandwiched between "/start"
-# and "/end" markers ("/start" appears at the top of the stack). If no files are locked,
-# the plugin simply returns both markers on the stack:
-#         (top of stack)       /start
-#         (top of stack - 1)   /end
-#
-# Note that if an executable was started using an SFN path then the plugin must also
-# be given the SFN path (if the plugin is supplied with the equivalent LFN path then
-# it will fail to detect if the executable is locked). As a further complication, if
-# a locked file is found the plugin returns the LFN format even if the input list of
-# executable files used the SFN format.
-#
-# Unfortunately the 'LockedList' plugin relies upon OS features only found in
-# Windows NT4 or later so older systems such as Win9x must be treated as special
-# cases.
-#
-# If none of the specified files is locked then an empty string is returned,
-# otherwise the function returns the first locked file it detects.
-#
-# Inputs:
-#         (top of stack)           - full path of EXE file to be checked
-#         (top of stack - 1)       - full path of EXE file to be checked
-#          ...
-#         (top of stack - n)       - full path of EXE file to be checked
-#         (top of stack - (n + 1)) - end-of-data marker (see C_EXE_END_MARKER definition)
-#
-# Outputs:
-#         (top of stack)           - if none of the files is in use, an empty string ("")
-#                                    is returned, otherwise the path to the first locked
-#                                    file found is returned
-#
-#  Usage:
-#
-#         Push "/EndOfExeList"
-#         Push "$INSTDIR\wperl.exe"
-#         Call CheckIfExeLocked
-#         Pop $R0
-#
-#        (if the file is no longer in use, $R0 will be "")
-#--------------------------------------------------------------------------
-
-Function CheckIfExeLocked
-
-  Call AtLeastWinNT4
-  Pop $G_TEMP
-  StrCmp $G_TEMP "0" specialcase
-
-  ; The target system provides the features required by the LockedList plugin
-
-  StrCpy $G_TEMP "emptylist"
-
-get_exe_path:
-  Pop $G_EXETOCHECK
-  StrCmp $G_EXETOCHECK "${C_EXE_END_MARKER}" start_search
-  IfFileExists "$G_EXETOCHECK" 0 get_exe_path
-  StrCpy $G_TEMP "gotlist"
-  LockedList::AddModule /NOUNLOAD "$G_EXETOCHECK"
-  Goto get_exe_path
-
-start_search:
-  StrCmp $G_TEMP "emptylist" nothing_to_report
-  LockedList::SilentSearch
-
-  StrCpy $G_EXETOCHECK ""
-  Pop $G_TEMP
-  StrCmp $G_TEMP "/start" get_search_result
-  MessageBox MB_OK|MB_ICONEXCLAMATION "Unexpected result from LockedList plugin\
-      ${MB_NL}${MB_NL}\
-      ($G_TEMP)"
-  Abort
-
-get_search_result:
-  Pop $G_TEMP           ; get "process ID" (or "/end" marker, if no more data)
-  StrCmp $G_TEMP "/end" end_of_locked_list
-  StrCmp $G_EXETOCHECK "" 0 skip_result
-  Pop $G_EXETOCHECK           ; get the "path to executable" result
-  Goto skip_window_caption
-
-skip_result:
-  Pop $G_TEMP           ; ignore the "path to executable" result
-
-skip_window_caption:
-  Pop $G_TEMP           ; ignore the "window caption" result
-  goto get_search_result
-
-nothing_to_report:
-  StrCpy $G_EXETOCHECK ""
-
-end_of_locked_list:
-  Push $G_EXETOCHECK
-  Goto exit
-
-  ; Windows 95, 98, ME and NT3.x are treated as special cases
-  ; (because they do not support the LockedList plugin)
-
-specialcase:
-  StrCpy $G_TEMP ""
-
-loop:
-  Pop $G_EXETOCHECK
-  StrCmp $G_EXETOCHECK "${C_EXE_END_MARKER}" allread
-  StrCmp $G_TEMP "" 0 loop
-  IfFileExists "$G_EXETOCHECK" 0 loop
-  SetFileAttributes "$G_EXETOCHECK" NORMAL
-  ClearErrors
-  FileOpen $G_FILE_HANDLE "$G_EXETOCHECK" a
-  FileClose $G_FILE_HANDLE
-  IfErrors 0 loop
-  StrCpy $G_TEMP "$G_EXETOCHECK"
-  Goto loop
-
-allread:
-  StrCpy $G_EXETOCHECK $G_TEMP
-  Push $G_EXETOCHECK
-
-exit:
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# General Purpose Function: WaitUntilExeUnlocked
-#--------------------------------------------------------------------------
-#
-# This function waits until a particular executable file (an EXE file) is no longer in use.
-#
-# It may take a little while for POPFile to shutdown so this function waits in a loop until
-# the specified EXE file is no longer in use. A timeout is used to avoid an infinite loop.
-#
-# Note: If the CheckIfExeLocked function is run on NT4 or higher it will use the LockedList
-# plugin which means the function's return value may not match any of the input data supplied
-# to the function (e.g. if a SFN path is supplied the return value will use LFN format).
-#
-# Inputs:
-#         (top of stack)     - the full path of the EXE file to be checked
-#
-# Outputs:
-#         (none)
-#
-# Usage:
-#
-#         Push "$INSTDIR\wperl.exe"
-#         Call WaitUntilExeUnlocked
-#
-#--------------------------------------------------------------------------
-
-Function WaitUntilExeUnlocked
-
-  !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
-  !define L_RESULT        $R8
-  !define L_TIMEOUT       $R7   ; used to avoid an infinite loop
-
-  ;-----------------------------------------------------------
-  ; Timeout loop counter start value (counts down to 0)
-
-  !ifndef C_SHUTDOWN_LIMIT
-    !define C_SHUTDOWN_LIMIT    20
-  !endif
-
-  ; Delay (in milliseconds) used inside the timeout loop
-
-  !ifndef C_SHUTDOWN_DELAY
-    !define C_SHUTDOWN_DELAY    1000
-  !endif
-  ;-----------------------------------------------------------
-
-  Exch ${L_EXE}
-  Push ${L_RESULT}
-  Push ${L_TIMEOUT}
-
-  IfFileExists "${L_EXE}" 0 exit_now
-  StrCpy ${L_TIMEOUT} ${C_SHUTDOWN_LIMIT}
-
-check_if_unlocked:
-  Sleep ${C_SHUTDOWN_DELAY}
-  Push "${C_EXE_END_MARKER}"
-  Push ${L_EXE}
-  Call CheckIfExeLocked
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "" exit_now
-  IntOp ${L_TIMEOUT} ${L_TIMEOUT} - 1
-  IntCmp ${L_TIMEOUT} 0 exit_now exit_now check_if_unlocked
-
- exit_now:
-  Pop ${L_TIMEOUT}
-  Pop ${L_RESULT}
-  Pop ${L_EXE}
-
-  !undef L_EXE
-  !undef L_RESULT
-  !undef L_TIMEOUT
-
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# General Purpose Function: ShutdownSilently
-#--------------------------------------------------------------------------
-#
-# This function attempts to shutdown POPFile using the User Interface (UI) invisibly
-# (i.e. no browser window is used).
-#
-# We use NSISdl to shutdown POPFile by "downloading" the POPFile Shutdown page. Normally one
-# successful download attempt is enough to shutdown POPFile and the page which NSISdl receives
-# will be the "POPFile has shut down" one. However if the UI is password protected then NSISdl
-# will receive a page requesting the UI password instead of the "POPFile has shut down" page.
-#
-# The layout and content of the HTML page depends upon the UI language and UI skin selection.
-# To avoid the need to parse the HTML page downloaded by NSISdl, we make a second attempt to
-# download the POPFile Shutdown page. If POPFile has shutdown then this second call will fail
-# or it will download an empty page (i.e. one which is 0 bytes long). If the second NSISdl call
-# downloads a page which is not empty then we assume it is a page requesting the UI password.
-#
-# To help debug problems, the first HTML file is _not_ overwritten with the second HTML file.
-#
-# Inputs:
-#         (top of stack)       - UI port to be used when issuing the shutdown request
-#
-# Outputs:
-#         (top of stack)       - string containing one of the following result codes:
-#
-#                                "success"    (i.e. UI shutdown request appeared to work)
-#
-#                                "failure"    (i.e. UI shutdown request failed)
-#
-#                                "password?"  (i.e. failure - UI may be password protected)
-#
-#                                "badport"    (i.e. failure - invalid UI port supplied)
-#
-# Usage:
-#
-#         Push "8080"
-#         Call ShutdownSilently
-#         Pop $R0
-#
-#         (if $R0 at this point is "password?" then POPFile is still running)
-#
-#--------------------------------------------------------------------------
-
-Function ShutdownSilently
-
-  ;--------------------------------------------------------------------------
-  ; Override the default timeout for NSISdl requests (specifies timeout in milliseconds)
-
-  !define C_SVU_DLTIMEOUT       /TIMEOUT=10000
-
-  ; Delay between the two shutdown requests (in milliseconds)
-
-  !define C_SVU_DLGAP           2000
-  ;--------------------------------------------------------------------------
-
-  !define L_RESULT    $R9
-  !define L_UIPORT    $R8
-
-  Exch ${L_UIPORT}
-  Push ${L_RESULT}
-  Exch
-
-  StrCmp ${L_UIPORT} "" badport
-  Push ${L_UIPORT}
-  Call StrCheckDecimal
-  Pop ${L_UIPORT}
-  StrCmp ${L_UIPORT} "" badport
-  IntCmp ${L_UIPORT} 1 port_ok badport
-  IntCmp ${L_UIPORT} 65535 port_ok port_ok
-
-badport:
-  StrCpy ${L_RESULT} "badport"
-  Goto exit
-
-port_ok:
-  NSISdl::download_quiet \
-      ${C_SVU_DLTIMEOUT} http://${C_UI_URL}:${L_UIPORT}/shutdown "$PLUGINSDIR\shutdown_1.htm"
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" try_again
-  StrCpy ${L_RESULT} "failure"
-  Goto exit
-
-try_again:
-  Sleep ${C_SVU_DLGAP}
-  NSISdl::download_quiet \
-      ${C_SVU_DLTIMEOUT} http://${C_UI_URL}:${L_UIPORT}/shutdown "$PLUGINSDIR\shutdown_2.htm"
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" 0 shutdown_ok
-  Push "$PLUGINSDIR\shutdown_2.htm"
-  Call GetFileSize
-  Pop ${L_RESULT}
-  StrCmp ${L_RESULT} 0 shutdown_ok
-  StrCpy ${L_RESULT} "password?"
-  Goto exit
-
-shutdown_ok:
-  StrCpy ${L_RESULT} "success"
-
-exit:
-  Pop ${L_UIPORT}
-  Exch ${L_RESULT}
-
-  !undef C_SVU_DLTIMEOUT
-  !undef C_SVU_DLGAP
-
-  !undef L_RESULT
-  !undef L_UIPORT
-
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# General Purpose Function: StrCheckDecimal
-#--------------------------------------------------------------------------
-#
-# This function checks if a given string contains only the digits 0 to 9
-# (if the string contains any invalid characters, "" is returned)
-#
-# Inputs:
-#         (top of stack)   - string which may contain a decimal number
-#
-# Outputs:
-#         (top of stack)   - the input string (if valid) or "" (if invalid)
-#
-# Usage:
-#
-#         Push "12345"
-#         Call StrCheckDecimal
-#         Pop $R0
-#         ($R0 at this point is "12345")
-#
-#--------------------------------------------------------------------------
-
-Function StrCheckDecimal
-
-  !define DECIMAL_DIGIT   "0123456789"   ; accept only these digits
-  !define BAD_OFFSET      10             ; length of DECIMAL_DIGIT string
-
-  !define L_STRING        $0   ; The input string
-  !define L_RESULT        $1   ; Holds the result: either "" (if input is invalid) or the input string (if valid)
-  !define L_CURRENT       $2   ; A character from the input string
-  !define L_OFFSET        $3   ; The offset to a character in the "validity check" string
-  !define L_VALIDCHAR     $4   ; A character from the "validity check" string
-  !define L_VALIDLIST     $5   ; Holds the current "validity check" string
-  !define L_CHARSLEFT     $6   ; To cater for MBCS input strings, terminate when end of string reached, not when a null byte reached
-
-  Exch ${L_STRING}
-  Push ${L_RESULT}
-  Push ${L_CURRENT}
-  Push ${L_OFFSET}
-  Push ${L_VALIDCHAR}
-  Push ${L_VALIDLIST}
-  Push ${L_CHARSLEFT}
-
-  StrCpy ${L_RESULT} ""
-
-next_input_char:
-  StrLen ${L_CHARSLEFT} ${L_STRING}
-  StrCmp ${L_CHARSLEFT} 0 done
-  StrCpy ${L_CURRENT} ${L_STRING} 1                   ; Get the next character from the input string
-  StrCpy ${L_VALIDLIST} ${DECIMAL_DIGIT}${L_CURRENT}  ; Add it to end of "validity check" to guarantee a match
-  StrCpy ${L_STRING} ${L_STRING} "" 1
-  StrCpy ${L_OFFSET} -1
-
-next_valid_char:
-  IntOp ${L_OFFSET} ${L_OFFSET} + 1
-  StrCpy ${L_VALIDCHAR} ${L_VALIDLIST} 1 ${L_OFFSET}    ; Extract next "valid" char (from "validity check" string)
-  StrCmp ${L_CURRENT} ${L_VALIDCHAR} 0 next_valid_char
-  IntCmp ${L_OFFSET} ${BAD_OFFSET} invalid 0 invalid    ; If match is with the char we added, input is bad
-  StrCpy ${L_RESULT} ${L_RESULT}${L_VALIDCHAR}          ; Add "valid" character to the result
-  goto next_input_char
-
-invalid:
-  StrCpy ${L_RESULT} ""
-
-done:
-  StrCpy ${L_STRING} ${L_RESULT}  ; Result is either a string of decimal digits or ""
-  Pop ${L_CHARSLEFT}
-  Pop ${L_VALIDLIST}
-  Pop ${L_VALIDCHAR}
-  Pop ${L_OFFSET}
-  Pop ${L_CURRENT}
-  Pop ${L_RESULT}
-  Exch ${L_STRING}                ; Place result on top of the stack
-
-  !undef DECIMAL_DIGIT
-  !undef BAD_OFFSET
-
-  !undef L_STRING
-  !undef L_RESULT
-  !undef L_CURRENT
-  !undef L_OFFSET
-  !undef L_VALIDCHAR
-  !undef L_VALIDLIST
-  !undef L_CHARSLEFT
-
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# General Purpose Function: GetFileSize
-#--------------------------------------------------------------------------
-#
-# This function gets the size (in bytes) of a particular file.
-#
-# If the specified file is not found, the function returns -1
-#
-# Inputs:
-#         (top of stack)     - filename of file to be checked
-# Outputs:
-#         (top of stack)     - length of the file (in bytes)
-#                              or '-1' if file not found
-#                              or '-2' if error occurred
-#
-# Usage:
-#
-#         Push "corpus\spam\table"
-#         Call GetFileSize
-#         Pop $R0
-#
-#         ($R0 now holds the size (in bytes) of the 'spam' bucket's 'table' file)
-#
-#--------------------------------------------------------------------------
-
-Function GetFileSize
-
-  !define L_FILENAME  $R9
-  !define L_RESULT    $R8
-
-  Exch ${L_FILENAME}
-  Push ${L_RESULT}
-  Exch
-
-  IfFileExists ${L_FILENAME} find_size
-  StrCpy ${L_RESULT} "-1"
-  Goto exit
-
-find_size:
-  ClearErrors
-  FileOpen ${L_RESULT} ${L_FILENAME} r
-  FileSeek ${L_RESULT} 0 END ${L_FILENAME}
-  FileClose ${L_RESULT}
-  IfErrors 0 return_size
-  StrCpy ${L_RESULT} "-2"
-  Goto exit
-
-return_size:
-  StrCpy ${L_RESULT} ${L_FILENAME}
-
-exit:
-  Pop ${L_FILENAME}
-  Exch ${L_RESULT}
-
-  !undef L_FILENAME
-  !undef L_RESULT
-
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# General Purpose Function: TrimNewlines
-#--------------------------------------------------------------------------
-#
-# This function trims newlines from lines of text.
-#
-# Inputs:
-#         (top of stack)   - string which may end with one or more newlines
-#
-# Outputs:
-#         (top of stack)   - the input string with the trailing newlines (if any) removed
-#
-# Usage:
-#
-#         Push "whatever$\r$\n"
-#         Call TrimNewlines
-#         Pop $R0
-#         ($R0 at this point is "whatever")
-#
-#--------------------------------------------------------------------------
-
-Function TrimNewlines
-  Exch $R0
-  Push $R1
-  Push $R2
-  StrCpy $R1 0
-
-loop:
-  IntOp $R1 $R1 - 1
-  StrCpy $R2 $R0 1 $R1
-  StrCmp $R2 "$\r" loop
-  StrCmp $R2 "$\n" loop
-  IntOp $R1 $R1 + 1
-  IntCmp $R1 0 no_trim_needed
-  StrCpy $R0 $R0 $R1
-
-no_trim_needed:
-  Pop $R2
-  Pop $R1
-  Exch $R0
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
-# General Purpose Function: AtLeastWinNT4
-#--------------------------------------------------------------------------
-#
-# This function is used to detect if we are running on Windows NT4 or later
-#
-# Inputs:
-#         (none)
-#
-# Outputs:
-#         (top of stack)   - 0 if Win9x or WinME, 1 if Win NT4 or higher
-#
-# Usage:
-#
-#         Call AtLeastWinNT4
-#         Pop $R0
-#
-#         ($R0 at this point is "0" if running on Win95, Win98, WinME or NT3.x)
-#
-#--------------------------------------------------------------------------
-
-Function AtLeastWinNT4
-
-  !define L_RESULT  $R9
-  !define L_TEMP    $R8
-
-  Push ${L_RESULT}
-  Push ${L_TEMP}
-
-  ClearErrors
-  ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-  IfErrors preNT4system
-  StrCpy ${L_TEMP} ${L_RESULT} 1
-  StrCmp ${L_TEMP} '3' preNT4system
-  StrCpy ${L_RESULT} "1"
-  Goto exit
-
-preNT4system:
-  StrCpy ${L_RESULT} "0"
-
-exit:
-  Pop ${L_TEMP}
-  Exch ${L_RESULT}
-
-  !undef L_RESULT
-  !undef L_TEMP
-
-FunctionEnd
 
 #--------------------------------------------------------------------------
 # End of OnDemand.nsi
