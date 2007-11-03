@@ -59,7 +59,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.7"
+  !define C_PFI_LIBRARY_VERSION     "0.3.11"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -843,7 +843,7 @@
 !endif
 
 
-!ifdef ADDUSER | TRANSLATOR_AUW
+!ifdef ADDUSER | BACKUP | RESTORE | TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStripLZS
     #
@@ -1114,8 +1114,8 @@
 # Macro: PFI_CheckIfLocked
 #
 # The installation process and the uninstall process may both require a function
-# which checks if a particular executable file (an EXE file) is being used. This
-# macro makes maintenance easier by ensuring that both processes use identical
+# which checks if a particular executable file (usually an EXE file) is being used.
+# This macro makes maintenance easier by ensuring that both processes use identical
 # functions, with the only difference being their names.
 #
 # There are several different ways to run POPFile so this function accepts a list
@@ -1124,7 +1124,7 @@
 # passed via the stack, with a marker string being used to mark the list's end.
 #
 # Normally the LockedList plugin will be used to check if any of the specified
-# executable files is use. This plugin returns its results on the stack,
+# executable files is in use. This plugin returns its results on the stack,
 # sandwiched between "/start" and "/end" markers ("/start" appears at the top
 # of the stack). If no files are locked, the plugin simply returns both of these
 # markers on the stack, like this:
@@ -1142,6 +1142,11 @@
 # supplying the file name without the path. In this mode the plugin returns a list of
 # paths to any running processes that match the filename so all we have to do is loop
 # through the results looking for a match.
+#
+# This function is normally used to check if a particular executable (.exe) file is
+# locked. However to make the function more general purpose it checks if a DLL has
+# been specified and treats that as an executable. All other filenames are assumed
+# to be ordinary files.
 #
 #------------------------------------------------------------------------------------
 #
@@ -1185,7 +1190,7 @@
 #
 # Usage (after macro has been 'inserted'):
 #
-#         Push "/EndOfExeList"
+#         Push "${C_EXE_END_MARKER}"
 #         Push "$INSTDIR\wperl.exe"
 #         Call PFI_CheckIfLocked
 #         Pop $R0
@@ -1216,7 +1221,9 @@
     StrCpy $G_CIL_FLAG ""
 
   get_exe_path:
+    ClearErrors
     Pop $G_CIL_PATH
+    IfErrors panic
     StrCmp $G_CIL_PATH "${C_EXE_END_MARKER}" list_exhausted
     StrCmp $G_CIL_FLAG "" 0 get_exe_path
     IfFileExists "$G_CIL_PATH" 0 get_exe_path
@@ -1242,14 +1249,30 @@
     StrLen $G_CIL_TEMP $G_CIL_PATH
     IntOp $G_CIL_TEMP $G_CIL_TEMP + 1
     StrCpy $G_CIL_FILE $G_CIL_FILE "" $G_CIL_TEMP
+    StrCpy $G_CIL_TEMP $G_CIL_FILE "" -4
+    StrCmp $G_CIL_TEMP ".exe" check_module
+    StrCmp $G_CIL_TEMP ".dll" check_module
+
+    ; Assume the file is "our" POPFile database so there is no need to use
+    ; the LockedList plugin's "AddFile" mode to check if the file is locked
+
+    SetFileAttributes "$G_CIL_PATH\$G_CIL_FILE" NORMAL
+    ClearErrors
+    FileOpen $G_CIL_TEMP "$G_CIL_PATH\$G_CIL_FILE" a
+    FileClose $G_CIL_TEMP
+    IfErrors 0 get_exe_path
+    StrCpy $G_CIL_FLAG "$G_CIL_PATH\$G_CIL_FILE"
+    Goto get_exe_path
+
+  check_module:
     LockedList::AddModule /NOUNLOAD "\$G_CIL_FILE"
     LockedList::SilentSearch
     Pop $G_CIL_TEMP
     StrCmp $G_CIL_TEMP "/start" get_search_result
-    MessageBox MB_OK|MB_ICONEXCLAMATION "Unexpected result from LockedList plugin\
+    MessageBox MB_OK|MB_ICONSTOP "Unexpected result from LockedList plugin\
         ${MB_NL}${MB_NL}\
         ($G_CIL_TEMP)"
-    Abort
+    Abort "Unexpected result from LockedList plugin ($G_CIL_TEMP)"
 
   get_search_result:
     Pop $G_CIL_TEMP           ; get "process ID" (or "/end" marker, if no more data)
@@ -1275,6 +1298,16 @@
     Push $G_CIL_FLAG
     Goto exit
 
+  panic:
+    MessageBox MB_OK|MB_ICONSTOP "Internal Error:\
+      ${MB_NL}${MB_NL}\
+      '${UN}PFI_CheckIfLocked' function did not find\
+      ${MB_NL}\
+      the '${C_EXE_END_MARKER}' marker on the stack!"
+    Abort "Internal Error: \
+        '${UN}PFI_CheckIfLocked' function did not find the \
+        '${C_EXE_END_MARKER}' marker on the stack!"
+
     ; Windows 95, 98, ME and NT3.x are treated as special cases
     ; (because they do not support the LockedList plugin)
 
@@ -1282,7 +1315,9 @@
     StrCpy $G_CIL_FLAG ""
 
   loop:
+    ClearErrors
     Pop $G_CIL_PATH
+    IfErrors panic
     StrCmp $G_CIL_PATH "${C_EXE_END_MARKER}" allread
     StrCmp $G_CIL_FLAG "" 0 loop
     IfFileExists "$G_CIL_PATH" 0 loop
@@ -1665,7 +1700,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDUSER | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE
+!ifdef ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetCompleteFPN
     #
@@ -2835,7 +2870,7 @@
     FunctionEnd
 !macroend
 
-!ifndef BACKUP & ONDEMAND
+!ifndef ONDEMAND
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParameters
     #
