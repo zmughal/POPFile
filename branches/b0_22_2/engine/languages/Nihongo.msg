@@ -371,6 +371,7 @@ Imap_UpdateError3                       サーバに接続するための情報を先に設定して
 Imap_NoConnectionMessage                サーバに接続するための情報を先に設定してください。そうすると、さらに多くのオプションが設定できるようになります。
 Imap_WatchMore                          監視フォルダリストにフォルダを追加
 Imap_WatchedFolder                      監視フォルダ 
+Imap_Use_SSL                            SSL を使用する
 
 Shutdown_Message                        POPFile は終了しました。
 
