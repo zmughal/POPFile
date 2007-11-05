@@ -24,6 +24,9 @@ LanguageDirection                       ltr
 # This is used to get the appropriate subdirectory for the manual
 ManualLanguage                          de
 
+# This is where to find the FAQ on the Wiki
+FAQLink                                 FAQ
+
 # Common words that are used on their own all over the interface
 Apply                                   Anwenden
 ApplyChanges                            Änderungen übernehmen
