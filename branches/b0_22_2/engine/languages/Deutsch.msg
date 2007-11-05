@@ -367,6 +367,7 @@ Imap_UpdateError3                       Bitte konfigurieren Sie erst die Verbind
 Imap_NoConnectionMessage                Bitte konfigurieren Sie erst die Verbindung zum Server. Nachdem Sie das getan haben, werden Sie an dieser Stelle mehr Konfigurationsmöglichkeiten finden.
 Imap_WatchMore                          : einen weiteren zu überwachenden Ordner
 Imap_WatchedFolder                      Überwachter Ordner Nr.
+Imap_Use_SSL							SSL-gesicherte Verbindung
 
 Shutdown_Message                        POPFile wurde beendet
 

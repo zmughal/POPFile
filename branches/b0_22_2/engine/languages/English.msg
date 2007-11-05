@@ -370,6 +370,7 @@ Imap_UpdateError3                       Please configure the connection details 
 Imap_NoConnectionMessage                Please configure the connection details first. After you have done that, more options will be available on this page.
 Imap_WatchMore                          a folder to list of watched folders
 Imap_WatchedFolder                      Watched folder no
+Imap_Use_SSL							Use SSL
 
 Shutdown_Message                        POPFile has shut down
 

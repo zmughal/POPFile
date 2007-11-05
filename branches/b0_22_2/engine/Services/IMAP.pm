@@ -1954,6 +1954,7 @@ sub configure_item
         $templ->param( 'IMAP_port',     $self->config_( 'port' ) );
         $templ->param( 'IMAP_login',    $self->config_( 'login' ) );
         $templ->param( 'IMAP_password', $self->config_( 'password' ) );
+        $templ->param( 'IMAP_ssl_checked', $self->config_( 'use_ssl' ) ? 'checked="checked"' : '' );
     }
 
     # Which mailboxes/folders should we be watching?
@@ -2145,6 +2146,13 @@ sub validate_item
             }
             else {
                 $templ->param( IMAP_connection_if_password_error => 1 );
+            }
+            
+            if ( defined $form->{imap_use_ssl} ) {
+                $self->config_( 'use_ssl', 1 );
+            }
+            else {
+                $self->config_( 'use_ssl', 0 );
             }
         }
         return;
