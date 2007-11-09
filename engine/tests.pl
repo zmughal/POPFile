@@ -34,21 +34,21 @@ sub rec_cp
     my ( $from, $to ) = @_;
     my $ok = 1;
 
-    my $subref = 
-        sub { 
-            my $f = $_; 
-            my $t = $f; 
-            $t =~ s/^$from/$to/; 
+    my $subref =
+        sub {
+            my $f = $_;
+            my $t = $f;
+            $t =~ s/^$from/$to/;
             if ( -d $f ) {
                 mkdir $t ;
             }
             else {
-                copy( $f, $t) or $ok = 0; 
+                copy( $f, $t) or $ok = 0;
             }
         };
     my %optref = ( wanted => $subref, no_chdir => 1 );
     find ( \%optref , $from );
-    
+
     return $ok;
 }
 
@@ -96,24 +96,24 @@ sub spin
 
 sub test_report
 {
-        my ( $ok, $test, $file, $line, $context ) = @_;
+    my ( $ok, $test, $file, $line, $context ) = @_;
 
-        spin( $line );
+    spin( $line );
 
-        $test_count += 1;
+    $test_count += 1;
 
-        if ( !$ok ) {
-                $fail_messages .= "\n    $file:$line failed '$test'";
-                if ( defined( $context ) ) {
-                        $fail_messages .= " ($context)";
-                }
-                $test_failures += 1;
-            print "Test fail at $file:$line ($test) ($context)\n";
-        } else {
-#            print "Test pass at $file:$line ($test) ($context)\n";
+    if ( !$ok ) {
+        $fail_messages .= "\n    $file:$line failed '$test'";
+        if ( defined( $context ) ) {
+            $fail_messages .= " ($context)";
         }
+        $test_failures += 1;
+        print "Test fail at $file:$line ($test) ($context)\n";
+    } else {
+#            print "Test pass at $file:$line ($test) ($context)\n";
+    }
 
-        flush STDOUT;
+    flush STDOUT;
 }
 
 # ----------------------------------------------------------------------------
