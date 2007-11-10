@@ -63,17 +63,29 @@
 
 Function un.onInit
 
+  ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
+
+  !define L_UAC_0   $0
+  !define L_UAC_1   $1
+  !define L_UAC_2   $2
+  !define L_UAC_3   $3
+
+  ; The reason why 'un.onInit' preserves the registers it uses is that it makes debugging easier!
+
+  Push ${L_UAC_0}
+  Push ${L_UAC_1}
+  Push ${L_UAC_2}
+  Push ${L_UAC_3}
+
   ; Use the UAC plugin to ensure that this uninstaller runs with 'administrator' privileges
   ; (UAC = Vista's new "User Account Control" feature).
-  ;
-  ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
 
 UAC_Elevate:
   UAC::RunElevated
-  StrCmp 1223 $0 UAC_ElevationAborted   ; UAC dialog aborted by user?
-  StrCmp 0 $0 0 UAC_Err                 ; Error?
-  StrCmp 1 $1 0 UAC_Success             ; Are we the real deal or just the wrapper?
-  Quit
+  StrCmp 1223 ${L_UAC_0} UAC_ElevationAborted   ; Jump if UAC dialog was aborted by user
+  StrCmp 0 ${L_UAC_0} 0 UAC_Err                 ; If ${L_UAC_0} is not 0 then an error was detected
+  StrCmp 1 ${L_UAC_1} 0 UAC_Success             ; Are we the real deal or just the wrapper ?
+  Quit                                          ; UAC not supported (probably pre-NT6), run as normal
 
 UAC_Err:
   MessageBox MB_OK|MB_ICONSTOP "Unable to elevate , error $0"
@@ -84,10 +96,10 @@ UAC_ElevationAborted:
   Abort
 
 UAC_Success:
-  StrCmp 1 $3 continue                ; Admin?
-  StrCmp 3 $1 0 UAC_ElevationAborted  ; Try again or abort?
-  MessageBox MB_OK|MB_ICONSTOP "This uninstaller requires admin access, try again" ; Inform user...
-  goto UAC_Elevate                    ; ... and try again
+  StrCmp 1 ${L_UAC_3} continue                ; Jump if we are a member of the admin group (any OS)
+  StrCmp 3 ${L_UAC_1} 0 UAC_ElevationAborted  ; Can we try to elevate again ?
+  MessageBox MB_OK|MB_ICONSTOP "This uninstaller requires admin access, try again"
+  goto UAC_Elevate                            ; ... try again
 
 continue:
 
@@ -101,13 +113,20 @@ continue:
 
   !insertmacro MUI_UNGETLANGUAGE
 
-  StrCpy $G_ROOTDIR   "$INSTDIR"
-  StrCpy $G_MPLIBDIR  "$INSTDIR\lib"
-
   Call un.SetGlobalUserVariables
 
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioP.ini"
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioUM.ini"
+
+  Pop ${L_UAC_3}
+  Pop ${L_UAC_2}
+  Pop ${L_UAC_1}
+  Pop ${L_UAC_0}
+
+  !undef L_UAC_0
+  !undef L_UAC_1
+  !undef L_UAC_2
+  !undef L_UAC_3
 
 FunctionEnd
 
@@ -116,14 +135,19 @@ FunctionEnd
 #
 # Used to initialise (or re-initialise) the following global variables:
 #
-# (1) $G_USERDIR      - full path to the folder containing the 'popfile.cfg' file
-# (2) $G_WINUSERNAME  - current Windows user login name
-# (3) $G_WINUSERTYPE  - user group ('Admin', 'Power', 'User', 'Guest' or 'Unknown')
+# (1) $G_ROOTDIR      - full path to the folder containing the POPFile program files
+# (2) $G_MPLIBDIR     - full path to the folder containing the minimal Perl
+# (3) $G_USERDIR      - full path to the folder containing the 'popfile.cfg' file
+# (4) $G_WINUSERNAME  - current Windows user login name
+# (5) $G_WINUSERTYPE  - user group ('Admin', 'Power', 'User', 'Guest' or 'Unknown')
 #
 # (this helps avoid problems when the uninstaller is started by a non-admin user)
 #--------------------------------------------------------------------------
 
 Function un.SetGlobalUserVariables
+
+  StrCpy $G_ROOTDIR   "$INSTDIR"
+  StrCpy $G_MPLIBDIR  "$INSTDIR\lib"
 
   ; Starting with 0.21.0 the registry is used to store the location of the 'User Data'
   ; (if setup.exe or adduser.exe was used to create/update the 'User Data' for this user)
@@ -1060,6 +1084,10 @@ Section "-un.Minimal Perl" UnSecMinPerl
   RMDir /r "$G_MPLIBDIR\XMLRPC"
 
 skip_XMLRPC_support:
+  IfFileExists "$G_MPLIBDIR\Net\SSLeay\*.*" 0 skip_SSL_support
+  RMDir /r "$G_MPLIBDIR\Net"
+
+skip_SSL_support:
   RMDir /r "$G_MPLIBDIR\auto"
   RMDir /r "$G_MPLIBDIR\Carp"
   RMDir /r "$G_MPLIBDIR\Class"
@@ -1116,15 +1144,22 @@ Section "-un.Registry Entries" UnSecRegistry
 
   ; Only remove registry data if it matches what we are uninstalling
 
-  StrCmp $G_WINUSERTYPE "Admin" check_HKLM_data
+  ClearErrors
+  ReadRegStr ${L_REGDATA} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  IfErrors check_HKLM_data
+  StrCpy ${L_REGDATA} ${L_REGDATA} 1
+  StrCmp ${L_REGDATA} '6' 0 check_HKLM_data
 
   ; Uninstalluser.exe deletes all HKCU registry data except for the 'Add/Remove Programs' entry
-
+  
   ReadRegStr ${L_REGDATA} HKCU \
       "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
-  StrCmp ${L_REGDATA} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 section_exit
+  StrCmp ${L_REGDATA} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 real_user
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}"
-  Goto section_exit
+
+real_user:
+  GetFunctionAddress ${L_REGDATA} un.DeleteDataFromHKCU
+  UAC::ExecCodeSegment ${L_REGDATA}
 
 check_HKLM_data:
   ReadRegStr ${L_REGDATA} HKLM \
@@ -1151,6 +1186,28 @@ section_exit:
 
 skip_section:
 SectionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: 'un.DeleteDataFromHKCU'
+#--------------------------------------------------------------------------
+
+Function un.DeleteDataFromHKCU
+
+  !define L_REGDATA $R9
+
+  Push ${L_REGDATA}
+  
+  ReadRegStr ${L_REGDATA} HKCU \
+      "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
+  StrCmp ${L_REGDATA} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 exit
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}"
+
+exit:
+  Pop ${L_REGDATA}
+
+  !undef L_REGDATA
+  
+FunctionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Uninstall End' (this is the penultimate section in the uninstaller)

@@ -591,11 +591,10 @@
   ; Installer Page - WELCOME
   ;---------------------------------------------------
 
-  ; Use a "pre" function for the 'WELCOME' page to get the user name and user rights
-  ; (For this build, if user has 'Admin' rights we perform a multi-user install,
-  ; otherwise we perform a single-user install)
+  ; Use a "pre" function for the 'WELCOME' page to remove the banner
+  ; (if one has been displayed)
 
-  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "CheckUserRights"
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "RemoveBanner"
 
   !define MUI_WELCOMEPAGE_TEXT                "$(PFI_LANG_WELCOME_INFO_TEXT)"
 
@@ -905,20 +904,71 @@
 
 Function .onInit
 
-  ; Use the UAC plugin to ensure that this installer runs with 'administrator' privileges
-  ; (UAC = Vista's new "User Account Control" feature).
-  ;
   ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
 
+  !define L_UAC_0   $0
+  !define L_UAC_1   $1
+  !define L_UAC_2   $2
+  !define L_UAC_3   $3
+
+  ; The reason why '.onInit' preserves the registers it uses is that it makes debugging easier!
+
+  Push ${L_UAC_0}
+  Push ${L_UAC_1}
+  Push ${L_UAC_2}
+  Push ${L_UAC_3}
+
+  ; Initialise the G_WINUSERNAME and $G_WINUSERTYPE globals _before_ trying to elevate
+  ; as this makes it easier to cope with the visible and hidden processes after elevation
+
+  ; The 'UserInfo' plugin may return an error if run on a Win9x system but since Win9x systems
+  ; do not support different account types, we treat this error as if user has 'Admin' rights.
+
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
+
+  ; Assume Win9x system, so user has 'Admin' rights
+  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
+
+  StrCpy $G_WINUSERNAME "UnknownUser"
+  StrCpy $G_WINUSERTYPE "Admin"
+  Goto UAC_Elevate
+
+got_name:
+  Pop $G_WINUSERNAME
+  StrCmp $G_WINUSERNAME "" 0 get_usertype
+  StrCpy $G_WINUSERNAME "UnknownUser"
+
+get_usertype:
+  UserInfo::GetAccountType
+  Pop $G_WINUSERTYPE
+  StrCmp $G_WINUSERTYPE "Admin" UAC_Elevate
+  StrCmp $G_WINUSERTYPE "Power" UAC_Elevate
+  StrCmp $G_WINUSERTYPE "User" UAC_Elevate
+  StrCmp $G_WINUSERTYPE "Guest" UAC_Elevate
+  StrCpy $G_WINUSERTYPE "Unknown"
+
+  ; Use the UAC plugin to ensure that this installer runs with 'administrator' privileges
+  ; (UAC = Vista's new "User Account Control" feature).
+
 UAC_Elevate:
+;  MessageBox MB_OK "Debug message (UAC_Elevate label in .onInit function)\
+;      ${MB_NL}${MB_NL}\
+;      Command-line = $CMDLINE\
+;      ${MB_NL}${MB_NL}\
+;      $$G_WINUSERNAME = $G_WINUSERNAME\
+;      ${MB_NL}${MB_NL}\
+;      $$G_WINUSERTYPE = $G_WINUSERTYPE"
+
   UAC::RunElevated
-  StrCmp 1223 $0 UAC_ElevationAborted   ; UAC dialog aborted by user?
-  StrCmp 0 $0 0 UAC_Err                 ; Error?
-  StrCmp 1 $1 0 UAC_Success             ; Are we the real deal or just the wrapper?
-  Quit
+  StrCmp 1223 ${L_UAC_0} UAC_ElevationAborted   ; Jump if UAC dialog was aborted by user
+  StrCmp 0 ${L_UAC_0} 0 UAC_Err                 ; If ${L_UAC_0} is not 0 then an error was detected
+  StrCmp 1 ${L_UAC_1} 0 UAC_Success             ; Are we the real deal or just the wrapper ?
+  Quit                                          ; UAC not supported (probably pre-NT6), run as normal
 
 UAC_Err:
-  MessageBox mb_iconstop "Unable to elevate , error $0"
+  MessageBox mb_iconstop "Unable to elevate , error ${L_UAC_0}"
   Abort
 
 UAC_ElevationAborted:
@@ -926,17 +976,12 @@ UAC_ElevationAborted:
   Abort
 
 UAC_Success:
-  # if $0==0 && $1==0, UAC not supported (Probably <NT6), run as normal?
-  # if $0==0 && $1==3, we can try to elevate again
-  # if $0==0 && $3==1, we are a member of the admin group (Any OS)
-  StrCmp 1 $3 continue                ; Admin?
-  StrCmp 3 $1 0 UAC_ElevationAborted  ; Try again?
+  StrCmp 1 ${L_UAC_3} continue                ; Jump if we are a member of the admin group (any OS)
+  StrCmp 3 ${L_UAC_1} 0 UAC_ElevationAborted  ; Can we try to elevate again ?
   MessageBox mb_iconstop "This installer requires admin access, try again"
-  goto UAC_Elevate
+  goto UAC_Elevate                            ; ... try again
 
 continue:
-
-  ; The reason why '.onInit' preserves the registers it uses is that it makes debugging easier!
 
   !define L_INPUT_FILE_HANDLE   $R9
   !define L_OUTPUT_FILE_HANDLE  $R8
@@ -984,6 +1029,16 @@ close_files:
   !undef L_INPUT_FILE_HANDLE
   !undef L_OUTPUT_FILE_HANDLE
   !undef L_TEMP
+
+  Pop ${L_UAC_3}
+  Pop ${L_UAC_2}
+  Pop ${L_UAC_1}
+  Pop ${L_UAC_0}
+
+  !undef L_UAC_0
+  !undef L_UAC_1
+  !undef L_UAC_2
+  !undef L_UAC_3
 
 FunctionEnd
 
@@ -1056,7 +1111,7 @@ notes_ignored:
   ; There may be a slight delay at this point and on some systems the 'WELCOME' page may appear
   ; in two stages (first an empty MUI page appears and a little later the page contents appear).
   ; This looks a little strange (and may prompt the user to start clicking buttons too soon)
-  ; so we display a banner to reassure the user. The banner will be removed by 'CheckUserRights'
+  ; so we display a banner to reassure the user. The banner will be removed by 'RemoveBanner'
 
   StrCpy $G_PFIFLAG "banner displayed"
 
@@ -1853,71 +1908,20 @@ end_optional:
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: CheckUserRights
+# Installer Function: RemoveBanner
 # (the "pre" function for the 'WELCOME' page)
-#
-# On systems which support different types of user, recommend that POPFile is installed by
-# a user with 'Administrative' rights (this makes it easier to use POPFile's multi-user mode).
 #--------------------------------------------------------------------------
 
-Function CheckUserRights
+Function RemoveBanner
 
-  !define L_WELCOME_TEXT  $R9
-
-  Push ${L_WELCOME_TEXT}
-
-  ; The 'UserInfo' plugin may return an error if run on a Win9x system but since Win9x systems
-  ; do not support different account types, we treat this error as if user has 'Admin' rights.
-
-  ClearErrors
-  UserInfo::GetName
-  IfErrors 0 got_name
-
-  ; Assume Win9x system, so user has 'Admin' rights
-  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
-
-  StrCpy $G_WINUSERNAME "UnknownUser"
-  StrCpy $G_WINUSERTYPE "Admin"
-  Goto exit
-
-got_name:
-  Pop $G_WINUSERNAME
-  StrCmp $G_WINUSERNAME "" 0 get_usertype
-  StrCpy $G_WINUSERNAME "UnknownUser"
-
-get_usertype:
-  UserInfo::GetAccountType
-  Pop $G_WINUSERTYPE
-  StrCmp $G_WINUSERTYPE "Admin" exit
-  StrCmp $G_WINUSERTYPE "Power" not_admin
-  StrCmp $G_WINUSERTYPE "User" not_admin
-  StrCmp $G_WINUSERTYPE "Guest" not_admin
-  StrCpy $G_WINUSERTYPE "Unknown"
-
-not_admin:
-
-  ; On the 'WELCOME' page, add a note recommending that POPFile is installed by a user
-  ; with 'Administrator' rights
-
-  !insertmacro MUI_INSTALLOPTIONS_READ "${L_WELCOME_TEXT}" "ioSpecial.ini" "Field 3" "Text"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioSpecial.ini" "Field 3" "Text" \
-      "${L_WELCOME_TEXT}\
-      ${IO_NL}${IO_NL}\
-      $(PFI_LANG_WELCOME_ADMIN_TEXT)"
-
-exit:
-  Pop ${L_WELCOME_TEXT}
-
-  StrCmp $G_PFIFLAG "no banner" no_banner
+  StrCmp $G_PFIFLAG "no banner" exit
 
   ; Remove the banner which was displayed by the 'PFIGUIInit' function
 
   Sleep ${C_MIN_BANNER_DISPLAY_TIME}
   Banner::destroy
 
-no_banner:
-
-  !undef L_WELCOME_TEXT
+exit:
 
 FunctionEnd
 
@@ -2177,6 +2181,8 @@ FunctionEnd
 
 Function InstallUserData
 
+  !define L_UAC_0   $0
+
   ; If we are only downloading and installing the SSL support files, display the FINISH page
 
   StrCmp $G_SSL_ONLY "1" exit
@@ -2192,16 +2198,22 @@ Function InstallUserData
   ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
 
   IfRebootFlag special_case
+  Push ${L_UAC_0}
   UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/install" ""
+  Pop ${L_UAC_0}
   Abort
 
 special_case:
+  Push ${L_UAC_0}
   UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/installreboot" ""
+  Pop ${L_UAC_0}
   Abort
 
 exit:
 
   ; Display the FINISH page
+
+  !undef L_UAC_0
 
 FunctionEnd
 
