@@ -723,6 +723,7 @@
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
   ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
+  ReserveFile "${NSISDIR}\Plugins\MoreInfo.dll"
   ReserveFile "${NSISDIR}\Plugins\nsExec.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
@@ -943,9 +944,18 @@ save_HKLM_root_sfn:
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" 0 update_HKCU_data
   IfFileExists "$G_ROOTDIR\uninstall.exe" 0 update_HKCU_data
+  ClearErrors
+  ReadRegStr ${L_TEMP} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  IfErrors update_AllUsers_uninstall
+  StrCpy ${L_TEMP} ${L_TEMP} 1
+  StrCmp ${L_TEMP} '6' update_HKCU_data
+
+update_AllUsers_uninstall:
+  SetShellVarContext all
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" \
                  "$G_ROOTDIR\uninstall.exe"
+  SetShellVarContext current
 
 update_HKCU_data:
 
@@ -1204,53 +1214,7 @@ skip_rel_notes:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url" \
               "InternetShortcut" "URL" "http://${C_UI_URL}:$G_GUI/shutdown"
 
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" NORMAL
-
-  !ifndef ENGLISH_MODE
-      StrCmp $LANGUAGE ${LANG_JAPANESE} japanese_faq
-  !endif
-
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
-              "InternetShortcut" "URL" \
-              "http://getpopfile.org/wiki/FAQ"
-
-  !ifndef ENGLISH_MODE
-      Goto support
-
-    japanese_faq:
-      WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
-                  "InternetShortcut" "URL" \
-                  "http://getpopfile.org/wiki/JP:FAQ"
-
-    support:
-  !endif
-
   SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url" \
-              "InternetShortcut" "URL" "http://getpopfile.org/"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" NORMAL
-
-  !ifndef ENGLISH_MODE
-      StrCmp $LANGUAGE ${LANG_JAPANESE} japanese_wiki
-  !endif
-
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
-              "InternetShortcut" "URL" \
-              "http://getpopfile.org/wiki"
-
-  !ifndef ENGLISH_MODE
-      Goto pfidiagnostic
-
-    japanese_wiki:
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
-                  "InternetShortcut" "URL" \
-                  "http://getpopfile.org/wiki/jp"
-
-    pfidiagnostic:
-  !endif
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk" 0 pfidiag_entries
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk" NORMAL
@@ -1260,12 +1224,12 @@ skip_rel_notes:
 pfidiag_entries:
   IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 msgcapture_entry
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\PFI Diagnostic utility.lnk"
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
-                 "$G_ROOTDIR\pfidiag.exe"
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" \
-                 "$G_ROOTDIR\pfidiag.exe" "/full"
+;  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
+;  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
+;                 "$G_ROOTDIR\pfidiag.exe"
+;  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" NORMAL
+;  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" \
+;                 "$G_ROOTDIR\pfidiag.exe" "/full"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk" \
                  "$G_ROOTDIR\pfidiag.exe" "/shortcut"
@@ -1308,7 +1272,7 @@ set_autostart_set:
 
 end_autostart_set:
 
-  ; Create entry in the Control Panel's "Add/Remove Programs" list
+  ; Create "User Data" entry in the Control Panel's "Add/Remove Programs" list
 
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "DisplayName" "${C_PFI_PRODUCT} Data ($G_WINUSERNAME)"
@@ -1321,6 +1285,33 @@ end_autostart_set:
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "NoRepair" "1"
 
+  ; Create "POPFile" (program) entry in "Add/Remove Programs" list (if target is Vista)
+
+  IfFileExists "$G_ROOTDIR\uninstall.exe" 0 all_done
+  ClearErrors
+  ReadRegStr ${L_TEMP} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  IfErrors all_done
+  StrCpy ${L_TEMP} ${L_TEMP} 1
+  StrCmp ${L_TEMP} '6' 0 all_done
+
+  MoreInfo::GetFileVersion "$G_ROOTDIR\uninstall.exe"
+  Pop ${L_TEMP}
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayName" "${C_PFI_PRODUCT} ${L_TEMP}"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "InstallLocation" "$G_ROOTDIR"
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoModify" "0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "ModifyPath" '"$G_ROOTDIR\uninstall.exe" /MODIFY'
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoElevateOnModify" "1"
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoRepair" "1"
+
+all_done:
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_BE_PATIENT)"
   SetDetailsPrint listonly

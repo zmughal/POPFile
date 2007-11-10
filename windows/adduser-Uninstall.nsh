@@ -446,6 +446,7 @@ Section "un.User Config" UnSecConfig
   Delete "$G_USERDIR\stopwords.default"
 
   Delete "$G_USERDIR\pfi-run.bat"
+  Delete "$G_USERDIR\pfi-run.bat.bk?"
 
   SetDetailsPrint textonly
   DetailPrint " "
@@ -461,22 +462,52 @@ Section "un.ShortCuts" UnSecShortcuts
 
   StrCmp $G_PFIFLAG "fail" do_nothing
 
+  !define L_TEMP    $R9
+
+  Push ${L_TEMP}
+
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_UN_PROG_SHORT)"
   SetDetailsPrint listonly
 
+  ; Remove the utility shortcuts in the 'User Data' folder
+
   Delete "$G_USERDIR\Check database status.lnk"
   Delete "$G_USERDIR\Run SQLite utility.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Check database status.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile Data ($G_WINUSERNAME).lnk"
+
+  ; Remove the POPFile shortcuts from the current user's Start Menu
+
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Check database status.lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
+
+  Call un.PFI_IsNT
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} 1 remove_all
+  IfFileExists "$G_ROOTDIR\uninstall.exe" remove_most
+
+remove_all:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk"
+
+remove_most:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile Data ($G_WINUSERNAME).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}"
+
+  Delete "$SMSTARTUP\Run POPFile.lnk"
 
   SetDetailsPrint textonly
   DetailPrint " "
   SetDetailsPrint listonly
+
+  Pop ${L_TEMP}
+
+  !undef L_TEMP
 
 do_nothing:
 SectionEnd

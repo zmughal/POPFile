@@ -76,12 +76,17 @@
   ;                         minimal Perl files (perl.exe, wperl.exe and perl58.dll)
   ;
   ; (b) $INSTDIR\kakasi  -  holds the Kakasi package used to process Japanese email
-  ;                         (only installed when Japanese support is required)
+  ;                         (only installed when Japanese support is required and the Kakasi
+  ;                         parser has been selected)
   ;
-  ; (c) $INSTDIR\lib     -  minimal Perl installation (except for the three files stored
+  ; (c) $INSTDIR\mecab   -  holds the MeCab package used to process Japanese email
+  ;                         (only installed when Japanese support is required and the MeCab
+  ;                         parser has been selected)
+  ;
+  ; (d) $INSTDIR\lib     -  minimal Perl installation (except for the three files stored
   ;                         in the $INSTDIR folder to avoid runtime problems)
   ;
-  ; (d) $INSTDIR\*       -  the remaining POPFile folders (Classifier, languages, skins, etc)
+  ; (e) $INSTDIR\*       -  the remaining POPFile folders (Classifier, languages, skins, etc)
   ;
   ; For this build, each user is expected to have separate user data folders. By default each
   ; user data folder will contain popfile.cfg, stopwords, stopwords.default, popfile.db,
@@ -143,7 +148,6 @@ continue:
 
   Call SkinsRestructure
 
-  StrCmp $G_WINUSERTYPE "Admin" 0 current_user_root
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language" "$LANGUAGE"
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version" "${C_POPFILE_MAJOR_VERSION}"
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${C_POPFILE_MINOR_VERSION}"
@@ -161,25 +165,6 @@ find_HKLM_root_sfn:
 
 save_HKLM_root_sfn:
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
-
-current_user_root:
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language" "$LANGUAGE"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version" "${C_POPFILE_MAJOR_VERSION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${C_POPFILE_MINOR_VERSION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision" "${C_POPFILE_REVISION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile RevStatus" "${C_POPFILE_RC}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$G_ROOTDIR"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Author" "setup.exe"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN" "$G_ROOTDIR"
-  StrCmp $G_SFN_DISABLED "0" find_HKCU_root_sfn
-  StrCpy ${L_TEMP} "Not supported"
-  Goto save_HKCU_root_sfn
-
-find_HKCU_root_sfn:
-  GetFullPathName /SHORT ${L_TEMP} "$G_ROOTDIR"
-
-save_HKCU_root_sfn:
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
 
   ; Install the POPFile Core files
 
@@ -366,17 +351,10 @@ install_schema:
   ; 'CreateShortCut' fails to update existing shortcuts if they are read-only, so try to clear
   ; the read-only attribute first. Similar handling is required for the Internet shortcuts.
 
-  ; If the user has 'Admin' rights, create a 'POPFile' folder with a set of shortcuts in
-  ; the 'All Users' Start Menu . If the user does not have 'Admin' rights, the shortcuts
-  ; are created in the 'Current User' Start Menu.
-
+  ; Create a 'POPFile' folder with a set of shortcuts in the 'All Users' Start Menu.
   ; If the 'All Users' folder is not found, NSIS will return the 'Current User' folder.
 
   SetShellVarContext all
-  StrCmp $G_WINUSERTYPE "Admin" create_shortcuts
-  SetShellVarContext current
-
-create_shortcuts:
   SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}"
   SetOutPath "$G_ROOTDIR"
 
@@ -394,14 +372,6 @@ create_shortcuts:
                  "$G_ROOTDIR\${C_README}.txt"
 
   SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url" \
-              "InternetShortcut" "URL" "http://${C_UI_URL}:$G_GUI/"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url" \
-              "InternetShortcut" "URL" "http://${C_UI_URL}:$G_GUI/shutdown"
 
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" NORMAL
 
@@ -451,7 +421,7 @@ create_shortcuts:
     pfidiagnostic:
   !endif
 
-  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 silent_shutdown
+  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 add_remove_programs
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\PFI Diagnostic utility.lnk"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
@@ -460,48 +430,39 @@ create_shortcuts:
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" \
                  "$G_ROOTDIR\pfidiag.exe" "/full"
 
-silent_shutdown:
+add_remove_programs:
   SetOutPath "$G_ROOTDIR"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk" \
-                 "$G_ROOTDIR\stop_pf.exe" "/showerrors $G_GUI"
+  SetShellVarContext current
 
   ; Create entry in the Control Panel's "Add/Remove Programs" list
 
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  ClearErrors
+  ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  IfErrors use_HKLM
+  StrCpy ${L_TEMP} ${L_RESULT} 1
+  StrCmp ${L_TEMP} '6' create_arp_entry
+
+use_HKLM:
+  SetShellVarContext all
+
+create_arp_entry:
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "InstallLocation" "$G_ROOTDIR"
-  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoModify" "0"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "ModifyPath" '"$G_ROOTDIR\uninstall.exe" /MODIFY'
-  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoElevateOnModify" "1"
-  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoRepair" "1"
 
-  StrCmp $G_WINUSERTYPE "Admin" 0 end_section
+  SetShellVarContext current
 
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "InstallLocation" "$G_ROOTDIR"
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoModify" "0"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "ModifyPath" '"$G_ROOTDIR\uninstall.exe" /MODIFY'
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoElevateOnModify" "1"
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoRepair" "1"
-
-end_section:
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
