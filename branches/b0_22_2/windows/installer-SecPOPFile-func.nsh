@@ -323,7 +323,7 @@ FunctionEnd
         Click OK to continue"
     ReadRegStr $G_ROOTDIR HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir"
     StrCmp $G_ROOTDIR "" try_other_entries
-    MessageBox MB_OK|MB_ICONINFORMATION "Good News: UAC_RootDir now defined"
+    MessageBox MB_OK|MB_ICONINFORMATION "Good News: UAC_RootDir now defined ($G_ROOTDIR)"
     Goto check_folder_exists
 
   try_other_entries:    ; ???
