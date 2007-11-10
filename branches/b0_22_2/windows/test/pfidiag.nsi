@@ -103,7 +103,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.8"
+  !define C_VERSION   "0.1.9"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -1240,15 +1240,13 @@ check_mecab:
 
   StrCmp $G_DIAG_MODE "simple" section_end
 
-  StrCmp ${L_MECABRC} "" exit_with_blank_line
+  StrCmp ${L_MECABRC} "" section_end
   StrCpy ${L_TEMP} ""
   IfFileExists "${L_MECABRC}" display_mecab_result
   StrCpy ${L_TEMP} "not "
 
 display_mecab_result:
   DetailPrint "'mecabrc'    file = ${L_TEMP}found"
-
-exit_with_blank_line:
   DetailPrint ""
 
 section_end:
