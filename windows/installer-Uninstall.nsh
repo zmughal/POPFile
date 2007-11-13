@@ -845,6 +845,8 @@ continue:
   Delete "$G_ROOTDIR\Server\*.pm"
   RMDir "$G_ROOTDIR\Server"
 
+  Delete "$G_ROOTDIR\Services\IMAP\*.pm"
+  RMDir "$G_ROOTDIR\Services\IMAP"
   Delete "$G_ROOTDIR\Services\*.pm"
   RMDir "$G_ROOTDIR\Services"
 
@@ -1151,7 +1153,7 @@ Section "-un.Registry Entries" UnSecRegistry
   StrCmp ${L_REGDATA} '6' 0 check_HKLM_data
 
   ; Uninstalluser.exe deletes all HKCU registry data except for the 'Add/Remove Programs' entry
-  
+
   ReadRegStr ${L_REGDATA} HKCU \
       "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
   StrCmp ${L_REGDATA} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 real_user
@@ -1196,7 +1198,7 @@ Function un.DeleteDataFromHKCU
   !define L_REGDATA $R9
 
   Push ${L_REGDATA}
-  
+
   ReadRegStr ${L_REGDATA} HKCU \
       "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
   StrCmp ${L_REGDATA} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 exit
@@ -1206,7 +1208,7 @@ exit:
   Pop ${L_REGDATA}
 
   !undef L_REGDATA
-  
+
 FunctionEnd
 
 #--------------------------------------------------------------------------
