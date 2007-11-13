@@ -5,7 +5,7 @@
 #                   to allow the text to be analysed properly. POPFile 0.22.5
 #                   (and earlier) only supported the 'Kakasi' parser. The 1.0.0
 #                   release offers a choice of three parsers (Kakasi, MeCab and
-#                   internal. To make  it easier to change the Nihongo Parser
+#                   internal. To make it easier to change the Nihongo Parser
 #                   the 1.0.0 release creates a "Change" option in the "Add/Remove
 #                   Programs" entry for POPFile. This new option is handled by the
 #                   POPFile uninstaller.
@@ -42,7 +42,7 @@
   ; This script requires the 'Inetc' NSIS plugin
   ;------------------------------------------------
 
-  ; This script uses a special NSIS plugin (inetc) to download the SSL files. This plugin
+  ; This script uses a special NSIS plugin (inetc) to download the MeCab files. This plugin
   ; has much better proxy support than the standard NSISdl plugin shipped with NSIS.
   ;
   ; The 'NSIS Wiki' page for the 'Inetc' plugin (description, example and download links):
@@ -187,10 +187,13 @@
 #
 # In order to keep the size of the uninstaller down (and thus reduce the
 # overall size of the installer) we only install these extra Perl packages
-# when _installing_ POPFile. When the uninstaller is used to _change_ the
-# selected Nihongo parser an error message asking the user to re-run the
-# installer is shown if it looks like these extra Perl packages are missing
-# from the existing installation.
+# when _installing_ POPFile.
+#
+# To Do:
+# When the uninstaller is used to _change_ the selected Nihongo parser
+# an error message asking the user to re-run the installer should be shown
+# if it looks like these extra Perl packages are missing from the existing
+# installation.
 #--------------------------------------------------------------------------
 
 !macro NIHONGO_PERL_SUPPORT PARSER
@@ -368,7 +371,7 @@
 
     !define L_RESERVED  $0          ; used in system.dll call
 
-    !define L_RESULT          $R0   ; result from 'GetSSLFile' function or the 'untgz' plugin
+    !define L_RESULT          $R0   ; result from 'GetMeCabFile' function or the 'untgz' plugin
                                     ; WARNING: The 'untgz' plugin is hard-coded to use $R0
 
     !define L_DLG_ITEM        $R1   ; used to disable/enable the "Show Details" button
