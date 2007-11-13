@@ -200,7 +200,7 @@
   ; Select LZMA compression to reduce 'setup.exe' size by around 30%
   ;--------------------------------------------------------------------------
 
-;;  SetCompress off
+##  SetCompress off
 
   SetCompressor /solid lzma
 
@@ -1550,6 +1550,9 @@ Section /o "IMAP" SecIMAP
 
   SetOutpath "$G_ROOTDIR\Services"
   File "..\engine\Services\IMAP.pm"
+
+  SetOutpath "$G_ROOTDIR\Services\IMAP"
+  File "..\engine\Services\IMAP\Client.pm"
 
   Delete "$G_ROOTDIR\POPFile\IMAP.pm"
   Delete "$G_ROOTDIR\Server\IMAP.pm"
