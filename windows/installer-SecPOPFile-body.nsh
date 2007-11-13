@@ -434,13 +434,24 @@ add_remove_programs:
   SetOutPath "$G_ROOTDIR"
   SetShellVarContext current
 
-  ; Create entry in the Control Panel's "Add/Remove Programs" list
+  ; Create an entry in the Control Panel's "Add/Remove Programs" list. The installer runs with
+  ; admin rights so normally HKLM is used but on Vista HKCU is used in order to avoid problems
+  ; with UAC (if HKLM is used then Vista elevates the uninstaller _before_ the UAC plugin gets
+  ; a chance!)
 
   ClearErrors
   ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
   IfErrors use_HKLM
   StrCpy ${L_TEMP} ${L_RESULT} 1
-  StrCmp ${L_TEMP} '6' create_arp_entry
+  IntCmp ${L_TEMP} 5 use_HKLM use_HKLM
+  ReadRegStr ${L_RESULT} HKLM \
+      "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
+  StrCmp ${L_RESULT} "$G_ROOTDIR\uninstall.exe" delete_HKLM_entry
+  StrCmp ${L_RESULT} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 create_arp_entry
+
+delete_HKLM_entry:
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}"
+  Goto create_arp_entry
 
 use_HKLM:
   SetShellVarContext all
