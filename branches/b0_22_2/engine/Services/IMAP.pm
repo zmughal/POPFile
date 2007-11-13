@@ -528,6 +528,11 @@ sub connect_server__ {
             }
         }
 
+        # Build a list of IMAP mailboxes if we haven't already got one:
+        unless ( @{$self->{mailboxes__}} ) {
+            @{$self->{mailboxes__}} = $imap->get_mailbox_list();
+        }
+
         # Do a STATUS to check UIDVALIDITY and UIDNEXT
         my $info = $imap->status( $folder );
         my $uidnext = $info->{UIDNEXT};
@@ -1201,7 +1206,7 @@ sub configure_item {
     # Which mailboxes/folders should we be watching?
     if ( $name eq 'imap_1_watch_folders' ) {
 
-        # We can only configure this when we have a list of mailboxes available on the server
+        # We can only configure this if we have a list of mailboxes on the server available
         if ( @{$self->{mailboxes__}} < 1 || ( ! $self->watched_folders__() ) ) {
             $templ->param( IMAP_if_mailboxes => 0 );
         }
