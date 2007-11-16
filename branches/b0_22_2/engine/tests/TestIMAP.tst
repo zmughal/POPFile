@@ -41,9 +41,11 @@ use POPFile::MQ;
 use POPFile::Logger;
 use POPFile::History;
 use Services::IMAP;
+use UI::HTML;
 use Classifier::Bayes;
 use Classifier::WordMangle;
 use File::Copy;
+use HTML::Template;
 
 $SIG{CHLD} = 'IGNORE';
 
@@ -68,6 +70,8 @@ else {
 
     # Configure the IMAP module so it will
     # talk to the server.
+    configure_imap_module( $im, $c, $mq, $l, $b, $h );
+    test_imap_ui( $im );
     configure_imap_module( $im, $c, $mq, $l, $b, $h );
     test_imap_module( $im, $c, $mq, $l, $b, $h );
     test_imap_client( $im );
@@ -343,6 +347,114 @@ sub test_imap_client {
     test_assert_equal( $im->{imap_error}, 'NO_LOGIN' );
 }
 
+#################################################################################
+# test_imap_ui
+# Test the UI widgets of the IMAP module. All we are going to have to do
+# here is test the two methods configure_item and validate_item
+##
+
+sub test_imap_ui {
+    my $im = shift;
+
+    # We are going to set up a template object that we will pass into
+    # configure_item and validate_item.
+    # Later, we'll test whether the correct parameters are set to the
+    # correct values.
+
+    # Here's a list of all the templates we have to test:
+    #   imap-bucket-folders.thtml
+    #   imap-options.thtml
+    #   imap-watch-folders.thtml
+    #   imap-connection-details.thtml
+    #   imap-update-mailbox-list.thtml
+    #   imap-watch-more-folders.thtml
+
+    # We also need to provide those methods with a language hash:
+    my $html = UI::HTML->new();
+    $html->{configuration__} = $im->{configuration__};
+    $html->load_language( 'English' );
+    my $language = $html->{language__};
+
+    # Start with the connection details
+    # imap-connection-details.thtml
+
+    my $tmpl = HTML::Template->new( filename => '../skins/default/imap-connection-details.thtml' );
+
+    # Test the template itself. Does it contain all the variables that it must contain
+    test_assert_equal( $tmpl->query( name => 'IMAP_hostname'), 'VAR' );
+    test_assert_equal( $tmpl->query( name => 'IMAP_port' ), 'VAR' );
+    test_assert_equal( $tmpl->query( name => 'IMAP_password' ), 'VAR' );
+    test_assert_equal( $tmpl->query( name => 'IMAP_login' ), 'VAR' );
+
+    # Now let the IMAP module populate the template
+    $im->config_( hostname => 'some host' );
+    $im->config_( port => 'some port' );
+    $im->config_( password => 'some password' );
+    $im->config_( login => 'some login' );
+
+    $im->configure_item( 'imap_0_connection_details', $tmpl, $language );
+
+    test_assert_equal( $tmpl->param( 'IMAP_hostname'), 'some host' );
+    test_assert_equal( $tmpl->param( 'IMAP_port' ), 'some port' );
+    test_assert_equal( $tmpl->param( 'IMAP_password' ), 'some password' );
+    test_assert_equal( $tmpl->param( 'IMAP_login' ), 'some login' );
+
+
+    # imap-watch-folders.thtml
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-watch-folders.thtml' );
+
+    test_assert_equal( $tmpl->query( name => 'IMAP_if_mailboxes' ), 'VAR' );
+    test_assert_equal( $tmpl->query( name => 'IMAP_loop_watched_folders' ), 'LOOP' );
+    test_assert_equal( $tmpl->query( name => ['IMAP_loop_watched_folders', 'IMAP_loop_counter'] ), 'VAR' );
+    test_assert_equal( $tmpl->query( name => ['IMAP_loop_watched_folders', 'IMAP_WatchedFolder_Msg' ] ), 'VAR' );
+    test_assert_equal( $tmpl->query( name => ['IMAP_loop_watched_folders', 'IMAP_loop_mailboxes'] ), 'LOOP' );
+    test_assert_equal( $tmpl->query( name => ['IMAP_loop_watched_folders', 'IMAP_loop_mailboxes', 'IMAP_mailbox' ] ), 'VAR' );
+    test_assert_equal( $tmpl->query( name => ['IMAP_loop_watched_folders', 'IMAP_loop_mailboxes', 'IMAP_selected' ] ), 'VAR' );
+
+    # We set both, the mailboxes__ arrayref and the list of watched folders, to be empty
+    $im->{mailboxes__} = [];
+    $im->config_( 'watched_folders', '' );
+    $im->configure_item( 'imap_1_watch_folders', $tmpl, $language );
+    test_assert( ! $tmpl->param( 'IMAP_if_mailboxes' ) );
+
+    # Now we set only one to a non-empty list
+    $im->{mailboxes__} = [ 1 ];
+    $im->configure_item( 'imap_1_watch_folders', $tmpl, $language );
+    test_assert( ! $tmpl->param( 'IMAP_if_mailboxes' ) );
+
+    $im->{mailboxes__} = [];
+    $im->watched_folders__( 'INBOX' );
+    $im->configure_item( 'imap_1_watch_folders', $tmpl, $language );
+    test_assert( ! $tmpl->param( 'IMAP_if_mailboxes' ) );
+
+    # Finally, both get a value
+    $im->{mailboxes__} = [1];
+    $im->watched_folders__( 'second' );
+    $im->configure_item( 'imap_1_watch_folders', $tmpl, $language );
+    test_assert( $tmpl->param( 'IMAP_if_mailboxes' ) );
+    my %params = map { $_ => 1 } $tmpl->param('IMAP_loop_watched_folders');
+    #use Data::Dumper; warn Dumper( \%params );
+    test_assert_equal( 1, 1 );
+
+
+
+
+    # imap-watch-more-folders.thtml
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-watch-more-folders.thtml' );
+
+    test_assert_equal( $tmpl->query( name => 'IMAP_if_mailboxes' ), 'VAR' );
+
+    $im->{mailboxes__} = [];
+    $im->configure_item( 'imap_2_watch_more_folders', $tmpl, $language );
+    test_assert( ! $tmpl->param( 'IMAP_if_mailboxes' ) );
+
+    $im->{mailboxes__} = [1];
+    $im->configure_item( 'imap_2_watch_more_folders', $tmpl, $language );
+    test_assert( $tmpl->param( 'IMAP_if_mailboxes' ) );
+
+
+}
+
 
 #################################################################################
 # configure_imap_module
@@ -388,7 +500,7 @@ sub start_popfile {
     rmtree( 'messages' );
     rmtree( 'corpus' );
     test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-    test_assert( rmtree( 'corpus/CVS' ) > 0 );
+    test_assert( rmtree( 'corpus/CVS' ) > 0 ) if -e 'corpus/CVS';
 
     unlink 'popfile.db';
     unlink 'stopwords';
