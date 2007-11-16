@@ -72,9 +72,9 @@ else {
     # talk to the server.
     configure_imap_module( $im, $c, $mq, $l, $b, $h );
     test_imap_ui( $im );
-    configure_imap_module( $im, $c, $mq, $l, $b, $h );
-    test_imap_module( $im, $c, $mq, $l, $b, $h );
-    test_imap_client( $im );
+#    configure_imap_module( $im, $c, $mq, $l, $b, $h );
+#    test_imap_module( $im, $c, $mq, $l, $b, $h );
+#    test_imap_client( $im );
 
     $mq->stop();
     $h->stop();
@@ -428,15 +428,60 @@ sub test_imap_ui {
     test_assert( ! $tmpl->param( 'IMAP_if_mailboxes' ) );
 
     # Finally, both get a value
-    $im->{mailboxes__} = [1];
-    $im->watched_folders__( 'second' );
+    $im->{mailboxes__} = ['INBOX','something', 'other', 'second'];
+    $im->watched_folders__( 'INBOX', 'second' );
     $im->configure_item( 'imap_1_watch_folders', $tmpl, $language );
     test_assert( $tmpl->param( 'IMAP_if_mailboxes' ) );
-    my %params = map { $_ => 1 } $tmpl->param('IMAP_loop_watched_folders');
-    #use Data::Dumper; warn Dumper( \%params );
-    test_assert_equal( 1, 1 );
 
+    # This should be an arrayref containing a hash for each
+    # iteration of the loop, ie for each watched folder
+    my $params =  $tmpl->param('IMAP_loop_watched_folders');
 
+    # since we have two watched folders, we should have to elements
+    # in our params array
+    test_assert_equal( scalar @$params, 2 );
+
+    my $inner_loop = $params->[0]->{IMAP_loop_mailboxes};
+    # since we have four mailboxes, this inner loop should have
+    # four elements
+    test_assert_equal( scalar @$inner_loop, 4 );
+    my %included_mailboxes = ();
+    foreach ( @$inner_loop ) {
+        $included_mailboxes{ $_->{IMAP_mailbox} } = 1;
+        if ( $_->{IMAP_mailbox} eq 'INBOX' ) {
+            test_assert_equal( $_->{IMAP_selected}, 'selected="selected"' );
+        }
+        else {
+            test_assert_equal( $_->{IMAP_selected}, '' );
+        }
+    }
+    test_assert_equal( scalar keys %included_mailboxes, 4 );
+    foreach ( @{$im->{mailboxes__}} ) {
+        test_assert_equal( $included_mailboxes{ $_ }, 1 );
+    }
+
+    # and the same for the second watched folder:
+    $inner_loop = $params->[1]->{IMAP_loop_mailboxes};
+    # since we have four mailboxes, this inner loop should have
+    # four elements
+    test_assert_equal( scalar @$inner_loop, 4 );
+    %included_mailboxes = ();
+    foreach ( @$inner_loop ) {
+        $included_mailboxes{ $_->{IMAP_mailbox} } = 1;
+        if ( $_->{IMAP_mailbox} eq 'second' ) {
+            test_assert_equal( $_->{IMAP_selected}, 'selected="selected"' );
+        }
+        else {
+            test_assert_equal( $_->{IMAP_selected}, '' );
+        }
+    }
+    test_assert_equal( scalar keys %included_mailboxes, 4 );
+    foreach ( @{$im->{mailboxes__}} ) {
+        test_assert_equal( $included_mailboxes{ $_ }, 1 );
+    }
+
+    test_assert_equal( $params->[0]->{IMAP_loop_counter}, 1 );
+    test_assert_equal( $params->[1]->{IMAP_loop_counter}, 2 );
 
 
     # imap-watch-more-folders.thtml
@@ -452,7 +497,9 @@ sub test_imap_ui {
     $im->configure_item( 'imap_2_watch_more_folders', $tmpl, $language );
     test_assert( $tmpl->param( 'IMAP_if_mailboxes' ) );
 
-
+    # imap-connection-details.thtml
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-bucket-folders.thtml' );
+    test_assert_equal( $tmpl->query( name => 'IMAP_if_mailboxes' ), 'VAR' );
 }
 
 
