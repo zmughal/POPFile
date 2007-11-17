@@ -477,18 +477,42 @@ Section "un.ShortCuts" UnSecShortcuts
 
   ; Remove the POPFile shortcuts from the current user's Start Menu
 
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk"
+  SetShellVarContext all
+  StrCpy ${L_TEMP} "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\"
+  SetShellVarContext current
+  StrCmp ${L_TEMP} "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\" 0 remove_all_support
+
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" 0 try_full
+  ShellLink::GetShortCutTarget "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk"
+  Pop ${L_TEMP}
+  IfFileExists "${L_TEMP}" skip_system_entries
+
+try_full:
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" 0 remove_all_support
+  ShellLink::GetShortCutTarget "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk"
+  Pop ${L_TEMP}
+  IfFileExists "${L_TEMP}" skip_system_entries
+
+remove_all_support:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url"
+
+skip_system_entries:
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Check database status.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
 
   Call un.PFI_IsNT
   Pop ${L_TEMP}
-  StrCmp ${L_TEMP} 1 remove_all
+  StrCmp ${L_TEMP} 1 remove_all_main
   IfFileExists "$G_ROOTDIR\uninstall.exe" remove_most
 
-remove_all:
+remove_all_main:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk"
 

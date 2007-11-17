@@ -323,21 +323,27 @@ install_schema:
 
   ; Attempt to remove some StartUp and Start Menu shortcuts created by previous installations
 
+  !macro OBSOLETE_START_MENU_ENTRIES
+
+      Delete "$SMSTARTUP\Run POPFile.lnk"
+      Delete "$SMSTARTUP\Run POPFile in background.lnk"
+
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.lnk"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
+
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
+
+  !macroend
+
   SetShellVarContext all
-  Delete "$SMSTARTUP\Run POPFile.lnk"
-  Delete "$SMSTARTUP\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
+  !insertmacro OBSOLETE_START_MENU_ENTRIES
 
   SetShellVarContext current
-  Delete "$SMSTARTUP\Run POPFile.lnk"
-  Delete "$SMSTARTUP\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
+  !insertmacro OBSOLETE_START_MENU_ENTRIES
 
   ; Create the START MENU entries
 
