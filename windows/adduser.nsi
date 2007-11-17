@@ -726,6 +726,7 @@
   ReserveFile "${NSISDIR}\Plugins\MoreInfo.dll"
   ReserveFile "${NSISDIR}\Plugins\nsExec.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
+  ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "ioA.ini"
@@ -1214,7 +1215,53 @@ skip_rel_notes:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url" \
               "InternetShortcut" "URL" "http://${C_UI_URL}:$G_GUI/shutdown"
 
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" NORMAL
+
+  !ifndef ENGLISH_MODE
+      StrCmp $LANGUAGE ${LANG_JAPANESE} japanese_faq
+  !endif
+
+  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
+              "InternetShortcut" "URL" \
+              "http://getpopfile.org/wiki/FAQ"
+
+  !ifndef ENGLISH_MODE
+      Goto support
+
+    japanese_faq:
+      WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
+                  "InternetShortcut" "URL" \
+                  "http://getpopfile.org/wiki/JP:FAQ"
+
+    support:
+  !endif
+
   SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
+
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url" NORMAL
+  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url" \
+              "InternetShortcut" "URL" "http://getpopfile.org/"
+
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" NORMAL
+
+  !ifndef ENGLISH_MODE
+      StrCmp $LANGUAGE ${LANG_JAPANESE} japanese_wiki
+  !endif
+
+  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
+              "InternetShortcut" "URL" \
+              "http://getpopfile.org/wiki"
+
+  !ifndef ENGLISH_MODE
+      Goto user_data_shortcut
+
+    japanese_wiki:
+  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
+                  "InternetShortcut" "URL" \
+                  "http://getpopfile.org/wiki/jp"
+
+    user_data_shortcut:
+  !endif
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk" 0 pfidiag_entries
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk" NORMAL
@@ -1224,12 +1271,12 @@ skip_rel_notes:
 pfidiag_entries:
   IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 msgcapture_entry
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\PFI Diagnostic utility.lnk"
-;  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
-;  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
-;                 "$G_ROOTDIR\pfidiag.exe"
-;  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" NORMAL
-;  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" \
-;                 "$G_ROOTDIR\pfidiag.exe" "/full"
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
+  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
+                 "$G_ROOTDIR\pfidiag.exe"
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" NORMAL
+  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" \
+                 "$G_ROOTDIR\pfidiag.exe" "/full"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk" \
                  "$G_ROOTDIR\pfidiag.exe" "/shortcut"

@@ -693,48 +693,74 @@ SectionEnd
 # Uninstaller Section: 'un.Start Menu Entries'
 #--------------------------------------------------------------------------
 
+  !macro CHECK_SHORTCUT_TARGET SHORTCUT_FILE EXPECTED_TARGET
+
+      !insertmacro PFI_UNIQUE_ID
+
+      IfFileExists "${SHORTCUT_FILE}" 0 try_next_${PFI_UNIQUE_ID}
+      ShellLink::GetShortCutTarget "${SHORTCUT_FILE}"
+      Pop ${L_TARGET}
+      StrCmp ${L_TARGET} "${EXPECTED_TARGET}" delete_menu_entries
+
+    try_next_${PFI_UNIQUE_ID}:
+  !macroend
+
 Section "-un.Start Menu Entries" UnSecStartMenu
 
   StrCmp $G_UNINST_MODE "change" skip_section
 
-  !define L_TEMP  $R9
+  !define L_TARGET      $R9
 
-  Push ${L_TEMP}
+  Push ${L_TARGET}
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_UN_PROG_SHORT)"
   SetDetailsPrint listonly
 
-  SetShellVarContext all
-  StrCmp $G_WINUSERTYPE "Admin" menucleanup
-  SetShellVarContext current
+  ; The UAC plugin ensures we have admin rights
 
-menucleanup:
-  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url" 0 delete_menu_entries
-  ReadINIStr ${L_TEMP} "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url" \
-      "InternetShortcut" "URL"
-  StrCmp ${L_TEMP} "file://$G_ROOTDIR/manual/en/manual.html" delete_menu_entries exit
+  SetShellVarContext all
+
+  ; Check if the Start Menu shortcuts refer to the installation we are removing
+  ; (if they don't then leave them alone)
+
+  !insertmacro CHECK_SHORTCUT_TARGET \
+      "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk" \
+      "$G_ROOTDIR\runpopfile.exe"
+
+  !insertmacro CHECK_SHORTCUT_TARGET \
+      "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" \
+      "$G_ROOTDIR\uninstall.exe"
+
+  !insertmacro CHECK_SHORTCUT_TARGET \
+      "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
+      "$G_ROOTDIR\pfidiag.exe"
+
+  !insertmacro CHECK_SHORTCUT_TARGET \
+      "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" \
+      "$G_ROOTDIR\pfidiag.exe"
+
+  Goto exit
 
 delete_menu_entries:
+  SetShellVarContext current
+  StrCpy ${L_TARGET} "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\"
+  SetShellVarContext all
+  StrCmp ${L_TARGET} "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\" 0 remove_all
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk" skip_site_entries
+
+remove_all:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url"
+
+skip_site_entries:
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
 
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
-
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url"
-
-  Delete "$SMSTARTUP\Run POPFile in background.lnk"
-  Delete "$SMSTARTUP\Run POPFile.lnk"
 
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}"
@@ -749,9 +775,9 @@ exit:
   DetailPrint " "
   SetDetailsPrint listonly
 
-  Pop ${L_TEMP}
+  Pop ${L_TARGET}
 
-  !undef L_TEMP
+  !undef L_TARGET
 
 skip_section:
 SectionEnd
