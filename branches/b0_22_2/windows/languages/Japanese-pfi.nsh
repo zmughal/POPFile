@@ -175,7 +175,7 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MBMANSHUT_1          "$G_PLS_FIELD_1 を自動的にシャットダウンすることができませんでした。"
 !insertmacro PFI_LANG_STRING PFI_LANG_MBMANSHUT_2          "$G_PLS_FIELD_1 を手動でシャットダウンして下さい。"
-!insertmacro PFI_LANG_STRING PFI_LANG_MBMANSHUT_3          "$G_PLS_FIELD_1 をシャットダウンしたら、'OK' をクリックして続行して下さい。"
+!insertmacro PFI_LANG_STRING PFI_LANG_MBMANSHUT_3          "$G_PLS_FIELD_1 をシャットダウンしたら、「OK」 をクリックして続行して下さい。"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Shared: Message box shown if problem detected when trying to save the log file [installer.nsi, addssl.nsi, backup.nsi, restore.nsi]
@@ -334,7 +334,7 @@
 
 ; The last line in the summary explains how to change the installation selections
 
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_BACKBUTTON   "設定を変更するには、'戻る' ボタンで前のページに戻ってください。"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_BACKBUTTON   "設定を変更するには、「戻る」 ボタンで前のページに戻ってください。"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - INSTFILES [installer.nsi]
@@ -424,7 +424,7 @@
 
 ; Message Box text strings
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "POPFile ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(残したいファイルがあれば いいえ をクリックして下さい。)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "POPFile ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(残したいファイルがあれば 「いいえ」 をクリックして下さい。)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_FINISH [installer.nsi]
@@ -456,7 +456,7 @@
 
 !insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TITLE       "インストール済みの POPFile 0.22 (以降) を選択してください"
 !insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_SUBTITLE    "SSL サポートを追加するには POPFile が既にインストールされている必要があります"
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_TOP    "SSL サポートは POPFile がインストールされているのと同じフォルダにインストールする必要があります。${MB_NL}${MB_NL}このユーティリティは次のフォルダにインストールされている POPFile に SSL サポートを追加します。異なる POPFile に対して追加したいなら、'参照' ボタンを押して別のフォルダを選択してください。 $_CLICK"
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_TOP    "SSL サポートは POPFile がインストールされているのと同じフォルダにインストールする必要があります。${MB_NL}${MB_NL}このユーティリティは次のフォルダにインストールされている POPFile に SSL サポートを追加します。異なる POPFile に対して追加したいなら、「参照」 ボタンを押して別のフォルダを選択してください。 $_CLICK"
 !insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_DESTN  "POPFile 0.22 (以降) がインストールされているフォルダ"
 
 !insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_MB_WARN_1   "POPFile 0.22 (以降) は次のフォルダにインストールされておりません${MB_NL}${MB_NL}$G_PLS_FIELD_1"
@@ -492,7 +492,7 @@
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TITLE         "$(^NameDA) ウィザード完了"
-!insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TEXT          "POPFile の SSL サポートがインストールされました。${IO_NL}${IO_NL}POPFile を起動し、POPFile とメールソフトとを SSL が使用できるように設定してください。${IO_NL}${IO_NL}'完了' ボタンを押してウィザードを閉じてください。"
+!insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TEXT          "POPFile の SSL サポートがインストールされました。${IO_NL}${IO_NL}POPFile を起動し、POPFile とメールソフトとを SSL が使用できるように設定してください。${IO_NL}${IO_NL}「完了」 ボタンを押してウィザードを閉じてください。"
 
 !insertmacro PFI_LANG_STRING PSS_LANG_FINISH_README        "重要な情報"
 
@@ -628,7 +628,7 @@
 
 ; Installation Progress Reports displayed above the progress bar
 
-!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_CORPUS     "corpus(コーパス、単語ファイル)のバックアップを作成中。しばらくお待ち下さい..."
+!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_CORPUS     "コーパス(単語ファイル)のバックアップを作成中。しばらくお待ち下さい..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_SQLBACKUP  "古い SQLite データベースをバックアップ中..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_FINDCORPUS "フラットファイルまたは BerkeleyDB のコーパスを探しています..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_MAKEBAT    "'pfi-run.bat' バッチファイルを生成中..."
@@ -646,7 +646,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_C           "アップデートするには「はい」をクリックして下さい。(古いファイルは次の名前で保存されます: 'stopwords.bak')"
 !insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_D           "古いファイルを残すには「いいえ」をクリックして下さい。(新しいファイルは次の名前で保存されます: 'stopwords.default')"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MBCORPUS_1           "古い corpus をバックアップ中にエラーが見つかりました。"
+!insertmacro PFI_LANG_STRING PFI_LANG_MBCORPUS_1           "古い コーパス をバックアップ中にエラーが見つかりました。"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Message box warnings used when verifying the installation folder chosen by user [adduser.nsi]
@@ -853,7 +853,7 @@
 
 ; Message Box to confirm changes to Outlook/Outlook Express account configuration
 
-!insertmacro PFI_LANG_STRING PFI_LANG_EXPCFG_MBIDENTITY    "Outlook Express アイデンティティー :"
+!insertmacro PFI_LANG_STRING PFI_LANG_EXPCFG_MBIDENTITY    "Outlook Express ユーザー :"
 !insertmacro PFI_LANG_STRING PFI_LANG_EXPCFG_MBACCOUNT     "Outlook Express アカウント :"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_OUTCFG_MBIDENTITY    "Outlook ユーザー :"
@@ -983,7 +983,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_OUTEXPRESS   "Outlook Express の設定を元に戻しています..."
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_OUTLOOK      "Outlook の設定を元に戻しています..."
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_EUDORA       "Eudora の設定を元に戻しています..."
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_DBMSGDIR     "corpus と 'Recent Messages' ディレクトリを削除中..."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_DBMSGDIR     "コーパス と '最近のメッセージ' ディレクトリを削除中..."
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_CONFIG       "設定データを削除中..."
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_EXESTATUS    "プログラムのステータスをチェック中..."
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_REGISTRY     "POPFile のレジストリエントリーを削除中..."
@@ -1013,12 +1013,12 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_1         "いくつかのメールクライアントの設定を元に戻すことができませんでした！"
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_2         "(詳細については $INSTDIR フォルダを参照してください。)"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_3         "'いいえ' をクリックすればエラーを無視して全てを削除します。"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_4         "'はい' をクリックすればデータは保存されます。(これは、後でまた再試行する時のためです。)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_3         "「いいえ」 をクリックすればエラーを無視して全てを削除します。"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_4         "「はい」 をクリックすればデータは保存されます。(これは、後でまた再試行する時のためです。)"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_2        "POPFile「ユーザーデータ」ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_USERDIR${MB_NL}${MB_NL}(残したいファイルがあれば いいえ をクリックして下さい。)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_2        "POPFile ユーザーデータ ディレクトリ以下の全てのファイルを削除しますか？${MB_NL}${MB_NL}$G_USERDIR${MB_NL}${MB_NL}(残したいファイルがあれば 「いいえ」 をクリックして下さい。)"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBDELMSGS_1       "'Recent Messages' ディレクトリ中の全てのファイルを削除しますか？"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBDELMSGS_1       "'最近のメッセージ' ディレクトリ中の全てのファイルを削除しますか？"
 
 ###########################################################################
 ###########################################################################
@@ -1027,28 +1027,28 @@
 ; Corpus Conversion: Standard MUI Page - INSTFILES [MonitorCC.nsi]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_TITLE        "POPFile Corpus(コーパス、単語ファイル)の変換"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUBTITLE     "インストールしようとしているバージョンの POPFile と動作するためには、今ある corpus を変換する必要があります。"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_TITLE        "POPFile コーパス(単語ファイル)の変換"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUBTITLE     "インストールしようとしているバージョンの POPFile が動作するためには、今ある コーパス を変換する必要があります。"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_ENDCONVERT_TITLE     "POPFile Corpus の変換は完了しました。"
+!insertmacro PFI_LANG_STRING PFI_LANG_ENDCONVERT_TITLE     "POPFile コーパスの変換は完了しました。"
 !insertmacro PFI_LANG_STRING PFI_LANG_ENDCONVERT_SUBTITLE  "続行するには「閉じる」をクリックして下さい。"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_BADCONVERT_TITLE     "POPFile Corpus の変換に失敗しました。"
+!insertmacro PFI_LANG_STRING PFI_LANG_BADCONVERT_TITLE     "POPFile コーパスの変換に失敗しました。"
 !insertmacro PFI_LANG_STRING PFI_LANG_BADCONVERT_SUBTITLE  "続行するには「キャンセル」をクリックして下さい。"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_MUTEX        "別の 'Corpus Conversion Monitor' が既に起動中です！"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PRIVATE      "'Corpus Conversion Monitor' は POPFile インストーラーの一部です。"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_NOFILE       "エラー: Corpus 変換データファイルが存在しません！"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_MUTEX        "別の 'コーパス変換モニタ' が既に起動中です！"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PRIVATE      "'コーパス変換モニタ' は POPFile インストーラーの一部です。"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_NOFILE       "エラー: コーパス変換データファイルが存在しません！"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_NOPOPFILE    "エラー: POPFile のパスが見つかりません。"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_STARTERR     "Corpus 変換のプロセスを起動中にエラーが発生しました。"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_FATALERR     "Corpus 変換のプロセス中に致命的なエラーが発生しました！"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_STARTERR     "コーパス変換のプロセスを起動中にエラーが発生しました。"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_FATALERR     "コーパス変換のプロセス中に致命的なエラーが発生しました！"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_ESTIMATE     "予想残り時間: "
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_MINUTES      "分"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_WAITING      "(最初のファイルが変換されるのを待っています。)"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_TOTALFILES   "$G_BUCKET_COUNT 個のバケツファイルを変換します。"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PROGRESS_N   "$G_ELAPSED_TIME.$G_DECPLACES 分経過。あと $G_STILL_TO_DO 個のファイルを変換します。"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PROGRESS_1   "$G_ELAPSED_TIME.$G_DECPLACES 分経過。あと1個のファイルを変換します。"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUMMARY      "Corpus の変換には $G_ELAPSED_TIME.$G_DECPLACES 分かかりました。"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PROGRESS_1   "$G_ELAPSED_TIME.$G_DECPLACES 分経過。あと 1 個のファイルを変換します。"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUMMARY      "コーパスの変換には $G_ELAPSED_TIME.$G_DECPLACES 分かかりました。"
 
 ###########################################################################
 ###########################################################################
