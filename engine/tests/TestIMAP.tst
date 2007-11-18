@@ -64,7 +64,6 @@ if ( $pid == 0 ) {
 else {
     # First, start POPFile.
     my ( $c, $mq, $l, $b, $w, $h ) = start_popfile();
-
     my $im = new Services::IMAP;
     my $session = $b->get_session_key( 'admin', '' );
 
@@ -72,9 +71,9 @@ else {
     # talk to the server.
     configure_imap_module( $im, $c, $mq, $l, $b, $h );
     test_imap_ui( $im );
-#    configure_imap_module( $im, $c, $mq, $l, $b, $h );
-#    test_imap_module( $im, $c, $mq, $l, $b, $h );
-#    test_imap_client( $im );
+    configure_imap_module( $im, $c, $mq, $l, $b, $h );
+    test_imap_module( $im, $c, $mq, $l, $b, $h );
+    test_imap_client( $im );
 
     $mq->stop();
     $h->stop();
@@ -497,9 +496,41 @@ sub test_imap_ui {
     $im->configure_item( 'imap_2_watch_more_folders', $tmpl, $language );
     test_assert( $tmpl->param( 'IMAP_if_mailboxes' ) );
 
-    # imap-connection-details.thtml
+
+    # imap-bucket-folders.thtml
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-bucket-folders.thtml' );
     test_assert_equal( $tmpl->query( name => 'IMAP_if_mailboxes' ), 'VAR' );
+    $im->{mailboxes__} = [];
+    $im->configure_item( 'imap_3_bucket_folders', $tmpl, $language );
+    test_assert( ! $tmpl->param( 'IMAP_if_mailboxes' ) );
+
+    $im->{mailboxes__} = ['INBOX', 'spam', 'other', 'personal', 'unclassified'];
+    $im->watched_folders__( 'INBOX' );
+
+    $im->configure_item( 'imap_3_bucket_folders', $tmpl, $language );
+    test_assert( $tmpl->param( 'IMAP_if_mailboxes' ) );
+    my $selected = 0;
+    foreach my $record ( @{$tmpl->param('imap_loop_buckets')} ) {
+        $record->{IMAP_Bucket_Header} =~ m|<b>(.+)</b>|;
+        my $bucket = $1;
+        test_assert( $bucket );
+        my $inner_loop = $record->{IMAP_loop_mailboxes};
+        test_assert( $inner_loop );
+        test_assert_equal( ref $inner_loop, 'ARRAY' );
+
+        foreach my $inner_record ( @$inner_loop ) {
+            if ( $inner_record->{IMAP_mailbox} eq $bucket ) {
+                test_assert_equal( $inner_record->{IMAP_selected}, 'selected="selected"' );
+                $selected++;
+            }
+            else {
+                test_assert_equal( $inner_record->{IMAP_selected}, '' );
+            }
+        }
+    }
+    test_assert_equal( $selected, 4 );
+    test_assert_equal( $selected, scalar @{$tmpl->param('imap_loop_buckets')} );
+
 }
 
 
