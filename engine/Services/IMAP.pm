@@ -212,8 +212,8 @@ sub stop {
 
     $self->disconnect_folders__();
 
-    if ( $self->{api_session__} ne '' ) {
-        $self->{classifier__}->release_session_key( $self->{api_session__} );
+    if ( $self->api_session() ne '' ) {
+        $self->classifier()->release_session_key( $self->api_session() );
     }
 }
 
@@ -233,11 +233,6 @@ sub service {
     my $self = shift;
 
     if ( time - $self->{last_update__} >= $self->config_( 'update_interval' ) ) {
-
-        # Check to see if we have obtained a session key yet
-        if ( $self->{api_session__} eq '' ) {
-            $self->{api_session__} = $self->{classifier__}->get_session_key( 'admin', '' );
-        }
 
         # Should we use a single or multiple connections?
         # And did this configuration options change?
@@ -354,7 +349,7 @@ sub build_folder_list__ {
     }
 
     # output folders
-    foreach my $bucket ( $self->{classifier__}->get_all_buckets( $self->{api_session__} ) ) {
+    foreach my $bucket ( $self->classifier()->get_all_buckets( $self->api_session() ) ) {
 
         my $folder = $self->folder_for_bucket__( $bucket );
 
@@ -413,7 +408,7 @@ sub connect_folders__ {
                 &&
             ! exists $self->{folders__}{$folder}{watched}
                 &&
-            $self->{classifier__}->is_pseudo_bucket( $self->{api_session__},
+            $self->classifier()->is_pseudo_bucket( $self->api_session(),
                                     $self->{folders__}{$folder}{output} ) ) {
                 next;
         }
@@ -506,7 +501,7 @@ sub connect_server__ {
                 &&
             ! exists $self->{folders__}{$folder}{watched}
                 &&
-            $self->{classifier__}->is_pseudo_bucket( $self->{api_session__},
+            $self->classifier()->is_pseudo_bucket( $self->api_session(),
                         $self->{folders__}{$folder}{output} ) ) {
                 next;
         }
@@ -789,7 +784,7 @@ sub classify_message {
 
         if ( $part eq 'HEADER' ) {
             seek $pseudo_mailer, 0, 0;
-            ( $class, $slot, $magnet_used ) = $self->{classifier__}->classify_and_modify( $self->{api_session__}, $pseudo_mailer, undef, 1, '', undef, 0, undef );
+            ( $class, $slot, $magnet_used ) = $self->classifier()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 1, '', undef, 0, undef );
 
             if ( $magnet_used ) {
                 $self->log_( 0, "Message was with slot $slot classified as $class using a magnet." );
@@ -805,7 +800,7 @@ sub classify_message {
         # a look and make it save the message to history:
         seek $pseudo_mailer, 0, 0;
 
-        ( $class, $slot, $magnet_used ) = $self->{classifier__}->classify_and_modify( $self->{api_session__}, $pseudo_mailer, undef, 0, '', undef, 0, undef );
+        ( $class, $slot, $magnet_used ) = $self->classifier()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 0, '', undef, 0, undef );
 
         close $pseudo_mailer;
         unlink $file;
@@ -890,9 +885,9 @@ sub reclassify_message {
     close TMP;
 
     my $slot = $self->history()->get_slot_from_hash( $hash );
-    $self->{classifier__}->add_message_to_bucket( $self->{api_session__}, $new_bucket, $file );
-    $self->{classifier__}->reclassified( $self->{api_session__}, $old_bucket, $new_bucket, 0 );
-    $self->history()->change_slot_classification( $slot, $new_bucket, $self->{api_session__}, 0);
+    $self->classifier()->add_message_to_bucket( $self->api_session(), $new_bucket, $file );
+    $self->classifier()->reclassified( $self->api_session(), $old_bucket, $new_bucket, 0 );
+    $self->history()->change_slot_classification( $slot, $new_bucket, $self->api_session(), 0);
 
     $self->log_( 0, "Reclassified the message with UID $msg from bucket $old_bucket to bucket $new_bucket." );
 
@@ -1015,6 +1010,24 @@ sub history {
     else {
         return $self->{history__};
     }
+}
+
+
+# ----------------------------------------------------------------------------
+#
+# api_session - Return the API session key and get one if we haven't done so
+#               already.
+#
+# ----------------------------------------------------------------------------
+
+sub api_session {
+    my $self = shift;
+
+    if ( ! $self->{api_session__} ) {
+        $self->{api_session__} = $self->classifier()->get_session_key( 'admin', '' );
+    }
+
+    return $self->{api_session__};
 }
 
 
@@ -1282,7 +1295,7 @@ sub configure_item {
         else {
             $templ->param( IMAP_if_mailboxes => 1 );
 
-            my @buckets = $self->{classifier__}->get_all_buckets( $self->{api_session__} );
+            my @buckets = $self->classifier()->get_all_buckets( $self->api_session() );
 
             my @outer_loop = ();
 
@@ -1412,7 +1425,7 @@ sub validate_item {
 
                     # pseudo buckets are free to map wherever they like since
                     # we will never reclassify to them anyway
-                    unless ( $self->{classifier__}->is_pseudo_bucket( $self->{api_session__}, $bucket ) ) {
+                    unless ( $self->classifier()->is_pseudo_bucket( $self->api_session(), $bucket ) ) {
                         $folders{ $folder }++;
                     }
                 }
@@ -1618,7 +1631,7 @@ sub train_on_archive__ {
         my $bucket = $self->{folders__}{$folder}{output};
 
         # Skip pseudobuckets and the INBOX
-        next if $self->{classifier__}->is_pseudo_bucket( $self->{api_session__}, $bucket );
+        next if $self->classifier()->is_pseudo_bucket( $self->api_session(), $bucket );
         next if $folder eq 'INBOX';
 
         my $imap = $self->{folders__}{$folder}{imap};
@@ -1645,7 +1658,7 @@ sub train_on_archive__ {
                 }
                 close $TMP;
 
-                $self->classifier()->add_message_to_bucket( $self->{api_session__}, $bucket, $file );
+                $self->classifier()->add_message_to_bucket( $self->api_session(), $bucket, $file );
                 $self->log_( 0, "Training on the message with UID $msg to bucket $bucket." );
 
                 unlink $file;
