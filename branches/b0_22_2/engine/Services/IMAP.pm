@@ -4,6 +4,7 @@ use POPFile::Module;
 use Services::IMAP::Client;
 @ISA = ("POPFile::Module");
 use Carp;
+use Fcntl;
 
 # ----------------------------------------------------------------------------
 #
@@ -745,8 +746,9 @@ sub classify_message {
     # use to read the message in binary, read-write mode:
     my $pseudo_mailer;
     my $file = $self->get_user_path_( 'imap.tmp' );
-    unless ( open $pseudo_mailer, "+>$file" ) {
-        $self->log_( 0, "Unable to open temporary file $file. Nothing done to message $msg." );
+
+    unless ( sysopen( $pseudo_mailer, $file, O_RDWR | O_CREAT ) ) {
+        $self->log_( 0, "Unable to open temporary file $file. Nothing done to message $msg. ($!)" );
 
         return;
     }
@@ -759,11 +761,10 @@ sub classify_message {
     # E.g. we could generate a list of parts by
     # first looking at the parts the message really has.
 
-    my @message_parts = qw/HEADER TEXT/;
     my $imap = $self->{folders__}{$folder}{imap};
 
     PART:
-    foreach my $part ( @message_parts ) {
+    foreach my $part ( qw/ HEADER TEXT / ) {
 
         my ($ok, @lines ) = $imap->fetch_message_part( $msg, $part );
 
@@ -774,7 +775,7 @@ sub classify_message {
         }
 
         foreach ( @lines ) {
-            print $pseudo_mailer "$_";
+            syswrite $pseudo_mailer, $_;
         }
 
         my ( $class, $slot, $magnet_used );
@@ -783,12 +784,12 @@ sub classify_message {
         # classifier have a non-save go:
 
         if ( $part eq 'HEADER' ) {
-            seek $pseudo_mailer, 0, 0;
+            sysseek $pseudo_mailer, 0, 0;
             ( $class, $slot, $magnet_used ) = $self->classifier()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 1, '', undef, 0, undef );
 
             if ( $magnet_used ) {
                 $self->log_( 0, "Message was with slot $slot classified as $class using a magnet." );
-                print $pseudo_mailer "\nThis message was classified based on a magnet.\nThe body of the message was not retrieved from the server.\n";
+                syswrite $pseudo_mailer, "\nThis message was classified based on a magnet.\nThe body of the message was not retrieved from the server.\n";
             }
             else {
                 next PART;
@@ -798,7 +799,7 @@ sub classify_message {
         # We will only get here if the message was magnetized or we
         # are looking at the complete message. Thus we let the classifier have
         # a look and make it save the message to history:
-        seek $pseudo_mailer, 0, 0;
+        sysseek $pseudo_mailer, 0, 0;
 
         ( $class, $slot, $magnet_used ) = $self->classifier()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 0, '', undef, 0, undef );
 
