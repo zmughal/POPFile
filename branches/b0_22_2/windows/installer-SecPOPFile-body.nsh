@@ -331,7 +331,7 @@ install_schema:
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.lnk"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url"
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
 
