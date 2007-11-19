@@ -127,7 +127,7 @@ sub start
     my ( $self ) = @_;
 
     # Open the socket used to receive request for proxy service
-
+    $self->log_( 1, "Opening listening socket on port " . $self->config_('port') . '.' );
     $self->{server__} = IO::Socket::INET->new( Proto     => 'tcp', # PROFILE BLOCK START
                                     ($self->config_( 'local' ) || 0) == 1 ? (LocalAddr => 'localhost') : (),
                                     LocalPort => $self->config_( 'port' ),
@@ -491,8 +491,8 @@ sub verify_connected_
                     ProxyPort => $self->config_( 'socks_port' ),
                     ConnectAddr  => $hostname,
                     ConnectPort  => $port ); # PROFILE BLOCK STOP
-        $self->log_( 0, "Attempting to connect to socks server at " 
-                    . $self->config_( 'socks_server' ) . ":" 
+        $self->log_( 0, "Attempting to connect to socks server at "
+                    . $self->config_( 'socks_server' ) . ":"
                     . ProxyPort => $self->config_( 'socks_port' ) );
     } else {
         if ( $ssl ) {
@@ -501,15 +501,15 @@ sub verify_connected_
                         Proto    => "tcp",
                         PeerAddr => $hostname,
                         PeerPort => $port ); # PROFILE BLOCK STOP
-            $self->log_( 0, "Attempting to connect to SSL server at " 
+            $self->log_( 0, "Attempting to connect to SSL server at "
                         . "$hostname:$port" );
-        
+
         } else {
             $mail = IO::Socket::INET->new( # PROFILE BLOCK START
                         Proto    => "tcp",
                         PeerAddr => $hostname,
                         PeerPort => $port ); # PROFILE BLOCK STOP
-            $self->log_( 0, "Attempting to connect to POP server at " 
+            $self->log_( 0, "Attempting to connect to POP server at "
                         . "$hostname:$port" );
         }
     }
