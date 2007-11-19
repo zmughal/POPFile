@@ -62,7 +62,7 @@ sub new
 sub start
 {
     my ( $self ) = @_;
-
+    $self->log_( 1, "Trying to open listening socket on port " . $self->config_('port') . '.' );
     $self->{server_} = IO::Socket::INET->new( Proto     => 'tcp',             # PROFILE BLOCK START
                                     $self->config_( 'local' )  == 1 ? (LocalAddr => 'localhost') : (),
                                      LocalPort => $self->config_( 'port' ),
