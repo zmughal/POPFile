@@ -29,7 +29,7 @@
 # * duplicate hash value => duplicate message in inbox
 # * fail while fetching a part
 # * fail while fetching_header_fields
-# * configure and validate item
+# * validate_item
 #
 # Client.pm
 # * ssl connection (difficult)
@@ -531,7 +531,29 @@ sub test_imap_ui {
     test_assert_equal( $selected, 4 );
     test_assert_equal( $selected, scalar @{$tmpl->param('imap_loop_buckets')} );
 
-}
+
+    # imap-update-mailbox-list.thtml
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
+    test_assert_equal( $tmpl->query( name => 'IMAP_if_connection_configured' ), 'VAR' );
+    $im->config_( 'hostname', '' );
+    $im->configure_item( 'imap_4_update_mailbox_list', $tmpl, $language );
+    test_assert( ! $tmpl->param('IMAP_if_connection_configured' ) );
+    $im->config_( 'hostname', 'test-host' );
+    $im->configure_item( 'imap_4_update_mailbox_list', $tmpl, $language );
+    test_assert( $tmpl->param('IMAP_if_connection_configured' ) );
+
+    # imap-options.thtml
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-options.thtml' );
+    $im->config_( 'expunge', 1 );
+    $im->configure_item( 'imap_5_options', $tmpl, $language );
+    test_assert_equal( $tmpl->param( 'IMAP_expunge_is_checked' ), 'checked="checked"' );
+
+    $im->config_( 'expunge', 0 );
+    $im->config_( 'update_interval', 99 );
+    $im->configure_item( 'imap_5_options', $tmpl, $language );
+    test_assert_equal( $tmpl->param( 'IMAP_expunge_is_checked' ), '' );
+    test_assert_equal( $tmpl->param( 'IMAP_interval', '99' ) );
+ }
 
 
 #################################################################################
