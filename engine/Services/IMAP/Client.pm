@@ -813,13 +813,13 @@ sub fetch_message_part {
                 # We cannot use split here, because this would get rid of
                 # trailing and leading newlines and thus omit complete lines.
 
-                while ( $message =~ m/(.*?$eol)/g ) {
+                while ( $message =~ m/(.*?(?:$eol|\012|\015))/g ) {
                     push @lines, $1;
                 }
             }
             # No number of octets: fall back, but issue a warning
             else {
-                while ( $last_response =~ m/(.*?$eol)/g ) {
+                while ( $last_response =~ m/(.*?(?:$eol|\012|\015))/g ) {
                     push @lines, $1;
                 }
 
