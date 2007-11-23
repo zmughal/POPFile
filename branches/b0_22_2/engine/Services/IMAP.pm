@@ -1380,12 +1380,12 @@ sub validate_item {
 
     # watched folders
     if ( $name eq 'imap_1_watch_folders' ) {
-        if ( defined $$form{update_imap_1_watch_folders} ) {
+        if ( defined $form->{update_imap_1_watch_folders} ) {
 
             my $i = 1;
             my %folders;
             foreach ( $self->watched_folders__() ) {
-                $folders{ $$form{"imap_folder_$i"} }++;
+                $folders{ $form->{"imap_folder_$i"} }++;
                 $i++;
             }
 
@@ -1397,7 +1397,7 @@ sub validate_item {
 
     # Add a watched folder
     if ( $name eq 'imap_2_watch_more_folders' ) {
-        if ( defined $$form{imap_2_watch_more_folders} ) {
+        if ( defined $form->{imap_2_watch_more_folders} ) {
             my @current = $self->watched_folders__();
             push @current, 'INBOX';
             $self->watched_folders__( @current );
@@ -1407,7 +1407,7 @@ sub validate_item {
 
     # map buckets to folders
     if ( $name eq 'imap_3_bucket_folders' ) {
-        if ( defined $$form{imap_3_bucket_folders} ) {
+        if ( defined $form->{imap_3_bucket_folders} ) {
 
             # We have to make sure that there is only one bucket per folder
             # Multiple buckets cannot map to the same folder because how
@@ -1420,7 +1420,7 @@ sub validate_item {
                 # match bucket name:
                 if ( $key =~ /^imap_folder_for_(.+)$/ ) {
                     my $bucket = $1;
-                    my $folder = $$form{ $key };
+                    my $folder = $form->{ $key };
 
                     $bucket2folder{ $bucket } = $folder;
 
@@ -1457,10 +1457,10 @@ sub validate_item {
     # various options
     if ( $name eq 'imap_5_options' ) {
 
-        if ( defined $$form{update_imap_5_options} ) {
+        if ( defined $form->{update_imap_5_options} ) {
 
             # expunge or not?
-            if ( defined $$form{imap_options_expunge} ) {
+            if ( defined $form->{imap_options_expunge} ) {
                 $self->config_( 'expunge', 1 );
             }
             else {
@@ -1468,7 +1468,7 @@ sub validate_item {
             }
 
             # update interval
-            my $form_interval = $$form{imap_options_update_interval};
+            my $form_interval = $form->{imap_options_update_interval};
             if ( defined $form_interval ) {
                 if ( $form_interval > 10 && $form_interval < 60*60 ) {
                     $self->config_( 'update_interval', $form_interval );
@@ -1502,40 +1502,40 @@ sub validate_connection_details {
     my $language = shift;
     my $form     = shift;
 
-    if ( defined $$form{update_imap_0_connection_details} ) {
-        if ( $$form{imap_hostname} ne '' ) {
+    if ( defined $form->{update_imap_0_connection_details} ) {
+        if ( $form->{imap_hostname} ne '' ) {
             $templ->param( IMAP_connection_if_hostname_error => 0 );
-            $self->config_( 'hostname', $$form{imap_hostname} );
+            $self->config_( 'hostname', $form->{imap_hostname} );
         }
         else {
             $templ->param( IMAP_connection_if_hostname_error => 1 );
         }
 
-        if ( $$form{imap_port} >= 1 && $$form{imap_port} < 65536 ) {
-            $self->config_( 'port', $$form{imap_port} );
+        if ( $form->{imap_port} >= 1 && $form->{imap_port} < 65536 ) {
+            $self->config_( 'port', $form->{imap_port} );
             $templ->param( IMAP_connection_if_port_error => 0 );
         }
         else {
             $templ->param( IMAP_connection_if_port_error => 1 );
         }
 
-        if ( $$form{imap_login} ne '' ) {
-            $self->config_( 'login', $$form{imap_login} );
+        if ( $form->{imap_login} ne '' ) {
+            $self->config_( 'login', $form->{imap_login} );
             $templ->param( IMAP_connection_if_login_error => 0 );
         }
         else {
             $templ->param( IMAP_connection_if_login_error => 1 );
         }
 
-        if ( $$form{imap_password} ne '' ) {
-            $self->config_( 'password', $$form{imap_password} );
+        if ( $form->{imap_password} ne '' ) {
+            $self->config_( 'password', $form->{imap_password} );
             $templ->param( IMAP_connection_if_password_error => 0 );
         }
         else {
             $templ->param( IMAP_connection_if_password_error => 1 );
         }
 
-        if ( defined $form->{imap_use_ssl} ) {
+        if ( $form->{imap_use_ssl} ) {
             $self->config_( 'use_ssl', 1 );
         }
         else {
