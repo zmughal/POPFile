@@ -182,11 +182,28 @@ sub test_imap_module {
     foreach ( 1 .. 5 ) {
         my $hash = ($h->get_slot_fields( $_ ))[6];
         test_assert_equal( $im->can_reclassify__( $hash, 'spam' ), undef );
-        test_assert_equal( $im->can_classify__( $hash ), undef );   #QUATSCH
+        test_assert( ! $im->can_classify__( $hash ) );
     }
 
     # check that a fresh classification confirms the reclassification
     test_assert_equal( $b->classify( $session, 'TestMailParse007.msg' ), 'personal' );
+
+    # Now let's see whether the words in one of the reclassified messages
+    # actually ended up in the corpus
+
+    my %words;
+
+    open WORDS, "<TestMailParse013.wrd";
+    while ( <WORDS> ) {
+        if ( /(.+) (\d+)/ ) {
+            $words{$1} = $2;
+        }
+    }
+    close WORDS;
+
+    foreach my $word (keys %words) {
+        test_assert( $b->get_count_for_word( $session, 'other', $word ) > 0, "other: $word $words{$word}" );
+    }
 
     $im->disconnect_folders__();
 
@@ -553,6 +570,35 @@ sub test_imap_ui {
     $im->configure_item( 'imap_5_options', $tmpl, $language );
     test_assert_equal( $tmpl->param( 'IMAP_expunge_is_checked' ), '' );
     test_assert_equal( $tmpl->param( 'IMAP_interval', '99' ) );
+
+    # We now will have to test validate_item.
+    my $form = {};
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-connection-details.thtml' );
+    $form->{update_imap_0_connection_details} = 1;
+    $form->{imap_hostname} = 'hostname';
+    $form->{imap_port} = 123;
+    $form->{imap_login} = 'username';
+    $form->{imap_password} = 'secret';
+    $form->{imap_use_ssl} = 1;
+    $im->validate_item( 'imap_0_connection_details', $tmpl, $language, $form );
+    test_assert_equal( $im->config_( 'use_ssl' ), 1 );
+    test_assert_equal( $im->config_( 'password' ), 'secret' );
+    test_assert_equal( $im->config_( 'login' ), 'username' );
+    test_assert_equal( $im->config_( 'port' ), 123 );
+    test_assert_equal( $im->config_( 'hostname' ), 'hostname' );
+
+    $form = {};
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-watch-folders.thtml' );
+    $form->{imap_folder_1} = 'first watched folder';
+    $form->{imap_folder_2} = 'second watched folder';
+    $form->{update_imap_1_watch_folders} = 1;
+    $im->watched_folders__( '1', '2' );
+    $im->validate_item( 'imap_1_watch_folders', $tmpl, $language, $form );
+    test_assert_equal( $im->{folder_change_flag__}, 1 );
+    my @folders = $im->watched_folders__();
+    test_assert_equal( scalar @folders, 2 );
+    test_assert_equal( $folders[0], 'first watched folder' );
+    test_assert_equal( $folders[1], 'second watched folder' );
  }
 
 
