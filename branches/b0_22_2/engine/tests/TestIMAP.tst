@@ -378,12 +378,12 @@ sub test_imap_ui {
     # correct values.
 
     # Here's a list of all the templates we have to test:
-    #   imap-bucket-folders.thtml
-    #   imap-options.thtml
-    #   imap-watch-folders.thtml
     #   imap-connection-details.thtml
-    #   imap-update-mailbox-list.thtml
+    #   imap-watch-folders.thtml
     #   imap-watch-more-folders.thtml
+    #   imap-bucket-folders.thtml
+    #   imap-update-mailbox-list.thtml
+    #   imap-options.thtml
 
     # We also need to provide those methods with a language hash:
     my $html = UI::HTML->new();
@@ -572,6 +572,8 @@ sub test_imap_ui {
     test_assert_equal( $tmpl->param( 'IMAP_interval', '99' ) );
 
     # We now will have to test validate_item.
+
+    # imap-connection-details.thtml
     my $form = {};
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-connection-details.thtml' );
     $form->{update_imap_0_connection_details} = 1;
@@ -587,6 +589,7 @@ sub test_imap_ui {
     test_assert_equal( $im->config_( 'port' ), 123 );
     test_assert_equal( $im->config_( 'hostname' ), 'hostname' );
 
+    # imap-watch-folders.thtml
     $form = {};
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-watch-folders.thtml' );
     $form->{imap_folder_1} = 'first watched folder';
@@ -599,7 +602,48 @@ sub test_imap_ui {
     test_assert_equal( scalar @folders, 2 );
     test_assert_equal( $folders[0], 'first watched folder' );
     test_assert_equal( $folders[1], 'second watched folder' );
- }
+
+    # imap-watch-more-folders.thtml
+    $form = {};
+    $form->{imap_2_watch_more_folders} = 1;
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-watch-more-folders.thtml' );
+    $im->validate_item( 'imap_2_watch_more_folders', $tmpl, $language, $form );
+    @folders = $im->watched_folders__();
+    test_assert_equal( scalar @folders, 3 );
+    test_assert_equal( pop @folders, 'INBOX' );
+
+    # imap-bucket-folders.thtml
+    $form = {};
+    $form->{imap_3_bucket_folders} = 1;
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-bucket-folders.thtml' );
+    $im->validate_item('imap_3_bucket_folders', $tmpl, $language, $form );
+
+
+    # imap-update-mailbox-list.thtml
+    $form = {};
+    $form->{do_imap_4_update_mailbox_list} = 1;
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
+    $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+
+
+    # imap-options.thtml
+    $form = {};
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-options.thtml' );
+    $form->{update_imap_5_options} = 1;
+    $form->{imap_options_expunge} = 1;
+    $form->{imap_options_update_interval} = 1234;
+    $im->validate_item( 'imap_5_options', $tmpl, $language, $form );
+    test_assert_equal( $im->config_( 'expunge' ), 1 );
+    test_assert_equal( $im->config_( 'update_interval' ), 1234 );
+
+    $form->{imap_options_expunge} = undef;
+    $im->validate_item( 'imap_5_options', $tmpl, $language, $form );
+    test_assert_equal( $im->config_( 'expunge' ), 0 );
+
+    $form->{imap_options_update_interval} = 0;
+    $im->validate_item( 'imap_5_options', $tmpl, $language, $form );
+    test_assert_equal( $tmpl->param('IMAP_if_interval_error'), 1 );
+}
 
 
 #################################################################################
