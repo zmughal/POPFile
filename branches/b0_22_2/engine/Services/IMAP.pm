@@ -1594,10 +1594,6 @@ sub validate_update_mailbox_list {
         }
     }
     return;
-#                if ( $@ ) {
-#                    $templ->param( IMAP_update_list_failed => 'Lost the connection to the server while trying to update the list of mailboxes. Please try again and/or check your connection settings.' );
-#                    $self->log_( 0, "Connection to server was lost." );
-#                }
 }
 
 
