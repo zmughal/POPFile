@@ -82,11 +82,11 @@
 
 ; Message shown above the progress bar while comparing the expected and actual MD5 sums for the files listed in 'mecab.md5'
 
-!define C_NPLS_VERIFYING_MECAB     "Verifying the files in the '$G_PLS_FIELD_1' folder..."
+!define C_NPLS_VERIFYING_MECAB     "'$G_PLS_FIELD_1' フォルダのファイルを検証しています..."
 
 ; Message shown above the progress bar with the result of the 'mecab.md5' MD5 checks
 
-!define C_NPLS_MECAB_MD5_RESULT    "MeCab validity check result: $G_PLS_FIELD_1"
+!define C_NPLS_MECAB_MD5_RESULT    "MeCab の検証結果: $G_PLS_FIELD_1"
 
 ; Message shown if internet connection does not appear to be working
 
