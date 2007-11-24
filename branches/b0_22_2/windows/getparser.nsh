@@ -97,11 +97,23 @@
 # are to big to include in the POPFile installer)
 #--------------------------------------------------------------------------
 
+  !ifndef C_MD5SUMS_FILE
+    !define C_MD5SUMS_FILE    "MD5SUMS"
+  !endif
+
+  !ifndef C_MECAB_MD5
+    !define C_MECAB_MD5       "mecab.md5"
+  !endif
+
   ; Temporarily use the "anonymous" URL of the project's new server:
 
+  !define C_NPD_MD5SUMS       "http://h1212143.stratoserver.net/installer/nihongo/mecab/${C_MD5SUMS_FILE}"
+  !define C_NPD_MECAB_MD5     "http://h1212143.stratoserver.net/installer/nihongo/mecab/${C_MECAB_MD5}"
   !define C_NPD_MECAB_PERL    "http://h1212143.stratoserver.net/installer/nihongo/mecab/MeCab.tar.gz"
   !define C_NPD_MECAB_DICT    "http://h1212143.stratoserver.net/installer/nihongo/mecab/mecab-ipadic.zip"
 
+;;  !define C_NPD_MD5SUMS       "http://getpopfile.org/installer/nihongo/mecab/${C_MD5SUMS_FILE}"
+;;  !define C_NPD_MECAB_MD5     "http://getpopfile.org/installer/nihongo/mecab/${C_MECAB_MD5}"
 ;;  !define C_NPD_MECAB_PERL    "http://getpopfile.org/installer/nihongo/mecab/MeCab.tar.gz"
 ;;  !define C_NPD_MECAB_DICT    "http://getpopfile.org/installer/nihongo/mecab/mecab-ipadic.zip"
 
@@ -348,6 +360,11 @@
 # by POPFile. This macro makes maintenance easier by ensuring that both processes
 # do the same thing.
 #
+# The MeCab package is a large download (over 12 MB) which could take a long time,
+# especially for users with a dial-up connection. If the selected installation
+# folder already contains a valid copy of the MeCab package then there is no need
+# to download the package again.
+#
 # Although the COMPONENTS page will show a 'Nihongo Parser' component when the
 # installer language is set to 'Nihongo' (or when an English-only build of the
 # installer or uninstaller is used), the individual parser components are never
@@ -369,13 +386,13 @@
 
     AddSize 43000
 
-    !define L_RESERVED  $0          ; used in system.dll call
+    !define L_RESERVED    $0          ; used in system.dll call
 
-    !define L_RESULT          $R0   ; result from 'GetMeCabFile' function or the 'untgz' plugin
-                                    ; WARNING: The 'untgz' plugin is hard-coded to use $R0
+    !define L_RESULT      $R0   ; result from 'GetMeCabFile' function or the 'untgz' plugin
+                                ; WARNING: The 'untgz' plugin is hard-coded to use $R0
 
-    !define L_DLG_ITEM        $R1   ; used to disable/enable the "Show Details" button
-    !define L_LISTSIZE        $R2   ; number of patches to be applied
+    !define L_DLG_ITEM    $R1   ; used to disable/enable the "Show Details" button
+    !define L_LISTSIZE    $R2   ; number of patches to be applied
 
     Push ${L_RESERVED}
     Push ${L_RESULT}
@@ -399,6 +416,40 @@
     FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
     GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x403
     EnableWindow ${L_DLG_ITEM} 0
+
+    ; Use MD5 sums to check the integrity of the Mecab files we download
+
+    Push "${C_NPD_MD5SUMS}"
+    Call ${UN}GetMeCabFile
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "OK" 0 installer_error_exit
+
+    Push "${C_NPD_MECAB_MD5}"
+    Call ${UN}GetMeCabFile
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "OK" 0 installer_error_exit
+
+    md5dll::GetMD5File "$PLUGINSDIR\${C_MECAB_MD5}"
+    Pop ${L_RESULT}
+    DetailPrint ""
+    DetailPrint "Calculated MD5 sum for ${C_MECAB_MD5}: ${L_RESULT}"
+    Push "${C_MECAB_MD5}"
+    Call ${UN}ExtractMD5sum
+    Pop $G_PLS_FIELD_1
+    DetailPrint "Downloaded MD5 sum for ${C_MECAB_MD5}: $G_PLS_FIELD_1"
+    StrCmp $G_PLS_FIELD_1 ${L_RESULT} check_if_installed
+    DetailPrint "MD5 sums differ!"
+    MessageBox MB_OK|MB_ICONEXCLAMATION "'${C_MECAB_MD5}' file has bad checksum!"
+    Goto installer_error_exit
+
+  check_if_installed:
+    IfFileExists "$G_ROOTDIR\mecab\etc\mecabrc" 0 download_mecab
+    Push "$G_ROOTDIR\mecab"
+    Call ${UN}VerifyMeCabInstall
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "OK" set_environment
+
+  download_mecab:
 
     ; Download the MeCab archives
 
@@ -467,6 +518,8 @@
     Pop ${L_RESULT}
     DetailPrint ""
     DetailPrint "Unzip result = ${L_RESULT}"
+
+  set_environment:
 
     ; Add the Environment Variable for MeCab
 
@@ -584,6 +637,10 @@
 #
 # Macro-based Functions which may be used by the installer and uninstaller
 #
+#    Macro:                FUNCTION_VERIFY_MECAB_INSTALL
+#    Installer Function:   VerifyMeCabInstall
+#    Uninstaller Function: un.VerifyMeCabInstall
+#
 #    Macro:                FUNCTION_GETMECABFILE
 #    Installer Function:   GetMeCabFile
 #    Uninstaller Function: un.GetMeCabFile
@@ -601,6 +658,156 @@
 #    Uninstaller Function: un.HandleParserSelection
 #
 #==============================================================================================
+
+
+#--------------------------------------------------------------------------
+# Macro: FUNCTION_VERIFY_MECAB_INSTALL
+#
+# The installation process and the uninstall process may both need a function
+# which verifies the contents of the 'mecab' installation folder. This macro
+# makes maintenance easier by ensuring that both processes use identical
+# functions, with the only difference being their names.
+#
+# The files in the 'mecab' folder as checked by comparing their MD5 sums against
+# the expected values found in the 'mecab.md5' file downloaded from the POPFile
+# web site. 'mecab.md5' contains an entry for each file in the Mecab zip file,
+# as shown in this extract:
+#
+#      # MD5 checksums generated by MD5summer (http://www.md5summer.org)
+#      # Generated 18/11/07 12:38:45
+#
+#      dafe94718a85a63809ec1ed2f6652694 *doc/en/bindings.html
+#      511cbced26190010bfd8038593d00bf0 *doc/Makefile
+#      143a77233074c7b86f7f5328fe81603a *etc/mecabrc
+#      4162fab178e43c764adee2da1987964d *AUTHORS
+#
+# Lines starting with '#' or ';' in 'mecab.md5' are ignored, as are empty lines.
+#
+# Lines in 'mecab.md5' which contain MD5 sums are assumed to be in this format:
+# (a) positions 1 to 32 contain a 32 character hexadecimal number (line starts in column 1)
+# (b) column 33 is a space character (' ')
+# (c) column 34 is the text/binary flag (' ' = text, '*' = binary)
+# (d) column 35 is the first character of the filename (filename terminates with end-of-line)
+#     The MeCab zip file contains several folders so the filename is really a relative path.
+#
+# Inputs:
+#         (top of stack)     - full path to the top-level MeCab folder
+#
+# Outputs:
+#         (top of stack)     - result ("OK" or "fail")
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "C:\Program Filea\POPFile\mecab"
+#         Call VerifyMeCabInstall
+#         Pop $0
+#
+#         ($R0 at this point is "OK" if the existing installation has same
+#         MD5 sums as the current downloadable version of the MeCab zip file)
+#
+#--------------------------------------------------------------------------
+
+!macro FUNCTION_VERIFY_MECAB_INSTALL UN
+  Function ${UN}VerifyMeCabInstall
+
+    !define L_DATA          $R9   ; relative path and expected MD5 sum for a file
+    !define L_EXPECTED_MD5  $R8   ; the expected MD5 sum for the file
+    !define L_FILEPATH      $R7   ; path to the file to be checked
+    !define L_HANDLE        $R6   ; handle used to access the MD5 sums file (mecab.md5)
+    !define L_MECABROOT     $R5   ; the top-level MeCab folder (e.g. C:\Program Files\POPFile\mecab)
+    !define L_RESULT        $R4   ; result to be returned by this function ("OK" or "fail")
+    !define L_TEMP          $R3
+
+    Exch ${L_MECABROOT}
+
+    Push ${L_DATA}
+    Push ${L_EXPECTED_MD5}
+    Push ${L_FILEPATH}
+    Push ${L_HANDLE}
+    Push ${L_RESULT}
+    Push ${L_TEMP}
+
+    SetPluginUnload alwaysoff
+
+    StrCpy $G_PLS_FIELD_1 "${L_MECABROOT}"
+    DetailPrint ""
+    SetDetailsPrint both
+    DetailPrint "${C_NPLS_VERIFYING_MECAB}"
+    SetDetailsPrint listonly
+    DetailPrint ""
+
+    StrCpy ${L_RESULT} "OK"
+
+    FileOpen ${L_HANDLE} "$PLUGINSDIR\${C_MECAB_MD5}" r
+
+  read_next_line:
+    FileRead ${L_HANDLE} ${L_DATA}
+    StrCmp ${L_DATA} "" end_of_file
+    StrCpy ${L_TEMP} ${L_DATA} 1
+    StrCmp ${L_TEMP} '#' read_next_line
+    StrCmp ${L_TEMP} ';' read_next_line
+    Push ${L_DATA}
+    Call ${UN}PFI_TrimNewlines
+    Pop ${L_DATA}
+    StrCmp ${L_DATA} "" read_next_line
+    StrCpy ${L_FILEPATH} ${L_DATA} "" 34       ; NSIS strings start at position 0 not 1
+    StrCpy $G_PLS_FIELD_1 "${L_FILEPATH} :"
+    StrCpy ${L_FILEPATH} "${L_MECABROOT}\${L_FILEPATH}"
+    IfFileExists "${L_FILEPATH}" get_expected_MD5
+    StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1 missing"
+    StrCpy ${L_RESULT} "fail"
+    Goto print_result
+
+  get_expected_MD5:
+    StrCpy ${L_EXPECTED_MD5} ${L_DATA} 32
+    Push ${L_EXPECTED_MD5}
+    Call ${UN}StrCheckHexadecimal
+    Pop ${L_EXPECTED_MD5}
+    md5dll::GetMD5File "${L_FILEPATH}"
+    Pop ${L_TEMP}
+    StrCmp ${L_EXPECTED_MD5} ${L_TEMP} sums_match
+    StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1 changed"
+    StrCpy ${L_RESULT} "fail"
+    Goto print_result
+
+  sums_match:
+    StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1 OK"
+
+  print_result:
+    DetailPrint $G_PLS_FIELD_1
+    Goto read_next_line
+
+  end_of_file:
+    FileClose ${L_HANDLE}
+    StrCpy $G_PLS_FIELD_1 "${L_RESULT}"
+    Detailprint ""
+    SetDetailsPrint both
+    DetailPrint "${C_NPLS_MECAB_MD5_RESULT}"
+    SetDetailsPrint listonly
+
+    SetPluginUnload manual
+
+    StrCpy ${L_MECABROOT} ${L_RESULT}
+
+    Pop ${L_TEMP}
+    Pop ${L_RESULT}
+    Pop ${L_HANDLE}
+    Pop ${L_FILEPATH}
+    Pop ${L_EXPECTED_MD5}
+    Pop ${L_DATA}
+
+    Exch ${L_MECABROOT}
+
+    !undef L_DATA
+    !undef L_EXPECTED_MD5
+    !undef L_FILEPATH
+    !undef L_HANDLE
+    !undef L_MECABROOT
+    !undef L_RESULT
+    !undef L_TEMP
+
+  FunctionEnd
+!macroend
 
 
 #--------------------------------------------------------------------------

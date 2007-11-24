@@ -673,6 +673,17 @@ SectionEnd
   !insertmacro SECTION_MECAB "un."
 
 #--------------------------------------------------------------------------
+# Uninstaller Function: un.VerifyMeCabInstall
+#
+# Inputs:
+#         (top of stack)     - full path to the top-level MeCab folder
+# Outputs:
+#         (top of stack)     - result ("OK" or "fail")
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_VERIFY_MECAB_INSTALL "un."
+
+#--------------------------------------------------------------------------
 # Uninstaller Function: un.GetMeCabFile
 #
 # Inputs:

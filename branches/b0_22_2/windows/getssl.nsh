@@ -167,7 +167,9 @@
   !else
       !define C_PATCH_CTRL_FILE   "0.22.x.pcf"
   !endif
-  !define C_MD5SUMS_FILE      "MD5SUMS"
+  !ifndef C_MD5SUMS_FILE
+    !define C_MD5SUMS_FILE    "MD5SUMS"
+  !endif
 
 #--------------------------------------------------------------------------
 # Macro used to preserve up to 3 backup copies of a file which is being patched

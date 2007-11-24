@@ -1402,6 +1402,17 @@ SectionEnd
   !insertmacro SECTION_MECAB ""
 
 #--------------------------------------------------------------------------
+# Installer Function: VerifyMeCabInstall
+#
+# Inputs:
+#         (top of stack)     - full path to the top-level MeCab folder
+# Outputs:
+#         (top of stack)     - result ("OK" or "fail")
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_VERIFY_MECAB_INSTALL ""
+
+#--------------------------------------------------------------------------
 # Installer Function: GetMeCabFile
 #
 # Inputs:
