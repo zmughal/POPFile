@@ -24,12 +24,10 @@
 # ---------------------------------------------------------------------------------------------
 # TODO:
 # IMAP.pm:
-# * changed uidvalidity while connecting
 # * fail while statusing
 # * duplicate hash value => duplicate message in inbox
 # * fail while fetching a part
 # * fail while fetching_header_fields
-# * validate_item
 #
 # Client.pm
 # * ssl connection (difficult)
@@ -141,7 +139,14 @@ sub test_imap_module {
     test_assert( -e 'imap.spool/spam/5' );
     test_assert( -e 'imap.spool/other/1' );
 
-    # move msgs 1, 2, and 3 to folder presonal
+    # The module should not allow reclassification to the same
+    # bucket.
+    my $hash = ( $h->get_slot_fields( 1 ) )[6];
+    test_assert( ! $im->can_reclassify__( $hash, 'spam' ) );
+    # If the hash is unknown, it should reclassify either
+    test_assert( ! $im->can_reclassify__( 'hash', 'other' ) );
+
+    # move msgs 1, 2, and 3 to folder personal
     $client = $im->{folders__}{'spam'}{imap};
     test_assert( $client );
     test_assert_equal( $client->select( 'spam' ), 1 );
@@ -180,7 +185,7 @@ sub test_imap_module {
     # get the msgs hashes and ask the imap module whether those messages
     # can be reclassified. It should say 'no!'
     foreach ( 1 .. 5 ) {
-        my $hash = ($h->get_slot_fields( $_ ))[6];
+        $hash = ($h->get_slot_fields( $_ ))[6];
         test_assert_equal( $im->can_reclassify__( $hash, 'spam' ), undef );
         test_assert( ! $im->can_classify__( $hash ) );
     }
@@ -205,6 +210,27 @@ sub test_imap_module {
         test_assert( $b->get_count_for_word( $session, 'other', $word ) > 0, "other: $word $words{$word}" );
     }
 
+    $im->disconnect_folders__();
+
+    # Change the UIDVALIDITY values and then log in again
+    $im->log_( 0, '---- changing uidvalies' );
+    $im->config_('login', 'someone');
+    my $uidvalis = $im->config_('uidvalidities');
+    my $newvalis = $uidvalis;
+    $newvalis =~ s/-->(\d+)-->/'-->' . ( $1 +2 ) . '-->'/ge;
+    $im->config_( 'uidvalidities', $newvalis );
+    $im->{last_update__} = 0;
+    $im->service();
+    $im->disconnect_folders__();
+    test_assert_equal( $im->config_( 'uidvalidities' ), $uidvalis );
+    $im->config_( 'uidvalidities', $uidvalis );
+
+    # The module is supposed to retrieve the list of mailboxes if it
+    # hasn't got any yet.
+    $im->{mailboxes__} = [];
+    $im->{last_update__} = 0;
+    $im->service();
+    test_assert_equal( scalar @{$im->{mailboxes__}}, 5 );
     $im->disconnect_folders__();
 
     # Check what happens when we time out
@@ -588,6 +614,7 @@ sub test_imap_ui {
     test_assert_equal( $im->config_( 'login' ), 'username' );
     test_assert_equal( $im->config_( 'port' ), 123 );
     test_assert_equal( $im->config_( 'hostname' ), 'hostname' );
+    # TODO: test with values that will NOT validate
 
     # imap-watch-folders.thtml
     $form = {};
