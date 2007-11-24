@@ -340,7 +340,7 @@ sub start
 
     # Pass in the current interface language for language specific parsing
 
-    $self->{parser__}->{lang__}  = $self->module_config_( 'html', 'language' );
+    $self->{parser__}->{lang__}  = $self->module_config_( 'html', 'language' ) || '';
     $self->{unclassified__} = log( $self->config_( 'unclassified_weight' ) );
 
     if ( !$self->db_connect__() ) {
