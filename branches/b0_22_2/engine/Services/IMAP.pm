@@ -212,12 +212,7 @@ sub stop {
     my $self = shift;
 
     $self->disconnect_folders__();
-
-    if ( $self->{api_session__} ne '' ) {
-        $self->classifier()->release_session_key( $self->{api_session__} );
-    }
 }
-
 
 
 # ----------------------------------------------------------------------------
