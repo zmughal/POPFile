@@ -213,8 +213,8 @@ sub stop {
 
     $self->disconnect_folders__();
 
-    if ( $self->api_session() ne '' ) {
-        $self->classifier()->release_session_key( $self->api_session() );
+    if ( $self->{api_session__} ne '' ) {
+        $self->classifier()->release_session_key( $self->{api_session__} );
     }
 }
 
