@@ -111,7 +111,7 @@ sub test_imap_module {
     # We change the uidvalidity and see whether the module detects
     # the difference between the (manipulated) stored value and
     # the value from the server.
-    my $client = $im->{folders__}{'spam'}{imap};
+    my $client = $im->{folders__}{spam}{imap};
     $client->uid_validity( 'spam', 50 );
     $im->{last_update__} = 0;
     $im->service();
@@ -145,6 +145,8 @@ sub test_imap_module {
     test_assert( ! $im->can_reclassify__( $hash, 'spam' ) );
     # If the hash is unknown, it should reclassify either
     test_assert( ! $im->can_reclassify__( 'hash', 'other' ) );
+    # But with a good hash and a valid bucket:
+    test_assert( $im->can_reclassify__( $hash, 'other' ) );
 
     # move msgs 1, 2, and 3 to folder personal
     $client = $im->{folders__}{'spam'}{imap};
@@ -232,6 +234,7 @@ sub test_imap_module {
     $im->service();
     test_assert_equal( scalar @{$im->{mailboxes__}}, 5 );
     $im->disconnect_folders__();
+
 
     # Check what happens when we time out
     $im->log_( 0, "---- Testing time-out behaviour for the module." );
@@ -430,14 +433,14 @@ sub test_imap_ui {
 
     # Now let the IMAP module populate the template
     $im->config_( hostname => 'some host' );
-    $im->config_( port => 'some port' );
+    $im->config_( port => 1234 );
     $im->config_( password => 'some password' );
     $im->config_( login => 'some login' );
 
     $im->configure_item( 'imap_0_connection_details', $tmpl, $language );
 
     test_assert_equal( $tmpl->param( 'IMAP_hostname'), 'some host' );
-    test_assert_equal( $tmpl->param( 'IMAP_port' ), 'some port' );
+    test_assert_equal( $tmpl->param( 'IMAP_port' ), 1234 );
     test_assert_equal( $tmpl->param( 'IMAP_password' ), 'some password' );
     test_assert_equal( $tmpl->param( 'IMAP_login' ), 'some login' );
 
@@ -614,7 +617,29 @@ sub test_imap_ui {
     test_assert_equal( $im->config_( 'login' ), 'username' );
     test_assert_equal( $im->config_( 'port' ), 123 );
     test_assert_equal( $im->config_( 'hostname' ), 'hostname' );
-    # TODO: test with values that will NOT validate
+
+    $form->{imap_use_ssl} = undef;
+    $im->validate_item( 'imap_0_connection_details', $tmpl, $language, $form );
+    test_assert_equal( $im->config_( 'use_ssl' ), 0 );
+
+    # After updating the connection details, the module must disconnect
+    # and empty its folders hash:
+    test_assert_equal( scalar keys %{$im->{folders__}}, 0 );
+
+    # Now test some values that should NOT validate:
+
+    # all the parameters need to be set to something (except for use_ssl)
+    foreach ( qw/ imap_hostname imap_port imap_login imap_password / ) {
+        my %invalid_form = %$form;
+        delete $invalid_form{$_};
+        $tmpl = HTML::Template->new( filename => '../skins/default/imap-connection-details.thtml' );
+        $im->validate_item( 'imap_0_connection_details', $tmpl, $language, \%invalid_form );
+        my $template_param = $_;
+        $template_param =~ s/imap_//;
+        $template_param = 'IMAP_connection_if_' . $template_param . '_error';
+        test_assert_equal( $tmpl->param( $template_param ), 1, $_ );
+    }
+
 
     # imap-watch-folders.thtml
     $form = {};
@@ -642,15 +667,42 @@ sub test_imap_ui {
     # imap-bucket-folders.thtml
     $form = {};
     $form->{imap_3_bucket_folders} = 1;
+    $form->{imap_folder_for_other} = 'personal';
+    $form->{imap_folder_for_personal} = 'other';
+
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-bucket-folders.thtml' );
     $im->validate_item('imap_3_bucket_folders', $tmpl, $language, $form );
-
+    test_assert_equal( $im->{folder_change_flag__}, 1 );
+    test_assert_equal( $im->folder_for_bucket__( 'other' ), 'personal' );
+    test_assert_equal( $im->folder_for_bucket__( 'personal' ), 'other' );
 
     # imap-update-mailbox-list.thtml
     $form = {};
     $form->{do_imap_4_update_mailbox_list} = 1;
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
+    $im->config_( 'hostname', '127.0.0.1' );
+    $im->config_( 'password', 'password' );
+    $im->config_( 'username', 'someone' );
+    $im->config_( 'port', '1143' );
+    $im->config_( 'update_interval', 10 );
+    $im->config_( 'use_ssl', 0 );
     $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+    test_assert_equal( scalar @{$im->{mailboxes__}}, 5 );
+    test_assert( ! $tmpl->param( 'IMAP_update_list_failed' ) );
+
+    $im->config_( 'hostname', '' );
+    $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+    test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
+
+    $im->config_( 'hostname', '127.0.0.1' );
+    $im->config_( 'port', '12345' );
+    $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+    test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
+
+    $im->config_( 'port', 1143 );
+    $im->config_( 'username', 'fail' );
+    $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+    test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
 
 
     # imap-options.thtml
@@ -689,7 +741,6 @@ sub configure_imap_module {
     $im->config_( 'enabled', 1 );
     $im->config_( 'expunge', 1 );
     $im->config_( 'hostname', '127.0.0.1' );
-
     $im->config_( 'password', 'password' );
     $im->config_( 'port', '1143' );
     $im->config_( 'update_interval', 10 );
@@ -713,7 +764,6 @@ sub configure_imap_module {
 ##
 
 sub start_popfile {
-
     rmtree( 'messages' );
     rmtree( 'corpus' );
     test_assert( rec_cp( 'corpus.base', 'corpus' ) );
