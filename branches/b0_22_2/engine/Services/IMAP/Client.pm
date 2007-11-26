@@ -378,7 +378,7 @@ sub get_response {
 
         # Check for lost connections:
         if ( $response eq '' && ! defined $buf ) {
-            $self->baild_out( "The connection to the IMAP server was lost while trying to get a response to command '$self->{last_command}'." );
+            $self->bail_out( "The connection to the IMAP server was lost while trying to get a response to command '$self->{last_command}'." );
         }
 
         # If this is the first line of the response and
