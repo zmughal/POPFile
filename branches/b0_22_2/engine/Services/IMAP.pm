@@ -1498,45 +1498,74 @@ sub validate_connection_details {
     my $form     = shift;
 
     if ( defined $form->{update_imap_0_connection_details} ) {
-        if ( $form->{imap_hostname} ne '' ) {
+        my $something_changed = undef;
+
+        if ( $form->{imap_hostname} ) {
             $templ->param( IMAP_connection_if_hostname_error => 0 );
-            $self->config_( 'hostname', $form->{imap_hostname} );
+            if ( $self->config_( 'hostname' ) ne $form->{imap_hostname} ) {
+                $self->config_( 'hostname', $form->{imap_hostname} );
+                $something_changed = 1;
+            }
         }
         else {
             $templ->param( IMAP_connection_if_hostname_error => 1 );
         }
 
-        if ( $form->{imap_port} >= 1 && $form->{imap_port} < 65536 ) {
-            $self->config_( 'port', $form->{imap_port} );
+        if ( $form->{imap_port} && $form->{imap_port} =~ m/^\d+$/ && $form->{imap_port} >= 1 && $form->{imap_port} < 65536 ) {
+            if ( $self->config_( 'port' ) != $form->{imap_port} ) {
+                $self->config_( 'port', $form->{imap_port} );
+                $something_changed = 1;
+            }
             $templ->param( IMAP_connection_if_port_error => 0 );
         }
         else {
             $templ->param( IMAP_connection_if_port_error => 1 );
         }
 
-        if ( $form->{imap_login} ne '' ) {
-            $self->config_( 'login', $form->{imap_login} );
+        if ( $form->{imap_login} ) {
+            if ( $self->config_( 'login' ) ne $form->{imap_login} ) {
+                $self->config_( 'login', $form->{imap_login} );
+                $something_changed = 1;
+            }
             $templ->param( IMAP_connection_if_login_error => 0 );
         }
         else {
             $templ->param( IMAP_connection_if_login_error => 1 );
         }
 
-        if ( $form->{imap_password} ne '' ) {
-            $self->config_( 'password', $form->{imap_password} );
+        if ( $form->{imap_password} ) {
+            if ( $self->config_( 'password' ) ne $form->{imap_password} ) {
+                $self->config_( 'password', $form->{imap_password} );
+                $something_changed = 1;
+            }
             $templ->param( IMAP_connection_if_password_error => 0 );
         }
         else {
             $templ->param( IMAP_connection_if_password_error => 1 );
         }
 
+        my $use_ssl_now = $self->config_( 'use_ssl' );
+
         if ( $form->{imap_use_ssl} ) {
             $self->config_( 'use_ssl', 1 );
+            if ( ! $use_ssl_now ) {
+                $something_changed = 1;
+            }
         }
         else {
             $self->config_( 'use_ssl', 0 );
+            if ( $use_ssl_now ) {
+                $something_changed = 1;
+            }
+        }
+
+        if ( $something_changed ) {
+            $self->log_( 1, 'Configuration has changed. Terminating any old connections.' );
+            $self->disconnect_folders__();
         }
     }
+
+
     return;
 }
 
