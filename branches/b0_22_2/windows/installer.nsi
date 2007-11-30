@@ -283,7 +283,7 @@
 
   !define C_PERL_DIR      "C:\Perl"
   !define C_PERL_VERSION  "5.8.8"
-  !define C_PERL_BUILD    "820"
+  !define C_PERL_BUILD    "822"
 
   ;----------------------------------------------------------------------
   ; Recently there have been some significant changes to the structure and
