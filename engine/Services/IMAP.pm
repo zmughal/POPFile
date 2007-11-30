@@ -534,10 +534,14 @@ sub connect_server__ {
 
             # If we already have a UIDVALIDITY value stored,
             # we compare the old and the new value.
-
             if ( defined $imap->uid_validity( $folder ) ) {
                 if ( $imap->check_uidvalidity( $folder, $uidvalidity ) ) {
-                    # That's the nice case. We simply do nothing.
+                    # That's the nice case.
+                    # But let's make sure that our UIDNEXT value is also valid
+                    unless ( defined $imap->uid_next( $folder ) ) {
+                        $self->log_( 0, "Detected invalid UIDNEXT configuration value for folder $folder. Some new messages might have been skipped." );
+                        $imap->uid_next( $folder, $uidnext );
+                    }
                 }
                 else {
                     # The validity has changed, we log this and update our stored
