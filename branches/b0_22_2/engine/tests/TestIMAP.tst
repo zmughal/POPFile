@@ -229,12 +229,21 @@ sub test_imap_module {
 
     # The module is supposed to retrieve the list of mailboxes if it
     # hasn't got any yet.
+    $im->log_( 0, '---- using invalid uidvalidities' );
     $im->{mailboxes__} = [];
     $im->{last_update__} = 0;
     $im->service();
     test_assert_equal( scalar @{$im->{mailboxes__}}, 5 );
     $im->disconnect_folders__();
 
+    # Give an invalid configuration string for uidnexts and uidvalidities
+    # and see whether we react in a graceful manner
+    $newvalis = $uidvalis;
+    $newvalis =~ s/-->(\d+)-->/-->-->/;
+    $im->config_( 'uidvalidities', $newvalis );
+    $im->{last_update__} = 0;
+    $im->service();
+    test_assert_equal( $im->config_('uidvalidities'), $uidvalis );
 
     # Check what happens when we time out
     $im->log_( 0, "---- Testing time-out behaviour for the module." );
