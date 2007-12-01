@@ -1151,6 +1151,7 @@ skip_Encode:
   RMDir /r "$G_MPLIBDIR\String"
   RMDir /r "$G_MPLIBDIR\Sys"
   RMDir /r "$G_MPLIBDIR\Text"
+  RMDir /r "$G_MPLIBDIR\Tie"
   RMDir /r "$G_MPLIBDIR\Time"
   RMDir /r "$G_MPLIBDIR\warnings"
   RMDir /r "$G_MPLIBDIR\Win32"
