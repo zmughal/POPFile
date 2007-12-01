@@ -54,9 +54,7 @@ my $cfg_separator = "-->";
 
 sub new {
     my $type = shift;
-    my $self = POPFile::Module->new();
-
-    bless $self, $type;
+    my $self = $type->SUPER::new();
 
     $self->name( 'imap' );
 
@@ -874,24 +872,25 @@ sub reclassify_message {
     # I simply use "imap.tmp" as the file name here.
 
     my $file = $self->get_user_path_( 'imap.tmp' );
-    unless ( open TMP, ">$file" ) {
+    if ( open my $TMP, '>', $file ) {
+        foreach ( @lines ) {
+            print $TMP $_;
+        }
+        close $TMP;
+
+        my $slot = $self->history()->get_slot_from_hash( $hash );
+        $self->classifier()->add_message_to_bucket( $self->api_session(), $new_bucket, $file );
+        $self->classifier()->reclassified( $self->api_session(), $old_bucket, $new_bucket, 0 );
+        $self->history()->change_slot_classification( $slot, $new_bucket, $self->api_session(), 0);
+
+        $self->log_( 0, "Reclassified the message with UID $msg from bucket $old_bucket to bucket $new_bucket." );
+
+        unlink $file;
+    }
+    else {
         $self->log_( 0, "Cannot open temp file $file" );
         return;
-    };
-
-    foreach ( @lines ) {
-        print TMP $_;
     }
-    close TMP;
-
-    my $slot = $self->history()->get_slot_from_hash( $hash );
-    $self->classifier()->add_message_to_bucket( $self->api_session(), $new_bucket, $file );
-    $self->classifier()->reclassified( $self->api_session(), $old_bucket, $new_bucket, 0 );
-    $self->history()->change_slot_classification( $slot, $new_bucket, $self->api_session(), 0);
-
-    $self->log_( 0, "Reclassified the message with UID $msg from bucket $old_bucket to bucket $new_bucket." );
-
-    unlink $file;
 }
 
 
