@@ -92,10 +92,20 @@ sub test_imap_module {
     my $session = $b->get_session_key( 'admin', '' );
     test_assert( $im->start() );
 
+    # The module is not supposed to do anything when the update
+    # interval hasn't elapsed yet:
+    my $last_update = time - 2;
+    $im->{last_update__} = $last_update;
+    $im->service();
+    test_assert_equal( $im->{last_update__}, $last_update );
+    $im->{last_update__} = 0;
+
     # Login. The server doesn't have any messages for us yet
     $im->log_( 0, "---- testing login to empty server (uidnext and uidvalidity)" );
     $im->config_( 'login', 'someone' );
     $im->service();
+
+    test_assert_equal( $im->{last_update__}, time );
 
     foreach my $folder (qw/ INBOX personal spam other / ) {
         my $client = $im->{folders__}{$folder}{imap};
@@ -691,7 +701,7 @@ sub test_imap_ui {
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
     $im->config_( 'hostname', '127.0.0.1' );
     $im->config_( 'password', 'password' );
-    $im->config_( 'username', 'someone' );
+    $im->config_( 'login', 'someone' );
     $im->config_( 'port', '1143' );
     $im->config_( 'update_interval', 10 );
     $im->config_( 'use_ssl', 0 );
@@ -699,17 +709,21 @@ sub test_imap_ui {
     test_assert_equal( scalar @{$im->{mailboxes__}}, 5 );
     test_assert( ! $tmpl->param( 'IMAP_update_list_failed' ) );
 
+    $im->config_( 'login', 'someone' );
     $im->config_( 'hostname', '' );
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
     $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
     test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
 
     $im->config_( 'hostname', '127.0.0.1' );
     $im->config_( 'port', '12345' );
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
     $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
     test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
 
     $im->config_( 'port', 1143 );
-    $im->config_( 'username', 'fail' );
+    $im->config_( 'login', 'fail' );
+    $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
     $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
     test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
 
@@ -747,6 +761,9 @@ sub configure_imap_module {
     $im->classifier( $b );
     $im->history ( $h );
     $im->initialize();
+    # We should not do anything when we're not enabled:
+    $im->config_( 'enabled', 0 );
+    test_assert_equal( $im->start(), 2 );
     $im->config_( 'enabled', 1 );
     $im->config_( 'expunge', 1 );
     $im->config_( 'hostname', '127.0.0.1' );
