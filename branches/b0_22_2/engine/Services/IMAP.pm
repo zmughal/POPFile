@@ -785,7 +785,7 @@ sub classify_message {
             ( $class, $slot, $magnet_used ) = $self->classifier()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 1, '', undef, 0, undef );
 
             if ( $magnet_used ) {
-                $self->log_( 0, "Message was with slot $slot classified as $class using a magnet." );
+                $self->log_( 0, "Message with slot $slot was classified as $class using a magnet." );
                 syswrite $pseudo_mailer, "\nThis message was classified based on a magnet.\nThe body of the message was not retrieved from the server.\n";
             }
             else {
@@ -1503,7 +1503,7 @@ sub validate_connection_details {
     if ( defined $form->{update_imap_0_connection_details} ) {
         my $something_changed = undef;
 
-        if ( $form->{imap_hostname} ) {
+        if ( $form->{imap_hostname} && $form->{imap_hostname} =~ /^\S+/ ) {
             $templ->param( IMAP_connection_if_hostname_error => 0 );
             if ( $self->config_( 'hostname' ) ne $form->{imap_hostname} ) {
                 $self->config_( 'hostname', $form->{imap_hostname} );
