@@ -6,6 +6,7 @@ body {
   background-color: #999999;
   font-family: Verdana, sans-serif;
   color: white;
+  margin: 1em;
 }
 
 a {
@@ -21,10 +22,14 @@ input, select, textarea, .submit {
   font-weight: normal;
 }
 
+input.checkbox {
+  background-color: transparent;
+  border: 0;
+}
 .shell, .shellTop {
   background-color: #344FB2;
-  border: 1px black outset;
-  width: 98%;
+  border: 1px black solid;
+  width: 100%;
   color: white;
 }
 
@@ -57,6 +62,7 @@ table.head a {
   background-color: #23367D;
   width: 12%;
   border: 1px black solid;
+  border-bottom: 0;
   height: 20px;
   font-weight: bold;
   letter-spacing: 0.1em;
@@ -106,8 +112,8 @@ table.footer {
   background-color: #344FB2;
   border: 1px black solid;
   color: white;
-  width: 100%;
   margin-top: 1em;
+  width: 100%;
 }
 
 table.settingsTable {
@@ -261,12 +267,61 @@ tr.rowBoundary {
 
 div.helpMessage {
   background-color: #23367D;
-  border: 1px solid #6B76A1;
-  padding: 0.3em;
-  padding-bottom: 0;
+  border: 1px solid black;
+  padding: 0.5em;
 }
-
+div.helpMessage form {
+  margin: 0;
+}
+/*********************************************************/
+/* Menu Settings */
 .menuLink {
   display: block;
   width: 100%;
+}
+/*********************************************************/
+/* Positioning */
+.historyNavigatorTop, .historyNavigatorBottom {
+  text-align: right;
+  vertical-align: top;
+}
+.refreshLink {
+  margin-top: 0.5em;
+}
+h2.history {
+  margin-top: 0;
+  margin-bottom: 0.3em;
+}
+.removeButtonsTop {
+  padding-bottom: 1em;
+}
+
+
+
+
+
+
+
+
+
+.checkLabel {
+  border: 1px solid #344FB2;
+  white-space: nowrap;
+}
+
+
+
+.historyMagnetUsed {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.historyMagnetUsed img {
+  vertical-align: bottom;
+}
+
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
 }

@@ -160,6 +160,7 @@ td.footerBody {
   background-color: #4C558E;
   border: 3px #252A49 solid;
   color: white;
+  width: 33%;
 }
 
 h2.security {
