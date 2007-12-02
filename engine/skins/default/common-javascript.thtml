@@ -1,19 +1,5 @@
 <script type="text/javascript">
 <!--
-<TMPL_IF NAME="If_Javascript_OK">
-warnings = 1; // confirmation dialogs enabled
-<TMPL_ELSE>
-warnings = 0; // confirmation dialogs disabled
-</TMPL_IF>
-
-function confirmClick(message) {
-    if(warnings)
-         return confirm (message);
-    else return 0;
-}
-
-function OnLoadHandler(){ 
-    return 0;
-}
+function OnLoadHandler(){ return 0; }
 // -->
 </script>

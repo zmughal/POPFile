@@ -77,15 +77,15 @@ td.logo2menuSpace {
 /*********************************************************/
 /* Table Settings */
 
-.settingsTable {
+table.settingsTable {
   border: 1px solid #CCCC99;
 }
 
-.settingsPanel {
+td.settingsPanel {
   border: 1px solid #CCCC99;
 }
 
-.openMessageTable {
+table.openMessageTable {
   border: 3px solid #CCCC99;
 }
 
@@ -109,20 +109,15 @@ tr.rowOdd {
 
 tr.rowHighlighted {
   color: #000000;
-  background-color: #999999;
+  background-color: #B7B7B7;
 }
 
 tr.rowBoundary { 
-  color: #000000;
-  background-color: #AFAF7F;
-}
-
-.lookupResultsTable {
-  border: 3px solid #CCCC99;
-}
-
-tr.rowBoundary {
   background-color: #CCCC99;
+}
+
+table.lookupResultsTable {
+  border: 3px solid #CCCC99;
 }
 
 /*********************************************************/
@@ -165,13 +160,17 @@ div.helpMessage {
   background-color: #DFDFAF;
   border: 2px solid #CCCC99;
   padding: 0.4em;
-  padding-bottom: 0;
+}
+
+div.helpMessage form {
+  margin: 0;
 }
 
 /*********************************************************/
 /* Form Labels */
 
-.historyLabel {
+th.historyLabel {
+  text-align: left;
   font-weight: bold;
 }
 
@@ -223,26 +222,67 @@ div.helpMessage {
 /*********************************************************/
 /* Positioning */
 
-table.historyWidgetsTop {
-  width: 100%;
-  margin-left: 1.5em;
-  margin-top: 0.6em;
-  margin-bottom: 1.0em;
+td.historyWidgetsTop form {
+  margin: 0;
+  padding: 0;
 }
 
-table.historyWidgetsBottom {
-  width: 100%;
-  margin-top: 0.6em;
+form.historyForm {
+  margin: 0;
+  padding: 0;
 }
 
 .historyNavigatorTop, .historyNavigatorBottom {
   text-align: right;
+  vertical-align: top;
+}
+
+.historyNavigatorTop form, .historyNavigatorBottom form {
+  display:inline;
+}
+
+.refreshLink {
+  margin-top: 0.5em;
 }
 
 .magnetsTable caption {
   text-align: left;
 }
 
-.advancedWidgets {
-  margin-top: 1em;
+h2.history, h2.buckets, h2.magnets, h2.users {
+  margin-top: 0;
+  margin-bottom: 0.3em;
+}
+
+.search {
+  display: inline;
+  float: left;
+  padding-right: 1em;
+}
+
+.filter {
+  display: inline;
+}
+
+.removeButtonsTop {
+  padding-bottom: 1em;
+}
+
+.viewHeadings {
+  display: inline;
+}
+
+.historyMagnetUsed {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.historyMagnetUsed img {
+  vertical-align: bottom;
+}
+
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
 }
