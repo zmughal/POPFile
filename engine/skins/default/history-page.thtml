@@ -201,7 +201,7 @@
                 <TMPL_IF NAME="History_If_Magnetized">
                     <div class="historyMagnetUsed">
                          <img title="<TMPL_VAR NAME="History_Magnet" ESCAPE=HTML>" alt="<TMPL_VAR NAME="History_Magnet" ESCAPE=HTML>" src="/skins/default/magnet.png">
-                         <span><TMPL_VAR NAME="History_MagnetUsed" ESCAPE=HTML></span>
+                         <span><TMPL_VAR NAME="History_MagnetUsed"></span>
                     </div>
                 <TMPL_ELSE>
 
