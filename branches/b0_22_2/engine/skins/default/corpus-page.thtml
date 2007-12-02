@@ -4,12 +4,11 @@
 <TMPL_IF NAME="If_Show_Bucket_Help">
 
 <div class="helpMessage">
+    <TMPL_VAR NAME="Localize_Help_Bucket_Setup">
+    <br /><br />
     <form method="post" action="/buckets">
-        <TMPL_VAR NAME="Localize_Help_Bucket_Setup">
         <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
-        <p>
         <input type="submit" class="submit" name="nomore_bucket_help" value="<TMPL_VAR NAME="Localize_Help_No_More">" />
-        </p>
     </form>
 </div>
 
@@ -18,12 +17,11 @@
 <TMPL_IF NAME="If_Show_Training_Help">
 
 <div class="helpMessage">
+    <TMPL_VAR NAME="Localize_Help_Training">
+    <br /><br />
     <form method="post" action="/buckets">
-        <TMPL_VAR NAME="Localize_Help_Training">
         <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
-        <p>
         <input type="submit" class="submit" name="nomore_training_help" value="<TMPL_VAR NAME="Localize_Help_No_More">" />
-        </p>
     </form>
 </div>
 
