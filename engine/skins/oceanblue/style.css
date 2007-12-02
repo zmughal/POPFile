@@ -21,17 +21,6 @@ body {
   color: white;
 }
 
-html {
-  /* color the scroll bars in IE -- I can't stand this feature but it was requested */
-  scrollbar-face-color:#2175bc;
-  scrollbar-arrow-color:white;
-  scrollbar-track-color:#1958b7;
-  scrollbar-shadow-color:#2175bc;
-  scrollbar-highlight-color:#2175bc;
-  scrollbar-3dlight-color:white;
-  scrollbar-darkshadow-Color:white;
-}
-
 .shell {
   font-size: 1em;
   border: 1px solid #90bade;
@@ -95,7 +84,7 @@ form {
   margin: 0;
 }
 
-.head {
+table.head {
   color: white;
   font-weight: bold;
   background-color: #2175bc;
@@ -287,6 +276,10 @@ h2 {
   vertical-align: top;
 }
 
+.historyNavigatorTop form, .historyNavigatorBottom form {
+  padding-top: 0.3em;
+  margin: 0;
+}
 .historyWidgetsTop {
   border-top: none;
   border-bottom: none;
@@ -296,6 +289,9 @@ h2 {
 h2.history {
   margin-top: 0;
   margin-bottom: 0.3em;
+}
+.removeButtonsTop {
+  padding-bottom: 1em;
 }
 .historyTable {
   border-top: none;
@@ -348,7 +344,9 @@ div.helpMessage {
   background-color: lightblue;
   border: 1px solid black;
   padding: 0.4em;
-  padding-bottom: 0;
+}
+div.helpMessage form {
+  margin: 0;
 }
 
 span.graphFont {
@@ -380,4 +378,19 @@ a:link:hover, a:visited:hover {
 
 .footer li {
   display: inline;
+}
+
+.historyMagnetUsed {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.historyMagnetUsed img {
+  vertical-align: bottom;
+}
+
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
 }

@@ -17,7 +17,7 @@ body {
   border-collapse: collapse;
   background-color: #000000;
   color: #ffffff;
-  border-spacing: 0px;
+  border-spacing: 0;
 }
 
 .shellTopLeft {
@@ -110,25 +110,11 @@ td.head {
   font-size: 10pt;
   background-image: url(menu.gif);
   width: 100%;
-  padding-top: 20px;
 }
 
-.menuSelected {
-  background-image: url(buttonSelected.gif);
+.menuSelected, .menuStandard {
   width: 124px;
-  color: #000000;
-  background-color: transparent;
-  background-repeat: no-repeat;
-  text-indent: 8px;
-}
 
-.menuStandard {
-  background-image: url(buttonUnselected.gif);
-  width: 124px;
-  color: #000000;
-  background-color: transparent;
-  background-repeat: no-repeat;
-  text-indent: 8px;
 }
 
 .menuIndent {
@@ -236,6 +222,7 @@ td.footerBody {
   font-family: sans-serif;
   text-align: center;
   background-color: transparent;
+  width: 33%;
 }
 
 table.historyWidgetsTop {
@@ -287,6 +274,9 @@ select, input, textarea {
   background-color: #313131;
 }
 
+input.checkbox {
+  background-color: transparent;
+}
 .submit, .toggleOn, .toggleOff, .undoButton, .deleteButton, .reclassifyButton {
   border-right: #000000 2px solid;
   border-top: #FFFFFF 2px solid;
@@ -306,6 +296,16 @@ a:link:hover, a:visited:hover {
   background-color: #EFEFF7;
 }
 
+.menuSelected a, .menuStandard a:hover {
+  color: #000000;
+  background-image: url(buttonSelected.gif);
+  padding-left: 6px;
+}
+.menuStandard a, .menuSelected a:hover {
+  color: #FFFFFF;
+  background-image: url(buttonUnselected.gif);
+  padding-left: 6px;
+}
 .menuSpacer {
   padding: 0;
   margin: 0;
@@ -320,9 +320,50 @@ tr.rowBoundary {
   background-color: #050505;
 }
 
+/*********************************************************/
+/* Menu Settings */
+.menuLink {             /* makes entire menu tab clickable */
+  display: block;
+  width: 100%;
+}
+/*********************************************************/
+/* Messages */
 div.helpMessage {
   background-color: #101010;
   border: 1px solid #FFFFFF;
   padding: 0.4em;
-  padding-bottom: 0;
+}
+div.helpMessage form {
+  margin: 0;
+}
+/*********************************************************/
+/* Positioning */
+.historyNavigatorTop, .historyNavigatorBottom {
+  text-align: right;
+  vertical-align: top;
+}
+.refreshLink {		// optional, link can be hidden
+  margin-top: 0.5em;
+}
+h2.history {		// optional
+  margin-top: 0;
+  margin-bottom: 0.3em;
+}
+.removeButtonsTop {	// spacing for top remove buttons (can be used to hide the top set of buttons)
+  padding-bottom: 1em;
+}
+.historyMagnetUsed {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.historyMagnetUsed img {
+  vertical-align: bottom;
+}
+
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
+}
 }
