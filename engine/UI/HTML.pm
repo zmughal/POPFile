@@ -2490,6 +2490,7 @@ sub history_page
             $row_data{History_If_Not_Pseudo} = !$self->{c__}->is_pseudo_bucket( $self->{api_session__},
                                                                            $bucket );
             $row_data{History_If_Magnetized} = ($$row[11] ne '');
+            $row_data{History_MagnetUsed}    = $self->{language__}{History_MagnetUsed} if $$row[11] ne '';
             $row_data{History_Magnet}        = $$row[11];
             my $size = $$row[12];
             if ( defined $size ) {
