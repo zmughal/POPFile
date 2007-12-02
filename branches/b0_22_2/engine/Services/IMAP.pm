@@ -1148,7 +1148,7 @@ sub can_reclassify__ {
     my $slot = $self->history()->get_slot_from_hash( $hash );
 
     if ( $slot ne '' ) {
-        my ( $id, $from, $to, $cc, $subject, $date, $hash, $inserted, $bucket, $reclassified ) =
+        my ( $id, $from, $to, $cc, $subject, $date, $hash, $inserted, $bucket, $reclassified, undef, $magnetized ) =
                     $self->history()->get_slot_fields( $slot );
 
         $self->log_( 2, "get_slot_fields returned the following information:" );
@@ -1162,20 +1162,28 @@ sub can_reclassify__ {
         $self->log_( 2, "inserted:      $inserted" );
         $self->log_( 2, "bucket:        $bucket" );
         $self->log_( 2, "reclassified:  $reclassified" );
+        $self->log_( 2, "magnetized:    $magnetized" );
 
-        # We must not reclassify a reclassified message
-        if ( ! $reclassified ) {
+        # We cannot reclassify magnetized messages
+        if ( ! $magnetized ) {
 
-            # new and old bucket must be different
-            if ( $new_bucket ne $bucket ) {
-                return $bucket;
+            # We must not reclassify a reclassified message
+            if ( ! $reclassified ) {
+
+                # new and old bucket must be different
+                if ( $new_bucket ne $bucket ) {
+                    return $bucket;
+                }
+                else {
+                    $self->log_( 1, "Will not reclassify to same bucket ($new_bucket)." );
+                }
             }
             else {
-                $self->log_( 1, "Will not reclassify to same bucket ($new_bucket)." );
+                $self->log_( 1, "The message was already reclassified." );
             }
         }
         else {
-            $self->log_( 1, "The message was already reclassified." );
+            $self->log_( 1, "The message was classified using a manget and cannot be reclassified." );
         }
     }
     else {
