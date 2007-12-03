@@ -1,10 +1,10 @@
     </div>
     <div id="footer">
         <p>
-            <a class="bottomLink" href="http://popfile.sourceforge.net/"><TMPL_VAR NAME="Localize_Footer_HomePage"></a>
-            <a class="bottomLink" href="http://popfile.sourceforge.net/manual/<TMPL_VAR NAME="Localize_ManualLanguage">/manual.html"><TMPL_VAR NAME="Localize_Footer_Manual"></a>
-            <a class="bottomLink" href="http://popfile.sourceforge.net/cgi-bin/wiki.pl"><TMPL_VAR NAME="Localize_Footer_Wiki"></a>
-            <a class="bottomLink" href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?<TMPL_VAR NAME="Localize_FAQLink">"><TMPL_VAR NAME="Localize_FAQ"></a>
+            <a class="bottomLink" href="http://getpopfile.org/"><TMPL_VAR NAME="Localize_Footer_HomePage"></a>
+
+            <a class="bottomLink" href="http://getpopfile.org/wiki"><TMPL_VAR NAME="Localize_Footer_Wiki"></a>
+            <a class="bottomLink" href="http://getpopfile.org/wiki/<TMPL_VAR NAME="Localize_FAQLink">"><TMPL_VAR NAME="Localize_FAQ"></a>
             <a class="bottomLink" href="http://sourceforge.net/tracker/index.php?group_id=63137&amp;atid=502959"><TMPL_VAR NAME="Localize_Footer_RequestFeature"></a>
             <a class="bottomLink" href="http://lists.sourceforge.net/lists/listinfo/popfile-announce"><TMPL_VAR NAME="Localize_Footer_MailingList"></a>
             <a class="bottomLink" href="http://sourceforge.net/forum/forum.php?forum_id=213876"><TMPL_VAR NAME="Localize_Footer_FeedMe"></a>
