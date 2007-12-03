@@ -1,16 +1,24 @@
 body {
   background-color: #FFFFFF;
-  border: none;
+  border: 0;
   font-family: tahoma, arial, sans-serif;
-  color: black;
+  color: #000000;
   margin: 10px 20px 20px 20px; 
-  font-size: 10pt;}
+  font-size: 10pt;
+}
 
 h2 {
   font-size: 11pt;
   font-weight: bold;
 }
 
+h2.history {
+  margin-top: 0;
+  margin-bottom: 0.3em;
+}
+.removeButtonsTop {
+  padding-bottom: 1em;
+}
 .shell, .shellTop {
   border-right: #000000 2px solid;
   border-top: #000000 2px solid;
@@ -31,6 +39,13 @@ input, select, textarea {
   background-color: #fff8dc;
 }
 
+input.checkbox {
+  background-color: transparent;
+  border: 0;
+}
+input.submit:hover {
+  background-color: #FFFFFF;
+}
 .menu {
   font-size: 10pt;
   font-weight: bold;
@@ -57,6 +72,10 @@ input, select, textarea {
   font-size: 10pt;
 }
 
+.menuLink {
+  display: block;
+  width: 100%;
+}
 tr.rowEven {
   border-right: #000000 2px solid;
   border-top: #000000 2px solid;
@@ -97,9 +116,9 @@ hr {
 }
 
 td.naked {
-  padding: 0px; 
-  margin: 0px; 
-  border: none;
+  padding: 0; 
+  margin: 0; 
+  border: 0;
 }
 
 td.logo2menuSpace {
@@ -125,15 +144,16 @@ table.head {
   font-family: tahoma, arial, sans-serif;
 }
 
-a.shutdownLink {
+a.logoutLink, a.shutdownLink {
   font-size: 10pt;
-  font-weight: bold;
+  font-weight: normal;
 }
 
 td.footerBody {
   text-align: center;
   padding-left: 5%;
   padding-right: 5%;
+  width: 33%;
 }
 
 table.footer {
@@ -152,10 +172,7 @@ table.settingsTable {
 }
 
 table.openMessageTable, table.lookupResultsTable {
-  border-right: #fffacd 3px solid;
-  border-top: #fffacd 3px solid;
-  border-left: #fffacd 3px solid;
-  border-bottom: #fffacd 3px solid;
+  border: 2px solid #000000;
 }
 
 td.openMessageCloser {
@@ -264,6 +281,11 @@ table.historyButtonsBottom {
 
 td.historyNavigatorTop {
   text-align: right;
+  vertical-align: top;
+}
+
+.historyNavigatorTop form, .historyNavigatorBottom form {
+  margin: 0.2em 0;
 }
 
 td.historyNavigatorBottom {
@@ -288,17 +310,39 @@ span.securityWidgetState {
 }
 
 tr.rowBoundary {
-  background-color: yellow;
+  background-color: #000000;
 }
 
 div.helpMessage {
   background-color: #fffacd;
-  border: 1px solid black;
+  border: #000000 2px solid;
   padding: 0.3em;
-  padding-bottom: 0;
 }
 
-.menuLink {
-  display: block;
-  width: 100%;
+div.helpMessage form {
+  margin: 0;
+}
+
+.viewHeadings {
+  display: inline;
+}
+
+td.top20 td.historyNavigatorTop a + a {
+  border-left: 1px solid black;
+  padding-left: 0.5em;
+}
+
+.historyMagnetUsed {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.historyMagnetUsed img {
+  vertical-align: bottom;
+}
+
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
 }
