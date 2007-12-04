@@ -102,6 +102,18 @@ body > #navigation {
  padding: 1%;
 }
 
+.toggleOff {
+ color: red;
+ font-weight: bold;
+}
+
+
+.toggleOn {
+ color: green;
+ font-weight: bold;
+}
+
+
 .rowEven {
  background-color: #e0e0e0;
 }

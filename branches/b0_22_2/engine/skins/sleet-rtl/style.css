@@ -401,5 +401,13 @@ div.helpMessage {
   background-color: #545F74;
   border: 1px solid #888888;
   padding: 0.4em;
-  padding-bottom: 0;
+}
+
+div.helpMessage form {
+  margin: 0;
+}
+
+.menuLink {
+  display: block;
+  width: 100%;
 }

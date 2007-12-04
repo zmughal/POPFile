@@ -260,6 +260,7 @@ tr.rowBoundary {
   display: block;
   width: 100%;
 }
+
 /*********************************************************/
 /* Messages */
 div.helpMessage {
@@ -267,9 +268,11 @@ div.helpMessage {
   border: 1px solid #2A582F;
   padding: 0.3em;
 }
+
 div.helpMessage form {
   margin: 0;
 }
+
 /*********************************************************/
 /* Form Labels */
 th.historyLabel {
@@ -291,8 +294,6 @@ h2.history {
 .removeButtonsTop {
   padding-bottom: 1em;
 }
-
-
 
 .historyMagnetUsed {
   overflow: hidden;

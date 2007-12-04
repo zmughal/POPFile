@@ -8,19 +8,12 @@ bad.  Its does well on OS X's Safari 1.0 beta, Opera, and IE 5.  It seems on
 most Mac browsers the "title bar" is not working correctly due to the way
 they handle system colors.
 
-Original design by Joseph Connors (TexasFett) <wincss@texas.mailshell.com>,
-but wouldn't look nearly as good without Dan Martin (Kraelen).  Thanks Dan.
+Original design by Joseph Connors (TexasFett), but wouldn't look nearly as
+good without Dan Martin (Kraelen).  Thanks Dan.
 
 CSS2 sytle comments are below the line they apply to.  CSS1 style comments are
 hacks to make the skin look better on IE and Konqueror since they ignore CSS1
 commenting.  But that means its not fully valid CSS2.
-
-03-29-03: Last Major Update
-04-19-03: Fix menu visited color on IE 6 - version accepted into POPFile 0.19
-05-03-03: Center footer better and add "icon" in Mozilla, maybe Opera head fix
-05-05-03: Changed a lot of head stuff, got rid of absolute positioning
-05-21-03: Did what I could to fix the changes 0.19 RC3 made to the footer
-08-06-04: Add support for some new 0.22 classes and some code improvements
 */
 
 body {
@@ -220,6 +213,10 @@ h2 {
   font-size: 1.2em;
 }
 
+th.historyLabel {
+  text-align: left;
+}
+
 tr.rowEven {
   background-color: transparent;
 /* If you would like more color try lightblue. */
@@ -310,6 +307,9 @@ td.historyNavigatorBottom {
   width: 100%;
 }
 
+
+
+
 .openMessageTable, .lookupResultsTable {
   border-width: 2px;
   border-style: inset;
@@ -350,7 +350,10 @@ div.helpMessage {
   border: 1px solid black;
   padding: 0.4em;
   margin: 0.3em;
-  padding-bottom: 0;
+}
+
+div.helpMessage form {
+  margin: 0;
 }
 
 span.graphFont {
@@ -360,6 +363,37 @@ span.graphFont {
 tr.rowBoundary {
   background-color: InfoBackground;
 }
+
+table.settingsTable + br {
+  display: none;
+}
+
+.viewHeadings {
+  display: inline;
+}
+
+td.top20 td.historyNavigatorTop a + a {
+  border-left: 1px solid black;
+  padding-left: 0.3em;
+}
+
+.historyMagnetUsed {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.historyMagnetUsed img {
+  vertical-align: bottom;
+}
+
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
+}
+
+/*********************************************************/
+/* Customizations */
 
 /* - uncomment this section if you want On text to be bold
 .bucketsWidgetStateOn, .configWidgetStateOn, .securityWidgetStateOn {
