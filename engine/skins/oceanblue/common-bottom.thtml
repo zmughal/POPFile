@@ -22,7 +22,7 @@
                 <TMPL_VAR NAME="Localize_Footer_Wiki"></a>
         </li>
         <li class="footerBody">
-            <a class="bottomLink" href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?FrequentlyAskedQuestions"><TMPL_VAR NAME="Localize_FAQ"></a>
+            <a class="bottomLink" href="http://getpopfile.org/wiki/<TMPL_VAR NAME="Localize_FAQLink">"><TMPL_VAR NAME="Localize_FAQ"></a>
         </li>
         <li class="footerBody">
             <a>&nbsp;</a>
