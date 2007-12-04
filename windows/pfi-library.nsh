@@ -59,7 +59,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.11"
+  !define C_PFI_LIBRARY_VERSION     "0.3.12"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -377,7 +377,9 @@
   !macroend
 
   ;--------------------------------------------------------------------------
-  ; 'adduser.nsi' macro used to ensure current skin selection uses lowercase
+  ; 'adduser.nsi' macro used to ensure current skin selection uses lowercase.
+  ; This macro is also used to handle the necessary conversion when an existing
+  ; installation uses an obsolete skin which is no longer shipped with POPFile.
   ;--------------------------------------------------------------------------
 
   !macro PFI_SkinCaseChange OLDNAME NEWNAME

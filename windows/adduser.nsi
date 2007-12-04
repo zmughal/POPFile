@@ -1733,7 +1733,6 @@ use_inherited_lang:
   StrCmp ${L_LANG} "Chinese-Traditional-BIG5" special_case
   StrCmp ${L_LANG} "English-UK" special_case
   StrCmp ${L_LANG} "Hebrew" special_case
-  StrCmp ${L_LANG} "Klingon" special_case
   Goto use_installer_lang
 
 special_case:
@@ -2325,8 +2324,15 @@ Function CheckExistingConfigData
   ; There may be more than one entry for these ports in the file - use the last one found
   ; (but give priority to any "html_port" entry).
 
-  FileOpen  ${L_CFG} "$G_USERDIR\popfile.cfg" r
   FileOpen  ${L_CLEANCFG} "$PLUGINSDIR\popfile.cfg" w
+  ClearErrors
+  FileOpen  ${L_CFG} "$G_USERDIR\popfile.cfg" r
+  IfErrors 0 found_eol
+
+  ; This is a clean install so set the UI skin to the default setting
+  ; (there is a skin called 'default' but for the 1.0.0 release we use 'simplyblue')
+
+  FileWrite ${L_CLEANCFG} "html_skin simplyblue${MB_NL}"
 
 found_eol:
   StrCpy ${L_TEXTEND} "<eol>"
@@ -2423,20 +2429,48 @@ got_skin:
   Call PFI_TrimNewlines
   Pop ${L_SKIN}
 
+  ; Originally the skins were all defined in a single 'skins'
+  ; folder. When the new skin template system was introduced
+  ; each skin was given its own folder with the folder's name
+  ; being used to select the skin. These folder names are in
+  ; lowercase so if we are upgrading a very old installation
+  ; we use the 'PFI_SkinCaseChange' macro to ensure that the
+  ; skin parameter in popfile.cfg uses lowercase.
+  ;
+  ; For the 1.0.0 release some significant skin changes have
+  ; been made:
+  ;
+  ; (a) the almost identical 'lrclaptop', 'tinydefault' and
+  ;     'smalldefault' skins have been merged into a revised
+  ;     version of 'smalldefault'
+  ;
+  ; (b) the 'klingon', 'prjbluegrey' and 'prjsteelbeach' skins
+  ;     have been dropped so we fallback to the default skin
+  ;     if any of these skins is currently selected
+  ;
+  ;     (Note that for the 1.0.0 release the default skin is
+  ;     'simplyblue' even though there's a skin called 'default')
+  ;
+  ; The 'PFI_SkinCaseChange' macro provides an easy way to achieve
+  ; the necessary changes if the user currently uses any of the
+  ; merged or dropped skins.
+
   !insertmacro PFI_SkinCaseChange "CoolBlue"       "coolblue"
   !insertmacro PFI_SkinCaseChange "CoolBrown"      "coolbrown"
   !insertmacro PFI_SkinCaseChange "CoolGreen"      "coolgreen"
   !insertmacro PFI_SkinCaseChange "CoolOrange"     "coolorange"
   !insertmacro PFI_SkinCaseChange "CoolYellow"     "coolyellow"
+  !insertmacro PFI_SkinCaseChange "klingon"        "simplyblue"
   !insertmacro PFI_SkinCaseChange "Lavish"         "lavish"
-  !insertmacro PFI_SkinCaseChange "LRCLaptop"      "lrclaptop"
+  !insertmacro PFI_SkinCaseChange "LRCLaptop"      "smalldefault"
   !insertmacro PFI_SkinCaseChange "orangeCream"    "orangecream"
-  !insertmacro PFI_SkinCaseChange "PRJBlueGrey"    "prjbluegrey"
-  !insertmacro PFI_SkinCaseChange "PRJSteelBeach"  "prjsteelbeach"
+  !insertmacro PFI_SkinCaseChange "PRJBlueGrey"    "simplyblue"
+  !insertmacro PFI_SkinCaseChange "PRJSteelBeach"  "simplyblue"
   !insertmacro PFI_SkinCaseChange "SimplyBlue"     "simplyblue"
   !insertmacro PFI_SkinCaseChange "Sleet"          "sleet"
   !insertmacro PFI_SkinCaseChange "Sleet-RTL"      "sleet-rtl"
   !insertmacro PFI_SkinCaseChange "StrawberryRose" "strawberryrose"
+  !insertmacro PFI_SkinCaseChange "tinydefault"    "smalldefault"
 
 save_skin_setting:
   StrCpy ${L_LNE} "${L_CMPRE}${L_SKIN}${MB_NL}"

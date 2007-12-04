@@ -1254,6 +1254,9 @@ Section "Skins" SecSkins
   SetOutPath "$G_ROOTDIR\skins\coolgreen"
   File "..\engine\skins\coolgreen\*.*"
 
+  SetOutPath "$G_ROOTDIR\skins\coolmint"
+  File "..\engine\skins\coolmint\*.*"
+
   SetOutPath "$G_ROOTDIR\skins\coolorange"
   File "..\engine\skins\coolorange\*.*"
 
@@ -1269,14 +1272,11 @@ Section "Skins" SecSkins
   SetOutPath "$G_ROOTDIR\skins\green"
   File "..\engine\skins\green\*.*"
 
-  SetOutPath "$G_ROOTDIR\skins\klingon"
-  File "..\engine\skins\klingon\*.*"
-
   SetOutPath "$G_ROOTDIR\skins\lavish"
   File "..\engine\skins\lavish\*.*"
 
-  SetOutPath "$G_ROOTDIR\skins\lrclaptop"
-  File "..\engine\skins\lrclaptop\*.*"
+  SetOutPath "$G_ROOTDIR\skins\ocean"
+  File "..\engine\skins\ocean\*.*"
 
   SetOutPath "$G_ROOTDIR\skins\oceanblue"
   File "..\engine\skins\oceanblue\*.*"
@@ -1284,20 +1284,14 @@ Section "Skins" SecSkins
   SetOutPath "$G_ROOTDIR\skins\orange"
   File "..\engine\skins\orange\*.*"
 
-  SetOutPath "$G_ROOTDIR\skins\osx"
-  File "..\engine\skins\osx\*.*"
-
   SetOutPath "$G_ROOTDIR\skins\orangecream"
   File "..\engine\skins\orangecream\*.*"
 
+  SetOutPath "$G_ROOTDIR\skins\osx"
+  File "..\engine\skins\osx\*.*"
+
   SetOutPath "$G_ROOTDIR\skins\outlook"
   File "..\engine\skins\outlook\*.*"
-
-  SetOutPath "$G_ROOTDIR\skins\prjbluegrey"
-  File "..\engine\skins\prjbluegrey\*.*"
-
-  SetOutPath "$G_ROOTDIR\skins\prjsteelbeach"
-  File "..\engine\skins\prjsteelbeach\*.*"
 
   SetOutPath "$G_ROOTDIR\skins\simplyblue"
   File "..\engine\skins\simplyblue\*.*"
@@ -1316,9 +1310,6 @@ Section "Skins" SecSkins
 
   SetOutPath "$G_ROOTDIR\skins\strawberryrose"
   File "..\engine\skins\strawberryrose\*.*"
-
-  SetOutPath "$G_ROOTDIR\skins\tinydefault"
-  File "..\engine\skins\tinydefault\*.*"
 
   SetOutPath "$G_ROOTDIR\skins\tinygrey"
   File "..\engine\skins\tinygrey\*.*"
