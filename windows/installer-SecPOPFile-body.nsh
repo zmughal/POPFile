@@ -310,6 +310,8 @@ install_schema:
   ; Default UI skin (the POPFile UI looks better if a skin is used)
   ; Note: Although there is a skin called "default" POPFile 1.0.0 defaults to "simplyblue"
 
+  SetOutPath "$G_ROOTDIR\skins\default"
+  File "..\engine\skins\default\*.*"
   SetOutPath "$G_ROOTDIR\skins\simplyblue"
   File "..\engine\skins\simplyblue\*.*"
 
