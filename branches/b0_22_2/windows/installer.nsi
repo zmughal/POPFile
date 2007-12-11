@@ -254,6 +254,10 @@
   !define C_README        "v${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.change"
   !define C_RELEASE_NOTES "..\engine\${C_README}"
 
+  ; Some releases may include a Japanese translation of the release notes
+
+  !define C_JAPANESE_RELEASE_NOTES "${C_RELEASE_NOTES}.nihongo"
+
   ;--------------------------------------------------------------------------
   ; Windows Vista expects to find a manifest specifying the execution level
   ;
@@ -896,6 +900,7 @@
   ReserveFile "ioP.ini"
   ReserveFile "ioUM.ini"
   ReserveFile "${C_RELEASE_NOTES}"
+  ReserveFile /nonfatal "${C_JAPANESE_RELEASE_NOTES}"
   ReserveFile "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
 ;  ReserveFile "SSL_pm.pat"     ; 0.22.5 does not need any SSL patches so there's no need for a built-in copy
 
@@ -1000,7 +1005,20 @@ continue:
 
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioG.ini"
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioP.ini"
+
+  ; The 1.0.0 release introduced some significant improvements to the support for
+  ; the Japanese language so a Japanese version of the release notes was provided
+  ; for that release. If future releases do not have a Japanese translation of these
+  ; notes then the normal English version will be used.
+
+  StrCmp $LANGUAGE ${LANG_JAPANESE} 0 English_release_notes
+  File /nonfatal "/oname=$PLUGINSDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
+  IfFileExists "$PLUGINSDIR\${C_README}" make_txt_file
+
+English_release_notes:
   File "/oname=$PLUGINSDIR\${C_README}" "${C_RELEASE_NOTES}"
+
+make_txt_file:
 
   ; Ensure the release notes are in a format which the standard Windows NOTEPAD.EXE can use.
   ; When the "POPFile" section is processed, the converted release notes will be copied to the

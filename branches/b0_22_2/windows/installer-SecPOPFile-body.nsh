@@ -183,7 +183,19 @@ save_HKLM_root_sfn:
   ; Install POPFile 'core' files
 
   File "..\engine\license"
+
+  ; Some releases may have a Japanese translation of the release notes.
+  
+  Delete "$G_ROOTDIR\${C_README}"
+  
+  StrCmp $LANGUAGE ${LANG_JAPANESE} 0 English_release_notes
+  File /nonfatal "/oname=$G_ROOTDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
+  IfFileExists "$G_ROOTDIR\${C_README}" copy_txt_version
+
+English_release_notes:
   File "${C_RELEASE_NOTES}"
+
+copy_txt_version:
   CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_README}.txt" "$G_ROOTDIR\${C_README}.txt"
 
   ; The experimental 'setup-repack587.exe' installer installed some NSIS-based replacements
