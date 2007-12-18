@@ -34,8 +34,15 @@
 # * fail while saying something
 # * say no to copy msg
 
-use strict;
-use POPFile::Loader;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use POPFile::History;
+use Services::IMAP;
+use UI::HTML;
+use Classifier::Bayes;
+use Classifier::WordMangle;
+use File::Copy;
 use HTML::Template;
 
 $SIG{CHLD} = 'IGNORE';
@@ -54,7 +61,8 @@ if ( $pid == 0 ) {
 # parent: runs the tests:
 else {
     # First, start POPFile.
-    my ( $c, $mq, $l, $b, $h, $im ) = start_popfile();
+    my ( $c, $mq, $l, $b, $w, $h ) = start_popfile();
+    my $im = new Services::IMAP;
     my $session = $b->get_session_key( 'admin', '' );
 
     # Configure the IMAP module so it will
@@ -94,7 +102,7 @@ sub test_imap_module {
 
     # Login. The server doesn't have any messages for us yet
     $im->log_( 0, "---- testing login to empty server (uidnext and uidvalidity)" );
-    $im->user_config_( 1, 'login', 'someone' );
+    $im->config_( 'login', 'someone' );
     $im->service();
 
     test_assert_equal( $im->{last_update__}, time );
@@ -124,7 +132,7 @@ sub test_imap_module {
     # Let the INBOX have four new messages, make sure they are
     # classified correctly and moved to the according folders.
     $im->log_( 0, "---- testing classify with 6 new messages" );
-    $im->user_config_( 1, 'login', 'new_INBOX_007_003_004_005_013_021' );
+    $im->config_( 'login', 'new_INBOX_007_003_004_005_013_021' );
     $b->create_magnet( $session, 'other', 'from', 'cxcse231@yahoo.com' );
     $im->{last_update__} = 0;
     $im->service();
@@ -218,16 +226,16 @@ sub test_imap_module {
 
     # Change the UIDVALIDITY values and then log in again
     $im->log_( 0, '---- changing uidvalies' );
-    $im->user_config_( 1, 'login', 'someone');
-    my $uidvalis = $im->user_config_( 1, 'uidvalidities');
+    $im->config_('login', 'someone');
+    my $uidvalis = $im->config_('uidvalidities');
     my $newvalis = $uidvalis;
     $newvalis =~ s/-->(\d+)-->/'-->' . ( $1 +2 ) . '-->'/ge;
-    $im->user_config_( 1, 'uidvalidities', $newvalis );
+    $im->config_( 'uidvalidities', $newvalis );
     $im->{last_update__} = 0;
     $im->service();
     $im->disconnect_folders__();
-    test_assert_equal( $im->user_config_( 1, 'uidvalidities' ), $uidvalis );
-    $im->user_config_( 1, 'uidvalidities', $uidvalis );
+    test_assert_equal( $im->config_( 'uidvalidities' ), $uidvalis );
+    $im->config_( 'uidvalidities', $uidvalis );
 
     # The module is supposed to retrieve the list of mailboxes if it
     # hasn't got any yet.
@@ -242,26 +250,26 @@ sub test_imap_module {
     # and see whether we react in a graceful manner
     $newvalis = $uidvalis;
     $newvalis =~ s/-->(\d+)-->/-->-->/;
-    $im->user_config_( 1,  'uidvalidities', $newvalis );
+    $im->config_( 'uidvalidities', $newvalis );
     $im->{last_update__} = 0;
     $im->service();
-    test_assert_equal( $im->user_config_( 1, 'uidvalidities'), $uidvalis );
+    test_assert_equal( $im->config_('uidvalidities'), $uidvalis );
 
     # Check what happens when we time out
     $im->log_( 0, "---- Testing time-out behaviour for the module." );
-    $im->user_config_( 1,  'login', 'timeOut1' );
+    $im->config_( 'login', 'timeOut1' );
     $im->{last_update__} = 0;
     $im->service();
     $im->disconnect_folders__();
 
     # Make the server drop the connection and make sure we don't crash
     $im->log_( 0, "---- Testing dropped-connection behaviour for the module." );
-    $im->user_config_( 1,  'login', 'dropConnection3' );
+    $im->config_( 'login', 'dropConnection3' );
     $im->{last_update__} = 0;
     $im->service();
 
     $im->log_( 0, "---- Testing train_on_archive." );
-    $im->user_config_( 1,  login => 'new_INBOX_007_003_004_005_013_021' );
+    $im->config_( login => 'new_INBOX_007_003_004_005_013_021' );
     $im->{last_update__} = 0;
     $client = $im->new_imap_client();
     $client->select( 'INBOX' );
@@ -272,18 +280,18 @@ sub test_imap_module {
     $client->move_message( 11, 'other' );
     $client->move_message( 12, 'spam' );
 
-    $im->user_config_( 1,  'training_mode', 1 );
-    $im->user_config_( 1,  login => 'someone' );
+    $im->config_( 'training_mode', 1 );
+    $im->config_( login => 'someone' );
     $im->service();
-    test_assert_equal( $im->user_config_( 1,  'training_mode' ), 0 );
+    test_assert_equal( $im->config_( 'training_mode' ), 0 );
 
     # Test the multiple-connection approach
     $im->log_( 0, "---- Testing multiple connections" );
-    $im->user_config_( 1,  use_multiple_connections => 1 );
-    $im->user_config_( 1,  login => 'someone' );
+    $im->config_( use_multiple_connections => 1 );
+    $im->config_( login => 'someone' );
     $im->{last_update__} = 0;
     $im->service();
-    $im->user_config_( 1,  use_multiple_connections => 0 );
+    $im->config_( use_multiple_connections => 0 );
     # TODO: login and place some msgs in the INBOX.
     #       check classifications.
 }
@@ -299,7 +307,7 @@ sub test_imap_client {
     my $im = shift;
 
     $im->log_( 0, "---- Testing various client methods" );
-    $im->user_config_( 1,  'login', 'someone' );
+    $im->config_( 'login', 'someone' );
     my $client = $im->new_imap_client();
 
     test_assert( $client, "Have we got a valid imap client?" );
@@ -344,7 +352,7 @@ sub test_imap_client {
     test_assert( $client->logout());
 
     $im->log_( 0, "---- testing client methods with 3 new messages." );
-    $im->user_config_( 1,  'login', 'new_INBOX_003_002_001' );
+    $im->config_( 'login', 'new_INBOX_003_002_001' );
     $client = $im->new_imap_client();
     $client->uid_next( 'INBOX', 0 );
     @msgs = $client->get_new_message_list_unselected( 'INBOX' );
@@ -376,12 +384,12 @@ sub test_imap_client {
     }
 
     $im->log_( 0, "---- Testing failing login behaviour for client" );
-    $im->user_config_( 1,  'login', 'fail' );
+    $im->config_( 'login', 'fail' );
     $im->new_imap_client();
     test_assert_equal( $im->{imap_error}, 'NO_LOGIN' );
 
     $im->log_( 0, "---- testing time-out behaviour in client" );
-    $im->user_config_( 1,  'login', 'timeOut1' );
+    $im->config_( 'login', 'timeOut1' );
     $client = $im->new_imap_client();
     eval {
         $client->get_mailbox_list();
@@ -391,11 +399,11 @@ sub test_imap_client {
     # sleep 3;
 
     $im->log_( 0, "---- testing something with the client here." );
-    $im->user_config_( 1,  'login', 'new_INBOX_003_002_001' );
+    $im->config_( 'login', 'new_INBOX_003_002_001' );
 
     $im->log_( 0, "shutting down the test server by logging in as user 'shutdown'." );
     # close the server process by logging in as user "shutdown"
-    $im->user_config_( 1,  'login', 'shutdown' );
+    $im->config_( 'login', 'shutdown' );
     eval {
         $im->new_imap_client();
     };
@@ -426,7 +434,10 @@ sub test_imap_ui {
     #   imap-options.thtml
 
     # We also need to provide those methods with a language hash:
-    my $language = load_language( 'English' );
+    my $html = UI::HTML->new();
+    $html->{configuration__} = $im->{configuration__};
+    $html->load_language( 'English' );
+    my $language = $html->{language__};
 
     # Start with the connection details
     # imap-connection-details.thtml
@@ -440,10 +451,10 @@ sub test_imap_ui {
     test_assert_equal( $tmpl->query( name => 'IMAP_login' ), 'VAR' );
 
     # Now let the IMAP module populate the template
-    $im->user_config_( 1,  hostname => 'some host' );
-    $im->user_config_( 1,  port => 1234 );
-    $im->user_config_( 1,  password => 'some password' );
-    $im->user_config_( 1,  login => 'some login' );
+    $im->config_( hostname => 'some host' );
+    $im->config_( port => 1234 );
+    $im->config_( password => 'some password' );
+    $im->config_( login => 'some login' );
 
     $im->configure_item( 'imap_0_connection_details', $tmpl, $language );
 
@@ -466,7 +477,7 @@ sub test_imap_ui {
 
     # We set both, the mailboxes__ arrayref and the list of watched folders, to be empty
     $im->{mailboxes__} = [];
-    $im->user_config_( 1,  'watched_folders', '' );
+    $im->config_( 'watched_folders', '' );
     $im->configure_item( 'imap_1_watch_folders', $tmpl, $language );
     test_assert( ! $tmpl->param( 'IMAP_if_mailboxes' ) );
 
@@ -589,21 +600,21 @@ sub test_imap_ui {
     # imap-update-mailbox-list.thtml
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
     test_assert_equal( $tmpl->query( name => 'IMAP_if_connection_configured' ), 'VAR' );
-    $im->user_config_( 1,  'hostname', '' );
+    $im->config_( 'hostname', '' );
     $im->configure_item( 'imap_4_update_mailbox_list', $tmpl, $language );
     test_assert( ! $tmpl->param('IMAP_if_connection_configured' ) );
-    $im->user_config_( 1,  'hostname', 'test-host' );
+    $im->config_( 'hostname', 'test-host' );
     $im->configure_item( 'imap_4_update_mailbox_list', $tmpl, $language );
     test_assert( $tmpl->param('IMAP_if_connection_configured' ) );
 
     # imap-options.thtml
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-options.thtml' );
-    $im->user_config_( 1,  'expunge', 1 );
+    $im->config_( 'expunge', 1 );
     $im->configure_item( 'imap_5_options', $tmpl, $language );
     test_assert_equal( $tmpl->param( 'IMAP_expunge_is_checked' ), 'checked="checked"' );
 
-    $im->user_config_( 1,  'expunge', 0 );
-    $im->user_config_( 1,  'update_interval', 99 );
+    $im->config_( 'expunge', 0 );
+    $im->config_( 'update_interval', 99 );
     $im->configure_item( 'imap_5_options', $tmpl, $language );
     test_assert_equal( $tmpl->param( 'IMAP_expunge_is_checked' ), '' );
     test_assert_equal( $tmpl->param( 'IMAP_interval', '99' ) );
@@ -619,20 +630,16 @@ sub test_imap_ui {
     $form->{imap_login} = 'username';
     $form->{imap_password} = 'secret';
     $form->{imap_use_ssl} = 1;
-    my ( $status, $error ) = $im->validate_item( 'imap_0_connection_details', $tmpl, $language, $form );
-    test_assert_equal( $status, $language->{Imap_ConnectionDetailsUpdated} );
-    test_assert( ! $error );
-    test_assert_equal( $im->user_config_( 1, 'use_ssl' ), 1 );
-    test_assert_equal( $im->user_config_( 1, 'password' ), 'secret' );
-    test_assert_equal( $im->user_config_( 1, 'login' ), 'username' );
-    test_assert_equal( $im->user_config_( 1, 'port' ), 123 );
-    test_assert_equal( $im->user_config_( 1, 'hostname' ), 'hostname' );
+    $im->validate_item( 'imap_0_connection_details', $tmpl, $language, $form );
+    test_assert_equal( $im->config_( 'use_ssl' ), 1 );
+    test_assert_equal( $im->config_( 'password' ), 'secret' );
+    test_assert_equal( $im->config_( 'login' ), 'username' );
+    test_assert_equal( $im->config_( 'port' ), 123 );
+    test_assert_equal( $im->config_( 'hostname' ), 'hostname' );
 
     $form->{imap_use_ssl} = undef;
-    ( $status, $error ) = $im->validate_item( 'imap_0_connection_details', $tmpl, $language, $form );
-    test_assert_equal( $im->user_config_( 1, 'use_ssl' ), 0 );
-    test_assert_equal( $status, $language->{Imap_ConnectionDetailsUpdated} );
-    test_assert( ! $error );
+    $im->validate_item( 'imap_0_connection_details', $tmpl, $language, $form );
+    test_assert_equal( $im->config_( 'use_ssl' ), 0 );
 
     # After updating the connection details, the module must disconnect
     # and empty its folders hash:
@@ -641,19 +648,15 @@ sub test_imap_ui {
     # Now test some values that should NOT validate:
 
     # all the parameters need to be set to something (except for use_ssl)
-    my %errors = (
-        imap_hostname => $language->{Imap_ServerNameError},
-        imap_port     => $language->{Imap_PortError},
-        imap_login    => $language->{Imap_LoginError},
-        imap_password  => $language->{Imap_PasswordError}
-    );
     foreach ( qw/ imap_hostname imap_port imap_login imap_password / ) {
         my %invalid_form = %$form;
         delete $invalid_form{$_};
         $tmpl = HTML::Template->new( filename => '../skins/default/imap-connection-details.thtml' );
-        ( $status, $error ) = $im->validate_item( 'imap_0_connection_details', $tmpl, $language, \%invalid_form );
-        test_assert_equal( $error, $errors{ $_ } );
-        test_assert( ! $status );
+        $im->validate_item( 'imap_0_connection_details', $tmpl, $language, \%invalid_form );
+        my $template_param = $_;
+        $template_param =~ s/imap_//;
+        $template_param = 'IMAP_connection_if_' . $template_param . '_error';
+        test_assert_equal( $tmpl->param( $template_param ), 1, $_ );
     }
 
 
@@ -664,9 +667,7 @@ sub test_imap_ui {
     $form->{imap_folder_2} = 'second watched folder';
     $form->{update_imap_1_watch_folders} = 1;
     $im->watched_folders__( '1', '2' );
-    ( $status, $error ) = $im->validate_item( 'imap_1_watch_folders', $tmpl, $language, $form );
-    test_assert_equal( $status, $language->{Imap_WatchedFoldersUpdated} );
-    test_assert( ! $error );
+    $im->validate_item( 'imap_1_watch_folders', $tmpl, $language, $form );
     test_assert_equal( $im->{folder_change_flag__}, 1 );
     my @folders = $im->watched_folders__();
     test_assert_equal( scalar @folders, 2 );
@@ -677,9 +678,7 @@ sub test_imap_ui {
     $form = {};
     $form->{imap_2_watch_more_folders} = 1;
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-watch-more-folders.thtml' );
-    ( $status, $error ) = $im->validate_item( 'imap_2_watch_more_folders', $tmpl, $language, $form );
-    test_assert_equal( $status, $language->{Imap_WatchedFolderAdded} );
-    test_assert( ! $error );
+    $im->validate_item( 'imap_2_watch_more_folders', $tmpl, $language, $form );
     @folders = $im->watched_folders__();
     test_assert_equal( scalar @folders, 3 );
     test_assert_equal( pop @folders, 'INBOX' );
@@ -691,13 +690,7 @@ sub test_imap_ui {
     $form->{imap_folder_for_personal} = 'other';
 
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-bucket-folders.thtml' );
-    ( $status, $error ) = $im->validate_item('imap_3_bucket_folders', $tmpl, $language, $form );
-    test_assert( ! $error );
-    my $expected = sprintf $language->{Imap_MapUpdated}, 'other', 'personal';
-    $expected .= '<br />';
-    $expected .= sprintf $language->{Imap_MapUpdated}, 'personal', 'other';
-    $expected .= '<br />';
-    test_assert_equal( $status, $expected );
+    $im->validate_item('imap_3_bucket_folders', $tmpl, $language, $form );
     test_assert_equal( $im->{folder_change_flag__}, 1 );
     test_assert_equal( $im->folder_for_bucket__( 'other' ), 'personal' );
     test_assert_equal( $im->folder_for_bucket__( 'personal' ), 'other' );
@@ -706,37 +699,33 @@ sub test_imap_ui {
     $form = {};
     $form->{do_imap_4_update_mailbox_list} = 1;
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
-    $im->user_config_( 1,  'hostname', '127.0.0.1' );
-    $im->user_config_( 1,  'password', 'password' );
-    $im->user_config_( 1,  'login', 'someone' );
-    $im->user_config_( 1,  'port', '1143' );
-    $im->user_config_( 1,  'update_interval', 10 );
-    $im->user_config_( 1,  'use_ssl', 0 );
-    ( $status, $error ) = $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+    $im->config_( 'hostname', '127.0.0.1' );
+    $im->config_( 'password', 'password' );
+    $im->config_( 'login', 'someone' );
+    $im->config_( 'port', '1143' );
+    $im->config_( 'update_interval', 10 );
+    $im->config_( 'use_ssl', 0 );
+    $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
     test_assert_equal( scalar @{$im->{mailboxes__}}, 5 );
-    test_assert( ! $error );
-    test_assert_equal( $status, $language->{Imap_UpdateOK} );
+    test_assert( ! $tmpl->param( 'IMAP_update_list_failed' ) );
 
-    $im->user_config_( 1,  'login', 'someone' );
-    $im->user_config_( 1,  'hostname', '' );
+    $im->config_( 'login', 'someone' );
+    $im->config_( 'hostname', '' );
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
-    ( $status, $error ) = $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
-    test_assert_equal( $error, $language->{Imap_UpdateError3} );
-    test_assert( ! $status );
+    $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+    test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
 
-    $im->user_config_( 1,  'hostname', '127.0.0.1' );
-    $im->user_config_( 1,  'port', '12345' );
+    $im->config_( 'hostname', '127.0.0.1' );
+    $im->config_( 'port', '12345' );
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
-    ( $status, $error ) = $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
-    test_assert_equal( $error, $language->{Imap_UpdateError2} );
-    test_assert( ! $status );
+    $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+    test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
 
-    $im->user_config_( 1,  'port', 1143 );
-    $im->user_config_( 1,  'login', 'fail' );
+    $im->config_( 'port', 1143 );
+    $im->config_( 'login', 'fail' );
     $tmpl = HTML::Template->new( filename => '../skins/default/imap-update-mailbox-list.thtml' );
-    ( $status, $error ) = $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
-    test_assert_equal( $error, $language->{Imap_UpdateError1} );
-    test_assert( ! $status );
+    $im->validate_item( 'imap_4_update_mailbox_list', $tmpl, $language, $form );
+    test_assert( $tmpl->param( 'IMAP_update_list_failed' ) );
 
 
     # imap-options.thtml
@@ -745,46 +734,17 @@ sub test_imap_ui {
     $form->{update_imap_5_options} = 1;
     $form->{imap_options_expunge} = 1;
     $form->{imap_options_update_interval} = 1234;
-    ( $status, $error ) = $im->validate_item( 'imap_5_options', $tmpl, $language, $form );
-    test_assert_equal( $im->user_config_( 1,  'expunge' ), 1 );
-    test_assert_equal( $im->user_config_( 1,  'update_interval' ), 1234 );
-    test_assert_equal( $status, $language->{Imap_OptionsUpdated} );
-    test_assert( ! $error );
+    $im->validate_item( 'imap_5_options', $tmpl, $language, $form );
+    test_assert_equal( $im->config_( 'expunge' ), 1 );
+    test_assert_equal( $im->config_( 'update_interval' ), 1234 );
 
     $form->{imap_options_expunge} = undef;
     $im->validate_item( 'imap_5_options', $tmpl, $language, $form );
-    test_assert_equal( $im->user_config_( 1,  'expunge' ), 0 );
-    test_assert_equal( $status, $language->{Imap_OptionsUpdated} );
-    test_assert( ! $error );
+    test_assert_equal( $im->config_( 'expunge' ), 0 );
 
     $form->{imap_options_update_interval} = 0;
-    ( $status, $error ) = $im->validate_item( 'imap_5_options', $tmpl, $language, $form );
-    test_assert_equal( $error, $language->{Imap_IntervalError} );
-    test_assert( ! $status );
-}
-
-sub load_language {
-    my $lang = shift;
-    my $language = {};
-
-    if ( open LANG, '<', "../languages/$lang.msg" ) {
-        while ( <LANG> ) {
-            next if ( /[ \t]*#/ );
-
-            if ( /([^\t ]+)[ \t]+(.+)/ ) {
-                my ( $id, $value )  = ( $1, $2 );
-                if ( $value =~ /^\"(.+)\"$/ ) {
-                    $value = $1;
-                }
-                my $msg = $value;
-                $msg =~ s/[\r\n]//g;
-
-                $language->{$id} = $msg;
-            }
-        }
-        close LANG;
-    }
-    return $language;
+    $im->validate_item( 'imap_5_options', $tmpl, $language, $form );
+    test_assert_equal( $tmpl->param('IMAP_if_interval_error'), 1 );
 }
 
 
@@ -795,19 +755,22 @@ sub load_language {
 
 sub configure_imap_module {
     my ( $im, $c, $mq, $l, $b, $h ) = @_;
-
+    $im->configuration( $c );
+    $im->mq( $mq );
+    $im->logger( $l );
+    $im->classifier( $b );
+    $im->history ( $h );
     $im->initialize();
-
     # We should not do anything when we're not enabled:
     $im->config_( 'enabled', 0 );
     test_assert_equal( $im->start(), 2 );
     $im->config_( 'enabled', 1 );
-    $im->user_config_( 1,  'expunge', 1 );
-    $im->user_config_( 1,  'hostname', '127.0.0.1' );
-    $im->user_config_( 1,  'password', 'password' );
-    $im->user_config_( 1,  'port', '1143' );
-    $im->user_config_( 1,  'update_interval', 10 );
-    $im->user_config_( 1,  'watched_folders', '' );
+    $im->config_( 'expunge', 1 );
+    $im->config_( 'hostname', '127.0.0.1' );
+    $im->config_( 'password', 'password' );
+    $im->config_( 'port', '1143' );
+    $im->config_( 'update_interval', 10 );
+    $im->config_( 'watched_folders', '' );
 
     $im->global_config_( 'message_cutoff', 100000 );
     $im->global_config_( 'timeout', 4 );
@@ -838,39 +801,40 @@ sub start_popfile {
 
     mkdir 'messages';
 
-    my $POPFile = POPFile::Loader->new();
-    $POPFile->CORE_loader_init();
-    $POPFile->CORE_signals();
+    my $c = new POPFile::Configuration;
+    my $mq = new POPFile::MQ;
+    my $l = new POPFile::Logger;
+    my $b = new Classifier::Bayes;
+    my $w = new Classifier::WordMangle;
+    my $h = new POPFile::History;
 
-    my %valid = ( 'POPFile/Database'      => 1,
-                  'POPFile/Logger'        => 1,
-                  'POPFile/MQ'            => 1,
-                  'POPFile/History'       => 1,
-                  'Classifier/Bayes'      => 1,
-                  'Classifier/WordMangle' => 1,
-                  'Classifier/MailParse'  => 1,
-                  'POPFile/Configuration' => 1,
-                  'Services/IMAP'         => 1 );
+    foreach ( $c, $l, $w, $mq, $h, $b ) {
+        $_->configuration( $c );
+        $_->mq( $mq );
+        $_->logger( $l ) unless $_ == $l;
+    }
 
-    $POPFile->CORE_load( 0, \%valid );
-    $POPFile->CORE_initialize();
-    $POPFile->CORE_config( 1 );
-    my $im = $POPFile->get_module( 'Services/IMAP' );
-    my $b  = $POPFile->get_module( 'Classifier/Bayes' );
-    my $h  = $POPFile->get_module( 'POPFile/History' );
-    my $l  = $POPFile->get_module( 'POPFile/Logger' );
-    my $mq = $POPFile->get_module( 'POPFile/MQ' );
-    my $c  = $POPFile->get_module( 'POPFile/Configuration' );
+    $b->history( $h );
+    $h->classifier( $b );
+    $h->initialize();
 
-    $im->config_( enabled => 1 );
+    $b->module_config_( 'html', 'language', 'English' );
+    $b->module_config_( 'html', 'port', '8080' );
+
+    $b->{parser__}->mangle( $w );
+    $b->initialize();
+
+    test_assert( $b->start() );
+    test_assert( $h->start() );
+
+    $l->initialize();
     $l->config_( 'level', 1 );
+
     $l->config_( logdir => '/tmp/' );
+    $l->global_config_( msgdir => 'msgs' );
+    $l->service();
 
-    $im->module_config_( 'html', 'port', 8082 );
-
-    $POPFile->CORE_start();
-
-    return ( $c, $mq, $l, $b, $h, $im );
+    return ( $c, $mq, $l, $b, $w, $h );
 }
 
 

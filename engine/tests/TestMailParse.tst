@@ -1,4 +1,4 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for MailParse.pm
 #
@@ -19,36 +19,64 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/CVS' );
+test_assert( rmtree( 'corpus/CVS' ) > 0 );
 unlink 'stopwords';
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
-
-my %valid = ( 'Classifier/Bayes' => 1,
-              'Classifier/WordMangle' => 1,
-              'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Database'     => 1,
-              'POPFile/Configuration' => 1 );
-
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
-
 use Classifier::MailParse;
+use Classifier::Bayes;
+use Classifier::WordMangle;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+
+# Load the test corpus
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $b = new Classifier::Bayes;
+my $w = new Classifier::WordMangle;
+
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
+
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->start();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$c->module_config_( 'html', 'language', 'English' );
+
+$b->{parser__}->mangle( $w );
+$b->initialize();
+test_assert( $b->start() );
+
 my $cl = new Classifier::MailParse;
 
-$cl->{mangle__} = $POPFile->get_module( 'Classifier/WordMangle' );
+$cl->mangle( $w );
 $cl->{lang__} = "English";
 # map_color()
 test_assert_equal( $cl->map_color( 'red' ),     'ff0000' );
@@ -376,6 +404,10 @@ for my $parse_test (@parse_tests) {
     }
 }
 
+# Restore the system locale
+
+setlocale( LC_CTYPE, $current_locale );
+
 # Check that from, to and subject get set correctly when parsing a message
 $cl->parse_file( 'TestMailParse013.msg' );
 test_assert_equal( $cl->{from__},    'RN <rrr@nnnnnnnnn.com>'                        );
@@ -399,7 +431,6 @@ test_assert_equal( $cl->{cc__},      'dsmith@dmi.net, dsmith@datamine.net, dsmit
 
 my @color_tests = ( 'TestMailParse015.msg', 'TestMailParse019.msg' );
 
-my $b = $POPFile->get_module( 'Classifier/Bayes' );
 my $session = $b->get_session_key( 'admin', '' );
 
 for my $color_test (@color_tests) {
@@ -516,11 +547,13 @@ foreach my $prefix (@INC) {
 }
 
 if ( $have_text_kakasi ) {
-    $b->user_module_config_( 1, 'html', 'language', 'Nihongo' );
-#    $b->{parser__}->mangle( $w );
+    $b->module_config_( 'html', 'language', 'Nihongo' );
+    $b->config_( 'nihongo_parser', 'kakasi' );
+    $b->{parser__}->mangle( $w );
     $b->initialize();
     test_assert( $b->start() );
     $cl->{lang__} = 'Nihongo';
+    $cl->setup_nihongo_parser( 'kakasi' );
 
     # Test decode_string
     my $original_string = 'POPFile' . pack( "H*", "a4cfbcabc6b0a5e1a1bca5ebbfb6a4eacaaca4b1a5c4a1bca5eba4c7a4b9" );
@@ -541,7 +574,7 @@ if ( $have_text_kakasi ) {
 
     # Test kakasi wakachi-gaki
 
-    $cl->init_kakasi();
+    $cl->{nihongo_parser__}{init}();
 
     my $wakati_string = pack( "H*", "504f5046696c6520a4cf20bcabc6b020a5e1a1bca5eb20bfb6a4eacaaca4b120a5c4a1bca5eb20a4c7a4b9" );
     test_assert_equal( $cl->parse_line_with_kakasi($original_string), $wakati_string );
@@ -550,7 +583,7 @@ if ( $have_text_kakasi ) {
     $wakati_string = pack( "H*", "504f5046696c6520a4cf20bcabc6b00a09a5e1a1bca5eb20bfb6a4eacaaca4b1090d202020a5c4a1bca5eb20a4c7a4b9" );
     test_assert_equal( $cl->parse_line_with_kakasi($original_string), $wakati_string );
 
-    $cl->close_kakasi();
+    $cl->{nihongo_parser__}{close}();
 
     # parse test for Japanese e-mails.
 
@@ -601,6 +634,6 @@ if ( $have_text_kakasi ) {
     print "\nWarning: Japanese tests skipped because Text::Kakasi was not found\n";
 }
 
-$POPFile->CORE_stop();
+$b->stop();
 
 1;

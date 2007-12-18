@@ -7,7 +7,7 @@
 #                                   The non-library functions used in this file are contained
 #                                   in a separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -76,12 +76,17 @@
   ;                         minimal Perl files (perl.exe, wperl.exe and perl58.dll)
   ;
   ; (b) $INSTDIR\kakasi  -  holds the Kakasi package used to process Japanese email
-  ;                         (only installed when Japanese support is required)
+  ;                         (only installed when Japanese support is required and the Kakasi
+  ;                         parser has been selected)
   ;
-  ; (c) $INSTDIR\lib     -  minimal Perl installation (except for the three files stored
+  ; (c) $INSTDIR\mecab   -  holds the MeCab package used to process Japanese email
+  ;                         (only installed when Japanese support is required and the MeCab
+  ;                         parser has been selected)
+  ;
+  ; (d) $INSTDIR\lib     -  minimal Perl installation (except for the three files stored
   ;                         in the $INSTDIR folder to avoid runtime problems)
   ;
-  ; (d) $INSTDIR\*       -  the remaining POPFile folders (Classifier, languages, skins, etc)
+  ; (e) $INSTDIR\*       -  the remaining POPFile folders (Classifier, languages, skins, etc)
   ;
   ; For this build, each user is expected to have separate user data folders. By default each
   ; user data folder will contain popfile.cfg, stopwords, stopwords.default, popfile.db,
@@ -121,9 +126,17 @@ rootdir_exists:
 
 continue:
 
+  ; Use HKLM as a simple workaround for the case where installer is started by a non-admin user
+  ; (the MakeRootDirSafe function will use this HKLM data to re-initialise $G_ROOTDIR)
+
+  WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "UAC_RootDir" "$G_ROOTDIR"
+
   ; If we are installing over a previous version, ensure that version is not running
 
-  Call MakeRootDirSafe
+  DetailPrint "Use UAC plugin to call 'MakeRootDirSafe' function"
+
+  GetFunctionAddress ${L_TEMP} MakeRootDirSafe
+  UAC::ExecCodeSegment ${L_TEMP}
 
   ; Starting with 0.21.0, a new structure is used for the minimal Perl (to enable POPFile to
   ; be started from any folder, once POPFILE_ROOT and POPFILE_USER have been initialized)
@@ -135,7 +148,6 @@ continue:
 
   Call SkinsRestructure
 
-  StrCmp $G_WINUSERTYPE "Admin" 0 current_user_root
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language" "$LANGUAGE"
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version" "${C_POPFILE_MAJOR_VERSION}"
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${C_POPFILE_MINOR_VERSION}"
@@ -154,25 +166,6 @@ find_HKLM_root_sfn:
 save_HKLM_root_sfn:
   WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
 
-current_user_root:
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language" "$LANGUAGE"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Major Version" "${C_POPFILE_MAJOR_VERSION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Minor Version" "${C_POPFILE_MINOR_VERSION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile Revision" "${C_POPFILE_REVISION}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "POPFile RevStatus" "${C_POPFILE_RC}"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath" "$G_ROOTDIR"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "Author" "setup.exe"
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN" "$G_ROOTDIR"
-  StrCmp $G_SFN_DISABLED "0" find_HKCU_root_sfn
-  StrCpy ${L_TEMP} "Not supported"
-  Goto save_HKCU_root_sfn
-
-find_HKCU_root_sfn:
-  GetFullPathName /SHORT ${L_TEMP} "$G_ROOTDIR"
-
-save_HKCU_root_sfn:
-  WriteRegStr HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
-
   ; Install the POPFile Core files
 
   SetDetailsPrint textonly
@@ -190,8 +183,39 @@ save_HKCU_root_sfn:
   ; Install POPFile 'core' files
 
   File "..\engine\license"
+
+  ; Some releases may have a Japanese translation of the release notes.
+  
+  Delete "$G_ROOTDIR\${C_README}"
+  
+  StrCmp $LANGUAGE ${LANG_JAPANESE} 0 English_release_notes
+  File /nonfatal "/oname=$G_ROOTDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
+  IfFileExists "$G_ROOTDIR\${C_README}" copy_txt_version
+
+English_release_notes:
   File "${C_RELEASE_NOTES}"
+
+copy_txt_version:
   CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_README}.txt" "$G_ROOTDIR\${C_README}.txt"
+
+  ; The experimental 'setup-repack587.exe' installer installed some NSIS-based replacements
+  ; for the non-service EXE files plus renamed versions of the old 0.22.2 EXE files. These
+  ; old ActivePerl 5.8.4 files can now be deleted as this installer contains versions based
+  ; upon a more recent version of ActivePerl (e.g. 0.22.5 is based upon 5.8.8 Build 820).
+
+  Delete "$G_ROOTDIR\popfile-584.exe"
+  Delete "$G_ROOTDIR\popfilef-584.exe"
+  Delete "$G_ROOTDIR\popfileb-584.exe"
+  Delete "$G_ROOTDIR\popfileif-584.exe"
+  Delete "$G_ROOTDIR\popfileib-584.exe"
+  Delete "$G_ROOTDIR\popfile-service-584.exe"
+
+  ; The experimental 'setup-repack587.exe' installer had to use 'perlmsgcap.exe' since the
+  ; NSIS-based replacements were not compatible with the standard "Message Capture" utility
+
+  Delete "$G_ROOTDIR\perlmsgcap.exe"
+
+  ; Install the POPFile EXE files
 
   File "..\engine\popfile.exe"
   File "..\engine\popfilef.exe"
@@ -199,6 +223,7 @@ save_HKCU_root_sfn:
   File "..\engine\popfileif.exe"
   File "..\engine\popfileib.exe"
   File "..\engine\popfile-service.exe"
+
   File /nonfatal "/oname=pfi-stopwords.default" "..\engine\stopwords"
 
   File "runpopfile.exe"
@@ -224,13 +249,15 @@ app_paths:
   SetOutPath "$G_ROOTDIR"
 
   File "..\engine\popfile.pl"
-  File "..\engine\popfile-check-setup.pl"
   File "..\engine\popfile.pck"
   File "..\engine\insert.pl"
   File "..\engine\bayes.pl"
   File "..\engine\pipe.pl"
 
   File "..\engine\favicon.ico"
+
+  File "..\engine\pix.gif"
+  File "..\engine\otto.png"
 
   SetOutPath "$G_ROOTDIR\Classifier"
   File "..\engine\Classifier\Bayes.pm"
@@ -267,7 +294,6 @@ install_schema:
 
   SetOutPath "$G_ROOTDIR\POPFile"
   File "..\engine\POPFile\MQ.pm"
-  File "..\engine\POPFile\Database.pm"
   File "..\engine\POPFile\History.pm"
   File "..\engine\POPFile\Loader.pm"
   File "..\engine\POPFile\Logger.pm"
@@ -294,9 +320,12 @@ install_schema:
   ;-----------------------------------------------------------------------
 
   ; Default UI skin (the POPFile UI looks better if a skin is used)
+  ; Note: Although there is a skin called "default" POPFile 1.0.0 defaults to "simplyblue"
 
   SetOutPath "$G_ROOTDIR\skins\default"
   File "..\engine\skins\default\*.*"
+  SetOutPath "$G_ROOTDIR\skins\simplyblue"
+  File "..\engine\skins\simplyblue\*.*"
 
   ;-----------------------------------------------------------------------
 
@@ -309,21 +338,27 @@ install_schema:
 
   ; Attempt to remove some StartUp and Start Menu shortcuts created by previous installations
 
+  !macro OBSOLETE_START_MENU_ENTRIES
+
+      Delete "$SMSTARTUP\Run POPFile.lnk"
+      Delete "$SMSTARTUP\Run POPFile in background.lnk"
+
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
+
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
+
+  !macroend
+
   SetShellVarContext all
-  Delete "$SMSTARTUP\Run POPFile.lnk"
-  Delete "$SMSTARTUP\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
+  !insertmacro OBSOLETE_START_MENU_ENTRIES
 
   SetShellVarContext current
-  Delete "$SMSTARTUP\Run POPFile.lnk"
-  Delete "$SMSTARTUP\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
+  !insertmacro OBSOLETE_START_MENU_ENTRIES
 
   ; Create the START MENU entries
 
@@ -337,17 +372,10 @@ install_schema:
   ; 'CreateShortCut' fails to update existing shortcuts if they are read-only, so try to clear
   ; the read-only attribute first. Similar handling is required for the Internet shortcuts.
 
-  ; If the user has 'Admin' rights, create a 'POPFile' folder with a set of shortcuts in
-  ; the 'All Users' Start Menu . If the user does not have 'Admin' rights, the shortcuts
-  ; are created in the 'Current User' Start Menu.
-
+  ; Create a 'POPFile' folder with a set of shortcuts in the 'All Users' Start Menu.
   ; If the 'All Users' folder is not found, NSIS will return the 'Current User' folder.
 
   SetShellVarContext all
-  StrCmp $G_WINUSERTYPE "Admin" create_shortcuts
-  SetShellVarContext current
-
-create_shortcuts:
   SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}"
   SetOutPath "$G_ROOTDIR"
 
@@ -366,14 +394,6 @@ create_shortcuts:
 
   SetOutPath "$SMPROGRAMS\${C_PFI_PRODUCT}"
 
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url" \
-              "InternetShortcut" "URL" "http://${C_UI_URL}:$G_GUI/"
-
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url" NORMAL
-  WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url" \
-              "InternetShortcut" "URL" "http://${C_UI_URL}:$G_GUI/shutdown"
-
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" NORMAL
 
   !ifndef ENGLISH_MODE
@@ -382,7 +402,7 @@ create_shortcuts:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?FrequentlyAskedQuestions"
+              "http://getpopfile.org/wiki/FAQ"
 
   !ifndef ENGLISH_MODE
       Goto support
@@ -390,7 +410,7 @@ create_shortcuts:
     japanese_faq:
       WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions"
+                  "http://getpopfile.org/wiki/JP:FAQ"
 
     support:
   !endif
@@ -409,7 +429,7 @@ create_shortcuts:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?POPFileDocumentationProject"
+              "http://getpopfile.org/wiki"
 
   !ifndef ENGLISH_MODE
       Goto pfidiagnostic
@@ -417,12 +437,12 @@ create_shortcuts:
     japanese_wiki:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_POPFileDocumentationProject"
+                  "http://getpopfile.org/wiki/jp"
 
     pfidiagnostic:
   !endif
 
-  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 silent_shutdown
+  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 add_remove_programs
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\PFI Diagnostic utility.lnk"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
@@ -431,38 +451,50 @@ create_shortcuts:
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" \
                  "$G_ROOTDIR\pfidiag.exe" "/full"
 
-silent_shutdown:
+add_remove_programs:
   SetOutPath "$G_ROOTDIR"
+  SetShellVarContext current
 
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk" \
-                 "$G_ROOTDIR\stop_pf.exe" "/showerrors $G_GUI"
+  ; Create an entry in the Control Panel's "Add/Remove Programs" list. The installer runs with
+  ; admin rights so normally HKLM is used but on Vista HKCU is used in order to avoid problems
+  ; with UAC (if HKLM is used then Vista elevates the uninstaller _before_ the UAC plugin gets
+  ; a chance!)
 
-  ; Create entry in the Control Panel's "Add/Remove Programs" list
+  ClearErrors
+  ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  IfErrors use_HKLM
+  StrCpy ${L_TEMP} ${L_RESULT} 1
+  IntCmp ${L_TEMP} 5 use_HKLM use_HKLM
+  ReadRegStr ${L_RESULT} HKLM \
+      "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
+  StrCmp ${L_RESULT} "$G_ROOTDIR\uninstall.exe" delete_HKLM_entry
+  StrCmp ${L_RESULT} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 create_arp_entry
 
-  StrCmp $G_WINUSERTYPE "Admin" use_HKLM
-
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "UninstallString" "$G_ROOTDIR\uninstall.exe"
-  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoModify" "1"
-  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoRepair" "1"
-  Goto end_section
+delete_HKLM_entry:
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}"
+  Goto create_arp_entry
 
 use_HKLM:
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  SetShellVarContext all
+
+create_arp_entry:
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "UninstallString" "$G_ROOTDIR\uninstall.exe"
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "NoModify" "1"
-  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "InstallLocation" "$G_ROOTDIR"
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoModify" "0"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "ModifyPath" '"$G_ROOTDIR\uninstall.exe" /MODIFY'
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoElevateOnModify" "1"
+  WriteRegDWORD SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoRepair" "1"
 
-end_section:
+  SetShellVarContext current
+
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly

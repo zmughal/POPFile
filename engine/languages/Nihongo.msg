@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -26,10 +26,11 @@ ManualLanguage                          jp
 
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 JP_FrequentlyAskedQuestions
+FAQLink                                 JP:FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   Å¬ÍÑ
+ApplyChanges                            ÊÑ¹¹¤òÅ¬ÍÑ
 On                                      ON
 Off                                     OFF
 TurnOn                                  ON ¤Ë¤¹¤ë
@@ -181,7 +182,7 @@ Advanced_RemoveWord                     Ã±¸ìºï½ü
 Advanced_AllParameters                  POPFile Á´¥Ñ¥é¥á¡¼¥¿¡¼
 Advanced_Parameter                      ¥Ñ¥é¥á¡¼¥¿¡¼
 Advanced_Value                          ÃÍ
-Advanced_Warning                        °Ê²¼¤Ï POPFile ¤ÎÁ´¤Æ¤Î¥Ñ¥é¥á¡¼¥¿¡¼¤Î¥ê¥¹¥È¤Ç¤¹¡£¥¢¥É¥Ð¥ó¥¹¥É¡¦¥æ¡¼¥¶¡¼¤Ë¸Â¤ê¡¢É¬Í×»þ¡¢ÃÍ¤òÊÑ¹¹¤·¤Æ¹¹¿·¥Ü¥¿¥ó¤ò¥¯¥ê¥Ã¥¯¤·¤Æ²¼¤µ¤¤¡£¥Ð¥ê¥Ç¥£¥Æ¥£¡¼¡ÊÂÅÅöÀ­¡Ë¥Á¥§¥Ã¥¯¤Ï¹Ô¤¤¤Þ¤»¤ó¡£
+Advanced_Warning                        °Ê²¼¤Ï POPFile ¤ÎÁ´¤Æ¤Î¥Ñ¥é¥á¡¼¥¿¡¼¤Î¥ê¥¹¥È¤Ç¤¹¡£¥¢¥É¥Ð¥ó¥¹¥É¡¦¥æ¡¼¥¶¡¼ÀìÍÑ¤Ç¤¹¡£ÃÍ¤òÊÑ¹¹¤·¤Æ¹¹¿·¥Ü¥¿¥ó¤ò¥¯¥ê¥Ã¥¯¤·¤Æ²¼¤µ¤¤¡£¥Ð¥ê¥Ç¥£¥Æ¥£¡¼¡ÊÂÅÅöÀ­¡Ë¥Á¥§¥Ã¥¯¤Ï¹Ô¤¤¤Þ¤»¤ó¡£ÂÀ»ú¤ÇÉ½¼¨¤µ¤ì¤Æ¤¤¤ë¹àÌÜ¤Ï¥Ç¥Õ¥©¥ë¥ÈÀßÄê¤«¤éÊÑ¹¹¤µ¤ì¤¿¤â¤Î¤Ç¤¹¡£¥ª¥×¥·¥ç¥ó¤Ë¤Ä¤¤¤Æ¤Î¾ÜºÙ¤Ï¡¢<a href="http://getpopfile.org/wiki/JP:OptionReference">¥ª¥×¥·¥ç¥ó¡¦¥ê¥Õ¥¡¥ì¥ó¥¹</a>¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
 Advanced_ConfigFile                     ÀßÄê¥Õ¥¡¥¤¥ë:
 
 History_Filter                          &nbsp;(<font color="%s">%s </font>¥Ð¥±¥Ä¤Î¤ß¤òÉ½¼¨)
@@ -233,7 +234,7 @@ Security_ExplainStats                   (POPFile ¤ÏËèÆü°ì²ó¡¢°Ê²¼¤Î»°¤Ä¤Î¥Ç¡¼¥¿¤
 Security_ExplainUpdate                  (POPFile ¤ÏËèÆü°ì²ó¡¢°Ê²¼¤Î»°¤Ä¤Î¥Ç¡¼¥¿¤ò www.usethesource.com ¾å¤Î¥¹¥¯¥ê¥×¥È¤ËÁ÷¤ê¤Þ¤¹¡£: ma (¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë POPFile ¤Î¥á¥¸¥ã¡¼¥Ð¡¼¥¸¥ç¥óÈÖ¹æ)¡¢mi (¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë POPFile ¤Î¥Þ¥¤¥Ê¡¼¥Ð¡¼¥¸¥ç¥óÈÖ¹æ)¡¢bn (¥¤¥ó¥¹¥È¡¼¥ë¤µ¤ì¤Æ¤¤¤ë POPFile ¤Î¥Ó¥ë¥ÉÈÖ¹æ)¡£¿·¤·¤¤¥Ð¡¼¥¸¥ç¥ó¤¬¥ê¥ê¡¼¥¹¤µ¤ì¤ë¤È¡¢POPFile ¤Ï¤½¤Î¾ðÊó¤ò¼õ¤±¤Æ¥Ú¡¼¥¸¤Î¾åÉô¤Ë¥°¥é¥Õ¥£¥Ã¥¯¤òÉ½¼¨¤·¤Æ¤ªÃÎ¤é¤»¤·¤Þ¤¹¡£»ÈÍÑ¤·¤Æ¤¤¤Þ¤¹ Web ¥µ¡¼¥Ð¡¼¤Ï¤³¤ì¤é¤Î¥í¥°¥Õ¥¡¥¤¥ë¤òÌó¸ÞÆü´ÖÊÝÂ¸¤·¤¿¤¢¤È¡¢ºï½ü¤·¤Þ¤¹¡£¤³¤ì¤é¤Î¹¹¿·¥Á¥§¥Ã¥¯¤Ë»ÈÍÑ¤·¤¿¥Ç¡¼¥¿¤ò IP ¥¢¥É¥ì¥¹¤È´ØÏ¢ÉÕ¤±¤ÆÊÝÂ¸¤·¤¿¤ê¤Ï¤¤¤Ã¤µ¤¤¤¤¤¿¤·¤Þ¤»¤ó¡£)
 Security_PasswordTitle                  ¥æ¡¼¥¶¡¼¥¤¥ó¥¿¡¼¥Õ¥§¡¼¥¹¥Ñ¥¹¥ï¡¼¥É
 Security_Password                       ¥Ñ¥¹¥ï¡¼¥É
-Security_PasswordUpdate                 ¥Ñ¥¹¥ï¡¼¥É¤ò %s ¤ËÊÑ¹¹¤·¤Þ¤·¤¿
+Security_PasswordUpdate                 ¥Ñ¥¹¥ï¡¼¥É¤òÊÑ¹¹¤·¤Þ¤·¤¿
 Security_AUTHTitle                      ¥ê¥â¡¼¥È¥µ¡¼¥Ð¡¼
 Security_SecureServer                   ¥ê¥â¡¼¥È POP3 ¥µ¡¼¥Ð¡¼ (SPA/AUTH ¤Þ¤¿¤Ï Æ©²á¥×¥í¥­¥·)
 Security_SecureServerUpdate             ¥ê¥â¡¼¥È POP3 ¥µ¡¼¥Ð¡¼¤ò %s ¤ËÊÑ¹¹¤·¤Þ¤·¤¿¡£
@@ -259,7 +260,7 @@ Magnet_Error3                           ¿·µ¬¥Þ¥°¥Í¥Ã¥È '%s' ¤Ë¥Ð¥±¥Ä '%s' ¤ò³ä¤ê
 Magnet_CurrentMagnets                   ¸½ºß¤Î¥Þ¥°¥Í¥Ã¥È
 Magnet_Message1                         ¼¡¤Î¥Þ¥°¥Í¥Ã¥È¤Ë¤è¤ê¡¢¥á¡¼¥ë¤ò¾ï¤ËÆÃÄê¤Î¥Ð¥±¥Ä¤ËÊ¬Îà¤·¤Þ¤¹¡£
 Magnet_CreateNew                        ¿·µ¬¥Þ¥°¥Í¥Ã¥ÈºîÀ®
-Magnet_Explanation                      <b>¥Þ¥°¥Í¥Ã¥È¤Ë¤Ï»°¤Ä¤Î¥¿¥¤¥×¤¬¤¢¤ê¤Þ¤¹:</b> <ul><li><b>º¹½Ð¿Í¤Î¥¢¥É¥ì¥¹¤Þ¤¿¤ÏÌ¾Á°:</b> Îã: john@company.com ¤Î¤è¤¦¤ËÆÃÄê¤Î¥¢¥É¥ì¥¹¤¬¥Þ¥Ã¥Á¤¹¤ë¡¢<br />company.com ¤Î¤è¤¦¤Ë company.com ¤ËÂ°¤¹¤ëÁ´¤Æ¤Î¿Í¤¿¤Á¤¬¥Þ¥Ã¥Á¤¹¤ë¡¢<br />John Doe ¤Î¤è¤¦¤ËÆÃÄê¤Î¿Í¤¬¥Þ¥Ã¥Á¤¹¤ë¡¢John ¤Î¤è¤¦¤ËJohn ¤È¤¤¤¦Ì¾Á°¤ò»ý¤ÄÁ´¤Æ¤Î¿Í¤¿¤Á¤¬¥Þ¥Ã¥Á¤¹¤ë¡£</li><li><b>°¸Àè¤Î¥¢¥É¥ì¥¹¤Þ¤¿¤ÏÌ¾Á°:</b> From: magnet ¤ÈÆ±ÍÍ¤Ç¤¹¤¬¥á¡¼¥ë¤Î To: ¥¢¥É¥ì¥¹¤¬ÂÐ¾Ý¤Ç¤¹¡£</li> <li><b>·ïÌ¾¤Ë´Þ¤Þ¤ì¤ëÃ±¸ì:</b> Îã: hello ¤È¤¹¤ë¤È hello ¤ò·ïÌ¾¤Ë´Þ¤àÁ´¤Æ¤Î¥á¥Ã¥»¡¼¥¸¤¬¥Þ¥Ã¥Á¤·¤Þ¤¹¡£</li></ul>
+Magnet_Explanation                      ¥Þ¥°¥Í¥Ã¥È¤Ë¤Ï»°¤Ä¤Î¥¿¥¤¥×¤¬¤¢¤ê¤Þ¤¹:</b> <ul><li><b>º¹½Ð¿Í¤Î¥¢¥É¥ì¥¹¤Þ¤¿¤ÏÌ¾Á°:</b> Îã: john@company.com ¤Î¤è¤¦¤ËÆÃÄê¤Î¥¢¥É¥ì¥¹¤¬¥Þ¥Ã¥Á¤¹¤ë¡¢<br />company.com ¤Î¤è¤¦¤Ë company.com ¤ËÂ°¤¹¤ëÁ´¤Æ¤Î¿Í¤¿¤Á¤¬¥Þ¥Ã¥Á¤¹¤ë¡¢<br />John Doe ¤Î¤è¤¦¤ËÆÃÄê¤Î¿Í¤¬¥Þ¥Ã¥Á¤¹¤ë¡¢John ¤Î¤è¤¦¤ËJohn ¤È¤¤¤¦Ì¾Á°¤ò»ý¤ÄÁ´¤Æ¤Î¿Í¤¿¤Á¤¬¥Þ¥Ã¥Á¤¹¤ë¡£</li><li><b>°¸Àè¤Î¥¢¥É¥ì¥¹¤Þ¤¿¤ÏÌ¾Á°:</b> From: magnet ¤ÈÆ±ÍÍ¤Ç¤¹¤¬¥á¡¼¥ë¤Î To: ¥¢¥É¥ì¥¹¤¬ÂÐ¾Ý¤Ç¤¹¡£</li> <li><b>·ïÌ¾¤Ë´Þ¤Þ¤ì¤ëÃ±¸ì:</b> Îã: hello ¤È¤¹¤ë¤È hello ¤ò·ïÌ¾¤Ë´Þ¤àÁ´¤Æ¤Î¥á¥Ã¥»¡¼¥¸¤¬¥Þ¥Ã¥Á¤·¤Þ¤¹¡£</li></ul>
 Magnet_MagnetType                       ¥Þ¥°¥Í¥Ã¥È¥¿¥¤¥×
 Magnet_Value                            ÃÍ
 Magnet_Always                           Ê¬ÎàÀè¤Î¥Ð¥±¥Ä
@@ -333,21 +334,21 @@ Windows_NextTime                        <p><font color="red">¤³¤ÎÊÑ¹¹¤Ï POPFile 
 
 Header_MenuSummary                      This table is the navigation menu which allows access to each of the different pages of the control center.
 History_MainTableSummary                This table shows the sender and subject of recently received messages and allows them to be reviewed and reclassified.  Clicking on the subject line will show the full message text, along with information about why it was classified as it was.  The 'Should be' column allows you to specify which bucket the message belongs in, or to undo that change.  The 'Delete' column allows you to delete specific messages from the history if you don't need them anymore.
-History_OpenMessageSummary              This table contains the full text of an email message, with the words that are used for classification highlighted according to the bucket that was most relevant for each.
+History_OpenMessageSummary              This table contains the full text of a message, with the words that are used for classification highlighted according to the bucket that was most relevant for each.
 Bucket_MainTableSummary                 This table provides an overview of the classification buckets.  Each row shows the bucket name, the word count total for that bucket, the actual number of individual words in each bucket, whether the email's subject line will be modified when it gets classified to that bucket, whether to quarantine the messages received in that bucket, and a table to pick the color used in displaying anything related to that bucket in the control center.
 Bucket_StatisticsTableSummary           This table provides three sets of statistics on the overall performance of POPFile.  The first is how accurate its classification is, the second is how many emails have been classified, and to which buckets, and the third is how many words are in each bucket, and what their relative percentages are.
 Bucket_MaintenanceTableSummary          This table contains forms that allow you to create, delete or rename buckets, and to lookup a word in all of the buckets to see its relative probabilities.
 Bucket_AccuracyChartSummary             This table graphically represents the accuracy of the email classification.
 Bucket_BarChartSummary                  This table graphically represents a percentage allocation for each of the different buckets.  It is used for both number of emails classified, and total word counts.
-Bucket_LookupResultsSummary             This table shows the probabilities associated with any given word of the corpus.  For each bucket, it shows the frequency that that word occurs, the probability that it will occur in that bucket, and the overall effect on the score of the bucket if that word exists in an email.
+Bucket_LookupResultsSummary             This table shows the probabilities associated with any given word of the corpus.  For each bucket, it shows the frequency with which that word occurs, the probability that it will occur in that bucket, and the overall effect on the score of the bucket if that word exists in a message.
 Bucket_WordListTableSummary             This table provides a listing of all the words for a particular bucket, organized by common first letter for each row.
-Magnet_MainTableSummary                 This table shows the list of magnets that are used to automatically classify email according to fixed rules.  Each row shows how the magnet is defined, what bucket it is intended for, and a button to delete the magnet.
+Magnet_MainTableSummary                 This table shows the list of magnets that are used to automatically classify messages according to fixed rules.  Each row shows how the magnet is defined, what bucket it is intended for, and a button to delete the magnet.
 Configuration_MainTableSummary          This table contains a number of forms to allow you to control the configuration of POPFile.
 Configuration_InsertionTableSummary     This table contains buttons that determine whether or not certain modifications are made to the headers or subject line of the email before it is passed on to the email client.
 Security_MainTableSummary               This table provides sets of controls that affect the security of the overall configuration of POPFile, whether it should automatically check for updates to the program, and whether statistics about POPFile's performance should be sent to the central datastore of the program's author for general information.
-Advanced_MainTableSummary               This table provides a list of words that POPFile ignores when classifying email due to their relative frequency in email in general.  They are organized per row according to the first letter of the words.
+Advanced_MainTableSummary               This table provides a list of words that POPFile ignores when classifying messages due to their relative frequency in messages in general.  They are organized per row according to the first letter of the words.
 
-Imap_Bucket2Folder                      <b>%s</b> ¥Ð¥±¥Ä¤ËÊ¬Îà¤µ¤ì¤¿¥á¡¼¥ë¤Î°ÜÆ°Àè
+Imap_Bucket2Folder                      '<b>%s</b>' ¥Ð¥±¥Ä¤ËÊ¬Îà¤µ¤ì¤¿¥á¡¼¥ë¤Î°ÜÆ°Àè
 Imap_MapError                           Ê£¿ô¤Î¥Ð¥±¥Ä¤ò¤Ò¤È¤Ä¤Î¥Õ¥©¥ë¥À¤ËÂÐ±þÉÕ¤±¤¹¤ë¤³¤È¤Ï¤Ç¤­¤Þ¤»¤ó¡£
 Imap_Server                             IMAP ¥µ¡¼¥Ð ¥Û¥¹¥ÈÌ¾:
 Imap_ServerNameError                    ¥µ¡¼¥Ð¤Î¥Û¥¹¥ÈÌ¾¤òÆþÎÏ¤·¤Æ¤¯¤À¤µ¤¤¡£
@@ -370,9 +371,10 @@ Imap_UpdateError3                       ¥µ¡¼¥Ð¤ËÀÜÂ³¤¹¤ë¤¿¤á¤Î¾ðÊó¤òÀè¤ËÀßÄê¤·¤Æ
 Imap_NoConnectionMessage                ¥µ¡¼¥Ð¤ËÀÜÂ³¤¹¤ë¤¿¤á¤Î¾ðÊó¤òÀè¤ËÀßÄê¤·¤Æ¤¯¤À¤µ¤¤¡£¤½¤¦¤¹¤ë¤È¡¢¤µ¤é¤ËÂ¿¤¯¤Î¥ª¥×¥·¥ç¥ó¤¬ÀßÄê¤Ç¤­¤ë¤è¤¦¤Ë¤Ê¤ê¤Þ¤¹¡£
 Imap_WatchMore                          ´Æ»ë¥Õ¥©¥ë¥À¥ê¥¹¥È¤Ë¥Õ¥©¥ë¥À¤òÄÉ²Ã
 Imap_WatchedFolder                      ´Æ»ë¥Õ¥©¥ë¥À 
+Imap_Use_SSL                            SSL ¤ò»ÈÍÑ¤¹¤ë
 
 Shutdown_Message                        POPFile ¤Ï½ªÎ»¤·¤Þ¤·¤¿¡£
 
-Help_Training                           POPFile ¤ò¤³¤ì¤«¤é»È¤¤»Ï¤á¤ë¾ì¹ç¡¢¤¢¤ëÄøÅÙ¤Î¥È¥ì¡¼¥Ë¥ó¥°¤¬É¬Í×¤È¤Ê¤ê¤Þ¤¹¡£¤½¤ì¤Ï¡¢POPFile ¤Ï¤É¤Î¥á¡¼¥ë¤¬É¬Í×¤Ê¥á¡¼¥ë¤Ç¤É¤Î¥á¡¼¥ë¤¬ÉÔÍ×¤Ê¥á¡¼¥ë¤«¤Ë¤Ä¤¤¤Æ¤Ê¤Ë¤âÃÎ¤é¤Ê¤¤¤«¤é¤Ç¤¹¡£¥È¥ì¡¼¥Ë¥ó¥°¤Ï¤½¤ì¤¾¤ì¤Î¥Ð¥±¥Ä¤Ë¤Ä¤¤¤Æ¹Ô¤¦É¬Í×¤¬¤¢¤ê¡ÊºÇÄã¤Ç¤â£±¤Ä¤Î¥Ð¥±¥Ä¤Ë¤Ä¤¤¤Æ¡¢£±¤Ä°Ê¾å¤Î¥á¥Ã¥»¡¼¥¸¤òºÆÊ¬Îà¤¹¤ë¡Ë¡¢POPFile ¤¬Ê¬Îà¤ò´Ö°ã¤¨¤¿¥á¥Ã¥»¡¼¥¸¤òÀµ¤·¤¤¥Ð¥±¥Ä¤ËºÆÊ¬Îà¤¹¤ë¡ÊÍúÎò¤Î±¦Â¦¤Ë¤¢¤ë¥á¥Ë¥å¡¼¤«¤éÀµ¤·¤¤Ê¬ÎàÀè¤òÁªÂò¤·¤Æ¡ÖºÆÊ¬Îà¡×¥Ü¥¿¥ó¤ò¥¯¥ê¥Ã¥¯¤¹¤ë¡Ë¤³¤È¤Ë¤è¤Ã¤Æ¥È¥ì¡¼¥Ë¥ó¥°¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£¤Þ¤¿¡¢POPFile ¤¬¹Ô¤Ã¤¿Ê¬Îà¤Ë¤¢¤ï¤»¤Æ¥Õ¥©¥ë¥À¤Ë°ÜÆ°¤¹¤ë¤Ê¤É¡¢¥á¡¼¥ë¥¯¥é¥¤¥¢¥ó¥È¤òÀßÄê¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£¥á¡¼¥ë¥¯¥é¥¤¥¢¥ó¥È¤ÎÀßÄê¤Ë¤Ä¤¤¤Æ¤Ï¡¢<a href="http://popfile.sourceforge.net/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions/EmailSorting">POPFile ¥É¥­¥å¥á¥ó¥Æ¡¼¥·¥ç¥ó¥×¥í¥¸¥§¥¯¥È</a>¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
-Help_Bucket_Setup                       POPFile ¤Ç¤Ï¡¢¤â¤È¤â¤È¤¢¤ë unclassified ¤È¤¤¤¦²¾ÁÛÅª¤Ê¥Ð¥±¥Ä°Ê³°¤Ë¡¢ºÇÄã¤Ç¤â£²¤Ä¤Î¥Ð¥±¥Ä¤òºîÀ®¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£POPFile ¤ÎÆÃÄ§¤Ï¡¢¡Ê¥á¡¼¥ë¤ò spam ¤È¤½¤ì°Ê³°¤ËÊ¬Îà¤¹¤ë¤È¤¤¤¦¤À¤±¤Ç¤Ï¤Ê¤¯¡Ë¤¤¤¯¤Ä¤Ç¤â¥Ð¥±¥Ä¤òºîÀ®¤·¡¢¤½¤ì¤é¤Ë¥á¡¼¥ë¤òÊ¬Îà¤¹¤ë¤³¤È¤¬¤Ç¤­¤ë¤³¤È¤Ç¤¹¡£´ÊÃ±¤ÊÀßÄê¤Ç¤Ï¡¢"spam"¡¢"personal"¡¢"work" ¤È¤¤¤Ã¤¿¥Ð¥±¥Ä¤òÀßÄê¤¹¤ë¤³¤È¤Ë¤Ê¤ë¤Ç¤·¤ç¤¦¡£
+Help_Training                           POPFile ¤ò¤³¤ì¤«¤é»È¤¤»Ï¤á¤ë¾ì¹ç¡¢¤¢¤ëÄøÅÙ¤Î¥È¥ì¡¼¥Ë¥ó¥°¤¬É¬Í×¤È¤Ê¤ê¤Þ¤¹¡£¤½¤ì¤Ï¡¢POPFile ¤Ï¤É¤Î¥á¡¼¥ë¤¬É¬Í×¤Ê¥á¡¼¥ë¤Ç¤É¤Î¥á¡¼¥ë¤¬ÉÔÍ×¤Ê¥á¡¼¥ë¤«¤Ë¤Ä¤¤¤Æ¤Ê¤Ë¤âÃÎ¤é¤Ê¤¤¤«¤é¤Ç¤¹¡£¥È¥ì¡¼¥Ë¥ó¥°¤Ï¤½¤ì¤¾¤ì¤Î¥Ð¥±¥Ä¤Ë¤Ä¤¤¤Æ¹Ô¤¦É¬Í×¤¬¤¢¤ê¡ÊºÇÄã¤Ç¤â£±¤Ä¤Î¥Ð¥±¥Ä¤Ë¤Ä¤¤¤Æ¡¢£±¤Ä°Ê¾å¤Î¥á¥Ã¥»¡¼¥¸¤òºÆÊ¬Îà¤¹¤ë¡Ë¡¢POPFile ¤¬Ê¬Îà¤ò´Ö°ã¤¨¤¿¥á¥Ã¥»¡¼¥¸¤òÀµ¤·¤¤¥Ð¥±¥Ä¤ËºÆÊ¬Îà¤¹¤ë¡ÊÍúÎò¤Î±¦Â¦¤Ë¤¢¤ë¥á¥Ë¥å¡¼¤«¤éÀµ¤·¤¤Ê¬ÎàÀè¤òÁªÂò¤·¤Æ¡ÖºÆÊ¬Îà¡×¥Ü¥¿¥ó¤ò¥¯¥ê¥Ã¥¯¤¹¤ë¡Ë¤³¤È¤Ë¤è¤Ã¤Æ¥È¥ì¡¼¥Ë¥ó¥°¤¹¤ë¤³¤È¤¬¤Ç¤­¤Þ¤¹¡£¤Þ¤¿¡¢POPFile ¤¬¹Ô¤Ã¤¿Ê¬Îà¤Ë¤¢¤ï¤»¤Æ¥Õ¥©¥ë¥À¤Ë°ÜÆ°¤¹¤ë¤Ê¤É¡¢¥á¡¼¥ë¥¯¥é¥¤¥¢¥ó¥È¤òÀßÄê¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£¥á¡¼¥ë¥¯¥é¥¤¥¢¥ó¥È¤ÎÀßÄê¤Ë¤Ä¤¤¤Æ¤Ï¡¢<a href="http://getpopfile.org/wiki/JP:FAQ:EmailSorting">POPFile ¥É¥­¥å¥á¥ó¥Æ¡¼¥·¥ç¥ó¥×¥í¥¸¥§¥¯¥È</a>¤ò»²¾È¤·¤Æ¤¯¤À¤µ¤¤¡£
+Help_Bucket_Setup                       POPFile ¤Ç¤Ï¡¢¤â¤È¤â¤È¤¢¤ë "unclassified" ¤È¤¤¤¦²¾ÁÛÅª¤Ê¥Ð¥±¥Ä°Ê³°¤Ë¡¢ºÇÄã¤Ç¤â£²¤Ä¤Î¥Ð¥±¥Ä¤òºîÀ®¤¹¤ëÉ¬Í×¤¬¤¢¤ê¤Þ¤¹¡£POPFile ¤ÎÆÃÄ§¤Ï¡¢¡Ê¥á¡¼¥ë¤ò spam ¤È¤½¤ì°Ê³°¤ËÊ¬Îà¤¹¤ë¤È¤¤¤¦¤À¤±¤Ç¤Ï¤Ê¤¯¡Ë¤¤¤¯¤Ä¤Ç¤â¥Ð¥±¥Ä¤òºîÀ®¤·¡¢¤½¤ì¤é¤Ë¥á¡¼¥ë¤òÊ¬Îà¤¹¤ë¤³¤È¤¬¤Ç¤­¤ë¤³¤È¤Ç¤¹¡£´ÊÃ±¤ÊÀßÄê¤Ç¤Ï¡¢"spam"¡¢"personal"¡¢"work" ¤È¤¤¤Ã¤¿¥Ð¥±¥Ä¤òÀßÄê¤¹¤ë¤³¤È¤Ë¤Ê¤ë¤Ç¤·¤ç¤¦¡£
 Help_No_More                            ¼¡²ó¤«¤éÉ½¼¨¤·¤Ê¤¤¡£

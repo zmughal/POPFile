@@ -1,4 +1,5 @@
 OPTIONAL-Upgrades from v0.20.x	0.0.0	BerkeleyDB
+REQUIRED	0.0.0	Carp
 REQUIRED	0.0.0	DBI
 REQUIRED	0.0.0	Date::Format
 REQUIRED	0.0.0	Date::Parse
@@ -18,7 +19,9 @@ OPTIONAL-SSL Connection Support	0.0.0	IO::Socket::SSL
 OPTIONAL-Socks Proxy Support	0.0.0	IO::Socket::Socks
 REQUIRED	0.0.0	MIME::Base64
 REQUIRED	0.0.0	MIME::QuotedPrint
+OPTIONAL-	0.0.0	MeCab
 REQUIRED	0.0.0	POSIX
+REQUIRED	0.0.0	Services::IMAP::Client
 REQUIRED	0.0.0	Sys::Hostname
 OPTIONAL-Japanese Language Support	0.0.0	Text::Kakasi
 OPTIONAL-XML-RPC Server Support	0.0.0	XMLRPC::Transport::HTTP

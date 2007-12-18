@@ -2,7 +2,7 @@
 #
 # Tests for IMAP.pm
 #
-# Copyright (c) 2003-2007 John Graham-Cumming
+# Copyright (c) 2003-2006 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -51,7 +51,6 @@ my $lf = "\012";
 my $eol = "$cr$lf";
 my $debug = 1;
 my $spool = "imap.spool";
-my $uid_file = 'imap.uids';
 
 # if nothing happens with in $idle_timeout seconds
 # we call exit.
@@ -204,7 +203,6 @@ while ( 1 ) {
 }
 
 close $main_sock;
-unlink $uid_file;
 print "\nThe IMAP_test_server is exiting.\n";
 
 # handle_command
@@ -628,12 +626,15 @@ sub uid_next {
     my $folder  = shift;
     my $uidnext = shift;
 
-    if ( open my $UIDS, '<', $uid_file ) {
+    if ( open my $UIDS, '<', 'imap.uids' ) {
         while ( <$UIDS> ) {
             /(.+):(.+)[\r\n]/;
             $uidnext{ $1 } = $2;
         }
     }
+#    else {
+#        die "IMAP-test-server has a problem: cannot open file 'imap.uids'";
+#    }
 
     if ( defined $uidnext ) {
         $uidnext{ $folder } = $uidnext;

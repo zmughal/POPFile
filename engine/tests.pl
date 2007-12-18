@@ -32,7 +32,6 @@ use File::Path;
 sub rec_cp
 {
     my ( $from, $to ) = @_;
-
     my $ok = 1;
 
     my $subref =
@@ -40,22 +39,21 @@ sub rec_cp
             my $f = $_;
             my $t = $f;
             $t =~ s/^$from/$to/;
-            if ( $t !~ /CVS/ ) {
-                if ( -d $f ) {
-                    mkdir $t;
-                } else {
-                    copy( $f, $t ) or $ok = 0;
-                }
+            if ( -d $f ) {
+                mkdir $t ;
+            }
+            else {
+                copy( $f, $t) or $ok = 0;
             }
         };
     my %optref = ( wanted => $subref, no_chdir => 1 );
-    find( \%optref , $from );
+    find ( \%optref , $from );
 
     return $ok;
 }
 
-# Look for all the TST files in the tests/ subfolder and run each of
-# them by including them in this file with the use statement
+# Look for all the TST files in the tests/ subfolder and run
+# each of them by including them in this file with the use statement
 
 # This is the total number of tests executed and the total failures
 
@@ -98,24 +96,24 @@ sub spin
 
 sub test_report
 {
-        my ( $ok, $test, $file, $line, $context ) = @_;
+    my ( $ok, $test, $file, $line, $context ) = @_;
 
-        spin( $line );
+    spin( $line );
 
-        $test_count += 1;
+    $test_count += 1;
 
-        if ( !$ok ) {
-                $fail_messages .= "\n    $file:$line failed '$test'";
-                if ( defined( $context ) ) {
-                        $fail_messages .= " ($context)";
-                }
-                $test_failures += 1;
-            print "Test fail at $file:$line ($test) ($context)\n";
-        } else {
-#            print "Test pass at $file:$line ($test) ($context)\n";
+    if ( !$ok ) {
+        $fail_messages .= "\n    $file:$line failed '$test'";
+        if ( defined( $context ) ) {
+            $fail_messages .= " ($context)";
         }
+        $test_failures += 1;
+        print "Test fail at $file:$line ($test) ($context)\n";
+    } else {
+#            print "Test pass at $file:$line ($test) ($context)\n";
+    }
 
-        flush STDOUT;
+    flush STDOUT;
 }
 
 # ----------------------------------------------------------------------------

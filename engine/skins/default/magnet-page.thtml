@@ -1,8 +1,6 @@
 <TMPL_INCLUDE NAME="common-top.thtml">
 <TMPL_INCLUDE NAME="common-middle.thtml">
 
-<TMPL_IF NAME="Magnet_Loop_Magnets">
-
 <h2 class="magnets"><TMPL_VAR NAME="Localize_Magnet_CurrentMagnets"></h2>
 
 <TMPL_INCLUDE NAME="magnet-navigator.thtml">
@@ -47,7 +45,7 @@
                 :
                 <input type="text" name="text<TMPL_VAR NAME="Magnet_Row_ID">" value="<TMPL_VAR NAME="Magnet_Validating">" size="<TMPL_VAR NAME="Magnet_Size">" />
             </td>
-            <td align="center">
+            <td>
                 <select name="bucket<TMPL_VAR NAME="Magnet_Row_ID">" id="magnetsAddBucket">
 
                     <TMPL_LOOP NAME="Magnet_Loop_Loop_Buckets">
@@ -60,7 +58,7 @@
 
                 </select>
             </td>
-            <td align="center">
+            <td>
                 <input type="checkbox" class="checkbox" name="remove<TMPL_VAR NAME="Magnet_Row_ID">" />
                 <TMPL_VAR NAME="Localize_Remove">
                 <input name="otype<TMPL_VAR NAME="Magnet_Row_ID">" type="hidden" value="<TMPL_VAR NAME="Magnet_MType">" />
@@ -74,35 +72,36 @@
         <tr>
             <td>
             </td>
-            <td align="center">
-                <input type="submit" class="submit deleteButton" name="update" value="<TMPL_VAR NAME="Localize_Update">" />
+            <td>
+                <input type="submit" class="deleteButton" name="update" value="<TMPL_VAR NAME="Localize_Update">" />
             </td>
-            <td align="center">
-                <input type="submit" class="submit deleteButton" name="delete" value="<TMPL_VAR NAME="Localize_Remove">" />
+            <td>
+                <input type="submit" class="deleteButton" name="delete" value="<TMPL_VAR NAME="Localize_Remove">" />
             </td>
         </tr>
     </table>
+    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
     <input type="hidden" name="start_magnet" value="<TMPL_VAR NAME="Magnet_Start_Magnet">" />
     <input type="hidden" name="count" value="<TMPL_VAR NAME="Magnet_Count_Magnet">" />
 </form>
-<TMPL_INCLUDE NAME="magnet-navigator.thtml">
-<hr />
-</TMPL_IF>
+<br />
+<br />
 
+<TMPL_INCLUDE NAME="magnet-navigator.thtml">
+
+<hr />
 <h2 class="magnets"><TMPL_VAR NAME="Localize_Magnet_CreateNew"></h2>
 <table cellspacing="0" summary="">
     <tr>
         <td>
-            <TMPL_VAR NAME="Localize_Magnet_Explanation">
+            <b>
+                <TMPL_VAR NAME="Localize_Magnet_Explanation">
         </td>
     </tr>
 </table>
-
-<table summary="">
-<tr><td>
 <div class="magnetsNewWidget">
     <form action="/magnets" method="post">
-        <label class="magnetsLabel" for="magnetsAddType" title="<TMPL_VAR NAME="Localize_tip_Magnet_Type">">
+        <label class="magnetsLabel" for="magnetsAddType">
             <TMPL_VAR NAME="Localize_Magnet_MagnetType">:
         </label>
         <br />
@@ -117,22 +116,23 @@
             </TMPL_LOOP>
 
         </select>
+        <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
         <br />
         <br />
         <input type="hidden" name="count" value="1" />
-        <label class="magnetsLabel" for="magnetsAddText" title="<TMPL_VAR NAME="Localize_tip_Magnet_Value">">
+        <label class="magnetsLabel" for="magnetsAddText">
             <TMPL_VAR NAME="Localize_Magnet_Value">:
         </label>
         <br />
         <textarea name="text0" id="magnetsAddText" cols="20" rows="3"></textarea>
         <br />
         <br />
-        <label class="magnetsLabel" for="magnetsAddBucket" title="<TMPL_VAR NAME="Localize_tip_Magnet_Bucket">">
+        <label class="magnetsLabel" for="magnetsAddBucket">
             <TMPL_VAR NAME="Localize_Magnet_Always">:
         </label>
         <br />
         <select name="bucket0" id="magnetsAddBucket">
-            <option value="">&nbsp;</option>
+            <option value=""></option>
 
             <TMPL_LOOP NAME="Magnet_Loop_Buckets">
 
@@ -145,6 +145,7 @@
         </select>
         <input type="submit" class="submit" name="create" value="<TMPL_VAR NAME="Localize_Create">" />
         <input type="hidden" name="start_magnet" value="<TMPL_VAR NAME="Magnet_Start_Magnet">" />
+        <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
     </form>
 
     <TMPL_IF NAME="Magnet_If_Message">
@@ -159,14 +160,7 @@
 
     </TMPL_IF>
 
+    <br />
 </div>
 
-</td>
-<td valign="top">
-<div class="helpMessage">
-    <TMPL_VAR NAME="Localize_Magnet_Note">
-</div>
-</td></tr></table>
-
-<TMPL_INCLUDE NAME="configuration-bar.thtml">
 <TMPL_INCLUDE NAME="common-bottom.thtml">
