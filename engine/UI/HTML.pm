@@ -5,7 +5,7 @@ package UI::HTML;
 #
 # This package contains an HTML UI for POPFile
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -155,9 +155,9 @@ sub initialize
 
     $self->config_( 'local', 1 );
 
-    # Use the default skin
+    # If no UI skin is specified use 'simplyblue' as the default
 
-    $self->config_( 'skin', 'default' );
+    $self->config_( 'skin', 'simplyblue' );
 
     # The last time we checked for an update using the local epoch
 
