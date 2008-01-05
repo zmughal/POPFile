@@ -7,7 +7,7 @@
 #                                   The non-library functions used in this file are contained
 #                                   in a separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005-2007 John Graham-Cumming
+# Copyright (c) 2005-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -185,15 +185,10 @@ save_HKLM_root_sfn:
   File "..\engine\license"
 
   ; Some releases may have a Japanese translation of the release notes.
-  
-  Delete "$G_ROOTDIR\${C_README}"
-  
-  StrCmp $LANGUAGE ${LANG_JAPANESE} 0 English_release_notes
-  File /nonfatal "/oname=$G_ROOTDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
-  IfFileExists "$G_ROOTDIR\${C_README}" copy_txt_version
 
-English_release_notes:
   File "${C_RELEASE_NOTES}"
+  StrCmp $LANGUAGE ${LANG_JAPANESE} 0 copy_txt_version
+  File /nonfatal "/oname=$G_ROOTDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
 
 copy_txt_version:
   CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_README}.txt" "$G_ROOTDIR\${C_README}.txt"

@@ -20,7 +20,7 @@
 #                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
 #                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2007 John Graham-Cumming
+# Copyright (c) 2002-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -902,7 +902,8 @@
   ReserveFile "${C_RELEASE_NOTES}"
   ReserveFile /nonfatal "${C_JAPANESE_RELEASE_NOTES}"
   ReserveFile "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
-;  ReserveFile "SSL_pm.pat"     ; 0.22.5 does not need any SSL patches so there's no need for a built-in copy
+
+;  ReserveFile "SSL_pm.pat"     ; 0.22.5 (and later releases) do not need any SSL patches (yet)
 
 #--------------------------------------------------------------------------
 # Installer Function: .onInit - installer starts by offering a choice of languages
@@ -959,14 +960,6 @@ get_usertype:
   ; (UAC = Vista's new "User Account Control" feature).
 
 UAC_Elevate:
-;  MessageBox MB_OK "Debug message (UAC_Elevate label in .onInit function)\
-;      ${MB_NL}${MB_NL}\
-;      Command-line = $CMDLINE\
-;      ${MB_NL}${MB_NL}\
-;      $$G_WINUSERNAME = $G_WINUSERNAME\
-;      ${MB_NL}${MB_NL}\
-;      $$G_WINUSERTYPE = $G_WINUSERTYPE"
-
   UAC::RunElevated
   StrCmp 1223 ${L_UAC_0} UAC_ElevationAborted   ; Jump if UAC dialog was aborted by user
   StrCmp 0 ${L_UAC_0} 0 UAC_Err                 ; If ${L_UAC_0} is not 0 then an error was detected
@@ -1011,12 +1004,9 @@ continue:
   ; for that release. If future releases do not have a Japanese translation of these
   ; notes then the normal English version will be used.
 
-  StrCmp $LANGUAGE ${LANG_JAPANESE} 0 English_release_notes
-  File /nonfatal "/oname=$PLUGINSDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
-  IfFileExists "$PLUGINSDIR\${C_README}" make_txt_file
-
-English_release_notes:
   File "/oname=$PLUGINSDIR\${C_README}" "${C_RELEASE_NOTES}"
+  StrCmp $LANGUAGE ${LANG_JAPANESE} 0 make_txt_file
+  File /nonfatal "/oname=$PLUGINSDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
 
 make_txt_file:
 
@@ -1360,6 +1350,11 @@ Section "Languages" SecLangs
 
   SetOutPath "$G_ROOTDIR\languages"
   File "..\engine\languages\*.msg"
+
+  ; The 1.1.0 release renamed the Brazilian Portuguese UI language file
+  ; so we need to remove any old versions of the file to avoid confusion
+
+  Delete "$G_ROOTDIR\languages\Portugues do Brasil.msg"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
