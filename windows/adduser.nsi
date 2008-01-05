@@ -7,7 +7,7 @@
 #                 to run POPFile for the first time. Some simple "repair work" can also
 #                 be done using this wizard.
 #
-# Copyright (c) 2004-2007 John Graham-Cumming
+# Copyright (c) 2004-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -1770,7 +1770,7 @@ use_installer_lang:
         !insertmacro PFI_UI_LANG_CONFIG "NORWEGIAN" "Norsk"
         !insertmacro PFI_UI_LANG_CONFIG "POLISH" "Polish"
         !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESE" "Portugues"
-        !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESEBR" "Portugues do Brasil"
+        !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESEBR" "Portugues-do-Brasil"
         !insertmacro PFI_UI_LANG_CONFIG "RUSSIAN" "Russian"
         !insertmacro PFI_UI_LANG_CONFIG "SLOVAK" "Slovak"
         !insertmacro PFI_UI_LANG_CONFIG "FINNISH" "Suomi"
