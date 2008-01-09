@@ -1351,8 +1351,8 @@ Section "Languages" SecLangs
   SetOutPath "$G_ROOTDIR\languages"
   File "..\engine\languages\*.msg"
 
-  ; The 1.1.0 release renamed the Brazilian Portuguese UI language file
-  ; so we need to remove any old versions of the file to avoid confusion
+  ; After the 1.0.0 release the Brazilian Portuguese UI language file was
+  ; renamed so we remove the old version of the file to avoid confusion
 
   Delete "$G_ROOTDIR\languages\Portugues do Brasil.msg"
 
