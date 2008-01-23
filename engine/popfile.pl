@@ -85,6 +85,10 @@ my $POPFile = POPFile::Loader->new();
 $POPFile->debug(1);
 $POPFile->CORE_loader_init();
 
+# Grab the current version number and add to the log
+
+$log = 'POPFile v' . $POPFile->{version_string__} . " starting\n$log";
+
 # Redefine POPFile's signals
 
 $POPFile->CORE_signals();
