@@ -8,7 +8,7 @@
 # header X-Text-Classification: into the header to tell the client
 # which category the message belongs in and much more...
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -37,7 +37,7 @@ $packing_list =~ s/[\\\/]$//;
 $packing_list .= '/popfile.pck';
 
 my $fatal = 0;
-my $log = '';
+my @log;
 
 if ( open PACKING, "<$packing_list" ) {
     while (<PACKING>) {
@@ -59,14 +59,14 @@ if ( open PACKING, "<$packing_list" ) {
                     $fatal = 1;
                     print STDERR "ERROR: POPFile needs Perl module $module, please install it.\n";
                 } else {
-                    $log .= "WARNING: POPFile may require Perl module $module; it is needed for \"$why\".\n";
+                    push @log, ("Warning: POPFile may require Perl module $module; it is needed only for \"$why\".");
                 }
             }
         }
     }
     close PACKING;
 } else {
-    $log .= "WARNING: Couldn't open POPFile packing list ($packing_list) so cannot check configuration\n";
+    push @log, ("Warning: Couldn't open POPFile packing list ($packing_list) so cannot check configuration (this probably doesn't matter)");
 }
 
 use strict;
@@ -85,10 +85,6 @@ my $POPFile = POPFile::Loader->new();
 $POPFile->debug(1);
 $POPFile->CORE_loader_init();
 
-# Grab the current version number and add to the log
-
-$log = 'POPFile v' . $POPFile->{version_string__} . " starting\n$log";
-
 # Redefine POPFile's signals
 
 $POPFile->CORE_signals();
@@ -105,12 +101,18 @@ $POPFile->CORE_initialize();
 if ( $POPFile->CORE_config() ) {
     $POPFile->CORE_start();
 
+    $POPFile->get_module( 'POPFile::Logger' )->debug( 0, 'POPFile ' . $POPFile->CORE_version() . ' starting' );
+
     # If there were any log messages from the packing list check then
     # log them now
 
-    if ( $log ne '' ) {
-        $POPFile->get_module( 'POPFile::Logger' )->debug( 0, $log );
+    if ( $#log != -1 ) {
+      foreach my $m (@log) {
+	$POPFile->get_module( 'POPFile::Logger' )->debug( 0, $m );
+      }
     }
+
+    $POPFile->get_module( 'POPFile::Logger' )->debug( 0, "POPFile successfully started" );
 
     # This is the main POPFile loop that services requests, it will
     # exit only when we need to exit
