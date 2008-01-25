@@ -25,8 +25,11 @@ LanguageDirection                       ltr
 ManualLanguage                          jp
 
 
-# This is where to find the FAQ on the Wiki
+# These are where to find the documents on the Wiki
+WikiLink                                JP
 FAQLink                                 JP:FAQ
+RequestFeatureLink                      JP:RequestFeature
+MailingListLink                         JP:POPFileAnnounce
 
 # Common words that are used on their own all over the interface
 Apply                                   適用
@@ -106,7 +109,7 @@ Header_Magnets                          マグネット
 Footer_HomePage                         POPFile ホームページ
 Footer_Manual                           マニュアル
 Footer_Forums                           フォーラム
-Footer_FeedMe                           寄付
+Footer_FeedMe                           寄付(英語)
 Footer_RequestFeature                   要望
 Footer_MailingList                      メーリングリスト
 Footer_Wiki                             ドキュメント

@@ -12,7 +12,7 @@
         <td class="footerBody">
             <a class="bottomLink" href="http://getpopfile.org/"><TMPL_VAR NAME="Localize_Footer_HomePage"></a>
             <br />
-            <a class="bottomLink" href="http://getpopfile.org/wiki">
+            <a class="bottomLink" href="http://getpopfile.org/wiki/<TMPL_VAR NAME="Localize_WikiLink">">
                 <TMPL_VAR NAME="Localize_Footer_Wiki"></a>
             <br />
             <a class="bottomLink" href="http://getpopfile.org/wiki/<TMPL_VAR NAME="Localize_FAQLink">"><TMPL_VAR NAME="Localize_FAQ"></a>
@@ -27,9 +27,9 @@
             (<TMPL_VAR NAME="Common_Bottom_Date"> - <TMPL_VAR NAME="Common_Bottom_LastLogin">)
         </td>
         <td class="footerBody">
-            <a class="bottomLink" href="http://sourceforge.net/tracker/index.php?group_id=63137&amp;atid=502959"><TMPL_VAR NAME="Localize_Footer_RequestFeature"></a>
+            <a class="bottomLink" href="http://getpopfile.org/wiki/<TMPL_VAR NAME="Localize_RequestFeatureLink">"><TMPL_VAR NAME="Localize_Footer_RequestFeature"></a>
             <br />
-            <a class="bottomLink" href="http://lists.sourceforge.net/lists/listinfo/popfile-announce"><TMPL_VAR NAME="Localize_Footer_MailingList"></a>
+            <a class="bottomLink" href="http://getpopfile.org/wiki/<TMPL_VAR NAME="Localize_MailingListLink">"><TMPL_VAR NAME="Localize_Footer_MailingList"></a>
             <br />
             <a class="bottomLink" href="http://sourceforge.net/forum/forum.php?forum_id=213876"><TMPL_VAR NAME="Localize_Footer_FeedMe"></a>
         </td>
