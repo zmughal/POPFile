@@ -101,8 +101,6 @@ $POPFile->CORE_initialize();
 if ( $POPFile->CORE_config() ) {
     $POPFile->CORE_start();
 
-    $POPFile->get_module( 'POPFile::Logger' )->debug( 0, 'POPFile ' . $POPFile->CORE_version() . ' starting' );
-
     # If there were any log messages from the packing list check then
     # log them now
 

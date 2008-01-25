@@ -9,7 +9,7 @@ use POPFile::Module;
 # This module handles POPFile's logger.  It is used to save debugging
 # information to disk or to send it to the screen.
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -136,7 +136,25 @@ sub start
 
     $self->calculate_today__();
 
+    $self->debug( 0, '-----------------------' );
+    $self->debug( 0, 'POPFile ' . $self->version() . ' starting' );
+
     return 1;
+}
+
+#----------------------------------------------------------------------------
+#
+# stop
+#
+# Called to stop the logger module
+#
+#----------------------------------------------------------------------------
+sub stop
+{
+    my ( $self ) = @_;
+
+    $self->debug( 0, 'POPFile stopped' );
+    $self->debug( 0, '---------------' );
 }
 
 # ---------------------------------------------------------------------------
