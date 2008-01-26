@@ -2126,6 +2126,7 @@ check_options:
   ; If user has NOT selected a program component on the COMPONENTS page and we find that the
   ; version we are about to upgrade includes that program component then the user is asked for
   ; permission to upgrade the component [To do: disable the component if user says 'No' ??]
+  ; Check the components in alphabetic order for the sake of convenience.
 
   !insertmacro SectionFlagIsSet ${SecIMAP} ${SF_SELECTED} check_nntp look_for_imap
 
@@ -2164,15 +2165,26 @@ look_for_smtp:
   !insertmacro SelectSection ${SecSMTP}
 
 check_socks:
-  !insertmacro SectionFlagIsSet ${SecSOCKS} ${SF_SELECTED} check_xmlrpc look_for_socks
+  !insertmacro SectionFlagIsSet ${SecSOCKS} ${SF_SELECTED} check_ssl look_for_socks
 
 look_for_socks:
-  IfFileExists "$G_ROOTDIR\lib\IO\Socket\Socks.pm" 0 check_xmlrpc
+  IfFileExists "$G_ROOTDIR\lib\IO\Socket\Socks.pm" 0 check_ssl
   StrCpy $G_PLS_FIELD_1 "SOCKS support"
   MessageBox MB_YESNO|MB_ICONQUESTION "$(MBCOMPONENT_PROB_1)\
       ${MB_NL}${MB_NL}\
-      $(MBCOMPONENT_PROB_2)" IDNO check_xmlrpc
+      $(MBCOMPONENT_PROB_2)" IDNO check_ssl
   !insertmacro SelectSection ${SecSOCKS}
+
+check_ssl:
+  !insertmacro SectionFlagIsSet ${SecSSL} ${SF_SELECTED} check_xmlrpc look_for_ssl
+
+look_for_ssl:
+  IfFileExists "$G_ROOTDIR\lib\Net\SSLeay.pm" 0 check_xmlrpc
+  StrCpy $G_PLS_FIELD_1 "SSL Support"
+  MessageBox MB_YESNO|MB_ICONQUESTION "$(MBCOMPONENT_PROB_1)\
+      ${MB_NL}${MB_NL}\
+      $(MBCOMPONENT_PROB_2)" IDNO check_xmlrpc
+  !insertmacro SelectSection ${SecSSL}
 
 check_xmlrpc:
   !insertmacro SectionFlagIsSet ${SecXMLRPC} ${SF_SELECTED} continue look_for_xmlrpc
