@@ -338,8 +338,8 @@ sub build_folder_list__ {
     %{$self->{folders__}} = ();
 
     # watched folders
-    foreach ( $self->watched_folders__() ) {
-        $self->{folders__}{$_}{watched} = 1;
+    foreach my $folder ( $self->watched_folders__() ) {
+        $self->{folders__}{$folder}{watched} = 1;
     }
 
     # output folders
@@ -615,7 +615,7 @@ sub scan_folder {
 
     # make the flags more accessible.
     my $is_watched = ( exists $self->{folders__}{$folder}{watched} ) ? 1 : 0;
-    my $is_output = ( exists $self->{folders__}{$folder}{output} ) ? $self->{folders__}{$folder}{output} : '';
+    my $is_output  = ( exists $self->{folders__}{$folder}{output } ) ? $self->{folders__}{$folder}{output} : '';
 
     $self->log_( 1, "Looking for new messages in folder $folder." );
 
@@ -1172,7 +1172,14 @@ sub can_reclassify__ {
 
                 # new and old bucket must be different
                 if ( $new_bucket ne $bucket ) {
-                    return $bucket;
+
+                    # The new bucket must not be a pseudo-bucket
+                    if ( ! $self->classifier()->is_pseudo_bucket( $self->api_session(), $new_bucket ) ) {
+                        return $bucket;
+                    }
+                    else {
+                        $self->log_( 1, "Will not reclassify to pseudo-bucket ($new_bucket)" );
+                    }
                 }
                 else {
                     $self->log_( 1, "Will not reclassify to same bucket ($new_bucket)." );
