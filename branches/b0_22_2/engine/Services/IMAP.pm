@@ -1436,12 +1436,7 @@ sub validate_item {
                     my $folder = $form->{ $key };
 
                     $bucket2folder{ $bucket } = $folder;
-
-                    # pseudo buckets are free to map wherever they like since
-                    # we will never reclassify to them anyway
-                    unless ( $self->classifier()->is_pseudo_bucket( $self->api_session(), $bucket ) ) {
-                        $folders{ $folder }++;
-                    }
+                    $folders{ $folder }++;
                 }
             }
 
@@ -1453,7 +1448,6 @@ sub validate_item {
                 }
                 else {
                     $self->folder_for_bucket__( $bucket, $folder );
-
                     $self->{folder_change_flag__} = 1;
                 }
             }
