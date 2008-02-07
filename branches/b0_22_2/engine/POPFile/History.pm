@@ -277,6 +277,8 @@ sub reserve_slot
     my ( $self ) = @_;
 
     my $r;
+    my $in_transaction = ! ( $self->db__()->{AutoCommit} );
+    $self->log_( 2, "already in a transaction." ) if ($in_transaction);
 
     while (1) {
         $r = int(rand( 1000000000 )+2);
@@ -284,7 +286,7 @@ sub reserve_slot
         $self->log_( 2, "reserve_slot selected random number $r" );
 
         # Avoid another POPFile process using the same committed id
-        $self->db__()->begin_work;
+        $self->db__()->begin_work unless ($in_transaction);
 
         # TODO Replace the hardcoded user ID 1 with the looked up
         # user ID from the session key
@@ -293,7 +295,7 @@ sub reserve_slot
                  "select id from history where committed = $r limit 1;");
 
         if ( defined( $test ) ) {
-            $self->db__()->commit;
+            $self->db__()->commit unless ($in_transaction);
             next;
         }
 
@@ -309,7 +311,7 @@ sub reserve_slot
 
     my $result = $self->db__()->selectrow_arrayref(
                  "select id from history where committed = $r limit 1;");
-    $self->db__()->commit;
+    $self->db__()->commit unless ($in_transaction);
 
     my $slot = $result->[0];
 
