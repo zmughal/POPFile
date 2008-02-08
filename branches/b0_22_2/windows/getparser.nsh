@@ -19,7 +19,7 @@
 #                   INCLUDE file contains macro-based SECTION and FUNCTION definitions
 #                   to make future maintenance easier.
 #
-# Copyright (c) 2007 John Graham-Cumming
+# Copyright (c) 2007-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -105,17 +105,11 @@
     !define C_MECAB_MD5       "mecab.md5"
   !endif
 
-  ; Temporarily use the "anonymous" URL of the project's new server:
-
-  !define C_NPD_MD5SUMS       "http://h1212143.stratoserver.net/installer/nihongo/mecab/${C_MD5SUMS_FILE}"
-  !define C_NPD_MECAB_MD5     "http://h1212143.stratoserver.net/installer/nihongo/mecab/${C_MECAB_MD5}"
-  !define C_NPD_MECAB_PERL    "http://h1212143.stratoserver.net/installer/nihongo/mecab/MeCab.tar.gz"
-  !define C_NPD_MECAB_DICT    "http://h1212143.stratoserver.net/installer/nihongo/mecab/mecab-ipadic.zip"
-
-;;  !define C_NPD_MD5SUMS       "http://getpopfile.org/installer/nihongo/mecab/${C_MD5SUMS_FILE}"
-;;  !define C_NPD_MECAB_MD5     "http://getpopfile.org/installer/nihongo/mecab/${C_MECAB_MD5}"
-;;  !define C_NPD_MECAB_PERL    "http://getpopfile.org/installer/nihongo/mecab/MeCab.tar.gz"
-;;  !define C_NPD_MECAB_DICT    "http://getpopfile.org/installer/nihongo/mecab/mecab-ipadic.zip"
+  !define C_NPD_MD5SUMS       "http://getpopfile.org/installer/nihongo/mecab/${C_MD5SUMS_FILE}"
+  !define C_NPD_MECAB_MD5     "http://getpopfile.org/installer/nihongo/mecab/${C_MECAB_MD5}"
+  
+  !define C_NPD_MECAB_PERL    "http://getpopfile.org/installer/nihongo/mecab/MeCab.tar.gz"
+  !define C_NPD_MECAB_DICT    "http://getpopfile.org/installer/nihongo/mecab/mecab-ipadic.zip"
 
 #--------------------------------------------------------------------------
 # User Registers (Global)

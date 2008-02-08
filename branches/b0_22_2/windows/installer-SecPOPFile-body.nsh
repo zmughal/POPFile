@@ -397,7 +397,7 @@ install_schema:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/wiki/FAQ"
+              "http://getpopfile.org/docs/FAQ"
 
   !ifndef ENGLISH_MODE
       Goto support
@@ -405,7 +405,7 @@ install_schema:
     japanese_faq:
       WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/wiki/JP:FAQ"
+                  "http://getpopfile.org/docs/JP:FAQ"
 
     support:
   !endif
@@ -424,7 +424,7 @@ install_schema:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/wiki"
+              "http://getpopfile.org/docs"
 
   !ifndef ENGLISH_MODE
       Goto pfidiagnostic
@@ -432,7 +432,7 @@ install_schema:
     japanese_wiki:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/wiki/jp"
+                  "http://getpopfile.org/docs/jp"
 
     pfidiagnostic:
   !endif

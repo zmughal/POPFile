@@ -7,7 +7,7 @@
 # is only installed when the "Nihongo" (Japanese) language is selected, this
 # file defines some constants instead of using LanguageString commands.
 #
-# Copyright (c) 2007 John Graham-Cumming
+# Copyright (c) 2007-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -60,7 +60,7 @@
 ; Text and URL used in the area below the description text box
 
 !define C_NPLS_Note                 "※ 分かち書きの精度と POPFile の分類精度との間には直接の因果関係はなく、どのプログラムを使用しても POPFile の分類精度にはほとんど違いはないという結果が出ています。\r\n\r\n※ 分かち書きのプログラムを変更すると、一時的に POPFile の分類精度が低下する可能性があります。\r\n\r\n※ インストール後に分かち書きのプログラムを変更することもできます。詳しくは下のリンクをクリック。"
-!define C_NPLS_Link                 "http://getpopfile.org/wiki/jp:faq:mecab"
+!define C_NPLS_Link                 "http://getpopfile.org/docs/jp:faq:mecab"
 
 ;-------------------------------------------------------------------------------------------
 ; Standard MUI Page - COMPONENTS (text used when the mouse hovers over the "Nihongo Parser" entry)

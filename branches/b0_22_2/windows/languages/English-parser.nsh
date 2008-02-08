@@ -6,7 +6,7 @@
 # special build only uses English text, unlike the normal multi-language
 # build of the installer.
 #
-# Copyright (c) 2007 John Graham-Cumming
+# Copyright (c) 2007-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -59,7 +59,7 @@
 ; Text and URL used in the area below the description text box
 
 !define C_NPLS_Note                 "* The wakachi-gaki accuracy does not relate directly to POPFile's classification accuracy.\r\n   In an experiment POPFile's accuracy was not significantly affected by the choice of parser.\r\n\r\n* Changing wakachi-gaki program may temporarily reduce POPFile's classification accuracy.\r\n\r\n* You can change the wakachi-gaki program after the installation. For more information, click"
-!define C_NPLS_Link                 "http://getpopfile.org/wiki/jp:faq:mecab"
+!define C_NPLS_Link                 "http://getpopfile.org/docs/jp:faq:mecab"
 
 ;-------------------------------------------------------------------------------------------
 ; Standard MUI Page - COMPONENTS (text used when the mouse hovers over the "Nihongo Parser" entry)

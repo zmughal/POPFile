@@ -13,7 +13,7 @@
 #                POPFile installation. This is an alternative to re-running the installer with
 #                /SSL specified on the command-line.
 #
-# Copyright (c) 2005-2007 John Graham-Cumming
+# Copyright (c) 2005-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -156,11 +156,7 @@
 # POPFile web site.
 #--------------------------------------------------------------------------
 
-  ; Temporarily use the "anonymous" URL for the project's new server:
-
-  !define C_PATCH_WEBSITE     "http://h1212143.stratoserver.net/installer/ssl-patch"
-
-;;  !define C_PATCH_WEBSITE     "http://getpopfile.org/ssl-patch"
+  !define C_PATCH_WEBSITE     "http://getpopfile.org/installer/ssl-patch"
 
   !ifdef INSTALLER
       !define C_PATCH_CTRL_FILE   "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
