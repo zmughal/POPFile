@@ -284,16 +284,6 @@ sub test_imap_module {
     $im->config_( login => 'someone' );
     $im->service();
     test_assert_equal( $im->config_( 'training_mode' ), 0 );
-
-    # Test the multiple-connection approach
-    $im->log_( 0, "---- Testing multiple connections" );
-    $im->config_( use_multiple_connections => 1 );
-    $im->config_( login => 'someone' );
-    $im->{last_update__} = 0;
-    $im->service();
-    $im->config_( use_multiple_connections => 0 );
-    # TODO: login and place some msgs in the INBOX.
-    #       check classifications.
 }
 
 
