@@ -579,9 +579,25 @@
         File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "..\0.22.x.pcf"
         File /nonfatal "/oname=$PLUGINSDIR\SSL_pm.pat" "..\SSL_pm.pat"
     !endif
+
+    ; Ensure the patch control file uses CRLF as the EOL marker
+    ; (the file is used as an INI file so it is best for it to use CRLF instead of LF)
+
     Push "${C_PATCH_CTRL_FILE}"
     Call ${UN}EOL2CRLF
     SetDetailsPrint listonly
+
+    ; Record information about the built-in Patch Control File in the installer log
+
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "Settings" "POPFileVersion"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_2 "${C_PATCH_CTRL_FILE}" "Settings" "PatchIssue"
+    DetailPrint "POPFile $G_PLS_FIELD_1 Patch Control File (issue $G_PLS_FIELD_2) [*** Built-in version ***]"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "Settings" "Comment"
+    StrCmp $G_PLS_FIELD_1 "" builtin_patch_count
+    DetailPrint "$G_PLS_FIELD_1"
+
+  builtin_patch_count:
+    DetailPrint ""
     !insertmacro MUI_INSTALLOPTIONS_READ ${L_LISTSIZE} "${C_PATCH_CTRL_FILE}" "Settings" "NumberOfPatches"
     StrCmp ${L_LISTSIZE} "0" 0 apply_patches
     DetailPrint "No POPFile SSL patches are required"
