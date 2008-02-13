@@ -83,7 +83,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.1"
+  !define C_VERSION             "0.0.2"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -299,6 +299,7 @@ Function .onInit
   Call PFI_GetParameters
   Pop $G_TRACELEVEL
   StrCmp $G_TRACELEVEL "" default
+  StrCmp $G_TRACELEVEL "/TIMEOUT=0" default
   StrCpy ${L_TEMP} $G_TRACELEVEL 13
   StrCmp ${L_TEMP} "/TRACE_LEVEL=" 0 usage_error
   StrCpy ${L_TEMP} $G_TRACELEVEL "" 13
