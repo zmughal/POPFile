@@ -66,6 +66,8 @@
 #
 #--------------------------------------------------------------------------
 
+  SetCompressor /solid lzma
+
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
   ;
@@ -83,7 +85,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.2"
+  !define C_VERSION             "0.0.3"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -193,6 +195,14 @@
   ShowInstDetails show
   !define MUI_FINISHPAGE_NOAUTOCLOSE
 
+  ;----------------------------------------------------------------
+  ; Customize MUI - General Custom Function
+  ;----------------------------------------------------------------
+
+  ; Use a custom '.onGUIInit' function to add language-specific texts to custom page INI file
+
+  !define MUI_CUSTOMFUNCTION_GUIINIT          "PFIGUIInit"
+
 #--------------------------------------------------------------------------
 # Define the Page order for the utility
 #--------------------------------------------------------------------------
@@ -236,8 +246,22 @@
   ;--------------------------------------------------------------------------
 
   !macro PFI_DBICAP_TEXT NAME VALUE
-    LangString ${NAME} ${LANG_ENGLISH} "${VALUE}"
+    LangString ${NAME} ${LANG_ENGLISH} `${VALUE}`
   !macroend
+
+  ; Strings used in the custom page used to select the trace level (this page may be suppressed)
+
+  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_SELECT_IO_BOX_HDR"     "DBI Trace Level Selection"
+
+  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_SELECT_IO_LEVEL_0"     "Trace Level 0 (trace disabled)"
+  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_SELECT_IO_LEVEL_1"     "Trace Level 1 (default, Trace DBI method calls returning with results or errors)"
+  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_SELECT_IO_LEVEL_2"     "Trace Level 2 (Trace method entry with parameters and returning with results)"
+  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_SELECT_IO_LEVEL_3"     "Trace Level 3 (As level 2, adding some high-level information from the driver and some internal information from the DBI)"
+  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_SELECT_IO_LEVEL_4"     "Trace Level 4 (As level 3, adding more detailed information from the driver)"
+
+  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_SELECT_IO_EXPLAIN"     "Trace level 1 is best for a simple overview of what's happening. Trace level 2 is a good choice for general purpose tracing. Levels 3 and above are best reserved for investigating a specific problem, when you need to see $\"inside$\" the driver and DBI."
+
+  ; Strings used for the main window, shown whilst the utility is running and when the report is complete
 
   !insertmacro PFI_DBICAP_TEXT "PFI_LANG_DBICAP_SELECT_HDR"     "Select the DBI_TRACE level"
   !insertmacro PFI_DBICAP_TEXT "PFI_LANG_DBICAP_SELECT_SUBHDR"  "Enable or disable tracing of POPFile's database activity"
@@ -333,6 +357,35 @@ exit:
   Pop ${L_TEMP}
 
   !undef L_TEMP
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: PFIGUIInit
+# (custom .onGUIInit function)
+#
+# Used to complete the initialization of the utility.
+#
+# Language strings are used to populate the fields in the INI file, therefore
+# this code cannot be included in '.onInit' (because the selected language
+# is not available for use inside the '.onInit' function)
+#--------------------------------------------------------------------------
+
+Function PFIGUIInit
+
+  ; This function adds language texts to the INI file used to define the
+  ; custom page used to select the value to be assigned to the DBI_TRACE
+  ; environment variable
+
+  !insertmacro PFI_IO_TEXT "ioDTL.ini" "1" "$(PFI_LANG_SELECT_IO_BOX_HDR)"
+
+  !insertmacro PFI_IO_TEXT "ioDTL.ini" "2" "$(PFI_LANG_SELECT_IO_LEVEL_0)"
+  !insertmacro PFI_IO_TEXT "ioDTL.ini" "3" "$(PFI_LANG_SELECT_IO_LEVEL_1)"
+  !insertmacro PFI_IO_TEXT "ioDTL.ini" "4" "$(PFI_LANG_SELECT_IO_LEVEL_2)"
+  !insertmacro PFI_IO_TEXT "ioDTL.ini" "5" "$(PFI_LANG_SELECT_IO_LEVEL_3)"
+  !insertmacro PFI_IO_TEXT "ioDTL.ini" "6" "$(PFI_LANG_SELECT_IO_LEVEL_4)"
+
+  !insertmacro PFI_IO_TEXT "ioDTL.ini" "7" "$(PFI_LANG_SELECT_IO_EXPLAIN)"
 
 FunctionEnd
 
