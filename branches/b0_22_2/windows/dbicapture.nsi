@@ -85,7 +85,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.4"
+  !define C_VERSION             "0.0.5"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -404,10 +404,9 @@ Function SelectTraceLevelPage
   !insertmacro MUI_HEADER_TEXT "$(PFI_LANG_DBICAP_SELECT_HDR)" "$(PFI_LANG_DBICAP_SELECT_SUBHDR)"
 
   !insertmacro MUI_INSTALLOPTIONS_INITDIALOG "ioDTL.ini"
-  Pop ${L_BUTTON}
-  FindWindow ${L_BUTTON} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_BUTTON} ${L_BUTTON} 1202                 ; [Field 3] is the default setting (Trace level 1)
-  SendMessage $HWNDPARENT ${WM_NEXTDLGCTL} ${L_BUTTON} 1  ; Set focus to the default radiobutton
+  Pop ${L_BUTTON}                                                               ; Ignore HWND of the dialog
+  !insertmacro MUI_INSTALLOPTIONS_READ ${L_BUTTON} "ioDTL.ini" "Field 3" "HWND" ; Field 3 selects 'Trace Level 1'
+  SendMessage $HWNDPARENT ${WM_NEXTDLGCTL} ${L_BUTTON} 1                        ; Set focus to default radiobutton
   !insertmacro MUI_INSTALLOPTIONS_SHOW
 
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_BUTTON} "ioDTL.ini" "Field 2" "State"
