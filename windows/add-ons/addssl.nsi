@@ -16,10 +16,10 @@
 #                the command "setup.exe /SSL" to run the installer (instead of "setup.exe").
 #
 #                IO::Socket:SSL v0.97 (released 17 July 2005) is the most recent version which
-#                is compatible with the current version of POPFile (0.22.4). IO::Socket::SSL
-#                versions 0.99, 0.999 and 1.01 (the most recent, released 13 September 2006)
-#                are all incompatible with POPFile 0.22.4 so a patch is applied to downgrade
-#                SSL.pm to v0.97 to make it POPFile-compatible (see ..\getssl.nsh for details).
+#                is compatible with POPFile 0.22.4. IO::Socket::SSL versions 0.99, 0.999, 1.01
+#                and 1.08 (the most recent, released 31 August 2007) are all incompatible with
+#                POPFile 0.22.4 so a patch is applied to downgrade SSL.pm to v0.97 to make it
+#                POPFile-compatible (see ..\getssl.nsh for details).
 #
 #                As a temporary workaround to cope with future "SSL compatibility" issues
 #                the command-line option /BUILTIN forces the wizard to install the old SSL
@@ -33,7 +33,7 @@
 #                An 'include' file is used to ensure this utility and the main POPFile
 #                installer download and install the same SSL support files.
 #
-# Copyright (c) 2004-2007 John Graham-Cumming
+# Copyright (c) 2004-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -170,9 +170,10 @@
   ; Up until 18 July 2006 it was safe for POPFile 0.22.3 and 0.22.4 to use the latest versions
   ; of the SSL files.
   ;
-  ; At present (14 September 2006) the University of Winnipeg repository supplies a version of
-  ; 'IO::Socket::SSL' which is not compatible with POPFile so a patch is applied to downgrade
-  ; the file to make it POPFile-compatible. See the ..\getssl.nsh INCLUDE file for details.
+  ; At present (14 February 2008) the University of Winnipeg repository supplies a version of
+  ; 'IO::Socket::SSL' which is not compatible with POPFile 0.22.4 or earlier so a patch is
+  ; applied to downgrade the file to make it POPFile-compatible. See the ..\getssl.nsh INCLUDE
+  ; file for details.
 
   ;------------------------------------------------
   ; How the Module.pm patch was created
@@ -264,7 +265,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.2.11"
+  !define C_PFI_VERSION  "0.3.0"
 
   ; Mention the wizard's version number in the window title
 

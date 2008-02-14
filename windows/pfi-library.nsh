@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2007 John Graham-Cumming
+# Copyright (c) 2003-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -59,7 +59,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.12"
+  !define C_PFI_LIBRARY_VERSION     "0.3.13"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1702,7 +1702,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetCompleteFPN
     #
