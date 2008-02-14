@@ -118,20 +118,26 @@
   ; How the SSL.pm patch was created
   ;------------------------------------------------
 
-  ; The patch used to downgrade SSL.pm v0.99, SSL.pm v0.999 or SSL.pm v1.01 to v0.97 was
-  ; created using the VPATCH package which is supplied with NSIS. The following commands
-  ; were used to create the patch file:
+  ; The patch used to downgrade SSL.pm v0.99, SSL.pm v0.999, SSL.pm v1.01 or SSL.pm v1.08
+  ; to SSL.pm v0.97 was created using the VPATCH package which is supplied with NSIS. The
+  ; following commands were used to create the patch file:
   ;
   ;   GenPat.exe SSL_0.99.pm SSL_0.97.pm SSL_pm.pat
   ;   GenPat.exe SSL_0.999.pm SSL_0.97.pm SSL_pm.pat
   ;   GenPat.exe SSL_1.01.pm SSL_0.97.pm SSL_pm.pat
+  ;   GenPat.exe SSL_1.08.pm SSL_0.97.pm SSL_pm.pat
   ;
   ; where SSL_0.97.pm  was the SSL.pm file from v0.97  of the IO::Socket:SSL module
   ;  and  SSL_0.99.pm  was the SSL.pm file from v0.99  of the IO::Socket:SSL module
   ;  and  SSL_0.999.pm was the SSL.pm file from v0.999 of the IO::Socket:SSL module
   ;  and  SSL_1.01.pm  was the SSL.pm file from v1.01  of the IO::Socket:SSL module
+  ;  and  SSL_1.08.pm  was the SSL.pm file from v1.08  of the IO::Socket:SSL module
   ;
-  ; The resulting SSL_pm.pat file can be used to downgrade v0.99 or v0.999 or v1.01 of SSL.pm.
+  ; The resulting SSL_pm.pat file can be used to downgrade v0.99, v0.999, v1.01 or v1.08 of SSL.pm.
+  ;
+  ; NOTE: When preparing the patch make sure that these Perl files use LF and not CRLF
+  ; for the end-of-line sequence otherwise the resulting SSL_pm.pat file will not work
+  ; (a "no suitable patches found" error will be displayed)
 
 #--------------------------------------------------------------------------
 # URLs used to download the necessary SSL support archives and files
