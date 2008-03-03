@@ -25,8 +25,7 @@ rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 test_assert( rmtree( 'corpus/CVS' ) > 0 );
-test_assert( `rm popfile.db` == 0 );
-
+unlink 'popfile.db';
 unlink 'stopwords';
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
