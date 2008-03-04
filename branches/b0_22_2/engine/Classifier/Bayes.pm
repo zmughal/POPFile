@@ -210,7 +210,7 @@ sub initialize
     # database, if you decide to change from using SQLite to some
     # other database (e.g. MySQL, Oracle, ... ) this *should* be all
     # you need to change.  The additional parameters user and auth are
-    # needed for some databases. 
+    # needed for some databases.
     #
     # Note that the dbconnect string
     # will be interpolated before being passed to DBI and the variable
@@ -222,7 +222,7 @@ sub initialize
 
     # SQLite 1.05+ have some problems we are resolving.  This lets us
     # give a nice message and then disable the version checking later
-    
+
     $self->config_( 'bad_sqlite_version', '3.0.0' );
 
     # No default unclassified weight is the number of times more sure
@@ -270,7 +270,7 @@ sub initialize
     #
     # 1 = Asynchronous deletes
     # 2 = Backup database every hour
-    
+
     $self->config_( 'sqlite_tweaks', 0xFFFFFFFF );
 
     # Japanese wakachigaki parser ('kakasi' or 'mecab' or 'internal').
@@ -304,10 +304,10 @@ sub deliver
     if ( $type eq 'COMIT' ) {
         $self->classified( $message[0], $message[2] );
     }
-    
+
     if ( $type eq 'RELSE' ) {
         $self->release_session_key_private__( $message[0] );
-    }    
+    }
 
     if ( $type eq 'TICKD' ) {
         $self->backup_database__();
@@ -361,12 +361,12 @@ sub start
         # control of a Mutex to avoid a crash if we are running on
         # Windows and using the fork.
 
-        if ( ( $nihongo_parser eq 'kakasi' ) && ( $^O eq 'MSWin32' ) && 
-             ( ( ( $self->module_config_( 'pop3', 'enabled' ) ) && 
-                 ( $self->module_config_( 'pop3', 'force_fork' ) ) ) || 
-               ( ( $self->module_config_( 'nntp', 'enabled' ) ) && 
-                 ( $self->module_config_( 'nntp', 'force_fork' ) ) ) || 
-               ( ( $self->module_config_( 'smtp', 'enabled' ) ) && 
+        if ( ( $nihongo_parser eq 'kakasi' ) && ( $^O eq 'MSWin32' ) &&
+             ( ( ( $self->module_config_( 'pop3', 'enabled' ) ) &&
+                 ( $self->module_config_( 'pop3', 'force_fork' ) ) ) ||
+               ( ( $self->module_config_( 'nntp', 'enabled' ) ) &&
+                 ( $self->module_config_( 'nntp', 'force_fork' ) ) ) ||
+               ( ( $self->module_config_( 'smtp', 'enabled' ) ) &&
                  ( $self->module_config_( 'smtp', 'force_fork' ) ) ) ) ) {
             $self->{parser__}->{need_kakasi_mutex__} = 1;
 
@@ -429,7 +429,7 @@ sub backup_database__
     # If database backup is turned on and we are using SQLite then
     # backup the database by copying it
 
-    if ( ( $self->config_( 'sqlite_tweaks' ) & 2 ) && 
+    if ( ( $self->config_( 'sqlite_tweaks' ) & 2 ) &&
          $self->{db_is_sqlite__} ) {
         if ( !copy( $self->{db_name__}, $self->{db_name__} . ".backup" ) ) {
 	    $self->log_( 0, "Failed to backup database ".$self->{db_name__} );
@@ -452,7 +452,7 @@ sub tweak_sqlite
 {
     my ( $self, $tweak, $state, $db ) = @_;
 
-    if ( $self->{db_is_sqlite__} && 
+    if ( $self->{db_is_sqlite__} &&
          ( $self->config_( 'sqlite_tweaks' ) & $tweak ) ) {
 
         $self->log_( 1, "Performing tweak $tweak to $state" );
@@ -460,7 +460,7 @@ sub tweak_sqlite
         if ( $tweak == 1 ) {
             my $sync = $state?'off':'normal';
             $db->do( "pragma synchronous=$sync;" );
-        }    
+        }
     }
 }
 
@@ -630,7 +630,7 @@ sub set_value_
 
         my $userid = $self->valid_session_key__( $session );
         my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-        $self->{db_delete_zero_words__}->execute( $bucketid );
+        $self->validate_sql_prepare_and_execute( $self->{db_delete_zero_words__}, $bucketid );
 
         return 1;
     } else {
@@ -724,7 +724,7 @@ sub db_connect__
 
     if ( $sqlite ) {
         $dbname = $self->get_user_path_( $self->config_( 'database' ) );
-        $dbpresent = ( -e $dbname ) || 0;                
+        $dbpresent = ( -e $dbname ) || 0;
     } else {
         $dbname = $self->config_( 'database' );
         $dbpresent = 1;
@@ -749,25 +749,25 @@ sub db_connect__
     $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
                                   $self->config_( 'dbuser' ),
                                   $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
-                                  
+
     $self->log_( 0, "Using SQLite library version " . $self->{db__}{sqlite_version});
-    
+
     # We check to make sure we're not using DBD::SQLite 1.05 or greater
     # which uses SQLite V 3 If so, we'll use DBD::SQLite2 and SQLite 2.8,
     # which is still compatible with old databases
-    
+
     if ( $self->{db__}{sqlite_version} gt $self->config_('bad_sqlite_version' ) )  {
-        $self->log_( 0, "Substituting DBD::SQLite2 for DBD::SQLite 1.05" );        
+        $self->log_( 0, "Substituting DBD::SQLite2 for DBD::SQLite 1.05" );
         $self->log_( 0, "Please install DBD::SQLite2 and set dbconnect to use DBD::SQLite2" );
-        
+
         $dbconnect =~ s/SQLite:/SQLite2:/;
-        
+
         undef $self->{db__};
 #         $self->db_disconnect__();
-        
+
         $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
                                       $self->config_( 'dbuser' ),
-                                      $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP        
+                                      $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
     }
 
     if ( !defined( $self->{db__} ) ) {
@@ -799,7 +799,7 @@ sub db_connect__
     # to strip off any sqlquotechars from the table names we retrieve
     #
 
-    my $sqlquotechar = $self->{db__}->get_info(29) || ''; 
+    my $sqlquotechar = $self->{db__}->get_info(29) || '';
     my @tables = map { s/$sqlquotechar//g; $_ } ($self->{db__}->tables());
 
     foreach my $table (@tables) {
@@ -836,8 +836,7 @@ sub db_connect__
             }
             print "    Saving table $table\n    ";
 
-            my $t = $self->{db__}->prepare( "select * from $table;" );
-            $t->execute;
+            my $t = $self->validate_sql_prepare_and_execute( "select * from $table;" );
             $i = 0;
             while ( 1 ) {
                 if ( ( ++$i % 100 ) == 0 ) {
@@ -995,8 +994,7 @@ sub db_connect__
 
     # Get the mapping from parameter names to ids into a local hash
 
-    my $h = $self->{db__}->prepare( "select name, id from bucket_template;" );
-    $h->execute;
+    my $h = $self->validate_sql_prepare_and_execute( "select name, id from bucket_template;" );
     while ( my $row = $h->fetchrow_arrayref ) {
         $self->{db_parameterid__}{$row->[0]} = $row->[1];
     }
@@ -1101,14 +1099,14 @@ sub db_update_cache__
 
     delete $self->{db_bucketid__}{$userid};
 
-    $self->{db_get_buckets__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_buckets__}, $userid );
     while ( my $row = $self->{db_get_buckets__}->fetchrow_arrayref ) {
         $self->{db_bucketid__}{$userid}{$row->[0]}{id} = $row->[1];
         $self->{db_bucketid__}{$userid}{$row->[0]}{pseudo} = $row->[2];
         $self->{db_bucketcount__}{$userid}{$row->[0]} = 0;
     }
 
-    $self->{db_get_bucket_word_counts__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_word_counts__}, $userid );
 
     for my $b (sort keys %{$self->{db_bucketid__}{$userid}}) {
         $self->{db_bucketcount__}{$userid}{$b} = 0;
@@ -1119,7 +1117,7 @@ sub db_update_cache__
         $self->{db_bucketcount__}{$userid}{$row->[1]} = $row->[0];
     }
 
-    $self->{db_get_bucket_unique_counts__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_unique_counts__}, $userid );
 
     while ( my $row = $self->{db_get_bucket_unique_counts__}->fetchrow_arrayref ) {
         $self->{db_bucketunique__}{$userid}{$row->[1]} = $row->[0];
@@ -1147,7 +1145,7 @@ sub db_get_word_count__
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->{db_get_wordid__}->execute( $word );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_wordid__}, $word );
     my $result = $self->{db_get_wordid__}->fetchrow_arrayref;
     if ( !defined( $result ) ) {
         return undef;
@@ -1155,7 +1153,7 @@ sub db_get_word_count__
 
     my $wordid = $result->[0];
 
-    $self->{db_get_word_count__}->execute( $self->{db_bucketid__}{$userid}{$bucket}{id}, $wordid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_word_count__}, $self->{db_bucketid__}{$userid}{$bucket}{id}, $wordid );
     $result = $self->{db_get_word_count__}->fetchrow_arrayref;
     if ( defined( $result ) ) {
          return $result->[0];
@@ -1202,7 +1200,7 @@ sub db_put_word_count__
     my $wordid = $result->[0];
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
 
-    $self->{db_put_word_count__}->execute( $bucketid, $wordid, $count );
+    $self->validate_sql_prepare_and_execute( $self->{db_put_word_count__}, $bucketid, $wordid, $count );
 
     return 1;
 }
@@ -1488,7 +1486,7 @@ sub magnet_match_helper__
     my @magnets;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->{db__}->prepare(                                           # PROFILE BLOCK START
+    my $h = $self->validate_sql_prepare_and_execute(                                           # PROFILE BLOCK START
         "select magnets.val, magnets.id from magnets, users, buckets, magnet_types
              where buckets.id = $bucketid and
                    magnets.id != 0 and
@@ -1496,8 +1494,6 @@ sub magnet_match_helper__
                    magnets.bucketid = buckets.id and
                    magnet_types.mtype = '$type' and
                    magnets.mtid = magnet_types.id order by magnets.val;" );   # PROFILE BLOCK STOP
-
-    $h->execute;
     while ( my $row = $h->fetchrow_arrayref ) {
         push @magnets, [$row->[0], $row->[1]];
     }
@@ -1588,11 +1584,10 @@ sub add_words_to_bucket__
 
     my $words;
     $words = join( ',', map( $self->{db__}->quote( $_ ), (sort keys %{$self->{parser__}{words__}}) ) );
-    $self->{get_wordids__} = $self->{db__}->prepare(        # PROFILE BLOCK START
+    $self->{get_wordids__} = $self->validate_sql_prepare_and_execute(        # PROFILE BLOCK START
              "select id, word
                   from words
                   where word in ( $words );" );             # PROFILE BLOCK STOP
-    $self->{get_wordids__}->execute;
 
     my @id_list;
     my %wordmap;
@@ -1606,13 +1601,11 @@ sub add_words_to_bucket__
 
     my $ids = join( ',', @id_list );
 
-    $self->{db_getwords__} = $self->{db__}->prepare(                                         # PROFILE BLOCK START
+    $self->{db_getwords__} = $self->validate_sql_prepare_and_execute(                                         # PROFILE BLOCK START
              "select matrix.times, matrix.wordid
                   from matrix
                   where matrix.wordid in ( $ids )
                     and matrix.bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};" );  # PROFILE BLOCK STOP
-
-    $self->{db_getwords__}->execute;
 
     my %counts;
 
@@ -1632,7 +1625,7 @@ sub add_words_to_bucket__
         # set_value_ which would need to look up the wordid again
 
         if ( defined( $wordmap{$word} ) && defined( $counts{$wordmap{$word}} ) ) {
-            $self->{db_put_word_count__}->execute( $self->{db_bucketid__}{$userid}{$bucket}{id},               # PROFILE BLOCK START
+            $self->validate_sql_prepare_and_execute( $self->{db_put_word_count__}, $self->{db_bucketid__}{$userid}{$bucket}{id},               # PROFILE BLOCK START
                 $wordmap{$word}, $counts{$wordmap{$word}} + $subtract * $self->{parser__}->{words__}{$word} ); # PROFILE BLOCK STOP
         } else {
 
@@ -1651,7 +1644,7 @@ sub add_words_to_bucket__
     # removed
 
     if ( $subtract == -1 ) {
-        $self->{db_delete_zero_words__}->execute( $self->{db_bucketid__}{$userid}{$bucket}{id} );
+        $self->validate_sql_prepare_and_execute( $self->{db_delete_zero_words__}, $self->{db_bucketid__}{$userid}{$bucket}{id} );
     }
 
     $self->{db__}->commit;
@@ -1803,7 +1796,7 @@ sub generate_unique_session_key__
 # $session        A session key previously returned by get_session_key
 #
 # Releases and invalidates the session key. Worker function that does the work
-# of release_session_key. 
+# of release_session_key.
 #                   ****DO NOT CALL DIRECTLY****
 # unless you want your session key released immediately, possibly preventing
 # asynchronous tasks from completing
@@ -1812,7 +1805,7 @@ sub generate_unique_session_key__
 sub release_session_key_private__
 {
     my ( $self, $session ) = @_;
-    
+
     if ( defined( $self->{api_sessions__}{$session} ) ) {
         $self->log_( 1, "release_session_key releasing key $session for user $self->{api_sessions__}{$session}" );
         delete $self->{api_sessions__}{$session};
@@ -1897,7 +1890,7 @@ sub get_session_key
 
     my $hash = md5_hex( $user . '__popfile__' . $pwd );
 
-    $self->{db_get_userid__}->execute( $user, $hash );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_userid__}, $user, $hash );
     my $result = $self->{db_get_userid__}->fetchrow_arrayref;
     if ( !defined( $result ) ) {
 
@@ -1933,7 +1926,7 @@ sub get_session_key
 sub release_session_key
 {
     my ( $self, $session ) = @_;
-    
+
     $self->mq_post_( "RELSE", $session );
 }
 
@@ -2099,12 +2092,11 @@ sub classify
 
     my $words;
     $words = join( ',', map( $self->{db__}->quote( $_ ), (sort keys %{$self->{parser__}{words__}}) ) );
-    $self->{get_wordids__} = $self->{db__}->prepare(  # PROFILE BLOCK START
+    $self->{get_wordids__} = $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
              "select id, word
                   from words
                   where word in ( $words )
                   order by id;" );                    # PROFILE BLOCK STOP
-    $self->{get_wordids__}->execute;
 
     my @id_list;
     my %temp_idmap;
@@ -2122,14 +2114,12 @@ sub classify
 
     my $ids = join( ',', @id_list );
 
-    $self->{db_classify__} = $self->{db__}->prepare(            # PROFILE BLOCK START
+    $self->{db_classify__} = $self->validate_sql_prepare_and_execute(            # PROFILE BLOCK START
              "select matrix.times, matrix.wordid, buckets.name
                   from matrix, buckets
                   where matrix.wordid in ( $ids )
                     and matrix.bucketid = buckets.id
                     and buckets.userid = $userid;" );           # PROFILE BLOCK STOP
-
-    $self->{db_classify__}->execute;
 
     # %matrix maps wordids and bucket names to counts
     # $matrix{$wordid}{$bucket} == $count
@@ -2446,7 +2436,7 @@ sub classify
                     my $width_2 = int( $chart{$word_2} * $scale - .5 ) * -1;
 
                     last if ( $width_1 <=0 && $width_2 <= 0 );
-                    
+
                     my %row_data;
 
                     $row_data{View_Chart_Word_1} = $word_1;
@@ -3176,7 +3166,7 @@ sub get_word_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->{db_get_full_total__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_full_total__}, $userid );
     return $self->{db_get_full_total__}->fetchrow_arrayref->[0];
 }
 
@@ -3240,7 +3230,7 @@ sub get_unique_word_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->{db_get_unique_word_count__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_unique_word_count__}, $userid );
     return $self->{db_get_unique_word_count__}->fetchrow_arrayref->[0];
 }
 
@@ -3315,14 +3305,15 @@ sub get_bucket_parameter
 
     # If there is a non-default value for this parameter then return it.
 
-    $self->{db_get_bucket_parameter__}->execute( $self->{db_bucketid__}{$userid}{$bucket}{id}, $self->{db_parameterid__}{$parameter} );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_parameter__},
+        $self->{db_bucketid__}{$userid}{$bucket}{id}, $self->{db_parameterid__}{$parameter} );
     my $result = $self->{db_get_bucket_parameter__}->fetchrow_arrayref;
 
     # If this parameter has not been defined for this specific bucket then
     # get the default value
 
     if ( !defined( $result ) ) {
-        $self->{db_get_bucket_parameter_default__}->execute(  # PROFILE BLOCK START
+        $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_parameter_default__},  # PROFILE BLOCK START
             $self->{db_parameterid__}{$parameter} );          # PROFILE BLOCK STOP
         $result = $self->{db_get_bucket_parameter_default__}->fetchrow_arrayref;
     }
@@ -3365,7 +3356,7 @@ sub set_bucket_parameter
 
     # Exactly one row should be affected by this statement
 
-    $self->{db_set_bucket_parameter__}->execute( $bucketid, $btid, $value );
+    $self->validate_sql_prepare_and_execute( $self->{db_set_bucket_parameter__}, $bucketid, $btid, $value );
 
     if ( defined( $self->{db_parameters__}{$userid}{$bucket}{$parameter} ) ) {
         $self->{db_parameters__}{$userid}{$bucket}{$parameter} = $value;
@@ -3397,7 +3388,7 @@ sub get_html_colored_message
     $self->{parser__}->{color_idmap__}  = undef;
     $self->{parser__}->{color_userid__} = undef;
     $self->{parser__}->{bayes__} = bless $self;
-    
+
     my $result = $self->{parser__}->parse_file( $file,   # PROFILE BLOCK START
            $self->global_config_( 'message_cutoff'   ) ); # PROFILE BLOCK STOP
 
@@ -3647,7 +3638,7 @@ sub get_buckets_with_magnets
 
     my @result;
 
-    $self->{db_get_buckets_with_magnets__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_buckets_with_magnets__}, $userid );
     while ( my $row = $self->{db_get_buckets_with_magnets__}->fetchrow_arrayref ) {
         push @result, ($row->[0]);
     }
@@ -3675,14 +3666,13 @@ sub get_magnet_types_in_bucket
     my @result;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->{db__}->prepare( "select magnet_types.mtype from magnet_types, magnets, buckets
+    my $h = $self->validate_sql_prepare_and_execute( "select magnet_types.mtype from magnet_types, magnets, buckets
         where magnet_types.id = magnets.mtid and
               magnets.bucketid = buckets.id and
               buckets.id = $bucketid
               group by magnet_types.mtype
               order by magnet_types.mtype;" );
 
-    $h->execute;
     while ( my $row = $h->fetchrow_arrayref ) {
         push @result, ($row->[0]);
     }
@@ -3757,13 +3747,12 @@ sub get_magnets
     my @result;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->{db__}->prepare( "select magnets.val from magnets, magnet_types
+    my $h = $self->validate_sql_prepare_and_execute( "select magnets.val from magnets, magnet_types
         where magnets.bucketid = $bucketid and
               magnets.id != 0 and
               magnet_types.id = magnets.mtid and
               magnet_types.mtype = '$type' order by magnets.val;" );
 
-    $h->execute;
     while ( my $row = $h->fetchrow_arrayref ) {
         push @result, ($row->[0]);
     }
@@ -3821,9 +3810,8 @@ sub get_magnet_types
 
     my %result;
 
-    my $h = $self->{db__}->prepare( "select magnet_types.mtype, magnet_types.header from magnet_types order by mtype;" );
+    my $h = $self->validate_sql_prepare_and_execute( "select magnet_types.mtype, magnet_types.header from magnet_types order by mtype;" );
 
-    $h->execute;
     while ( my $row = $h->fetchrow_arrayref ) {
         $result{$row->[0]} = $row->[1];
     }
@@ -3946,6 +3934,86 @@ sub remove_stopword
 
     return $self->{parser__}->{mangle__}->remove_stopword( $stopword, $self->module_config_( 'html', 'language' ) );
 }
+
+
+#----------------------------------------------------------------------------
+#
+# validate_sql_prepare_and_execute
+#
+# This method will prepare sql statements and execute them.
+# The statement itself and any binding parameters are also
+# tested for possible null-characters (\x00).
+# If you pass in a handle to a prepared statement, the statement
+# will be executed and possible binding-parameters are checked.
+#
+# $statement  The sql statement to prepare or the prepared statement handle
+# @args       The (optional) list of binding parameters
+#
+# Returns the result of prepare()
+#----------------------------------------------------------------------------
+sub validate_sql_prepare_and_execute {
+    my $self = shift;
+    my $sql_or_sth  = shift;
+    my @args = @_;
+
+    my $dbh = $self->db();
+    my $sth = undef;
+
+    # Is this a statement-handle or a sql string?
+    if ( (ref $sql_or_sth) =~ m/^DBI::/ ) {
+        $sth = $sql_or_sth;
+    }
+    else {
+        my $sql = $sql_or_sth;
+        $sql = $self->check_for_nullbytes( $sql );
+        $sth = $dbh->prepare( $sql );
+    }
+
+    my $execute_result = undef;
+
+    # Any binding-params?
+    if ( @args ) {
+        foreach my $arg ( @args ) {
+            $arg = $self->check_for_nullbytes( $arg );
+        }
+        $execute_result = $sth->execute( @args );
+    }
+    else {
+        $execute_result = $sth->execute();
+    }
+
+    unless ( $execute_result ) {
+        my ( $package, $file, $line ) = caller;
+        $self->log_( 0, "DBI::execute failed.  Called from package '$package' ($file), line $line." );
+    }
+
+    return $sth;
+}
+
+
+#----------------------------------------------------------------------------
+#
+# check_for_nullbytes
+#
+# Will check a passed-in string for possible null-bytes and log and error
+# message in case a null-byte is found.
+#
+# Will return the string with any null-bytes removed.
+#----------------------------------------------------------------------------
+sub check_for_nullbytes {
+    my $self = shift;
+    my $string = shift;
+
+    my $backup = $string;
+
+    if ( my $count = ( $string =~ s/\x00//g ) ) {
+        my ( $package, $file, $line ) = caller( 1 );
+        $self->log_( 0, "Found $count null-character(s) in string '$backup'. Called from package '$package' ($file), line $line." );
+    }
+
+    return $string;
+}
+
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
