@@ -3306,7 +3306,8 @@ sub get_bucket_parameter
     # If there is a non-default value for this parameter then return it.
 
     $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_parameter__},
-        $self->{db_bucketid__}{$userid}{$bucket}{id}, $self->{db_parameterid__}{$parameter} );
+        $self->{db_bucketid__}{$userid}{$bucket}{id},
+        $self->{db_parameterid__}{$parameter} );
     my $result = $self->{db_get_bucket_parameter__}->fetchrow_arrayref;
 
     # If this parameter has not been defined for this specific bucket then
@@ -4004,11 +4005,13 @@ sub check_for_nullbytes {
     my $self = shift;
     my $string = shift;
 
-    my $backup = $string;
+    if ( defined $string ) {
+        my $backup = $string;
 
-    if ( my $count = ( $string =~ s/\x00//g ) ) {
-        my ( $package, $file, $line ) = caller( 1 );
-        $self->log_( 0, "Found $count null-character(s) in string '$backup'. Called from package '$package' ($file), line $line." );
+        if ( my $count = ( $string =~ s/\x00//g ) ) {
+            my ( $package, $file, $line ) = caller( 1 );
+            $self->log_( 0, "Found $count null-character(s) in string '$backup'. Called from package '$package' ($file), line $line." );
+        }
     }
 
     return $string;
