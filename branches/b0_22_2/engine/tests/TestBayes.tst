@@ -186,6 +186,19 @@ test_assert_equal( $b->get_count_for_word( $session, $buckets[0], 'foo'), 0 );
 test_assert_equal( $b->get_count_for_word( $session, $buckets[1], 'foo'), 1 );
 test_assert_equal( $b->get_count_for_word( $session, $buckets[2], 'foo'), 0 );
 
+# Test validation of sql
+
+my $sql = "SELECT * FROM words WHERE word IN ( 'f\x00oo', 'baz' )";
+my $sth = $b->validate_sql_prepare_and_execute( $sql );
+test_assert_equal( ref $sth, 'DBI::st' );
+test_assert_equal( scalar @{$sth->fetchall_arrayref}, 2 );
+
+# same thing with bind-params
+$sql = "SELECT * FROM words WHERE word IN ( ?, ? )";
+$sth = $b->validate_sql_prepare_and_execute( $sql, "f\x00oo", 'baz' );
+test_assert_equal( ref $sth, 'DBI::st' );
+test_assert_equal( scalar @{$sth->fetchall_arrayref}, 2 );
+
 # get_unique_word_count
 
 test_assert_equal( $b->get_unique_word_count( $session ), 4012 );
@@ -992,7 +1005,7 @@ if ( $have_text_kakasi ) {
     my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 1 );
     close CLIENT;
     close MAIL;
-    
+
     test_assert_equal( $class, 'gomi' );
     test_assert( -e $h->get_slot_file( $slot ) );
 
