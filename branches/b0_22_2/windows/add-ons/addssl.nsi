@@ -3,23 +3,23 @@
 # addssl.nsi --- This is the NSIS script used to create a utility which installs
 #                SSL support for an existing POPFile 0.22.0 (or later) installation.
 #
-#                Normally the SSL support files are downloaded from the University of Winnipeg
-#                repository. However these files are no longer compatible with the minimal Perl
-#                shipped with POPFile 0.22.0, 0.22.1 or 0.22.2 so this utility includes a set
-#                of compatible SSL files which will be installed instead. The minimal Perl's
-#                version number (obtained from the 'perl58.dll' file) is used to determine the
-#                action to be taken.
+#                The Windows installer for POPFile 0.22.3 (or later) is able to download
+#                and install SSL support. If any patches need to be applied to make the
+#                SSL files work with POPFile these will be downloaded from the POPFile
+#                website and applied by the 0.22.5 or later installers.
 #
-#                The Windows installer for POPFile 0.22.3 (or later) is able to download and
-#                install SSL support. Normally SSL support is downloaded at the same time that
-#                POPFile is installed, but SSL support can be added or updated later by using
-#                the command "setup.exe /SSL" to run the installer (instead of "setup.exe").
+#                Normally SSL support is downloaded at the same time that POPFile is
+#                installed, but SSL support can be added or updated after installation
+#                by using the "Add/Remove Programs" entry for POPFile 1.0.0 or later.
+#                For POPFile 0.22.3, 0.22.4 or 0.22.5 SSL support can be added or updated
+#                later by using the command "setup.exe /SSL" to run the installer.
 #
-#                IO::Socket:SSL v0.97 (released 17 July 2005) is the most recent version which
-#                is compatible with POPFile 0.22.4. IO::Socket::SSL versions 0.99, 0.999, 1.01
-#                and 1.08 (the most recent, released 31 August 2007) are all incompatible with
-#                POPFile 0.22.4 so a patch is applied to downgrade SSL.pm to v0.97 to make it
-#                POPFile-compatible (see ..\getssl.nsh for details).
+#                Normally the SSL support files are downloaded from the University of
+#                Winnipeg repository. However these files are no longer compatible with
+#                the minimal Perl shipped with POPFile 0.22.0, 0.22.1 or 0.22.2 so this
+#                utility includes a set of compatible SSL files which will be installed
+#                instead. The minimal Perl's version number (obtained from the 'perl58.dll'
+#                file) is used to determine the action to be taken.
 #
 #                As a temporary workaround to cope with future "SSL compatibility" issues
 #                the command-line option /BUILTIN forces the wizard to install the old SSL
@@ -30,8 +30,9 @@
 #                will apply a patch to update Module.pm v1.40 to v1.41 (the original file will
 #                be backed up as Module.pm.bk1). The patch is only applied if v1.40 is found.
 #
-#                An 'include' file is used to ensure this utility and the main POPFile
-#                installer download and install the same SSL support files.
+#                An 'include' file (getssl.nsh) is used to ensure this utility and the main
+#                POPFile installer download and install the same SSL support files and any
+#                necessary SSL patches.
 #
 # Copyright (c) 2004-2008 John Graham-Cumming
 #
@@ -195,11 +196,11 @@
 # For POPFile 0.22.3 (and later) releases this wizard will download and, if necessary, patch
 # the SSL support files from the University of Winnipeg repository. However there will always
 # be some delay between the repository being updated with SSL files which are not compatible
-# with POPFile and the generation of an updated version of this wizard.
+# with POPFile and the generation of an updated version of the SSL patches (or this wizard).
 #
 # The /BUILTIN switch provides an easy way to force the installation of the old SSL support
 # files normally used only for the POPFile 0.22.0, 0.22.1 and 0.22.2 releases as a workaround
-# until this wizard can be updated to handle the new SSL support files.
+# until the SSL patches (or this wizard) can be updated to handle the new SSL support files.
 #
 # To force the installation of the old SSL support files use the following command:
 #
@@ -214,6 +215,7 @@
 #
 # Normally no NSIS compiler warnings are expected. However there may be some warnings
 # which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or more language tables.
+#
 # These "PFI_LANG_NSISDL_PLURAL" warnings can be safely ignored (at present only the
 # 'Japanese-pfi.nsh' file generates this warning).
 #
@@ -265,7 +267,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.3.0"
+  !define C_PFI_VERSION  "0.3.1"
 
   ; Mention the wizard's version number in the window title
 

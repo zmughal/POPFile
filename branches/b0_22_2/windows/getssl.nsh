@@ -8,10 +8,10 @@
 #                0.22 (or later) installation. This 'include' file ensures that these two
 #                programs download and install the same SSL files.
 #
-#                Starting with the 1.0.0 release the POPFile program's "Add/Remove Program" entry
-#                now shows a "Change" button which can be used to add SSL support to the existing
-#                POPFile installation. This is an alternative to re-running the installer with
-#                /SSL specified on the command-line.
+#                Starting with the 1.0.0 release the POPFile program's "Add/Remove Program"
+#                entry now shows a "Change" button which can be used to add SSL support to
+#                the existing POPFile installation. This is an alternative to re-running the
+#                installer with /SSL specified on the command-line.
 #
 # Copyright (c) 2005-2008 John Graham-Cumming
 #
@@ -92,27 +92,35 @@
   ;------------------------------------------------
 
   ; On 18 July 2006 the University of Winnipeg repository was updated to provide
-  ; IO::Socket::SSL v0.99 which is not compatible with POPFile so a patch will be
-  ; applied to downgrade the SSL.pm file to the compatible v0.97 version.
+  ; IO::Socket::SSL v0.99 which was not compatible with the then current version
+  ; of POPFile (0.22.4) so a patch was created to downgrade the SSL.pm file to
+  ; the compatible v0.97 version. This patch is also used for POPFile 0.22.3.
   ;
   ; On 18 August 2006 the University of Winnipeg repository was updated to supply
-  ; IO::Socket::SSL v0.999 which is not compatible with POPFile so a patch will
-  ; be applied to downgrade the SSL.pm file to the compatible v0.97 version.
+  ; IO::Socket::SSL v0.999 which was not compatible with the then current version
+  ; of POPFile (0.22.4) so a patch was created to downgrade the SSL.pm file to
+  ; the compatible v0.97 version. This patch is also used for POPFile 0.22.3.
   ;
   ; On 13 September 2006 the University of Winnipeg repository was updated to
-  ; supply IO::Socket::SSL v1.01 which is not compatible with POPFile so a patch
-  ; will be applied to downgrade the SSL.pm file to the compatible v0.97 version.
+  ; supply IO::Socket::SSL v1.01 which was not compatible with the then current
+  ; version of POPFile (0.22.4) so a patch was created to downgrade the SSL.pm
+  ; file to the compatible v0.97 version. This patch is also used for POPFile 0.22.3.
   ;
-  ; POPFile 0.22.5 uses a new minimal Perl and at the time of its release there
-  ; was no need to patch any of the SSL Support files from the University of
-  ; Winnipeg repository.
+  ; POPFile 0.22.5 uses a new minimal Perl and at the time of its release (June 2007)
+  ; there was no need to patch any of the SSL Support files from the University of
+  ; Winnipeg repository for use with POPFile 0.22.5.
   ;
-  ; Starting with the 0.22.5 release any patches required to make the SSL Support
-  ; files compatible with POPFile will be downloaded from the POPFile web site.
-  ; This will avoid the need to rebuild the installer and the 'SSL Setup' wizard
-  ; every time the SSL Support files get changed. However the current patches,
-  ; if any, will be incorporated in each build so they can be used if the POPFile
-  ; web site is down.
+  ; On 31 August 2007 the University of Winnipeg repository was updated to
+  ; supply IO::Socket::SSL v1.08 which is not compatible with POPFile 0.22.4 or
+  ; 0.22.3 so a patch will be applied to downgrade the SSL.pm file to the compatible
+  ; v0.97 version when SSL Support is added to POPFile 0.22.4 or 0.22.3.
+  ;
+  ; Starting with the 0.22.5 release any patches required to make the SSL Support files
+  ; compatible with POPFile will be downloaded from the POPFile web site. This will avoid
+  ; the need to rebuild the installer and the 'SSL Setup' wizard every time the SSL Support
+  ; files become incompatible with the 0.22.5 or any later releases of POPFile. However the
+  ; current patches, if any, will always be incorporated into each build of the installer
+  ; so they can be used if the POPFile web site is not available when the installer is run.
 
   ;------------------------------------------------
   ; How the SSL.pm patch was created
@@ -120,8 +128,9 @@
 
   ; The patch used to downgrade SSL.pm v0.99, SSL.pm v0.999, SSL.pm v1.01 or SSL.pm v1.08
   ; to SSL.pm v0.97 was created using the VPATCH package which is supplied with NSIS. The
-  ; following commands were used to create the patch file:
+  ; following MS-DOS commands were used to create the patch file:
   ;
+  ;   if exist SSL_pm.pat del SSL_pm.pat
   ;   GenPat.exe SSL_0.99.pm SSL_0.97.pm SSL_pm.pat
   ;   GenPat.exe SSL_0.999.pm SSL_0.97.pm SSL_pm.pat
   ;   GenPat.exe SSL_1.01.pm SSL_0.97.pm SSL_pm.pat
@@ -133,11 +142,14 @@
   ;  and  SSL_1.01.pm  was the SSL.pm file from v1.01  of the IO::Socket:SSL module
   ;  and  SSL_1.08.pm  was the SSL.pm file from v1.08  of the IO::Socket:SSL module
   ;
-  ; The resulting SSL_pm.pat file can be used to downgrade v0.99, v0.999, v1.01 or v1.08 of SSL.pm.
+  ; The resulting SSL_pm.pat file is able to downgrade v0.99, v0.999, v1.01 or v1.08 of SSL.pm.
   ;
-  ; NOTE: When preparing the patch make sure that these Perl files use LF and not CRLF
-  ; for the end-of-line sequence otherwise the resulting SSL_pm.pat file will not work
-  ; (a "no suitable patches found" error will be displayed)
+  ; NOTE: It is important that the various SSL.pm files used to generate this patch use
+  ;       the correct end-of-line sequences. When the untgz plugin extracts SSL.pm the
+  ;       output file uses LF therefore the files used to generate this patch must also
+  ;       use LF instead of the normal CRLF sequence used on Windows systems. If files
+  ;       with CRLF are used to make the patch then the SSL.pm file will _not_ be patched
+  ;       (a "no suitable patches found" error will be reported by the 'vpatch' plugin).
 
 #--------------------------------------------------------------------------
 # URLs used to download the necessary SSL support archives and files
@@ -158,8 +170,8 @@
 # created and applied by the standard VPATCH package shipped with the NSIS compiler).
 #
 # The patch control file, any patches and the file containing the MD5 sums of the
-# patch control file and any patches are all stored in the same directory on the
-# POPFile web site.
+# patch control file and the available patches are all stored in the same directory
+# on the POPFile web site.
 #--------------------------------------------------------------------------
 
   !define C_PATCH_WEBSITE     "http://getpopfile.org/installer/ssl-patch"
@@ -217,7 +229,7 @@
   Var G_SSL_FILEURL        ; full URL used to download SSL file
 
   !ifdef ADDSSL
-      Var G_PLS_FIELD_2        ; used to customise translated text strings
+      Var G_PLS_FIELD_2    ; used to customise translated text strings
   !endif
 
   Var G_PATCH_SOURCE       ; indicated the source of the SSL patches we are to apply
@@ -225,6 +237,8 @@
 
   Var G_SSL_SOURCE         ; indicates the source of the SSL files we are to install
                            ; (the possible values are either ${C_BUILTIN} or ${C_INTERNET})
+
+  Var G_PATCH_CTRL_FILE    ; the name of the appropriate Patch Control File (e.g. 0.22.x.pcf, 0.22.5.pcf, etc)
 
   ; Values used for the $G_PATCH_SOURCE and $G_SSL_SOURCE flags
   ; (constants are used for these values to make maintenance easier)
@@ -274,6 +288,17 @@
 
     !ifdef ADDSSL
 
+        ; We only check the first 3 fields in the version number (X.Y.Z), ignoring the BUILD number
+        ; (NOTE: This means ActivePerl 5.8.8.820 and 5.8.8.822 are not handled differently )
+
+        !define L_VER_X    $R3     ; version number's MAJOR field
+        !define L_VER_Y    $R4     ; version number's MINOR field
+        !define L_VER_Z    $R5     ; version number's REVISION field
+
+        Push ${L_VER_X}
+        Push ${L_VER_Y}
+        Push ${L_VER_Z}
+
         ; Assume we will use the built-in SSL files which are compatible with pre-0.22.3 releases
         ; (these SSL support files do not require any patches to make them POPFile-compatible)
 
@@ -295,7 +320,7 @@
         Pop ${L_RESULT}
         StrCmp ${L_RESULT} "/BUILTIN" 0 look_for_minimal_Perl
         DetailPrint "The '/BUILTIN' option was supplied on the command-line"
-        Goto assume_pre_0_22_3
+        Goto pre_0_22_3
 
       look_for_minimal_Perl:
 
@@ -306,18 +331,9 @@
 
         IfFileExists "$G_ROOTDIR\perl58.dll" check_Perl_version
         DetailPrint "Assume pre-0.22.3 installation (perl58.dll not found in '$G_ROOTDIR' folder)"
-        Goto assume_pre_0_22_3
+        Goto pre_0_22_3
 
       check_Perl_version:
-
-        !define L_VER_X    $R1     ; We check only the first three fields in the version number
-        !define L_VER_Y    $R2     ; but the code could be further simplified by merely testing
-        !define L_VER_Z    $R3     ; the 'build number' field (the field we currently ignore)
-
-        Push ${L_VER_X}
-        Push ${L_VER_Y}
-        Push ${L_VER_Z}
-
         GetDllVersion "$G_ROOTDIR\perl58.dll" ${L_VER_Y} ${L_VER_Z}
         IntOp ${L_VER_X} ${L_VER_Y} / 0x00010000
         IntOp ${L_VER_Y} ${L_VER_Y} & 0x0000FFFF
@@ -326,25 +342,15 @@
 
         ; Only download the SSL files if the minimal Perl version is 5.8.7 or higher
 
-        IntCmp ${L_VER_X} 5 0 restore_vars set_download_flag
-        IntCmp ${L_VER_Y} 8 0 restore_vars set_download_flag
-        IntCmp ${L_VER_Z} 7 0 restore_vars set_download_flag
+        IntCmp ${L_VER_X} 5 0 pre_0_22_3 set_download_flag
+        IntCmp ${L_VER_Y} 8 0 pre_0_22_3 set_download_flag
+        IntCmp ${L_VER_Z} 7 0 pre_0_22_3 set_download_flag
 
       set_download_flag:
         StrCpy $G_SSL_SOURCE "${C_INTERNET}"
+        Goto download_ssl
 
-      restore_vars:
-        Pop ${L_VER_Z}
-        Pop ${L_VER_Y}
-        Pop ${L_VER_X}
-
-        !undef L_VER_X
-        !undef L_VER_Y
-        !undef L_VER_Z
-
-        StrCmp $G_SSL_SOURCE "${C_INTERNET}" download_ssl
-
-      assume_pre_0_22_3:
+      pre_0_22_3:
 
         ; Pretend we've just downloaded the SSL archives and OpenSSL DLLs from the Internet
 
@@ -528,16 +534,47 @@
         ; If the built-in SSL Support files are being used then there is no need to patch SSL.pm
 
         StrCmp $G_SSL_SOURCE "${C_BUILTIN}" all_done
-    !endif
 
-    ; Try to download the appropriate POPFile Patch Control File
+        ; If we are adding SSL Support to POPFile 0.22.5 or later then we need to get the appropriate
+        ; Patch Control File from the POPFile website instead of using the generic one (0.22.x.pcf)
+
+        IfFileExists "$G_ROOTDIR\uninstall.exe" check_popfile_version
+
+      use_generic_pcf:
+        StrCpy $G_PATCH_CTRL_FILE "${C_PATCH_CTRL_FILE}"
+        Goto download_pcf
+
+      check_popfile_version:
+        GetDllVersion "$G_ROOTDIR\uninstall.exe" ${L_VER_Y} ${L_VER_Z}
+        IntOp ${L_VER_X} ${L_VER_Y} / 0x00010000
+        IntOp ${L_VER_Y} ${L_VER_Y} & 0x0000FFFF
+        IntOp ${L_VER_Z} ${L_VER_Z} / 0x00010000
+        DetailPrint ""
+        DetailPrint "POPFile version ${L_VER_X}.${L_VER_Y}.${L_VER_Z} detected in '$G_ROOTDIR' folder"
+
+        ; 0.22.5 was the first release to use a Patch Control File
+
+        IntCmp ${L_VER_X}  0 0 use_generic_pcf use_appropriate_pcf
+        IntCmp ${L_VER_Y} 22 0 use_generic_pcf use_appropriate_pcf
+        IntCmp ${L_VER_Z}  5 0 use_generic_pcf use_appropriate_pcf
+
+      use_appropriate_pcf:
+        StrCpy $G_PATCH_CTRL_FILE "${L_VER_X}.${L_VER_Y}.${L_VER_Z}.pcf"
+
+      download_pcf:
+    !else
+
+        ; Try to download the appropriate POPFile Patch Control File
+
+        StrCpy $G_PATCH_CTRL_FILE "${C_PATCH_CTRL_FILE}"
+    !endif
 
     DetailPrint ""
     DetailPrint ""
     DetailPrint "Download the Patch Control File and MD5 sums from the POPFile website..."
     DetailPrint ""
 
-    Push "${C_PATCH_WEBSITE}/${C_PATCH_CTRL_FILE}"
+    Push "${C_PATCH_WEBSITE}/$G_PATCH_CTRL_FILE"
     Call ${UN}GetSSLFile
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "OK" 0 use_default_patches
@@ -552,11 +589,11 @@
     ; Calculate the MD5 sum for the patch control file and then
     ; compare the result with the value given in the MD5SUMS file
 
-    md5dll::GetMD5File "$PLUGINSDIR\${C_PATCH_CTRL_FILE}"
+    md5dll::GetMD5File "$PLUGINSDIR\$G_PATCH_CTRL_FILE"
     Pop ${L_RESULT}
     DetailPrint ""
     DetailPrint "Calculated MD5 sum for Patch Control File: ${L_RESULT}"
-    Push "${C_PATCH_CTRL_FILE}"
+    Push $G_PATCH_CTRL_FILE
     Call ${UN}ExtractMD5sum
     Pop $G_PLS_FIELD_1
     DetailPrint "Downloaded MD5 sum for Patch Control File: $G_PLS_FIELD_1"
@@ -584,27 +621,28 @@
     !else
         File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "..\0.22.x.pcf"
         File /nonfatal "/oname=$PLUGINSDIR\SSL_pm.pat" "..\SSL_pm.pat"
+        StrCpy $G_PATCH_CTRL_FILE "${C_PATCH_CTRL_FILE}"
     !endif
 
     ; Ensure the patch control file uses CRLF as the EOL marker
     ; (the file is used as an INI file so it is best for it to use CRLF instead of LF)
 
-    Push "${C_PATCH_CTRL_FILE}"
+    Push $G_PATCH_CTRL_FILE
     Call ${UN}EOL2CRLF
     SetDetailsPrint listonly
 
     ; Record information about the built-in Patch Control File in the installer log
 
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "Settings" "POPFileVersion"
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_2 "${C_PATCH_CTRL_FILE}" "Settings" "PatchIssue"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "Settings" "POPFileVersion"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_2 "$G_PATCH_CTRL_FILE" "Settings" "PatchIssue"
     DetailPrint "POPFile $G_PLS_FIELD_1 Patch Control File (issue $G_PLS_FIELD_2) [*** Built-in version ***]"
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "Settings" "Comment"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "Settings" "Comment"
     StrCmp $G_PLS_FIELD_1 "" builtin_patch_count
     DetailPrint "$G_PLS_FIELD_1"
 
   builtin_patch_count:
     DetailPrint ""
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_LISTSIZE} "${C_PATCH_CTRL_FILE}" "Settings" "NumberOfPatches"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_LISTSIZE} "$G_PATCH_CTRL_FILE" "Settings" "NumberOfPatches"
     StrCmp ${L_LISTSIZE} "0" 0 apply_patches
     DetailPrint "No POPFile SSL patches are required"
     Goto all_done
@@ -616,16 +654,16 @@
     ; Ensure the patch control file uses CRLF as the EOL marker
     ; (the file is used as an INI file so it is best for it to use CRLF instead of LF)
 
-    Push "${C_PATCH_CTRL_FILE}"
+    Push $G_PATCH_CTRL_FILE
     Call ${UN}EOL2CRLF
 
     ; Record information about the Patch Control File in the installer log
 
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "Settings" "POPFileVersion"
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_2 "${C_PATCH_CTRL_FILE}" "Settings" "PatchIssue"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "Settings" "POPFileVersion"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_2 "$G_PATCH_CTRL_FILE" "Settings" "PatchIssue"
     DetailPrint ""
     DetailPrint "POPFile $G_PLS_FIELD_1 Patch Control File (issue $G_PLS_FIELD_2)"
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "Settings" "Comment"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "Settings" "Comment"
     StrCmp $G_PLS_FIELD_1 "" get_the_patches
     DetailPrint "$G_PLS_FIELD_1"
 
@@ -655,6 +693,14 @@
         DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
         SetDetailsPrint listonly
         !insertmacro SECTIONLOG_EXIT "SSL Support"
+    !else
+        Pop ${L_VER_Z}
+        Pop ${L_VER_Y}
+        Pop ${L_VER_X}
+
+        !undef L_VER_X
+        !undef L_VER_Y
+        !undef L_VER_Z
     !endif
 
     Pop ${L_LISTSIZE}
@@ -1066,7 +1112,7 @@
     Push ${L_PCF_ID}
     Push ${L_RESULT}
 
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_LISTSIZE} "${C_PATCH_CTRL_FILE}" "Settings" "NumberOfPatches"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_LISTSIZE} "$G_PATCH_CTRL_FILE" "Settings" "NumberOfPatches"
     StrCmp ${L_LISTSIZE} "0" 0 download_patches
     DetailPrint "No POPFile SSL patches are required"
     Goto exit
@@ -1079,12 +1125,12 @@
     IntOp ${L_INDEX} ${L_INDEX} + 1
     IntCmp ${L_INDEX} ${L_LISTSIZE} 0 0 exit
     StrCpy ${L_PCF_ID} "Patch-${L_INDEX}"
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_PATCHFILE} "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "PatchData"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_PATCHFILE} "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "PatchData"
     StrCmp ${L_PATCHFILE} "" no_patch_specified
     Push "${C_PATCH_WEBSITE}/${L_PATCHFILE}"
     Call ${UN}GetSSLFile
     Pop ${L_RESULT}
-    !insertmacro MUI_INSTALLOPTIONS_WRITE "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "DownloadStatus" "${L_RESULT}"
+    !insertmacro MUI_INSTALLOPTIONS_WRITE "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "DownloadStatus" "${L_RESULT}"
     StrCpy $G_PLS_FIELD_1 "OK (${L_PATCHFILE})"
     StrCmp ${L_RESULT} "OK" download_status
     StrCpy $G_PLS_FIELD_1 "Unable to download [${L_PCF_ID}] file (${L_PATCHFILE})"
@@ -1153,7 +1199,7 @@
     Push ${L_TARGET_FILE}
     Push ${L_TARGET_FOLDER}
 
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_LISTSIZE} "${C_PATCH_CTRL_FILE}" "Settings" "NumberOfPatches"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_LISTSIZE} "$G_PATCH_CTRL_FILE" "Settings" "NumberOfPatches"
 
     DetailPrint ""
     DetailPrint ""
@@ -1176,24 +1222,24 @@
     IntOp ${L_INDEX} ${L_INDEX} + 1
     IntCmp ${L_INDEX} ${L_LISTSIZE} 0 0 all_done
     StrCpy ${L_PCF_ID} "Patch-${L_INDEX}"
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_PATCHFILE} "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "PatchData"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_PATCHFILE} "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "PatchData"
     StrCmp ${L_PATCHFILE} "" apply_next_patch
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "LogMsg-1"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "LogMsg-1"
     DetailPrint ""
     DetailPrint ""
     DetailPrint "[${L_PCF_ID}] $G_PLS_FIELD_1"
     DetailPrint "[${L_PCF_ID}]"
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "Category"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "Category"
     DetailPrint "[${L_PCF_ID}] This patch is $G_PLS_FIELD_1"
     DetailPrint "[${L_PCF_ID}]"
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_PATCHFILE} "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "PatchData"
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_TARGET_FOLDER} "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "TargetFolder"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_PATCHFILE} "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "PatchData"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_TARGET_FOLDER} "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "TargetFolder"
     StrCpy ${L_TARGET_FOLDER} $G_ROOTDIR\${L_TARGET_FOLDER}
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_TARGET_FILE} "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "TargetFile"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_TARGET_FILE} "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "TargetFile"
     DetailPrint "[${L_PCF_ID}] Target file: ${L_TARGET_FOLDER}\${L_TARGET_FILE}"
     DetailPrint "[${L_PCF_ID}]"
     StrCmp $G_PATCH_SOURCE "${C_BUILTIN}" check_target_path
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "DownloadStatus"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "DownloadStatus"
     StrCmp $G_PLS_FIELD_1 "OK" check_target_path
     StrCpy $G_PLS_FIELD_2 "Unable to apply '${L_PATCHFILE}' patch data ($G_PLS_FIELD_1)"
     DetailPrint "[${L_PCF_ID}] $G_PLS_FIELD_2"
@@ -1212,9 +1258,9 @@
   apply_patch:
     vpatch::vpatchfile "$PLUGINSDIR\${L_PATCHFILE}" "${L_TARGET_FOLDER}\${L_TARGET_FILE}" "$PLUGINSDIR\patched-${L_TARGET_FILE}"
     Pop $G_PLS_FIELD_2
-    !insertmacro MUI_INSTALLOPTIONS_WRITE "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "PatchResult" "$G_PLS_FIELD_2"
+    !insertmacro MUI_INSTALLOPTIONS_WRITE "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "PatchResult" "$G_PLS_FIELD_2"
 
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "LogMsg-2"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "LogMsg-2"
     SetDetailsPrint both
     DetailPrint "[${L_PCF_ID}] $G_PLS_FIELD_1 $G_PLS_FIELD_2"
     SetDetailsPrint listonly
@@ -1233,16 +1279,16 @@
     StrCpy $G_PLS_FIELD_2 "Unable to replace target file with patched file"
 
   patch_failure:
-    !insertmacro MUI_INSTALLOPTIONS_WRITE "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "PatchResult" "$G_PLS_FIELD_2"
+    !insertmacro MUI_INSTALLOPTIONS_WRITE "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "PatchResult" "$G_PLS_FIELD_2"
     DetailPrint "[${L_PCF_ID}]"
     SetDetailsPrint both
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "LogMsg-4"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "LogMsg-4"
     DetailPrint "[${L_PCF_ID}] $G_PLS_FIELD_1"
     SetDetailsPrint listonly
     !ifdef ADDSSL
         Goto show_msgbox
     !endif
-    !insertmacro MUI_INSTALLOPTIONS_READ ${L_RESULT} "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "Category"
+    !insertmacro MUI_INSTALLOPTIONS_READ ${L_RESULT} "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "Category"
     StrCmp ${L_RESULT} "ESSENTIAL" 0 apply_next_patch
 
     !ifdef ADDSSL
@@ -1254,7 +1300,7 @@
     Goto apply_next_patch
 
   patch_success:
-    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "${C_PATCH_CTRL_FILE}" "${L_PCF_ID}" "LogMsg-3"
+    !insertmacro MUI_INSTALLOPTIONS_READ $G_PLS_FIELD_1 "$G_PATCH_CTRL_FILE" "${L_PCF_ID}" "LogMsg-3"
     SetDetailsPrint listonly
     DetailPrint "[${L_PCF_ID}]"
     DetailPrint "[${L_PCF_ID}] $G_PLS_FIELD_1"
