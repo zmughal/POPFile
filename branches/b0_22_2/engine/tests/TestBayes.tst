@@ -199,6 +199,8 @@ $sth = $b->validate_sql_prepare_and_execute( $sql, "f\x00oo", 'baz' );
 test_assert_equal( ref $sth, 'DBI::st' );
 test_assert_equal( scalar @{$sth->fetchall_arrayref}, 2 );
 
+test_assert_equal( $b->db_quote("foo\x00bar" ), "'foobar'" );
+
 # get_unique_word_count
 
 test_assert_equal( $b->get_unique_word_count( $session ), 4012 );
