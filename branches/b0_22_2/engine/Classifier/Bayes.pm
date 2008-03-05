@@ -866,7 +866,7 @@ sub db_connect__
                     my $val = $rows[$i];
                     if ( $t->{TYPE}->[$i] !~ /^int/i ) {
                         $val = '' if ( !defined( $val ) );
-                        $val = $self->{db__}->quote( $val );
+                        $val = $self->db_quote( $val );
                     } else {
                         $val = 'NULL' if ( !defined( $val ) );
                     }
@@ -1186,7 +1186,7 @@ sub db_put_word_count__
     # word in the words table (if there's none then we need to add the
     # word), the bucket id in the buckets table (which must exist)
 
-    $word = $self->{db__}->quote($word);
+    $word = $self->db_quote($word);
 
     my $result = $self->{db__}->selectrow_arrayref(
                      "select words.id from words where words.word = $word limit 1;");
@@ -3934,6 +3934,30 @@ sub remove_stopword
     # Pass language parameter to remove_stopword()
 
     return $self->{parser__}->{mangle__}->remove_stopword( $stopword, $self->module_config_( 'html', 'language' ) );
+}
+
+
+#----------------------------------------------------------------------------
+#
+# db_quote
+#
+# Quote a string for use in a sql statement. Before calling DBI::quote on the
+# string the string is also checked for any null-bytes.
+#
+# $string   The string that should be quoted.
+#
+# returns the quoted string without any possible null-bytes
+#----------------------------------------------------------------------------
+sub db_quote {
+    my $self   = shift;
+    my $string = shift;
+
+    if ( $string =~ s/\x00//g ) {
+        my ( $package, $file, $line ) = caller( 1 );
+        $self->log( 0, "Found null-byte in string $string. Called from package '$package' ($file), line $line." );
+    }
+
+    return $self->{db__}->quote( $string );
 }
 
 
