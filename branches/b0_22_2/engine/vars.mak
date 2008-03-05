@@ -3,11 +3,13 @@
 # This Makefile is used for the creation of POPFile packages
 # and for testing
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2003-2008 John Graham-Cumming
+
+export POPFILE_BUILD_YEAR=2008
 
 export POPFILE_MAJOR_VERSION=1
 export POPFILE_MINOR_VERSION=0
-export POPFILE_REVISION=0
+export POPFILE_REVISION=1
 export POPFILE_VERSION:=$(POPFILE_MAJOR_VERSION).$(POPFILE_MINOR_VERSION).$(POPFILE_REVISION)
 POPFILE_VERSION_FILE=POPFile/popfile_version
 POPFILE_ZIP := popfile-$(POPFILE_VERSION)$(RC).zip
