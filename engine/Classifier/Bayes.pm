@@ -3952,9 +3952,10 @@ sub db_quote {
     my $self   = shift;
     my $string = shift;
 
+    my $backup = $string;
     if ( $string =~ s/\x00//g ) {
         my ( $package, $file, $line ) = caller;
-        $self->log_( 0, "Found null-byte in string $string. Called from package '$package' ($file), line $line." );
+        $self->log_( 0, "Found null-byte in string '$backup'. Called from package '$package' ($file), line $line." );
     }
 
     return $self->{db__}->quote( $string );
