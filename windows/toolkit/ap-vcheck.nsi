@@ -8,7 +8,7 @@
 #                   at compile-time to ensure that the installer is built using a suitable
 #                   version of ActivePerl.
 #
-# Copyright (c) 2007  John Graham-Cumming
+# Copyright (c) 2007-2008  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -35,18 +35,20 @@
 #
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.22" compiler,
-  ; released 27 November 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.36" compiler,
+  ; released 29 March 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.36"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.22_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -54,6 +56,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
   ;--------------------------------------------------------------------------
   ; Symbol used to avoid confusion over where the line breaks occur.
@@ -69,11 +72,11 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.1"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.0.2"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "ap-vcheck.exe"
 
   Name "ActivePerl Version Check ${C_VERSION}"
-  
+
   ; Specify EXE filename and icon for the 'installer'
 
   OutFile "${C_OUTFILE}"
@@ -89,7 +92,7 @@
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   user
-  
+
 #--------------------------------------------------------------------------
 
   ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
@@ -117,37 +120,37 @@
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 #----------------------------------------------------------------------------------------
-  
+
 Section default
 
   !define C_DEF_AP_FOLDER     "!define C_AP_FOLDER   "
-  
+
   !define C_DEF_AP_MAJOR      "!define C_AP_MAJOR    "
   !define C_DEF_AP_MINOR      "!define C_AP_MINOR    "
   !define C_DEF_AP_REVSN      "!define C_AP_REVISION "
   !define C_DEF_AP_BUILD      "!define C_AP_BUILD    "
   !define C_DEF_AP_VERSN      "!define C_AP_VERSION  "
-  
+
   !define C_DEF_AP_STATUS     "!define C_AP_STATUS   "
   !define C_DEF_AP_ERRMSG     "!define C_AP_ERRORMSG "
-  
+
   !define L_PERL_FOLDER   $R9     ; Location of ActivePerl installation (passed via the command-line)
   !define L_RESULTS_FILE  $R8     ; File handle used to access the output file (ap-version.nsh)
-  
+
   StrCpy ${L_PERL_FOLDER} ""
-  
+
   ; Get the location of the ActivePerl installation we are to check
-  
+
   Call GetParameters
   Pop ${L_PERL_FOLDER}
-  
+
   StrCmp ${L_PERL_FOLDER} "" 0 look_for_Perl
   FileOpen ${L_RESULTS_FILE} "ap-version.nsh" w
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_STATUS} $\"failure$\"${MB_NL}${MB_NL}"
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_ERRMSG} $\"ActivePerl location not supplied$\"${MB_NL}"
   FileClose ${L_RESULTS_FILE}
   Goto exit
-  
+
 look_for_Perl:
   IfFileExists "${L_PERL_FOLDER}\bin\*.*" look_for_DLL
   FileOpen ${L_RESULTS_FILE} "ap-version.nsh" w
@@ -165,7 +168,7 @@ look_for_DLL:
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_ERRMSG} $\"perl58.dll not found in '${L_PERL_FOLDER}\bin' folder$\"${MB_NL}"
   FileClose ${L_RESULTS_FILE}
   Goto exit
-  
+
 check_Perl_version:
   !define L_MAJOR     $R1
   !define L_MINOR     $R2
@@ -187,7 +190,7 @@ check_Perl_version:
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_VERSN} $\"${L_MAJOR}.${L_MINOR}.${L_REVSN}$\"${MB_NL}"
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_BUILD} $\"${L_BUILD}$\"${MB_NL}"
   FileClose ${L_RESULTS_FILE}
-  
+
  exit:
  SectionEnd
 

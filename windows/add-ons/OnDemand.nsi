@@ -9,7 +9,7 @@
 #                   and starting the email client (to avoid problems if the email client looks
 #                   for new mail before POPFile is ready to accept commands).
 #
-# Copyright (c) 2005-2007 John Graham-Cumming
+# Copyright (c) 2005-2008 John Graham-Cumming
 #
 #   This file creates a utility for use with POPFile.
 #
@@ -27,18 +27,20 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.22" compiler,
-  ; released 27 November 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.36" compiler,
+  ; released 29 March 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.36"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.22_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -46,6 +48,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
   ;--------------------------------------------------
   ; This script requires the 'LockedList' NSIS plugin
@@ -64,7 +67,7 @@
   ; (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested using LockedList plugin v0.4 (RC2) timestamped 27 September 2007 19:42
+  ; Tested using LockedList plugin v0.7 (RC2) timestamped 26 February 2008 17:49:24
 
 #-------------------------------------------------------------------------------------------
 # Parameters are supplied via an INI file stored in the same folder as this utility:
@@ -136,7 +139,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.1.0"
+  !define C_VERSION   "0.1.1"
 
   ; Specify the icon file for the utility
 

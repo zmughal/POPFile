@@ -4,7 +4,7 @@
 #                       supported by the POPFile Windows installer and its associated
 #                       utilities. This makes maintenance easier.
 #
-# Copyright (c) 2004-2006 John Graham-Cumming
+# Copyright (c) 2004-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -37,7 +37,7 @@
 #
 # (1) an up-to-date main NSIS language file (${NSISDIR}\Contrib\Language files\*.nlf)
 # and
-# (2) an up-to-date NSIS MUI Language file (${NSISDIR}\Contrib\Modern UI\Language files\*.nsh)
+# (2) an up-to-date NSIS MUI Language file (${NSISDIR}\Contrib\Language files\*.nsh)
 #
 # To add support for a language which is already supported by the NSIS MUI package, an extra
 # file is required:
@@ -50,7 +50,8 @@
 # other *-pfi.nsh files, add a new '!insertmacro PFI_LANG_LOAD' line to load this new file.
 #
 # If there is a suitable POPFile UI language file for the new language, some changes will be
-# required to the code in 'adduser.nsi' which attempts to select an appropriate UI language.
+# required to the code in 'adduser.nsi' which attempts to select an appropriate UI language
+# (see "Section "-Languages" SecLangs" in adduser.nsi).
 #--------------------------------------------------------------------------
 # USAGE EXAMPLES
 #
@@ -90,14 +91,10 @@
   ; NOTE: The order used here makes the names appear in alphabetic order in the language
   ; selection menu (NB we override the normal "Japanese" menu entry with "Nihongo" here)
 
-  ; Currently a subset of the languages supported by NSIS MUI 1.75 (using the NSIS names)
+  ; Currently a subset of the languages supported by NSIS MUI 1.8 (using the NSIS names)
 
-  ; NSIS 2.0 compiler messages use language ID codes when referring to problems with
-  ; language strings, e.g.
-  ;
-  ;     LangString "PFI_LANG_NSISDL_PLURAL" is not set in language table of language 1041
-  ;
-  ; NSIS 2.08 (or later) compiler messages usually mention names instead of ID codes, e.g.
+  ; NSIS 2.08 (or later) compiler messages usually use language names when referring to problems
+  ; with language strings, e.g.
   ;
   ;     LangString "PFI_LANG_NSISDL_PLURAL" is not set in language table of language Japanese
   ;
