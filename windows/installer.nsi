@@ -49,18 +49,20 @@
 #  (7) getparser.nsh                 - macro-based sections and functions to install the Nihongo Parser
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.22" compiler,
-  ; released 27 November 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.36" compiler,
+  ; released 29 March 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.36"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.22_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -68,6 +70,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
 ; Normally no NSIS compiler warnings are expected. However there may be some warnings
 ; which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or more language tables.
@@ -117,7 +120,8 @@
   ; (${NSISDIR}\Plugins\). The 'UAC' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with version v0.0.6b of the 'UAC' plugin.
+  ; Tested with version v0.0.8 (20080310) of the 'UAC' plugin,
+  ; timestamped 10 March 2008 20:17:46.
 
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
@@ -370,9 +374,7 @@
 
   Var G_GUI                ; GUI port (1-65535)
 
-  Var G_PFIFLAG            ; Multi-purpose variable:
-                           ; (1) used to indicate if banner was shown before the 'WELCOME' page
-                           ; (2) used to avoid unnecessary Install/Upgrade button text updates
+  Var G_PFIFLAG            ; used to indicate if banner was shown before the 'WELCOME' page
 
   Var G_NOTEPAD            ; path to notepad.exe ("" = not found in search path)
 
@@ -579,6 +581,7 @@
   ; This makes it easy to recover from a previous 'bad' choice of language for the installer
 
   !define MUI_LANGDLL_ALWAYSSHOW
+  !define MUI_LANGDLL_ALLLANGUAGES
 
   ; Remember user's language selection and offer this as the default when re-installing
   ; (uninstaller also uses this setting to determine which language is to be used)
@@ -1156,36 +1159,6 @@ exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: .onVerifyInstDir
-#
-# This function is called every time the user changes the installation directory. It ensures
-# that the button used to start the installation process is labelled "Install" or "Upgrade"
-# depending upon the currently selected directory. As this function is called EVERY time the
-# directory is altered, the button text is only updated when a change is required.
-#
-# The '$G_PFIFLAG' global variable is initialized by 'CheckForExistingLocation'
-# (the "pre" function for the PROGRAM DIRECTORY page).
-#--------------------------------------------------------------------------
-
-Function .onVerifyInstDir
-
-  IfFileExists "$INSTDIR\popfile.pl" upgrade
-  StrCmp $G_PFIFLAG "install" exit
-  StrCpy $G_PFIFLAG "install"
-  GetDlgItem $G_DLGITEM $HWNDPARENT 1
-  SendMessage $G_DLGITEM ${WM_SETTEXT} 0 "STR:$(^InstallBtn)"
-  Goto exit
-
-upgrade:
-  StrCmp $G_PFIFLAG "upgrade" exit
-  StrCpy $G_PFIFLAG "upgrade"
-  GetDlgItem $G_DLGITEM $HWNDPARENT 1
-  SendMessage $G_DLGITEM ${WM_SETTEXT} 0 "STR:$(PFI_LANG_INST_BTN_UPGRADE)"
-
-exit:
-FunctionEnd
-
-#--------------------------------------------------------------------------
 # Installer Section: StartLog (this must be the very first section)
 #
 # Creates the log header with information about this installation
@@ -1200,7 +1173,7 @@ Section "-StartLog"
   DetailPrint "------------------------------------------------------------"
   DetailPrint "Command-line: $CMDLINE"
   DetailPrint "User Details: $G_WINUSERNAME ($G_WINUSERTYPE)"
-  DetailPrint "PFI Language: $LANGUAGE"
+  DetailPrint "PFI Language: $(^Language) ($LANGUAGE)"
   DetailPrint "------------------------------------------------------------"
   Call PFI_GetDateTimeStamp
   Pop $G_PLS_FIELD_1
@@ -2000,11 +1973,6 @@ FunctionEnd
 
 Function CheckForExistingLocation
 
-  ; Initialize the $G_PFIFLAG used by the '.onVerifyInstDir' function to avoid sending
-  ; unnecessary messages to change the text on the button used to start the installation
-
-  StrCpy $G_PFIFLAG ""
-
   ReadRegStr $INSTDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
   StrCmp $INSTDIR "" try_HKLM
   IfFileExists "$INSTDIR\*.*" exit
@@ -2342,128 +2310,6 @@ FunctionEnd
 #--------------------------------------------------------------------------
 
 ;!insertmacro ShowPleaseWaitBanner "un."
-
-#--------------------------------------------------------------------------
-# Macro-based Function: NSIS2IO
-#
-# Convert an NSIS string to a form suitable for use by InstallOptions
-#
-# Inputs:
-#         (top of stack)     - a string to be used on an InstallOptions page
-# Outputs:
-#         (top of stack)     - a safe version of the input which will be displayed correctly
-#
-# Usage:
-#         Push "C:\Install\Workshop\restore"        ; InstallOptions treats '\r' as a CR char
-#         Call NSIS2IO
-#         Pop $R0
-#
-#         $R0 will now hold "C:\\Install\\Workshop\\restore"
-#         to make InstallOptions display "C:\Install\Workshop\restore" on one line
-#         instead of using two lines to display the string like this:
-#             C:\Install\Workshop
-#             estore
-#
-#--------------------------------------------------------------------------
-
-!macro NSIS2IO UN
-  Function ${UN}NSIS2IO
-
-    !define L_STRING      $R0   ; the string to be converted
-    !define L_LENGTH      $R1   ; length of string
-    !define L_OFFSET      $R2   ; current character offset (offset 0 = first character)
-    !define L_CURRENT     $R3   ; current character(s) from string
-    !define L_CONVERTED   $R4   ; InstallOptions equivalent character-pair
-
-    Exch ${L_STRING}
-    Push ${L_LENGTH}
-    Push ${L_OFFSET}
-    Push ${L_CURRENT}
-    Push ${L_CONVERTED}
-
-    ; Get length of input string (use length so we can cope with MBCS strings;
-    ; the previous version of this function looped through the string until
-    ; a null byte ("") was found - this resulted in the truncation of some
-    ; MBCS strings)
-
-    StrLen ${L_LENGTH} ${L_STRING}
-
-    StrCpy ${L_OFFSET} -1
-
-    ; Loop until end of string is reached
-
-  loop:
-    IntOp ${L_OFFSET} ${L_OFFSET} + 1
-    IntCmp ${L_OFFSET} ${L_LENGTH} exit 0 exit
-
-    ; Get the next character from the string
-
-    StrCpy ${L_CURRENT} ${L_STRING} 1 ${L_OFFSET}
-
-    ; Check if this is one of the characters that needs to be converted
-
-    StrCmp ${L_CURRENT} "$\r" carriagereturn
-    StrCmp ${L_CURRENT} "$\n" linefeed
-    StrCmp ${L_CURRENT} "$\t" tab
-    StrCmp ${L_CURRENT} "\"   backslash
-    Goto loop
-
-  carriagereturn:
-    StrCpy ${L_CONVERTED} "\r"
-    Goto replace_char
-
-  linefeed:
-    StrCpy ${L_CONVERTED} "\n"
-    Goto replace_char
-
-  tab:
-    StrCpy ${L_CONVERTED} "\t"
-    Goto replace_char
-
-  backslash:
-    StrCpy ${L_CONVERTED} "\\"
-
-  replace_char:
-    StrCpy ${L_CURRENT} ${L_STRING} ${L_OFFSET}
-    IntOp ${L_OFFSET} ${L_OFFSET} + 1
-    StrCpy ${L_STRING} ${L_STRING} "" ${L_OFFSET}
-    StrCpy ${L_STRING} "${L_CURRENT}${L_CONVERTED}${L_STRING}"
-    IntOp ${L_LENGTH} ${L_LENGTH} + 1
-    Goto loop
-
-    ; Return "InstallOptions-safe" string
-
-  exit:
-    Pop ${L_CONVERTED}
-    Pop ${L_CURRENT}
-    Pop ${L_OFFSET}
-    Pop ${L_LENGTH}
-    Exch ${L_STRING}
-
-    !undef L_STRING
-    !undef L_LENGTH
-    !undef L_OFFSET
-    !undef L_CURRENT
-    !undef L_CONVERTED
-
-  FunctionEnd
-!macroend
-
-#--------------------------------------------------------------------------
-# Installer Function: NSIS2IO
-#
-# This function is used during the installation process
-#--------------------------------------------------------------------------
-
-!insertmacro NSIS2IO ""
-
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.NSIS2IO
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
-
-!insertmacro NSIS2IO "un."
 
 #--------------------------------------------------------------------------
 # End of 'installer.nsi'
