@@ -59,7 +59,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.13"
+  !define C_PFI_LIBRARY_VERSION     "0.3.15"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -157,7 +157,7 @@
 
   !macro PFI_LANG_LOAD LANG MENUNAME
       !if "${MENUNAME}" != "-"
-          !define MUI_${LANG}_LANGNAME "${MENUNAME}"
+          !define LANGFILE_${LANG}_NAME "${MENUNAME}"
       !endif
       !insertmacro MUI_LANGUAGE "${LANG}"
       !ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
@@ -1162,6 +1162,7 @@
 #
 # Tested using LockedList plugin v0.4 (RC2) timestamped 27 September 2007 19:42
 # (this is the first version to support the new "filename only" mode which we use)
+# and LockedList plugin v0.7 (RC2) timestamped 26 February 2008 17:49:24.
 #
 # The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
 #------------------------------------------------------------------------------------
