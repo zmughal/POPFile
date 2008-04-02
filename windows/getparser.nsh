@@ -3,16 +3,16 @@
 # getparser.nsh --- Japanese (Nihongo) text does not use spaces between words so
 #                   POPFile uses a 'Nihongo Parser' to split the text into words
 #                   to allow the text to be analysed properly. POPFile 0.22.5
-#                   (and earlier) only supported the 'Kakasi' parser. The 1.0.0
-#                   release offers a choice of three parsers (Kakasi, MeCab and
-#                   internal. To make it easier to change the Nihongo Parser
-#                   the 1.0.0 release creates a "Change" option in the "Add/Remove
-#                   Programs" entry for POPFile. This new option is handled by the
-#                   POPFile uninstaller.
+#                   (and earlier) only supported the 'Kakasi' parser. Starting
+#                   with the 1.0.0 release POPFile offers a choice of 3 parsers
+#                   (Kakasi, MeCab and internal). To make it easier to change
+#                   the Nihongo Parser a "Change" option is created in the
+#                   "Add/Remove Programs" entry for POPFile. This new option
+#                   is handled by the POPFile uninstaller.
 #
 #                   The 'MeCab' parser is too big (about 13 MB) to include in the
-#                   installer so it is downloaded from the Internet when the user
-#                   selects this parser.
+#                   installer so if necessary it is downloaded from the Internet
+#                   when the user selects the MeCab parser.
 #
 #                   Since the installer and uninstaller both need to offer a choice
 #                   of Nihongo Parser and may need to download the MeCab files, this
@@ -52,7 +52,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' documentation, example & source files can be unzipped
   ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 11 August 2007 19:06:24
+  ; Tested with the inetc.dll plugin timestamped 1 April 2008 10:33:06
 
   ;------------------------------------------------
   ; This script requires the 'md5dll' NSIS plugin
@@ -107,7 +107,7 @@
 
   !define C_NPD_MD5SUMS       "http://getpopfile.org/installer/nihongo/mecab/${C_MD5SUMS_FILE}"
   !define C_NPD_MECAB_MD5     "http://getpopfile.org/installer/nihongo/mecab/${C_MECAB_MD5}"
-  
+
   !define C_NPD_MECAB_PERL    "http://getpopfile.org/installer/nihongo/mecab/MeCab.tar.gz"
   !define C_NPD_MECAB_DICT    "http://getpopfile.org/installer/nihongo/mecab/mecab-ipadic.zip"
 
@@ -380,17 +380,15 @@
 
     AddSize 43000
 
-    !define L_RESERVED    $0          ; used in system.dll call
+    !define L_RESERVED    $0    ; used in system.dll call
 
     !define L_RESULT      $R0   ; result from 'GetMeCabFile' function or the 'untgz' plugin
                                 ; WARNING: The 'untgz' plugin is hard-coded to use $R0
 
-    !define L_DLG_ITEM    $R1   ; used to disable/enable the "Show Details" button
-    !define L_LISTSIZE    $R2   ; number of patches to be applied
+    !define L_LISTSIZE    $R1   ; number of patches to be applied
 
     Push ${L_RESERVED}
     Push ${L_RESULT}
-    Push ${L_DLG_ITEM}
     Push ${L_LISTSIZE}
 
     ; Install the necessary extra Perl packages required by the MeCab parser. If there is a
@@ -399,17 +397,6 @@
     ; extra Perl packages, we install them now in order to keep the MeCab install code simple.
 
     !insertmacro NIHONGO_PERL_SUPPORT "mecab"
-
-    ; Unlike the NSISdl plugin shipped with NSIS, the Inetc plugin leaves the "Show Details"
-    ; button in view so we temporarily disable it during the download to avoid a messy display
-    ; (if the user has already clicked the button then they'll just need to put up with the mess)
-    ;
-    ; In order to avoid screen flicker effects as a result of downloading several files, we
-    ; disable the button "for the duration" instead of disabling/enabling it for every transfer
-
-    FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
-    GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x403
-    EnableWindow ${L_DLG_ITEM} 0
 
     ; Use MD5 sums to check the integrity of the Mecab files we download
 
@@ -489,10 +476,6 @@
     DetailPrint ""
     MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_MB_UNPACKFAIL)"
 
-    ; Enable the "Show Details" button now that we have stopped downloading files
-
-    EnableWindow ${L_DLG_ITEM} 1
-
   installer_error_exit:
     StrCpy $G_PLS_FIELD_1 "(undefined)"
     MessageBox MB_OK|MB_ICONEXCLAMATION "${C_NPLS_REPEATMECAB}"
@@ -558,15 +541,12 @@
     SetDetailsPrint listonly
 
     Pop ${L_LISTSIZE}
-    Pop ${L_DLG_ITEM}
     Pop ${L_RESULT}
     Pop ${L_RESERVED}
 
     !undef L_RESERVED
 
     !undef L_RESULT
-
-    !undef L_DLG_ITEM
     !undef L_LISTSIZE
 
   do_nothing:
