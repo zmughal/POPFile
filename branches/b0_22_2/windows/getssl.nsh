@@ -49,7 +49,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' documentation, example & source files can be unzipped
   ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 11 August 2007 19:06:24
+  ; Tested with the inetc.dll plugin timestamped 1 April 2008 10:33:06
 
   ;------------------------------------------------
   ; This script requires the 'md5dll' NSIS plugin
@@ -279,11 +279,9 @@
     !define L_RESULT          $R0   ; result from 'GetSSLFile' function or the 'untgz' plugin
                                     ; WARNING: The 'untgz' plugin is hard-coded to use $R0
 
-    !define L_DLG_ITEM        $R1   ; used to disable/enable the "Show Details" button
-    !define L_LISTSIZE        $R2   ; number of patches to be applied
+    !define L_LISTSIZE        $R1   ; number of patches to be applied
 
     Push ${L_RESULT}
-    Push ${L_DLG_ITEM}
     Push ${L_LISTSIZE}
 
     !ifdef ADDSSL
@@ -370,17 +368,6 @@
 
     StrCpy $G_SSL_SOURCE "${C_INTERNET}"    ; this means "download the SSL Support files"
     StrCpy $G_PATCH_SOURCE "${C_INTERNET}"  ; this means "download the latest SSL patches"
-
-    ; Unlike the NSISdl plugin shipped with NSIS, the Inetc plugin leaves the "Show Details"
-    ; button in view so we temporarily disable it during the download to avoid a messy display
-    ; (if the user has already clicked the button then they'll just need to put up with the mess)
-    ;
-    ; In order to avoid screen flicker effects as a result of downloading several files, we
-    ; disable the button "for the duration" instead of disabling/enabling it for every transfer
-
-    FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
-    GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x403
-    EnableWindow ${L_DLG_ITEM} 0
 
     ; Download the SSL archives and OpenSSL DLLs
 
@@ -495,10 +482,6 @@
     SetDetailsPrint listonly
     DetailPrint ""
     MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_MB_UNPACKFAIL)"
-
-    ; Enable the "Show Details" button now that we have stopped downloading files
-
-    EnableWindow ${L_DLG_ITEM} 1
 
     !ifdef INSTALLER
       installer_error_exit:
@@ -615,7 +598,7 @@
     !ifdef INSTALLER
         File "/oname=$PLUGINSDIR\${C_PATCH_CTRL_FILE}" "${C_PATCH_CTRL_FILE}"
 
-        ; 0.22.5 release does not need any SSL patches so "SSL_pm.pat" is not needed here
+        ; The 0.22.5, 1.0.0 and 1.0.1 releases do not need any SSL patches so "SSL_pm.pat" is not needed here
         ; File /nonfatal "/oname=$PLUGINSDIR\SSL_pm.pat" "SSL_pm.pat"
 
     !else
@@ -673,10 +656,6 @@
     Call ${UN}DownloadPatches
     Pop ${L_RESULT}
 
-    ; Enable the "Show Details" button now that we have stopped downloading files
-
-    EnableWindow ${L_DLG_ITEM} 1
-
     ; Are there any patches to be applied?
 
     StrCmp ${L_RESULT} "0" all_done
@@ -704,12 +683,9 @@
     !endif
 
     Pop ${L_LISTSIZE}
-    Pop ${L_DLG_ITEM}
     Pop ${L_RESULT}
 
     !undef L_RESULT
-
-    !undef L_DLG_ITEM
     !undef L_LISTSIZE
 
     !if '${UN}' == 'un.'
