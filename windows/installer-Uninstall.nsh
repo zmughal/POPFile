@@ -517,7 +517,7 @@ Section "-un.StartLog"
   DetailPrint "Command-line: $CMDLINE"
   DetailPrint "$$INSTDIR    : $INSTDIR"
   DetailPrint "User Details: $G_WINUSERNAME ($G_WINUSERTYPE)"
-  DetailPrint "PFI Language: $LANGUAGE"
+  DetailPrint "PFI Language: $(^Language) ($LANGUAGE)"
   DetailPrint "------------------------------------------------------------"
   Call un.PFI_GetDateTimeStamp
   Pop $G_PLS_FIELD_1
