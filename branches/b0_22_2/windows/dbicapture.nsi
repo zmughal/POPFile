@@ -24,18 +24,20 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.22" compiler,
-  ; released 27 November 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.36" compiler,
+  ; released 29 March 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.36"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.22_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -43,6 +45,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
   ; Although this utility was originally created for use with the 1.0.0 release it is
   ; compatible with many earlier installations created by the installer, though in some cases a
@@ -85,7 +88,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.5"
+  !define C_VERSION             "0.0.6"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -113,6 +116,7 @@
 #--------------------------------------------------------------------------
 
   ; Avoid compiler warnings by disabling the functions and definitions we do not use
+  ; (this is a modified version of the Message Capture utility so we re-use MSGCAPTURE here)
 
   !define MSGCAPTURE
 
@@ -280,7 +284,9 @@
 
   !insertmacro PFI_DBICAP_TEXT "PFI_LANG_DBICAP_RIGHTCLICK"     "Right-click in the window below to copy the report to the clipboard"
 
-  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_DBICAP_MBOPTIONERROR"  "'$G_TRACELEVEL' is not a valid option for this utility${MB_NL}${MB_NL}Usage: $R1 /TRACE_LEVEL=x${MB_NL}where x is in the range 0 to 15${MB_NL}${MB_NL}(use 0 to disable database tracing)"
+  ; This utility's executable file might have been renamed so we need to ensure we use the correct name in the 'usage' message.
+
+  !insertmacro PFI_DBICAP_TEXT "PFI_LANG_DBICAP_MBOPTIONERROR"  "'$G_TRACELEVEL' is not a valid option for this utility${MB_NL}${MB_NL}Usage: $EXEFILE /TRACE_LEVEL=x${MB_NL}where x is in the range 0 to 15${MB_NL}${MB_NL}(use 0 to disable database tracing)"
 
   !insertmacro PFI_DBICAP_TEXT "PFI_LANG_DBICAP_STARTBUTTON"    "Start"
 
@@ -335,16 +341,6 @@ Function .onInit
   IntCmp ${L_TEMP} 15 exit exit usage_error
 
 usage_error:
-
-  ; This utility's executable file might have been renamed so we need
-  ; to ensure we use the correct name in the 'usage' message. The first
-  ; system call gets the full pathname (returned in $R0) and the second call
-  ; extracts the filename (and possibly the extension) part (returned in $R1)
-
-  ; No need to worry about corrupting $R0 and $R1 (we abort after displaying the message)
-
-  System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024)'
-  System::Call 'comdlg32::GetFileTitleA(t R0, t .R1, i 1024)'
   MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_DBICAP_MBOPTIONERROR)"
   Abort
 
