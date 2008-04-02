@@ -33,18 +33,20 @@
 #  (4) adduser-Uninstall.nsh   - source for the 'User Data' uninstaller (uninstalluser.exe)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.22" compiler,
-  ; released 27 November 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.36" compiler,
+  ; released 29 March 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.36"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.22_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -52,6 +54,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
 ; NOTE: The language selection menu order used in this script assumes that "Nihongo" is
 ; used instead of "Japanese" in the language selection menu (see the 'pfi-languages.nsh' file)
@@ -490,6 +493,7 @@
   ; This makes it easy to recover from a previous 'bad' choice of language for the installer
 
   !define MUI_LANGDLL_ALWAYSSHOW
+  !define MUI_LANGDLL_ALLLANGUAGES
 
   ; Remember user's language selection and offer this as the default when re-installing
   ; (uninstaller also uses this setting to determine which language is to be used)
