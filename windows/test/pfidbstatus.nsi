@@ -11,7 +11,7 @@
 #                           to execute SQL from the command-line so this utility checks the
 #                           sqlite.exe version number before trying to execute any SQL.
 #
-# Copyright (c) 2005-2007  John Graham-Cumming
+# Copyright (c) 2005-2008  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -29,18 +29,20 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.22" compiler,
-  ; released 27 November 2006. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.22-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.36" compiler,
+  ; released 29 March 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.36"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.22_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS v2.22 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -48,6 +50,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
   ;------------------------------------------------
   ; This script requires the 'GetSize' NSIS plugin
@@ -156,7 +159,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.6"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.7"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -612,16 +615,8 @@ give_up:
 usage_msg:
 
   ; Ensure the correct program name appears in the 'usage' message added to the log.
-  ; The first system call gets the full pathname (returned in $R0) and the second call
-  ; extracts the filename (and possibly the extension) part (result returned in $R1)
 
-  Push $R0
-  Push $R1
-  System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024)'
-  System::Call 'comdlg32::GetFileTitleA(t R0, t .R1, i 1024)'
-  StrCpy $G_PLS_FIELD_1 $R1
-  Pop $R1
-  Pop $R0
+  StrCpy $G_PLS_FIELD_1 $EXEFILE
 
   DetailPrint ""
   DetailPrint "$(DBS_LANG_NODBPARAM_2)"
