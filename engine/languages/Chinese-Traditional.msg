@@ -184,7 +184,7 @@ Advanced_RemoveWord                     移除字詞
 Advanced_AllParameters                  所有的 POPFile 參數
 Advanced_Parameter                      參數
 Advanced_Value                          值
-Advanced_Warning                        這是完整的 POPFile 參數清單.  祇適合進階使用者: 妳可以變更任何參數值並按下 更新; 不過沒有任何機制會檢查這些參數值的有效性.  以粗體顯示的項目表示已經從預設值被加以變更了.  更詳盡的選項資訊請見 <a href="http://getpopfile.org/wiki/OptionReference">OptionReference</a>.
+Advanced_Warning                        這是完整的 POPFile 參數清單.  祇適合進階使用者: 妳可以變更任何參數值並按下 更新; 不過沒有任何機制會檢查這些參數值的有效性.  以粗體顯示的項目表示已經從預設值被加以變更了.  更詳盡的選項資訊請見 <a href="http://getpopfile.org/docs/OptionReference">OptionReference</a>.
 Advanced_ConfigFile                     組態檔:
 
 History_Filter                          &nbsp;(祇顯示 <font color="%s">%s</font> 郵筒)
@@ -377,6 +377,6 @@ Imap_Use_SSL                            使用 SSL
 
 Shutdown_Message                        POPFile 已經被停掉了
 
-Help_Training                           當妳初次使用 POPFile 時, 她啥也不懂而需要被加以調教. POPFile 的每一個郵筒都需要用郵件訊息來加以調教, 祇有當妳重新把某個被 POPFile 錯誤分類的郵件訊息重新分類到正確的郵筒時, 纔真的是在調教她. 同時妳也得設定妳的郵件用戶端程式, 來按照 POPFile 的分類結果加以過濾郵件訊息. 關於設定用戶端過濾器的資訊可以在 <a href="http://getpopfile.org/wiki/FAQ:EmailSorting">POPFile 文件計畫</a>裏被找到.
+Help_Training                           當妳初次使用 POPFile 時, 她啥也不懂而需要被加以調教. POPFile 的每一個郵筒都需要用郵件訊息來加以調教, 祇有當妳重新把某個被 POPFile 錯誤分類的郵件訊息重新分類到正確的郵筒時, 纔真的是在調教她. 同時妳也得設定妳的郵件用戶端程式, 來按照 POPFile 的分類結果加以過濾郵件訊息. 關於設定用戶端過濾器的資訊可以在 <a href="http://getpopfile.org/docs/FAQ:EmailSorting">POPFile 文件計畫</a>裏被找到.
 Help_Bucket_Setup                       POPFile 除了 "未分類 (unclassified)" 的假郵筒外, 還需要至少兩個郵筒. 而 POPFile 的獨特之處正在於她對電子郵件的區分更勝於此, 妳甚至可以有任意數量的郵筒. 簡單的設定會是像 "垃圾 (spam)", "個人 (personal)", 和 "工作 (work)" 郵筒.
 Help_No_More                            別再顯示這個說明了
