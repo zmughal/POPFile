@@ -29,7 +29,7 @@ ManualLanguage                          jp
 WikiLink                                JP
 FAQLink                                 JP:FAQ
 RequestFeatureLink                      JP:RequestFeature
-MailingListLink                         JP:POPFileAnnounce
+MailingListLink                         JP:mailing_lists
 
 # Common words that are used on their own all over the interface
 Apply                                   ลฌอั
