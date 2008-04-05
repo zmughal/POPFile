@@ -1353,7 +1353,7 @@ sub validate_item {
             # update interval
             my $form_interval = $form->{imap_options_update_interval};
             if ( defined $form_interval ) {
-                if ( $form_interval > 10 && $form_interval < 60*60 ) {
+                if ( $form_interval >= 10 && $form_interval <= 60*60 ) {
                     $self->config_( 'update_interval', $form_interval );
                     $templ->param( IMAP_if_interval_error => 0 );
                 }
