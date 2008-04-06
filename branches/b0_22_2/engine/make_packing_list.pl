@@ -56,7 +56,7 @@ foreach my $file (@ARGV) {
 
 open PACKAGE, ">$output";
 foreach my $module (sort keys %modules) {
-    if ( $module !~ /^Classifier|POPFile|Proxy|UI/ ) {
+    if ( $module !~ /^Classifier|POPFile|Proxy|UI|Services/ ) {
         print PACKAGE "$modules{$module}\t0.0.0\t$module\n";
     }
 }
