@@ -12,8 +12,7 @@
         <td class="footerBody">
             <a class="bottomLink" href="http://getpopfile.org/"><TMPL_VAR NAME="Localize_Footer_HomePage"></a>
             <br />
-            <a class="bottomLink" href="http://getpopfile.org/docs/<TMPL_VAR NAME="Localize_WikiLink">">
-                <TMPL_VAR NAME="Localize_Footer_Wiki"></a>
+            <a class="bottomLink" href="http://getpopfile.org/docs/<TMPL_VAR NAME="Localize_WikiLink">"><TMPL_VAR NAME="Localize_Footer_Wiki"></a>
             <br />
             <a class="bottomLink" href="http://getpopfile.org/docs/<TMPL_VAR NAME="Localize_FAQLink">"><TMPL_VAR NAME="Localize_FAQ"></a>
             <br />
