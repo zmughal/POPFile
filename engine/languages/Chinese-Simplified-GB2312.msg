@@ -233,8 +233,8 @@ Security_Error1                         连接埠一定要介于 1 和 65535 之间
 Security_Stealth                        鬼鬼祟祟模式/服务器作业
 Security_NoStealthMode                  否 (鬼鬼祟祟模式)
 Security_StealthMode                    (鬼鬼祟祟模式)
-Security_ExplainStats                   (这个选项开启后, POPFile 每天都会传送一次下列三个数值到 www.usethesource.com 的一个脚本: bc (你的邮筒数量), mc (被 POPFile 分类过的邮件讯息总数) 和 ec (分类错误的总数).  这些数值会被储存到一个档案里, 然后会被我用来发布一些关于人们使用 POPFile 的情况跟其成效的统计数据.  我的网页服务器会保留其本身的日志档约 5 天, 然后就会加以删除; 我不会储存任何统计与单独 IP 地址间的关联性起来.)
-Security_ExplainUpdate                  (这个选项开启后, POPFile 每天都会传送一次下列三个数值到 www.usethesource.com 的一个脚本: ma (你的 POPFile 的主要版本编号), mi (你的 POPFile 的次要版本编号) 和 bn (你的 POPFile 的建号).  新版推出时, POPFile 会收到一份图形响应, 并且显示在画面顶端.  我的网页服务器会保留其本身的日志档约 5 天, 然后就会加以删除; 我不会储存任何更新检查与单独 IP 地址间的关联性起来.)
+Security_ExplainStats                   (这个选项开启后, POPFile 每天都会传送一次下列三个数值到 getpopfile.org 的一个脚本: bc (你的邮筒数量), mc (被 POPFile 分类过的邮件讯息总数) 和 ec (分类错误的总数).  这些数值会被储存到一个档案里, 然后会被我用来发布一些关于人们使用 POPFile 的情况跟其成效的统计数据.  我的网页服务器会保留其本身的日志档约 5 天, 然后就会加以删除; 我不会储存任何统计与单独 IP 地址间的关联性起来.)
+Security_ExplainUpdate                  (这个选项开启后, POPFile 每天都会传送一次下列三个数值到 getpopfile.org 的一个脚本: ma (你的 POPFile 的主要版本编号), mi (你的 POPFile 的次要版本编号) 和 bn (你的 POPFile 的建号).  新版推出时, POPFile 会收到一份图形响应, 并且显示在画面顶端.  我的网页服务器会保留其本身的日志档约 5 天, 然后就会加以删除; 我不会储存任何更新检查与单独 IP 地址间的关联性起来.)
 Security_PasswordTitle                  使用者接口口令
 Security_Password                       口令
 Security_PasswordUpdate                 口令已更新
