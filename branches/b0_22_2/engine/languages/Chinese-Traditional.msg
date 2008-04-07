@@ -232,8 +232,8 @@ Security_Error1                         連接埠一定要介於 1 和 65535 之
 Security_Stealth                        鬼鬼祟祟模式/伺服器作業
 Security_NoStealthMode                  否 (鬼鬼祟祟模式)
 Security_StealthMode                    (鬼鬼祟祟模式)
-Security_ExplainStats                   (這個選項開啟後, POPFile 每天都會傳送一次下列三個數值到 www.usethesource.com 的一個腳本: bc (妳的郵筒數量), mc (被 POPFile 分類過的郵件訊息總數) 和 ec (分類錯誤的總數).  這些數值會被儲存到一個檔案裏, 然後會被我用來發佈一些關於人們使用 POPFile 的情況跟其成效的統計資料.  我的網頁伺服器會保留其本身的日誌檔約 5 天, 然後就會加以刪除; 我不會儲存任何統計與單獨 IP 地址間的關聯性起來.)
-Security_ExplainUpdate                  (這個選項開啟後, POPFile 每天都會傳送一次下列三個數值到 www.usethesource.com 的一個腳本: ma (妳的 POPFile 的主要版本編號), mi (妳的 POPFile 的次要版本編號) 和 bn (妳的 POPFile 的建號).  新版推出時, POPFile 會收到一份圖形回應, 並且顯示在畫面頂端.  我的網頁伺服器會保留其本身的日誌檔約 5 天, 然後就會加以刪除; 我不會儲存任何更新檢查與單獨 IP 地址間的關聯性起來.)
+Security_ExplainStats                   (這個選項開啟後, POPFile 每天都會傳送一次下列三個數值到 getpopfile.org 的一個腳本: bc (妳的郵筒數量), mc (被 POPFile 分類過的郵件訊息總數) 和 ec (分類錯誤的總數).  這些數值會被儲存到一個檔案裏, 然後會被我用來發佈一些關於人們使用 POPFile 的情況跟其成效的統計資料.  我的網頁伺服器會保留其本身的日誌檔約 5 天, 然後就會加以刪除; 我不會儲存任何統計與單獨 IP 地址間的關聯性起來.)
+Security_ExplainUpdate                  (這個選項開啟後, POPFile 每天都會傳送一次下列三個數值到 getpopfile.org 的一個腳本: ma (妳的 POPFile 的主要版本編號), mi (妳的 POPFile 的次要版本編號) 和 bn (妳的 POPFile 的建號).  新版推出時, POPFile 會收到一份圖形回應, 並且顯示在畫面頂端.  我的網頁伺服器會保留其本身的日誌檔約 5 天, 然後就會加以刪除; 我不會儲存任何更新檢查與單獨 IP 地址間的關聯性起來.)
 Security_PasswordTitle                  使用者介面密碼
 Security_Password                       密碼
 Security_PasswordUpdate                 密碼已更新
