@@ -7,7 +7,7 @@
 
 include vars.mak
 
-.PHONY: test package windows core skins coverage macosx rc
+.PHONY: test package windows core languages skins coverage macosx rc
 
 error:
 	@echo Must specify one of coverage, test, package or windows
@@ -110,10 +110,13 @@ LANGUAGES := $(wildcard languages/*.msg)
 
 BUILD_ZIP=wzzip -P $(POPFILE_ZIP) -a $^
 xplat: $(POPFILE_ZIP)
-$(POPFILE_ZIP): core skins POPFile/popfile_version
+$(POPFILE_ZIP): core languages skins POPFile/popfile_version
 
 core: popfile.pl otto.gif otto.png pix.gif black.gif bayes.pl pipe.pl insert.pl Classifier/*.pm POPFile/*.pm Proxy/*.pm Services/*.pm  Services/IMAP/*.pm UI/*.pm v$(POPFILE_VERSION).change v$(POPFILE_VERSION).change.nihongo license stopwords favicon.ico $(POPFILE_VERSION_FILE) Classifier/popfile.sql popfile.pck
 	rm -f $(POPFILE_ZIP)
+	$(BUILD_ZIP)
+
+languages: languages/*.msg
 	$(BUILD_ZIP)
 
 .PHONY: skins_css skins_gif skins_thtml
