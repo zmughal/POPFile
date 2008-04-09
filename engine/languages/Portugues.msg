@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -179,8 +179,8 @@ Password_Error1                         Senha incorreta
 Security_Error1                         A porta segura deve ser um número entre 1 e 65535
 Security_Stealth                        Modo Stealth/Operação Servidor
 Security_NoStealthMode                  Não (Modo Stealth)
-Security_ExplainStats                   (Com isto ligado o POPFile envia uma vez por dia os seguintes três valores para um script em www.usethesource.com: bc (o número total de receptáculos que você tem), mc (o número total de mensagens que o POPFile classificou) e ec (o número total de erros de classificação).  Isto fica guardado num arquivo que eu vou usar para publicar algumas estatísticas sobre como as pessoas usam o POPFile e o quão bem ele funciona.  O meu servidor web mantém o seus arquivos de log por mais ou menos 5 dias antes de os apagar; Eu não guardo nenhuma ligação entre as estatístcas e os endereços IP de cada um.)
-Security_ExplainUpdate                  (Com isto ligado o POPFile envia uma vez por dia os seguintes três valores para um script em www.usethesource.com: ma (o número maior da versão do seu POPFile), mi (o número menor da versão do seu POPFile) and bn (o número do build da sua versão do POPFile). O POPFile recebe uma resposta na forma de um gráfico que aparece no topo da página se uma nova versão estiver disponível.  Meu servidor web mantém seus arquivos de log por mais ou menos 5 antes de os apagar; Eu não guardo nenhuma ligação entre as verificações de versão e os endereços IP de cada um.)
+Security_ExplainStats                   (Com isto ligado o POPFile envia uma vez por dia os seguintes três valores para um script em getpopfile.org: bc (o número total de receptáculos que você tem), mc (o número total de mensagens que o POPFile classificou) e ec (o número total de erros de classificação).  Isto fica guardado num arquivo que eu vou usar para publicar algumas estatísticas sobre como as pessoas usam o POPFile e o quão bem ele funciona.  O meu servidor web mantém o seus arquivos de log por mais ou menos 5 dias antes de os apagar; Eu não guardo nenhuma ligação entre as estatístcas e os endereços IP de cada um.)
+Security_ExplainUpdate                  (Com isto ligado o POPFile envia uma vez por dia os seguintes três valores para um script em getpopfile.org: ma (o número maior da versão do seu POPFile), mi (o número menor da versão do seu POPFile) and bn (o número do build da sua versão do POPFile). O POPFile recebe uma resposta na forma de um gráfico que aparece no topo da página se uma nova versão estiver disponível.  Meu servidor web mantém seus arquivos de log por mais ou menos 5 antes de os apagar; Eu não guardo nenhuma ligação entre as verificações de versão e os endereços IP de cada um.)
 Security_PasswordTitle                  Senha da Interface de utilizador
 Security_Password                       Senha
 Security_PasswordUpdate                 Alterada a senha para %s
@@ -209,7 +209,7 @@ Magnet_Error3                           Criar novo íman '%s' no receptáculo '%s'
 Magnet_CurrentMagnets                   Ímans Actuais
 Magnet_Message1                         Os seguintes ímans atraem as mensagens para receptáculo especificado.
 Magnet_CreateNew                        Criar Novo Íman
-Magnet_Explanation                      <b>Três tipos de íman estão disponíveis: <ul><li>De um endereço ou nome:</b> Por exemplo: adriano@companhia.com para apanhar um endereço específico, <br />companhia.com para apanhar todo mundo que manda mensagens de companhia.com, <br />Adriano Gomes para apanhar uma pessoa específica, Adriano para apanhar todos os Adrianos</li><li><b>Para um endereço ou nome:</b> Como um íman Originador: mas para o endereço Para: de uma mensagem </li><li><b>Palavras no assunto:</b> Por exemplo: olá para apanhar todas as mensagens com olá no assunto</li></ul>
+Magnet_Explanation                      Três tipos de íman estão disponíveis: <ul><li>De um endereço ou nome:</b> Por exemplo: adriano@companhia.com para apanhar um endereço específico, <br />companhia.com para apanhar todo mundo que manda mensagens de companhia.com, <br />Adriano Gomes para apanhar uma pessoa específica, Adriano para apanhar todos os Adrianos</li><li><b>Para um endereço ou nome:</b> Como um íman Originador: mas para o endereço Para: de uma mensagem </li><li><b>Palavras no assunto:</b> Por exemplo: olá para apanhar todas as mensagens com olá no assunto</li></ul>
 Magnet_MagnetType                       Tipo do íman
 Magnet_Value                            Valor
 Magnet_Always                           Colocar sempre no receptáculo

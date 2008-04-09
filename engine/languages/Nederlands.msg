@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -152,8 +152,8 @@ Password_Error1                         Ongeldig wachtwoord
 Security_Error1                         De veilige poort moet een nummer zijn tussen 1 en 65535
 Security_Stealth                        Undercover modus/Server operatie
 Security_NoStealthMode                  Nee (Undercover modus)
-Security_ExplainStats                   (als dit aan staat stuurt POPFile één keer per dag de volgende drie waarden naar een script op www.usethesource.com: bc (het aantal bakken dat je hebt), mc (het totaal aantal geclassificeerde berichten door POPFile) en ec (het totaal aantal fouten tijdens classificatie).  Deze waarden worden opgeslagen in een bestand en ik zal deze gegevens gebruiken om statistieken te publiceren over hoe mensen POPFile gebruiken en hoe goed het werkt.  Mijn web server houdt de log bestanden 5 dagen vast waarna ze verwijderd zullen worden; Ik bewaar geen gegevens over het verband tussen de statistieken en individuele IP adressen.)
-Security_ExplainUpdate                  (als dit aan staat stuurt POPFile één keer per dag de volgende drie waarden naar een script op www.usethesource.com: ma (het grote versie nummer van jouw POPFile installatie), mi (het kleine versie nummer van jouw POPFile installatie) en bn (het bouwnummer van jouw versie van POPFile).  POPFile ontvangt in reactie hierop een plaatje dat bovenaan de pagina afgebeeld wordt als er een nieuwe versie van POPFile beschikbaar is. Mijn web server houdt de log bestanden 5 dagen vast waarna ze verwijderd zullen worden; Ik bewaar geen gegevens over het verband tussen de update checks en individuele IP adressen.)
+Security_ExplainStats                   (als dit aan staat stuurt POPFile één keer per dag de volgende drie waarden naar een script op getpopfile.org: bc (het aantal bakken dat je hebt), mc (het totaal aantal geclassificeerde berichten door POPFile) en ec (het totaal aantal fouten tijdens classificatie).  Deze waarden worden opgeslagen in een bestand en ik zal deze gegevens gebruiken om statistieken te publiceren over hoe mensen POPFile gebruiken en hoe goed het werkt.  Mijn web server houdt de log bestanden 5 dagen vast waarna ze verwijderd zullen worden; Ik bewaar geen gegevens over het verband tussen de statistieken en individuele IP adressen.)
+Security_ExplainUpdate                  (als dit aan staat stuurt POPFile één keer per dag de volgende drie waarden naar een script op getpopfile.org: ma (het grote versie nummer van jouw POPFile installatie), mi (het kleine versie nummer van jouw POPFile installatie) en bn (het bouwnummer van jouw versie van POPFile).  POPFile ontvangt in reactie hierop een plaatje dat bovenaan de pagina afgebeeld wordt als er een nieuwe versie van POPFile beschikbaar is. Mijn web server houdt de log bestanden 5 dagen vast waarna ze verwijderd zullen worden; Ik bewaar geen gegevens over het verband tussen de update checks en individuele IP adressen.)
 Security_PasswordTitle                  Gebruikers Interface Wachtwoord
 Security_Password                       Wachtwoord
 Security_PasswordUpdate                 Wachtwoord veranderd naar %s
@@ -175,7 +175,7 @@ Magnet_Error3                           Maak nieuwe magneet '%s' in bak '%s'
 Magnet_CurrentMagnets                   Huidige magneten
 Magnet_Message1                         De volgende magneten zorgen er altijd voor dat berichten in de gespecificeerde bak vallen.
 Magnet_CreateNew                        Maak Nieuwe Magneet
-Magnet_Explanation                      <b>Er zijn drie type magneten beschikbaar: <ul><li>Van adres of naam:</b> B.v.: john@company.com om een specifiek adres te specificeren, <br />company.com om iedereen te specificeren die berichten sturen vanaf company.com, <br />John Doe om een bepaalde persoon te specificeren, John om alle Johns te specificeren</li><li><b>Naar adres of naam:</b> Net als een "Van" magneet maar nu voor de geadresseerde</li><li><b>Onderwerp woorden:</b> B.v.: Hallo om alle berichten met Hallo in het onderwerp te specificeren.</li></ul>
+Magnet_Explanation                      Er zijn drie type magneten beschikbaar: <ul><li>Van adres of naam:</b> B.v.: john@company.com om een specifiek adres te specificeren, <br />company.com om iedereen te specificeren die berichten sturen vanaf company.com, <br />John Doe om een bepaalde persoon te specificeren, John om alle Johns te specificeren</li><li><b>Naar adres of naam:</b> Net als een "Van" magneet maar nu voor de geadresseerde</li><li><b>Onderwerp woorden:</b> B.v.: Hallo om alle berichten met Hallo in het onderwerp te specificeren.</li></ul>
 Magnet_MagnetType                       Magneet type
 Magnet_Value                            Waarde
 Magnet_Always                           Gaat altijd naar bak

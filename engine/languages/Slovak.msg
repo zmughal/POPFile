@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -156,8 +156,8 @@ Password_Error1                         Nesprávne heslo
 Security_Error1                         Bezpeènostnı port musí by v rozpätí èísel 1 a 65535
 Security_Stealth                        Utajenı mód/Èinnos servera
 Security_NoStealthMode                  Nie (Utajenı mód)
-Security_ExplainStats                   (Ak je toto zapnuté, POPFile pošle raz za deò nasledovné tri hodnoty na stránku www.usethesource.com: bc (celkovı poèet košov, ktoré máš), mc (celkovı poèet správ, ktoré POPFile klasifikoval) a ec (celkovı poèet chybnıch klasifikácii).  Tieto hodnoty sa ukladajú do súboru a budú pouité na vyhodnotenie niektorıch štatistík o tom ako ¾udia pouívajú POPFile a ako dobre funguje.  Môj web server uchováva tieto informácie pribline 5 dní a potom ich zmae; Neuchovávam informácie prepojujúce štatistické údaje s konkrétnymi IP adresami.)
-Security_ExplainUpdate                  (Ak je toto zapnuté, POPFile pošle raz za deò nasledovné tri hodnoty na stránku www.usethesource.com: ma (hlavné èíslo verzie pouívaného POPFile), mi (ved¾ajšie èíslo verzie pouívaného POPFile) a bn (èíslo kompilácie pouívaného POPFile).  POPFile dostane odpoveï vo forme obrázku, ktorı sa zobrazí na vrchu stránku, ak je k dispozícii nová verzia.  Môj web server uchováva tieto informácie pribline 5 dní a potom ich zmae; Neuchovávam informácie prepojujúce štatistické údaje s konkrétnymi IP adresami.)
+Security_ExplainStats                   (Ak je toto zapnuté, POPFile pošle raz za deò nasledovné tri hodnoty na stránku getpopfile.org: bc (celkovı poèet košov, ktoré máš), mc (celkovı poèet správ, ktoré POPFile klasifikoval) a ec (celkovı poèet chybnıch klasifikácii).  Tieto hodnoty sa ukladajú do súboru a budú pouité na vyhodnotenie niektorıch štatistík o tom ako ¾udia pouívajú POPFile a ako dobre funguje.  Môj web server uchováva tieto informácie pribline 5 dní a potom ich zmae; Neuchovávam informácie prepojujúce štatistické údaje s konkrétnymi IP adresami.)
+Security_ExplainUpdate                  (Ak je toto zapnuté, POPFile pošle raz za deò nasledovné tri hodnoty na stránku getpopfile.org: ma (hlavné èíslo verzie pouívaného POPFile), mi (ved¾ajšie èíslo verzie pouívaného POPFile) a bn (èíslo kompilácie pouívaného POPFile).  POPFile dostane odpoveï vo forme obrázku, ktorı sa zobrazí na vrchu stránku, ak je k dispozícii nová verzia.  Môj web server uchováva tieto informácie pribline 5 dní a potom ich zmae; Neuchovávam informácie prepojujúce štatistické údaje s konkrétnymi IP adresami.)
 Security_PasswordTitle                  Heslo uívate¾ského rozhrania
 Security_Password                       Heslo
 Security_PasswordUpdate                 Heslo zmenené na %s
@@ -179,7 +179,7 @@ Magnet_Error3                           Vytvorenı novı magnet '%s' v koši '%s'
 Magnet_CurrentMagnets                   Aktuálne magnety
 Magnet_Message1                         Nasledovné magnety klasifikujú poštu vdy do urèeného koša.
 Magnet_CreateNew                        Vytvori novı magnet
-Magnet_Explanation                      <b>Existujú tri typy magnetov:</b> <ul><li><b>Adresa alebo meno odosielae¾a:</b> (políèko From: v pošte) Napr.: john@company.com pre konkrétnu adresu, <br />company.com pre kadého odosielate¾a z adresy company.com, <br />John Doe pre konkrétnu osobu, John pre kadného Johna</li><li><b>Adresa alebo meno príjemcu:</b> To isté ako predchádzajúce, ale pre políèko To: pošty</li> <li><b>Slová v subjekte:</b> Napr.: hello zaradí kadú poštu, ktorá má hello v subjekte</li></ul>
+Magnet_Explanation                      Existujú tri typy magnetov:</b> <ul><li><b>Adresa alebo meno odosielae¾a:</b> (políèko From: v pošte) Napr.: john@company.com pre konkrétnu adresu, <br />company.com pre kadého odosielate¾a z adresy company.com, <br />John Doe pre konkrétnu osobu, John pre kadného Johna</li><li><b>Adresa alebo meno príjemcu:</b> To isté ako predchádzajúce, ale pre políèko To: pošty</li> <li><b>Slová v subjekte:</b> Napr.: hello zaradí kadú poštu, ktorá má hello v subjekte</li></ul>
 Magnet_MagnetType                       Typ magnetu
 Magnet_Value                            Hodnota
 Magnet_Always                           Zaradí sa vdy do koša

@@ -1,4 +1,4 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for bayes.pl
 #
@@ -19,14 +19,13 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/CVS' );
-unlink( 'popfile.db' );
-
+test_assert( rmtree( 'corpus/CVS' ) > 0 );
+unlink 'popfile.db';
 unlink 'stopwords';
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 

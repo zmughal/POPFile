@@ -1,0 +1,17 @@
+    </div>
+    <div id="footer">
+        <p>
+            <a class="bottomLink" href="http://getpopfile.org/"><TMPL_VAR NAME="Localize_Footer_HomePage"></a>
+
+            <a class="bottomLink" href="http://getpopfile.org/docs"><TMPL_VAR NAME="Localize_Footer_Wiki"></a>
+            <a class="bottomLink" href="http://getpopfile.org/docs/<TMPL_VAR NAME="Localize_FAQLink">"><TMPL_VAR NAME="Localize_FAQ"></a>
+            <a class="bottomLink" href="http://getpopfile.org/docs/<TMPL_VAR NAME="Localize_RequestFeatureLink">"><TMPL_VAR NAME="Localize_Footer_RequestFeature"></a>
+            <a class="bottomLink" href="http://getpopfile.org/docs/<TMPL_VAR NAME="Localize_MailingListLink">"><TMPL_VAR NAME="Localize_Footer_MailingList"></a>
+            <a class="bottomLink" href="http://sourceforge.net/forum/forum.php?forum_id=213876"><TMPL_VAR NAME="Localize_Footer_FeedMe"></a>
+            <br />
+            POPFile <TMPL_VAR NAME="Common_Bottom_Version"> (<TMPL_VAR NAME="Common_Bottom_Date"><TMPL_VAR NAME="Common_Bottom_LastLogin">)
+        </p>
+    </div>
+</div>
+</body>
+</html>

@@ -33,12 +33,6 @@ use locale;
 use IO::Socket::INET qw(:DEFAULT :crlf);
 use IO::Select;
 
-# We use crypto to secure the contents of POPFile's cookies
-
-use Crypt::CBC;
-use Crypt::Random qw/makerandom_octet/;
-use MIME::Base64;
-
 # A handy variable containing the value of an EOL for the network
 
 my $eol = "\015\012";
@@ -52,10 +46,6 @@ sub new
 {
     my $type = shift;
     my $self = POPFile::Module->new();
-
-    # Crypto object used to encode/decode cookies
-
-    $self->{crypto__} = '';
 
     bless $self;
 
@@ -72,7 +62,7 @@ sub new
 sub start
 {
     my ( $self ) = @_;
-
+    $self->log_( 1, "Trying to open listening socket on port " . $self->config_('port') . '.' );
     $self->{server_} = IO::Socket::INET->new( Proto     => 'tcp',             # PROFILE BLOCK START
                                     $self->config_( 'local' )  == 1 ? (LocalAddr => 'localhost') : (),
                                      LocalPort => $self->config_( 'port' ),
@@ -98,21 +88,6 @@ EOM
 
     $self->{selector_} = new IO::Select( $self->{server_} );
 
-    # Think of an encryption key for encrypting cookies using Blowfish
-    $self->log_( 1, "Generating random octet" );
-    my $key = makerandom_octet(
-                Length => 56,
-                Strength => $self->global_config_( 'crypt_strength' ),
-                Device   => $self->global_config_( 'crypt_device' )
-              );
-    $self->{crypto__} = new Crypt::CBC( { 'key'            => $key,
-                                          'cipher'         => 'Blowfish',
-                                          'padding'        => 'standard',
-                                          'prepend_iv'     => 0,
-                                          'regenerate_key' => 0,
-                                          'salt'           => 1,
-                                          'header'         => 'salt', } );
-
     return 1;
 }
 
@@ -128,8 +103,6 @@ sub stop
     my ( $self ) = @_;
 
     close $self->{server_} if ( defined( $self->{server_} ) );
-
-    $self->SUPER::stop();
 }
 
 # ----------------------------------------------------------------------------
@@ -177,13 +150,12 @@ sub service
                      ( my $request = $self->slurp_( $client ) ) ) {
                     my $content_length = 0;
                     my $content;
-                    my $cookie = '';
 
                     $self->log_( 2, $request );
 
                     while ( my $line = $self->slurp_( $client ) )  {
-                        $cookie = $1 if ( $line =~ /Cookie: (.+)/ );
                         $content_length = $1 if ( $line =~ /Content-Length: (\d+)/i );
+
                         # Discovered that Norton Internet Security was
                         # adding HTTP headers of the form
                         #
@@ -204,13 +176,8 @@ sub service
                         $self->log_( 2, $content );
                     }
 
-                    # Handle decryption of a cookie header
-
-                    $cookie = $self->decrypt_cookie__( $cookie );
-
                     if ( $request =~ /^(GET|POST) (.*) HTTP\/1\./i ) {
-                        $code = $self->handle_url( $client, $2, $1,
-                                    $content, $cookie );
+                        $code = $self->handle_url( $client, $2, $1, $content );
                         $self->log_( 2,
                             "HTTP handle_url returned code $code\n" );
                     } else {
@@ -237,9 +204,7 @@ sub service
 # ----------------------------------------------------------------------------
 sub forked
 {
-    my ( $self, $writer ) = @_;
-
-    $self->SUPER::forked( $writer );
+    my ( $self ) = @_;
 
     close $self->{server_};
 }
@@ -252,51 +217,13 @@ sub forked
 # $url        URL to process
 # $command    The HTTP command used (GET or POST)
 # $content    Any non-header data in the HTTP command
-# $cookie     Decrypted cookie value (or null)
 #
 # ----------------------------------------------------------------------------
 sub handle_url
 {
-    my ( $self, $client, $url, $command, $content, $cookie ) = @_;
+    my ( $self, $client, $url, $command, $content ) = @_;
 
-    return $self->{url_handler_}( $self, $client, $url, $command,
-                                  $content, $cookie );
-}
-
-# ----------------------------------------------------------------------------
-#
-# decrypt_cookie__
-#
-# $cookie            The cookie value to decrypt
-#
-# ----------------------------------------------------------------------------
-sub decrypt_cookie__
-{
-    my ( $self, $cookie ) = @_;
-
-    $self->log_( 2, "Decrypt cookie: $cookie" );
-
-    $cookie =~ /popfile=([^\r\n]+)/;
-    if ( defined( $1 ) ) {
-        return $self->{crypto__}->decrypt( decode_base64( $1 ) );
-    } else {
-        return '';
-    }
-}
-
-# ----------------------------------------------------------------------------
-#
-# encrypt_cookie_
-#
-# $cookie            The cookie value to encrypt
-#
-# ----------------------------------------------------------------------------
-sub encrypt_cookie_
-{
-    my ( $self, $cookie ) = @_;
-
-    $self->log_( 2, "Encrypting cookie $cookie" );
-    return encode_base64( $self->{crypto__}->encrypt( $cookie ), '' );
+    return $self->{url_handler_}( $self, $client, $url, $command, $content );
 }
 
 # ----------------------------------------------------------------------------
@@ -321,15 +248,15 @@ sub parse_form_
     $arguments =~ s/&amp;/&/g;
 
     while ( $arguments =~ m/\G(.*?)=(.*?)(&|\r|\n|$)/g ) {
-        my $arg = $self->url_decode_( $1 );
+        my $arg = $1;
 
         my $need_array = defined( $self->{form_}{$arg} );
 
         if ( $need_array ) {
-            if ( $#{ $self->{form_}{$arg . "_array"} } == -1 ) {
+	    if ( $#{ $self->{form_}{$arg . "_array"} } == -1 ) {
                 push( @{ $self->{form_}{$arg . "_array"} }, $self->{form_}{$arg} );
-            }
-        }
+	    }
+	}
 
         $self->{form_}{$arg} = $2;
         $self->{form_}{$arg} =~ s/\+/ /g;
@@ -368,21 +295,22 @@ sub url_encode_
 
 # ----------------------------------------------------------------------------
 #
-# url_decode_
+# http_redirect_ - tell the browser to redirect to a url
 #
-# $text     Text to decode from URL safety
+# $client   The web browser to send redirect to
+# $url      Where to go
 #
-# Decode text in a URL
+# Return a valid HTTP/1.0 header containing a 302 redirect message to the passed in URL
 #
 # ----------------------------------------------------------------------------
-sub url_decode_
+sub http_redirect_
 {
-    my ( $self, $text ) = @_;
+    my ( $self, $client, $url ) = @_;
 
-    $text =~ s/\+/ /;
-    $text =~ s/(%([A-F0-9][A-F0-9]))/chr(hex($2))/eg;
-
-    return $text;
+    my $header = "HTTP/1.0 302 Found$eol" . 'Location: ';
+    $header .= $url;
+    $header .= "$eol$eol";
+    print $client $header;
 }
 
 # ----------------------------------------------------------------------------
@@ -412,10 +340,7 @@ Click <a href=\"/\">here</a> to continue.
 
     $self->log_( 1, $text );
 
-    my $error_code = 500;
-    $error_code = $error if ( $error eq '404' );
-
-    print $client "HTTP/1.0 $error_code Error$eol";
+    print $client "HTTP/1.0 200 OK$eol";
     print $client "Content-Type: text/html$eol";
     print $client "Content-Length: ";
     print $client length( $text );
@@ -431,8 +356,8 @@ Click <a href=\"/\">here</a> to continue.
 # $file       The file to read (always assumed to be a GIF right now)
 # $type       Set this to the HTTP return type (e.g. text/html or image/gif)
 #
-# Returns the contents of a file formatted into an HTTP 200 message or
-# an HTTP 404 if the file does not exist
+# Returns the contents of a file formatted into an HTTP 200 message or an HTTP 404 if the
+# file does not exist
 #
 # ----------------------------------------------------------------------------
 sub http_file_
@@ -453,7 +378,16 @@ sub http_file_
         # plus 1 hour to give the browser cache 1 hour to keep things
         # like graphics and style sheets in cache.
 
-        my $expires = $self->zulu_offset_( 0, 1 );
+        my @day   = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' );
+        my @month = ( 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' );
+        my $zulu = time;
+        $zulu += 60 * 60; # 1 hour
+        my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime( $zulu );
+
+        my $expires = sprintf( "%s, %02d %s %04d %02d:%02d:%02d GMT",          # PROFILE BLOCK START
+                               $day[$wday], $mday, $month[$mon], $year+1900,
+                               $hour, 59, 0);                                  # PROFILE BLOCK STOP
+
         my $header = "HTTP/1.0 200 OK$eol" . "Content-Type: $type$eol" . "Expires: $expires$eol" . "Content-Length: ";
         $header .= length($contents);
         $header .= "$eol$eol";
@@ -461,34 +395,6 @@ sub http_file_
     } else {
         $self->http_error_( $client, 404 );
     }
-}
-
-# ----------------------------------------------------------------------------
-#
-# zulu_offset_
-#
-# $days       Number of days to move forward
-# $hours      Number of hours to move forward
-#
-# Returns the current time in Zulu as a string suitable for passing to
-# a web browser shifted forward $days or $hours.
-#
-# ----------------------------------------------------------------------------
-sub zulu_offset_
-{
-    my ( $self, $days, $hours ) = @_;
-
-    my @day   = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' );
-    my @month = ( 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
-                  'Sep', 'Oct', 'Nov', 'Dec' );
-    my $zulu = time;
-    $zulu += 60 * 60 * $hours;
-    $zulu += 24 * 60 * 60 * $days;
-    my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime( $zulu );
-
-    return sprintf( "%s, %02d %s %04d %02d:%02d:%02d GMT",# PROFILE BLOCK START
-               $day[$wday], $mday, $month[$mon], $year+1900,
-               $hour, 59, 0);                             # PROFILE BLOCK STOP
 }
 
 sub history
