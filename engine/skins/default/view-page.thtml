@@ -23,11 +23,12 @@
             <form id="HistoryMainForm" action="/history" method="post">
                 <input type="hidden" name="search" value="<TMPL_VAR NAME="View_Field_Search">" />
                 <input type="hidden" name="sort" value="<TMPL_VAR NAME="View_Field_Sort">" />
+                <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
                 <input type="hidden" name="negate" value="<TMPL_VAR NAME="View_Field_Negate">" />
                 <input type="hidden" name="start_message" value="<TMPL_VAR NAME="View_This_Page">" />
                 <input type="hidden" name="filter" value="<TMPL_VAR NAME="View_Field_Filter">" />
 
-                <table align="left" summary="">
+                <table align="left">
                     <tr valign="top">
                         <td>
                             <font size="+1">
@@ -228,7 +229,7 @@
         </td>
     <tr>
         <td>
-            <a class="messageLink" href="/view?view=<TMPL_VAR NAME="View_This">&amp;text=1"><TMPL_VAR NAME="Localize_View_DownloadMessage"></a>
+            <a class="messageLink" href="/view?view=<TMPL_VAR NAME="View_This">&amp;session=<TMPL_VAR NAME="Session_Key">&amp;text=1"><TMPL_VAR NAME="Localize_View_DownloadMessage"></a>
         </td>
 
         <td class="openMessageCloser">

@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 # 2005/08/09 Translated by David Gimeno i Ayuso <info@sima-pc.com>
 #
@@ -27,7 +27,7 @@ LanguageDirection                       ltr
 ManualLanguage                          en
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 faq
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   Aplicar
@@ -230,8 +230,8 @@ Security_Error1                         El port ha de ser un número entre 1 i 65
 Security_Stealth                        Mode furtiu/Operació del servidor
 Security_NoStealthMode                  No (mode furtiu)
 Security_StealthMode                    (Mode furtiu)
-Security_ExplainStats                   (Si s'activa, POPFile envia un cop al dia els tres següents valors a un programa a www.usethesource.com: bc, el nombre total de cistelles que teniu; mc, el nombre total de missatges classificats per POPFile, i ec, el nombre total d'errors de classificació. Això s'emmagatzema en un fitxer i serà usat per confeccionar estadístiques d'ús de POPFile i com funciona de bé. El meu servidor web conserva els seus fitxers de registre uns 5 dies i aleshores s'esborren; no emmagatzemo cap connexió entre estadístiques i adreces IP individuals).
-Security_ExplainUpdate                  (Si s'activa, POPFile envia un cop per dia els tres següents valors a un programa a www.usethesource.com: ma, el nombre major de versió de la vostra instal·lació POPFile; mi, el nombre menor de versió de la vostra instal·lació POPFile, i bn, el nombre de muntatge de la vostra instal·lació POPFile. POPFile rep una resposta en forma de gràfic que surt dalt de la pàgina, si hi ha una versió nova disponible. El meu servidor web conserva els seus fitxers de registre uns 5 dies i aleshores s'esborren; no emmagatzemo cap connexió entre les verificacions d'actualització i les adreces IP individuals).
+Security_ExplainStats                   (Si s'activa, POPFile envia un cop al dia els tres següents valors a un programa a getpopfile.org: bc, el nombre total de cistelles que teniu; mc, el nombre total de missatges classificats per POPFile, i ec, el nombre total d'errors de classificació. Això s'emmagatzema en un fitxer i serà usat per confeccionar estadístiques d'ús de POPFile i com funciona de bé. El meu servidor web conserva els seus fitxers de registre uns 5 dies i aleshores s'esborren; no emmagatzemo cap connexió entre estadístiques i adreces IP individuals).
+Security_ExplainUpdate                  (Si s'activa, POPFile envia un cop per dia els tres següents valors a un programa a getpopfile.org: ma, el nombre major de versió de la vostra instal·lació POPFile; mi, el nombre menor de versió de la vostra instal·lació POPFile, i bn, el nombre de muntatge de la vostra instal·lació POPFile. POPFile rep una resposta en forma de gràfic que surt dalt de la pàgina, si hi ha una versió nova disponible. El meu servidor web conserva els seus fitxers de registre uns 5 dies i aleshores s'esborren; no emmagatzemo cap connexió entre les verificacions d'actualització i les adreces IP individuals).
 Security_PasswordTitle                  Contrasenya d'interfície d'usuari
 Security_Password                       Contrasenya
 Security_PasswordUpdate                 S'ha actualitzat la contrasenya
@@ -373,6 +373,6 @@ Imap_WatchedFolder                      Carpeta mirada núm.
 
 Shutdown_Message                        S'ha aturat el POPFile
 
-Help_Training                           Quan useu per primer cop POPFile, no sap res i caldrà una mica d'entrenament. Cal entrenar POPFile per a cada cistella. L'anireu educant cada cop que reclassifiqueu un missatge que POPFile hagi classificat a una cistella incorrecta. També haureu de configurar el vostre client de correu perquè filtri els missatges segons la classificació de POPFile. Podeu trobar informació sobre com configurar el filtratge del vostre client de correu a <a href="http://getpopfile.org/docs/faq/EmailSorting">Projecte de Documentació POPFile</a> (en anglès).
+Help_Training                           Quan useu per primer cop POPFile, no sap res i caldrà una mica d'entrenament. Cal entrenar POPFile per a cada cistella. L'anireu educant cada cop que reclassifiqueu un missatge que POPFile hagi classificat a una cistella incorrecta. També haureu de configurar el vostre client de correu perquè filtri els missatges segons la classificació de POPFile. Podeu trobar informació sobre com configurar el filtratge del vostre client de correu a <a href="http://getpopfile.org/docs/FAQ:EmailSorting">Projecte de Documentació POPFile</a> (en anglès).
 Help_Bucket_Setup                       POPFile necessita al menys dues cistelles a més de la pseudo-cistella 'unclassified'. El que fa únic POPFile és que pot classificar els correus en tantes cistelles com volgueu. Una configuració senzilla pot ser una cistella "spam", una "personal" i una altra "feina".
 Help_No_More                            No mostrar-m'ho més

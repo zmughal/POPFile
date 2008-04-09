@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 3
+# POPFILE LOADABLE MODULE
 package Classifier::Bayes;
 
 use POPFile::Module;
@@ -37,9 +37,8 @@ use Classifier::MailParse;
 use IO::Handle;
 use DBI;
 use Digest::MD5 qw( md5_hex );
-use Digest::SHA qw( sha256_hex );
 use MIME::Base64;
-use Crypt::Random qw( makerandom_octet );
+use File::Copy;
 
 # This is used to get the hostname of the current machine
 # in a cross platform way
@@ -81,8 +80,14 @@ sub new
 
     $self->{hostname__}        = '';
 
+    # File Handle for DBI database
+
+    $self->{db__}                = {};
+
+    $self->{history__}        = 0;
+
     # To save time we also 'prepare' some commonly used SQL statements
-    # and cache them here, see the function db_prepare__ for details
+    # and cache them here, see the function db_connect__ for details
 
     $self->{db_get_buckets__} = 0;
     $self->{db_get_wordid__} = 0;
@@ -95,13 +100,8 @@ sub new
     $self->{db_get_bucket_parameter__} = 0;
     $self->{db_set_bucket_parameter__} = 0;
     $self->{db_get_bucket_parameter_default__} = 0;
-    $self->{db_get_user_parameter__} = 0;
-    $self->{db_set_user_parameter__} = 0;
-    $self->{db_get_user_parameter_default__} = 0;
     $self->{db_get_buckets_with_magnets__} = 0;
     $self->{db_delete_zero_words__} = 0;
-    $self->{db_get_user_list__} = 0;
-    $self->{db_get_user_from_account__} = 0;
 
     # Caches the name of each bucket and relates it to both the bucket
     # ID in the database and whether it is pseudo or not
@@ -117,25 +117,11 @@ sub new
 
     $self->{db_parameterid__}    = {};
 
-    # Caches the IDs that map to user parameter types
-
-    $self->{db_user_parameterid__}    = {};
-
     # Caches looked up parameter values on a per bucket basis
 
     $self->{db_parameters__}     = {};
 
-    # Caches looked up user parameter values on a per user basis
-    # Subkeys are:
-    #
-    # lastused      Time the cache entry was last used
-    # value         The value for the parameter
-    # default       Whether the value is the default or not
-
-    $self->{cached_user_parameters__}     = {};
-
     # Used to parse mail messages
-
     $self->{parser__}            = new Classifier::MailParse;
 
     # The possible colors for buckets
@@ -147,29 +133,24 @@ sub new
                                    'black' ];                                        # PROFILE BLOCK STOP
 
     # Precomputed per bucket probabilities
-
     $self->{bucket_start__}      = {};
 
     # A very unlikely word
-
     $self->{not_likely__}        = {};
 
     # The expected corpus version
     #
     # DEPRECATED  This is only used when upgrading old flat file corpus files
     #             to the database
-
     $self->{corpus_version__}    = 1;
 
     # The unclassified cutoff this value means that the top
     # probabilily must be n times greater than the second probability,
     # default is 100 times more likely
-
     $self->{unclassified__}      = log(100);
 
     # Used to tell the caller whether a magnet was used in the last
     # mail classification
-
     $self->{magnet_used__}       = 0;
     $self->{magnet_detail__}     = 0;
 
@@ -197,6 +178,21 @@ sub new
 
 #----------------------------------------------------------------------------
 #
+# forked
+#
+# This is called inside a child process that has just forked, since
+# the child needs access to the database we open it
+#
+#----------------------------------------------------------------------------
+sub forked
+{
+    my ( $self ) = @_;
+
+    $self->db_connect__();
+}
+
+#----------------------------------------------------------------------------
+#
 # initialize
 #
 # Called to set up the Bayes module's parameters
@@ -206,12 +202,47 @@ sub initialize
 {
     my ( $self ) = @_;
 
+    # This is the name for the database
+
+    $self->config_( 'database', 'popfile.db' );
+
+    # This is the 'connect' string used by DBI to connect to the
+    # database, if you decide to change from using SQLite to some
+    # other database (e.g. MySQL, Oracle, ... ) this *should* be all
+    # you need to change.  The additional parameters user and auth are
+    # needed for some databases.
+    #
+    # Note that the dbconnect string
+    # will be interpolated before being passed to DBI and the variable
+    # $dbname can be used within it and it resolves to the full path
+    # to the database named in the database parameter above.
+
+    $self->config_( 'dbconnect', 'dbi:SQLite2:dbname=$dbname' );
+    $self->config_( 'dbuser', '' ); $self->config_( 'dbauth', '' );
+
+    # SQLite 1.05+ have some problems we are resolving.  This lets us
+    # give a nice message and then disable the version checking later
+
+    $self->config_( 'bad_sqlite_version', '3.0.0' );
+
+    # No default unclassified weight is the number of times more sure
+    # POPFile must be of the top class vs the second class, default is
+    # 100 times more
+
+    $self->config_( 'unclassified_weight', 100 );
+
     # The corpus is kept in the 'corpus' subfolder of POPFile
     #
     # DEPRECATED This is only used to find an old corpus that might
     # need to be upgraded
 
     $self->config_( 'corpus', 'corpus' );
+
+    # The characters that appear before and after a subject
+    # modification
+
+    $self->config_( 'subject_mod_left',  '[' );
+    $self->config_( 'subject_mod_right', ']' );
 
     # Get the hostname for use in the X-POPFile-Link header
 
@@ -221,6 +252,12 @@ sub initialize
 
     $self->config_( 'hostname', $self->{hostname__} );
 
+    # If set to 1 then the X-POPFile-Link will have < > around the URL
+    # (i.e. X-POPFile-Link: <http://foo.bar>) when set to 0 there are
+    # none (i.e. X-POPFile-Link: http://foo.bar)
+
+    $self->config_( 'xpl_angle', 0 );
+
     # This parameter is used when the UI is operating in Stealth Mode.
     # If left blank (the default setting) the X-POPFile-Link will use 127.0.0.1
     # otherwise it will use this string instead. The system's HOSTS file should
@@ -228,17 +265,25 @@ sub initialize
 
     $self->config_( 'localhostname', '' );
 
-    # Japanese wakachigaki parser ('kakasi' or 'mecab' or 'internal').
-    # TODO: Users can choose the parser engine to use?
+    # This is a bit mask used to control options when we are using the
+    # default SQLite database.  By default all the options are on.
+    #
+    # 1 = Asynchronous deletes
+    # 2 = Backup database every hour
 
+    $self->config_( 'sqlite_tweaks', 0xFFFFFFFF );
+
+    # Japanese wakachigaki parser ('kakasi' or 'mecab' or 'internal').
     $self->config_( 'nihongo_parser', 'kakasi' );
 
     $self->mq_register_( 'COMIT', $self );
     $self->mq_register_( 'RELSE', $self );
-    $self->mq_register_( 'CREAT', $self );
-    $self->mq_register_( 'TICKD', $self );
 
-    $self->{parser__}->{mangle__} = $self->mangle_();
+    # Register for the TICKD message which is sent hourly by the
+    # Logger module.  We use this to hourly save the database if bit 1
+    # of the sqlite_tweaks is set and we are using SQLite
+
+    $self->mq_register_( 'TICKD', $self );
 
     return 1;
 }
@@ -264,15 +309,8 @@ sub deliver
         $self->release_session_key_private__( $message[0] );
     }
 
-    if ( $type eq 'CREAT' ) {
-        my ( $session, $user ) = ( $message[0], $message[1] );
-        $self->{api_sessions__}{$session} = $user;
-        $self->db_update_cache__( $session );
-        $self->log_( 1, "CREAT message on $session for $user" );
-    }
-
     if ( $type eq 'TICKD' ) {
-        $self->cleanup_orphan_words__();
+        $self->backup_database__();
     }
 }
 
@@ -287,8 +325,6 @@ sub start
 {
     my ( $self ) = @_;
 
-    $self->db_prepare__();
-
     # In Japanese or Korean mode, explicitly set LC_COLLATE to C.
     #
     # This is to avoid Perl crash on Windows because default
@@ -296,26 +332,20 @@ sub start
     # which is different from the charset POPFile uses for Japanese
     # characters(EUC-JP).
 
-    # TODO : hardcoded 1
-
-    if ( defined( $self->user_module_config_( 1, 'html', 'language' ) ) &&
-       ( $self->user_module_config_( 1, 'html', 'language' ) =~ /^Nihongo|Korean$/ )) {
+    if ( defined( $self->module_config_( 'html', 'language' ) ) &&
+       ( $self->module_config_( 'html', 'language' ) =~ /^Nihongo|Korean$/ )) {
         use POSIX qw( locale_h );
         setlocale( LC_COLLATE, 'C' );
     }
 
     # Pass in the current interface language for language specific parsing
 
-    # TODO : hardcoded 1
+    $self->{parser__}->{lang__}  = $self->module_config_( 'html', 'language' ) || '';
+    $self->{unclassified__} = log( $self->config_( 'unclassified_weight' ) );
 
-    $self->{parser__}->{lang__}  = $self->user_module_config_( 1, 'html', 'language' ) || '';
-    $self->{unclassified__} = log( $self->user_config_( 1, 'unclassified_weight' ) );
-
-    $self->upgrade_predatabase_data__();
-
-    # Since Text::Kakasi is not thread-safe, we use it under the
-    # control of a Mutex to avoid a crash if we are running on
-    # Windows and using the fork.
+    if ( !$self->db_connect__() ) {
+        return 0;
+    }
 
     if ( $self->{parser__}->{lang__} eq 'Nihongo' ) {
         # Setup Nihongo (Japanese) parser.
@@ -338,7 +368,6 @@ sub start
                  ( $self->module_config_( 'nntp', 'force_fork' ) ) ) ||
                ( ( $self->module_config_( 'smtp', 'enabled' ) ) &&
                  ( $self->module_config_( 'smtp', 'force_fork' ) ) ) ) ) {
-
             $self->{parser__}->{need_kakasi_mutex__} = 1;
 
             # Prepare the Mutex.
@@ -347,6 +376,8 @@ sub start
             $self->log_( 2, "Create mutex for Kakasi." );
         }
     }
+
+    $self->upgrade_predatabase_data__();
 
     return 1;
 }
@@ -362,39 +393,8 @@ sub stop
 {
     my ( $self ) = @_;
 
-    $self->db_cleanup__();
+    $self->db_disconnect__();
     delete $self->{parser__};
-    $self->SUPER::stop();
-}
-
-#----------------------------------------------------------------------------
-#
-# forked
-#
-# Called when POPFile has entered a child process
-#
-#----------------------------------------------------------------------------
-sub forked
-{
-    my ( $self, $writer ) = @_;
-
-    $self->SUPER::forked( $writer );
-    $self->db_prepare__();
-}
-
-#----------------------------------------------------------------------------
-#
-# childexit
-#
-# Called when POPFile a child process is about to exit
-#
-#----------------------------------------------------------------------------
-sub childexit
-{
-    my ( $self ) = @_;
-
-    $self->db_cleanup__();
-    $self->SUPER::childexit();
 }
 
 #----------------------------------------------------------------------------
@@ -412,6 +412,56 @@ sub classified
 
     $self->set_bucket_parameter( $session, $class, 'count',             # PROFILE BLOCK START
         $self->get_bucket_parameter( $session, $class, 'count' ) + 1 ); # PROFILE BLOCK STOP
+}
+
+#----------------------------------------------------------------------------
+#
+# backup_database__
+#
+# Called when the TICKD message is received each hour and if we are using
+# the default SQLite database will make a copy with the .backup extension
+#
+#----------------------------------------------------------------------------
+sub backup_database__
+{
+    my ( $self ) = @_;
+
+    # If database backup is turned on and we are using SQLite then
+    # backup the database by copying it
+
+    if ( ( $self->config_( 'sqlite_tweaks' ) & 2 ) &&
+         $self->{db_is_sqlite__} ) {
+        if ( !copy( $self->{db_name__}, $self->{db_name__} . ".backup" ) ) {
+	    $self->log_( 0, "Failed to backup database ".$self->{db_name__} );
+        }
+    }
+}
+
+#----------------------------------------------------------------------------
+#
+# tweak_sqlite
+#
+# Called when a module wants is to tweak access to the SQLite database.
+#
+# $tweak    The tweak to apply (a bit in the sqlite_tweaks mask)
+# $state    1 to enable the tweak, 0 to disable
+# $db       The db handle to tweak
+#
+#----------------------------------------------------------------------------
+sub tweak_sqlite
+{
+    my ( $self, $tweak, $state, $db ) = @_;
+
+    if ( $self->{db_is_sqlite__} &&
+         ( $self->config_( 'sqlite_tweaks' ) & $tweak ) ) {
+
+        $self->log_( 1, "Performing tweak $tweak to $state" );
+
+        if ( $tweak == 1 ) {
+            my $sync = $state?'off':'normal';
+            $db->do( "pragma synchronous=$sync;" );
+        }
+    }
 }
 
 #----------------------------------------------------------------------------
@@ -468,19 +518,6 @@ sub reclassified
     }
 }
 
-
-#----------------------------------------------------------------------------
-# cleanup_orphan_words__
-# Removes Words from (words) no longer associated with a bucket
-# Called when the TICKD message is received each hour.
-#----------------------------------------------------------------------------
-sub cleanup_orphan_words__
-{
-    my ( $self ) = @_;
-    $self->db_()->do( "delete from words where words.id in" .                            # PROFILE BLOCK START
-                        " (select id from words except select wordid from matrix);" );   # PROFILE BLOCK STOP
-}
-
 #----------------------------------------------------------------------------
 #
 # get_color
@@ -515,7 +552,6 @@ sub get_color
 
 #----------------------------------------------------------------------------
 #
-
 # get_not_likely_
 #
 # Returns the probability of a word that doesn't appear
@@ -594,7 +630,7 @@ sub set_value_
 
         my $userid = $self->valid_session_key__( $session );
         my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-        $self->{db_delete_zero_words__}->execute( $bucketid );
+        $self->validate_sql_prepare_and_execute( $self->{db_delete_zero_words__}, $bucketid );
 
         return 1;
     } else {
@@ -642,7 +678,7 @@ sub update_constants__
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    if ( defined $wc && $wc > 0 )  {
+    if ( $wc > 0 )  {
         $self->{not_likely__}{$userid} = -log( 10 * $wc );
 
         foreach my $bucket ($self->get_buckets( $session )) {
@@ -662,14 +698,226 @@ sub update_constants__
 
 #----------------------------------------------------------------------------
 #
-# db_prepare__
+# db_connect__
 #
-# Prepare various SQL statements
+# Connects to the POPFile database and returns 1 if successful
 #
 #----------------------------------------------------------------------------
-sub db_prepare__
+sub db_connect__
 {
     my ( $self ) = @_;
+
+    # Connect to the database, note that the database must exist for
+    # this to work, to make this easy for people POPFile we will
+    # create the database automatically here using the file
+    # 'popfile.sql' which should be located in the same directory the
+    # Classifier/Bayes.pm module
+
+    # If we are using SQLite then the dbname is actually the name of a
+    # file, and hence we treat it like one, otherwise we leave it
+    # alone
+
+    my $dbname;
+    my $dbconnect = $self->config_( 'dbconnect' );
+    my $dbpresent;
+    my $sqlite = ( $dbconnect =~ /sqlite/i );
+
+    if ( $sqlite ) {
+        $dbname = $self->get_user_path_( $self->config_( 'database' ) );
+        $dbpresent = ( -e $dbname ) || 0;
+    } else {
+        $dbname = $self->config_( 'database' );
+        $dbpresent = 1;
+    }
+
+    # Record whether we are using SQLite or not and the name of the
+    # database so that other routines can access it; this is used by
+    # the backup_database__ routine to make a backup copy of the
+    # database when using SQLite.
+
+    $self->{db_is_sqlite__} = $sqlite;
+    $self->{db_name__}      = $dbname;
+
+    # Now perform the connect, note that this is database independent
+    # at this point, the actual database that we connect to is defined
+    # by the dbconnect parameter.
+
+    $dbconnect =~ s/\$dbname/$dbname/g;
+
+    $self->log_( 0, "Attempting to connect to $dbconnect ($dbpresent)" );
+
+    $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
+                                  $self->config_( 'dbuser' ),
+                                  $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
+
+    $self->log_( 0, "Using SQLite library version " . $self->{db__}{sqlite_version});
+
+    # We check to make sure we're not using DBD::SQLite 1.05 or greater
+    # which uses SQLite V 3 If so, we'll use DBD::SQLite2 and SQLite 2.8,
+    # which is still compatible with old databases
+
+    if ( $self->{db__}{sqlite_version} gt $self->config_('bad_sqlite_version' ) )  {
+        $self->log_( 0, "Substituting DBD::SQLite2 for DBD::SQLite 1.05" );
+        $self->log_( 0, "Please install DBD::SQLite2 and set dbconnect to use DBD::SQLite2" );
+
+        $dbconnect =~ s/SQLite:/SQLite2:/;
+
+        undef $self->{db__};
+#         $self->db_disconnect__();
+
+        $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
+                                      $self->config_( 'dbuser' ),
+                                      $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
+    }
+
+    if ( !defined( $self->{db__} ) ) {
+        $self->log_( 0, "Failed to connect to database and got error $DBI::errstr" );
+        return 0;
+    }
+
+    if ( !$dbpresent ) {
+        if ( !$self->insert_schema__( $sqlite ) ) {
+            return 0;
+        }
+    }
+
+    # Now check for a need to upgrade the database because the schema
+    # has been changed.  From POPFile v0.22.0 there's a special
+    # 'popfile' table inside the database that contains the schema
+    # version number.  If the version number doesn't match or is
+    # missing then do the upgrade.
+
+    open SCHEMA, '<' . $self->get_root_path_( 'Classifier/popfile.sql' );
+    <SCHEMA> =~ /-- POPFILE SCHEMA (\d+)/;
+    my $version = $1;
+    close SCHEMA;
+
+    my $need_upgrade = 1;
+
+    #
+    # retrieve the SQL_IDENTIFIER_QUOTE_CHAR for the database then use it
+    # to strip off any sqlquotechars from the table names we retrieve
+    #
+
+    my $sqlquotechar = $self->{db__}->get_info(29) || '';
+    my @tables = map { s/$sqlquotechar//g; $_ } ($self->{db__}->tables());
+
+    foreach my $table (@tables) {
+        if ( $table eq 'popfile' ) {
+            my @row = $self->{db__}->selectrow_array(
+               'select version from popfile;' );
+
+            if ( $#row == 0 ) {
+                $need_upgrade = ( $row[0] != $version );
+            }
+        }
+    }
+
+    if ( $need_upgrade ) {
+
+        print "\n\nDatabase schema is outdated, performing automatic upgrade\n";
+        # The database needs upgrading, so we are going to dump out
+        # all the data in the database as INSERT OR IGNORE statements
+        # in a temporary file, then DROP all the tables in the
+        # database, then recreate the schema from the new schema and
+        # finally rerun the inserts.
+
+        my $i = 0;
+        my $ins_file = $self->get_user_path_( 'insert.sql' );
+        open INSERT, '>' . $ins_file;
+
+        foreach my $table (@tables) {
+            next if ( $table eq 'popfile' );
+            if ( $sqlite && ( $table =~ /^sqlite_/ ) ) {
+                next;
+            }
+            if ( $i > 99 ) {
+                print "\n";
+            }
+            print "    Saving table $table\n    ";
+
+            my $t = $self->validate_sql_prepare_and_execute( "select * from $table;" );
+            $i = 0;
+            while ( 1 ) {
+                if ( ( ++$i % 100 ) == 0 ) {
+                    print "[$i]";
+                    flush STDOUT;
+                }
+                if ( ( $i % 1000 ) == 0 ) {
+                    print "\n";
+                    flush STDOUT;
+                }
+                my @rows = $t->fetchrow_array;
+
+                last if ( $#rows == -1 );
+
+                print INSERT "INSERT OR IGNORE INTO $table (";
+                for my $i (0..$t->{NUM_OF_FIELDS}-1) {
+                    if ( $i != 0 ) {
+                        print INSERT ',';
+                    }
+                    print INSERT $t->{NAME}->[$i];
+                }
+                print INSERT ') VALUES (';
+                for my $i (0..$t->{NUM_OF_FIELDS}-1) {
+                    if ( $i != 0 ) {
+                        print INSERT ',';
+                    }
+                    my $val = $rows[$i];
+                    if ( $t->{TYPE}->[$i] !~ /^int/i ) {
+                        $val = '' if ( !defined( $val ) );
+                        $val = $self->db_quote( $val );
+                    } else {
+                        $val = 'NULL' if ( !defined( $val ) );
+                    }
+                    print INSERT $val;
+                }
+                print INSERT ");\n";
+            }
+        }
+
+        close INSERT;
+
+        if ( $i > 99 ) {
+            print "\n";
+        }
+
+        foreach my $table (@tables) {
+            if ( $sqlite && ( $table =~ /^sqlite_/ ) ) {
+                next;
+            }
+            print "    Dropping old table $table\n";
+            $self->{db__}->do( "DROP TABLE $table;" );
+        }
+
+        print "    Inserting new database schema\n";
+        if ( !$self->insert_schema__( $sqlite ) ) {
+            return 0;
+        }
+
+        print "    Restoring old data\n    ";
+
+        $self->{db__}->begin_work;
+        open INSERT, '<' . $ins_file;
+        $i = 0;
+        while ( <INSERT> ) {
+            if ( ( ++$i % 100 ) == 0 ) {
+               print "[$i]";
+               flush STDOUT;
+            }
+            if ( ( $i % 1000 ) == 0 ) {
+                print "\n";
+                flush STDOUT;
+            }
+            s/[\r\n]//g;
+            $self->{db__}->do( $_ );
+        }
+        close INSERT;
+        $self->{db__}->commit;
+
+        unlink $ins_file;
+        print "\nDatabase upgrade complete\n\n";
+    }
 
     # Now prepare common SQL statements for use, as a matter of convention the
     # parameters to each statement always appear in the following order:
@@ -679,104 +927,76 @@ sub db_prepare__
     # word
     # parameter
 
-    $self->{db_get_buckets__} = $self->db_()->prepare(                                 # PROFILE BLOCK START
+    $self->{db_get_buckets__} = $self->{db__}->prepare(                                 # PROFILE BLOCK START
              'select name, id, pseudo from buckets
                   where buckets.userid = ?;' );                                         # PROFILE BLOCK STOP
 
-    $self->{db_get_wordid__} = $self->db_()->prepare(                                  # PROFILE BLOCK START
+    $self->{db_get_wordid__} = $self->{db__}->prepare(                                  # PROFILE BLOCK START
              'select id from words
                   where words.word = ? limit 1;' );                                     # PROFILE BLOCK STOP
 
-    $self->{db_get_userid__} = $self->db_()->prepare(                                  # PROFILE BLOCK START
+    $self->{db_get_userid__} = $self->{db__}->prepare(                                  # PROFILE BLOCK START
              'select id from users where name = ?
                                      and password = ? limit 1;' );                      # PROFILE BLOCK STOP
 
-    $self->{db_get_word_count__} = $self->db_()->prepare(                              # PROFILE BLOCK START
+    $self->{db_get_word_count__} = $self->{db__}->prepare(                              # PROFILE BLOCK START
              'select matrix.times from matrix
                   where matrix.bucketid = ? and
                         matrix.wordid = ? limit 1;' );                                  # PROFILE BLOCK STOP
 
-    $self->{db_put_word_count__} = $self->db_()->prepare(                              # PROFILE BLOCK START
+    $self->{db_put_word_count__} = $self->{db__}->prepare(                              # PROFILE BLOCK START
            'replace into matrix ( bucketid, wordid, times ) values ( ?, ?, ? );' );     # PROFILE BLOCK STOP
 
-    $self->{db_get_bucket_unique_counts__} = $self->db_()->prepare(                    # PROFILE BLOCK START
+    $self->{db_get_bucket_unique_counts__} = $self->{db__}->prepare(                    # PROFILE BLOCK START
              'select count(matrix.wordid), buckets.name from matrix, buckets
                   where buckets.userid = ?
                     and matrix.bucketid = buckets.id
                   group by buckets.name;' );                                            # PROFILE BLOCK STOP
 
-    $self->{db_get_bucket_word_counts__} = $self->db_()->prepare(                      # PROFILE BLOCK START
+    $self->{db_get_bucket_word_counts__} = $self->{db__}->prepare(                      # PROFILE BLOCK START
              'select sum(matrix.times), buckets.name from matrix, buckets
                   where matrix.bucketid = buckets.id
                     and buckets.userid = ?
                     group by buckets.name;' );                                          # PROFILE BLOCK STOP
 
-    $self->{db_get_unique_word_count__} = $self->db_()->prepare(                       # PROFILE BLOCK START
+    $self->{db_get_unique_word_count__} = $self->{db__}->prepare(                       # PROFILE BLOCK START
              'select count(matrix.wordid) from matrix, buckets
                   where matrix.bucketid = buckets.id and
                         buckets.userid = ?;' );                                         # PROFILE BLOCK STOP
 
-    $self->{db_get_full_total__} = $self->db_()->prepare(                              # PROFILE BLOCK START
+    $self->{db_get_full_total__} = $self->{db__}->prepare(                              # PROFILE BLOCK START
              'select sum(matrix.times) from matrix, buckets
                   where buckets.userid = ? and
                         matrix.bucketid = buckets.id;' );                               # PROFILE BLOCK STOP
 
-    $self->{db_get_bucket_parameter__} = $self->db_()->prepare(                        # PROFILE BLOCK START
+    $self->{db_get_bucket_parameter__} = $self->{db__}->prepare(                        # PROFILE BLOCK START
              'select bucket_params.val from bucket_params
                   where bucket_params.bucketid = ? and
                         bucket_params.btid = ?;' );                                     # PROFILE BLOCK STOP
 
-    $self->{db_set_bucket_parameter__} = $self->db_()->prepare(                        # PROFILE BLOCK START
+    $self->{db_set_bucket_parameter__} = $self->{db__}->prepare(                        # PROFILE BLOCK START
            'replace into bucket_params ( bucketid, btid, val ) values ( ?, ?, ? );' );  # PROFILE BLOCK STOP
 
-    $self->{db_get_bucket_parameter_default__} = $self->db_()->prepare(                # PROFILE BLOCK START
+    $self->{db_get_bucket_parameter_default__} = $self->{db__}->prepare(                # PROFILE BLOCK START
              'select bucket_template.def from bucket_template
                   where bucket_template.id = ?;' );                                     # PROFILE BLOCK STOP
 
-    $self->{db_get_user_parameter__} = $self->db_()->prepare(                        # PROFILE BLOCK START
-             'select user_params.val from user_params
-                  where user_params.userid = ? and
-                        user_params.utid = ?;' );                                     # PROFILE BLOCK STOP
-
-    $self->{db_set_user_parameter__} = $self->db_()->prepare(                        # PROFILE BLOCK START
-           'replace into user_params ( userid, utid, val ) values ( ?, ?, ? );' );  # PROFILE BLOCK STOP
-
-    $self->{db_get_user_parameter_default__} = $self->db_()->prepare(                # PROFILE BLOCK START
-             'select user_template.def from user_template
-                  where user_template.id = ?;' );                                     # PROFILE BLOCK STOP
-
-    $self->{db_get_buckets_with_magnets__} = $self->db_()->prepare(                    # PROFILE BLOCK START
+    $self->{db_get_buckets_with_magnets__} = $self->{db__}->prepare(                    # PROFILE BLOCK START
              'select buckets.name from buckets, magnets
                   where buckets.userid = ? and
                         magnets.id != 0 and
                         magnets.bucketid = buckets.id group by buckets.name order by buckets.name;' );
                                                                                         # PROFILE BLOCK STOP
-    $self->{db_delete_zero_words__} = $self->db_()->prepare(                           # PROFILE BLOCK START
+    $self->{db_delete_zero_words__} = $self->{db__}->prepare(                           # PROFILE BLOCK START
              'delete from matrix
                   where matrix.times = 0
                     and matrix.bucketid = ?;' );                                        # PROFILE BLOCK STOP
 
-    $self->{db_get_user_list__} = $self->db_()->prepare(
-             'select id, name from users order by name;' );
-
-    $self->{db_get_user_from_account__} = $self->db_()->prepare(
-             'select userid from accounts where account = ?' );
-
     # Get the mapping from parameter names to ids into a local hash
 
-    my $h = $self->db_()->prepare( "select name, id from bucket_template;" );
-    $h->execute();
+    my $h = $self->validate_sql_prepare_and_execute( "select name, id from bucket_template;" );
     while ( my $row = $h->fetchrow_arrayref ) {
         $self->{db_parameterid__}{$row->[0]} = $row->[1];
-    }
-    $h->finish;
-
-    # Get the mapping from user parameter names to ids into a local hash
-
-    $h = $self->db_()->prepare( "select name, id from user_template;" );
-    $h->execute;
-    while ( my $row = $h->fetchrow_arrayref ) {
-        $self->{db_user_parameterid__}{$row->[0]} = $row->[1];
     }
     $h->finish;
 
@@ -785,12 +1005,58 @@ sub db_prepare__
 
 #----------------------------------------------------------------------------
 #
-# db_cleanup__
+# insert_schema__
 #
-# Cleanup handles into the database
+# Insert the POPFile schema in a database
+#
+# $sqlite          Set to 1 if this is a SQLite database
 #
 #----------------------------------------------------------------------------
-sub db_cleanup__
+sub insert_schema__
+{
+    my ( $self, $sqlite ) = @_;
+
+    if ( -e $self->get_root_path_( 'Classifier/popfile.sql' ) ) {
+        my $schema = '';
+
+        $self->log_( 0, "Creating database schema" );
+
+        open SCHEMA, '<' . $self->get_root_path_( 'Classifier/popfile.sql' );
+        while ( <SCHEMA> ) {
+            next if ( /^--/ );
+            next if ( !/[a-z;]/ );
+            s/--.*$//;
+
+            # If the line begins 'alter' and we are doing SQLite then ignore
+            # the line
+
+            if ( $sqlite && ( /^alter/i ) ) {
+                next;
+            }
+
+            $schema .= $_;
+
+            if ( ( /end;/ ) || ( /\);/ ) || ( /^alter/i ) ) {
+                $self->{db__}->do( $schema );
+                $schema = '';
+            }
+        }
+        close SCHEMA;
+        return 1;
+    } else {
+        $self->log_( 0, "Can't find the database schema" );
+        return 0;
+    }
+}
+
+#----------------------------------------------------------------------------
+#
+# db_disconnect__
+#
+# Disconnect from the POPFile database
+#
+#----------------------------------------------------------------------------
+sub db_disconnect__
 {
     my ( $self ) = @_;
 
@@ -806,13 +1072,13 @@ sub db_cleanup__
     $self->{db_get_bucket_parameter__}->finish;
     $self->{db_set_bucket_parameter__}->finish;
     $self->{db_get_bucket_parameter_default__}->finish;
-    $self->{db_get_user_parameter__}->finish;
-    $self->{db_set_user_parameter__}->finish;
-    $self->{db_get_user_parameter_default__}->finish;
     $self->{db_get_buckets_with_magnets__}->finish;
     $self->{db_delete_zero_words__}->finish;
-    $self->{db_get_user_list__}->finish;
-    $self->{db_get_user_from_account__}->finish;
+
+    if ( defined( $self->{db__} ) ) {
+        $self->{db__}->disconnect;
+        undef $self->{db__};
+    }
 }
 
 #----------------------------------------------------------------------------
@@ -833,14 +1099,14 @@ sub db_update_cache__
 
     delete $self->{db_bucketid__}{$userid};
 
-    $self->{db_get_buckets__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_buckets__}, $userid );
     while ( my $row = $self->{db_get_buckets__}->fetchrow_arrayref ) {
         $self->{db_bucketid__}{$userid}{$row->[0]}{id} = $row->[1];
         $self->{db_bucketid__}{$userid}{$row->[0]}{pseudo} = $row->[2];
         $self->{db_bucketcount__}{$userid}{$row->[0]} = 0;
     }
 
-    $self->{db_get_bucket_word_counts__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_word_counts__}, $userid );
 
     for my $b (sort keys %{$self->{db_bucketid__}{$userid}}) {
         $self->{db_bucketcount__}{$userid}{$b} = 0;
@@ -851,7 +1117,7 @@ sub db_update_cache__
         $self->{db_bucketcount__}{$userid}{$row->[1]} = $row->[0];
     }
 
-    $self->{db_get_bucket_unique_counts__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_unique_counts__}, $userid );
 
     while ( my $row = $self->{db_get_bucket_unique_counts__}->fetchrow_arrayref ) {
         $self->{db_bucketunique__}{$userid}{$row->[1]} = $row->[0];
@@ -879,7 +1145,7 @@ sub db_get_word_count__
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->{db_get_wordid__}->execute( $word );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_wordid__}, $word );
     my $result = $self->{db_get_wordid__}->fetchrow_arrayref;
     if ( !defined( $result ) ) {
         return undef;
@@ -887,7 +1153,7 @@ sub db_get_word_count__
 
     my $wordid = $result->[0];
 
-    $self->{db_get_word_count__}->execute( $self->{db_bucketid__}{$userid}{$bucket}{id}, $wordid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_word_count__}, $self->{db_bucketid__}{$userid}{$bucket}{id}, $wordid );
     $result = $self->{db_get_word_count__}->fetchrow_arrayref;
     if ( defined( $result ) ) {
          return $result->[0];
@@ -920,21 +1186,21 @@ sub db_put_word_count__
     # word in the words table (if there's none then we need to add the
     # word), the bucket id in the buckets table (which must exist)
 
-    $word = $self->db_()->quote($word);
+    $word = $self->db_quote($word);
 
-    my $result = $self->db_()->selectrow_arrayref(
+    my $result = $self->{db__}->selectrow_arrayref(
                      "select words.id from words where words.word = $word limit 1;");
 
     if ( !defined( $result ) ) {
-        $self->db_()->do( "insert into words ( word ) values ( $word );" );
-        $result = $self->db_()->selectrow_arrayref(
+        $self->{db__}->do( "insert into words ( word ) values ( $word );" );
+        $result = $self->{db__}->selectrow_arrayref(
                      "select words.id from words where words.word = $word limit 1;");
     }
 
     my $wordid = $result->[0];
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
 
-    $self->{db_put_word_count__}->execute( $bucketid, $wordid, $count );
+    $self->validate_sql_prepare_and_execute( $self->{db_put_word_count__}, $bucketid, $wordid, $count );
 
     return 1;
 }
@@ -956,7 +1222,7 @@ sub upgrade_predatabase_data__
     # of POPFile and hence what we do is cheat and get a session key
     # assuming that the user name is admin with password ''
 
-    my $session = $self->get_administrator_session_key();
+    my $session = $self->get_session_key( 'admin', '' );
 
     if ( !defined( $session ) ) {
         $self->log_( 0, "Tried to get the session key for user admin and failed; cannot upgrade old data" );
@@ -1046,7 +1312,7 @@ sub upgrade_bucket__
 
     foreach my $gl ( 'subject', 'xtc', 'xpl' ) {
         $self->log_( 1, "Checking deprecated parameter GLOBAL_$gl for $bucket\n" );
-        my $val = $self->configuration_()->deprecated_parameter( "GLOBAL_$gl" );
+        my $val = $self->{configuration__}->deprecated_parameter( "GLOBAL_$gl" );
         if ( defined( $val ) && ( $val == 0 ) ) {
             $self->log_( 1, "GLOBAL_$gl is 0 for $bucket, overriding $gl\n" );
             $self->set_bucket_parameter( $session, $bucket, $gl, 0 );
@@ -1101,7 +1367,7 @@ sub upgrade_bucket__
     if ( -e $self->get_user_path_( $self->config_( 'corpus' ) . "/$bucket/table" ) ) {
         $self->log_( 0, "Performing automatic upgrade of $bucket corpus from flat file to DBI" );
 
-        $self->db_()->begin_work;
+        $self->{db__}->begin_work;
 
         if ( open WORDS, '<' . $self->get_user_path_( $self->config_( 'corpus' ) . "/$bucket/table" ) )  {
 
@@ -1112,7 +1378,7 @@ sub upgrade_bucket__
                 if ( $1 != $self->{corpus_version__} )  {
                     print STDERR "Incompatible corpus version in $bucket\n";
                     close WORDS;
-                    $self->db_()->rollback;
+                    $self->{db__}->rollback;
                     return 0;
                 } else {
                     $self->log_( 0, "Upgrading bucket $bucket..." );
@@ -1141,12 +1407,12 @@ sub upgrade_bucket__
                 close WORDS;
             } else {
                 close WORDS;
-                $self->db_()->rollback;
+                $self->{db__}->rollback;
                 unlink $self->get_user_path_( $self->config_( 'corpus' ) . "/$bucket/table" );
                 return 0;
             }
 
-            $self->db_()->commit;
+            $self->{db__}->commit;
             unlink $self->get_user_path_( $self->config_( 'corpus' ) . "/$bucket/table" );
         }
     }
@@ -1164,7 +1430,7 @@ sub upgrade_bucket__
         tie %h, "BerkeleyDB::Hash", -Filename => $bdb_file;
 
         $self->log_( 0, "Upgrading bucket $bucket..." );
-        $self->db_()->begin_work;
+        $self->{db__}->begin_work;
 
         my $wc = 1;
 
@@ -1183,7 +1449,7 @@ sub upgrade_bucket__
 
         $wc -= 1;
         $self->log_( 0, "(completed $wc words)" );
-        $self->db_()->commit;
+        $self->{db__}->commit;
         untie %h;
         unlink $bdb_file;
     }
@@ -1220,7 +1486,7 @@ sub magnet_match_helper__
     my @magnets;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->db_()->prepare(                                           # PROFILE BLOCK START
+    my $h = $self->validate_sql_prepare_and_execute(                                           # PROFILE BLOCK START
         "select magnets.val, magnets.id from magnets, users, buckets, magnet_types
              where buckets.id = $bucketid and
                    magnets.id != 0 and
@@ -1228,8 +1494,6 @@ sub magnet_match_helper__
                    magnets.bucketid = buckets.id and
                    magnet_types.mtype = '$type' and
                    magnets.mtid = magnet_types.id order by magnets.val;" );   # PROFILE BLOCK STOP
-
-    $h->execute;
     while ( my $row = $h->fetchrow_arrayref ) {
         push @magnets, [$row->[0], $row->[1]];
     }
@@ -1319,12 +1583,11 @@ sub add_words_to_bucket__
     # then update those counts and write them back to the database.
 
     my $words;
-    $words = join( ',', map( $self->db_()->quote( $_ ), (sort keys %{$self->{parser__}{words__}}) ) );
-    $self->{get_wordids__} = $self->db_()->prepare(        # PROFILE BLOCK START
+    $words = join( ',', map( $self->{db__}->quote( $_ ), (sort keys %{$self->{parser__}{words__}}) ) );
+    $self->{get_wordids__} = $self->validate_sql_prepare_and_execute(        # PROFILE BLOCK START
              "select id, word
                   from words
                   where word in ( $words );" );             # PROFILE BLOCK STOP
-    $self->{get_wordids__}->execute;
 
     my @id_list;
     my %wordmap;
@@ -1338,13 +1601,11 @@ sub add_words_to_bucket__
 
     my $ids = join( ',', @id_list );
 
-    $self->{db_getwords__} = $self->db_()->prepare(                                         # PROFILE BLOCK START
+    $self->{db_getwords__} = $self->validate_sql_prepare_and_execute(                                         # PROFILE BLOCK START
              "select matrix.times, matrix.wordid
                   from matrix
                   where matrix.wordid in ( $ids )
                     and matrix.bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};" );  # PROFILE BLOCK STOP
-
-    $self->{db_getwords__}->execute;
 
     my %counts;
 
@@ -1354,7 +1615,7 @@ sub add_words_to_bucket__
 
     $self->{db_getwords__}->finish;
 
-    $self->db_()->begin_work;
+    $self->{db__}->begin_work;
     foreach my $word (keys %{$self->{parser__}->{words__}}) {
 
         # If there's already a count then it means that the word is
@@ -1364,7 +1625,7 @@ sub add_words_to_bucket__
         # set_value_ which would need to look up the wordid again
 
         if ( defined( $wordmap{$word} ) && defined( $counts{$wordmap{$word}} ) ) {
-            $self->{db_put_word_count__}->execute( $self->{db_bucketid__}{$userid}{$bucket}{id},               # PROFILE BLOCK START
+            $self->validate_sql_prepare_and_execute( $self->{db_put_word_count__}, $self->{db_bucketid__}{$userid}{$bucket}{id},               # PROFILE BLOCK START
                 $wordmap{$word}, $counts{$wordmap{$word}} + $subtract * $self->{parser__}->{words__}{$word} ); # PROFILE BLOCK STOP
         } else {
 
@@ -1383,10 +1644,10 @@ sub add_words_to_bucket__
     # removed
 
     if ( $subtract == -1 ) {
-        $self->{db_delete_zero_words__}->execute( $self->{db_bucketid__}{$userid}{$bucket}{id} );
+        $self->validate_sql_prepare_and_execute( $self->{db_delete_zero_words__}, $self->{db_bucketid__}{$userid}{$bucket}{id} );
     }
 
-    $self->db_()->commit;
+    $self->{db__}->commit;
 }
 
 #----------------------------------------------------------------------------
@@ -1502,17 +1763,30 @@ sub generate_unique_session_key__
 {
     my ( $self ) = @_;
 
-    # Generate a long random number, hash it and the time together to
-    # get a random session key in hex
+    my @chars = ( 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',   # PROFILE BLOCK START
+                  'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'U', 'V', 'W', 'X', 'Y',
+                  'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A' ); # PROFILE BLOCK STOP
 
-    $self->log_( 1, "Generating random octet" );
-    my $random = makerandom_octet(
-                    Length   => 128,
-                    Strength => $self->global_config_( 'crypt_strength' ),
-                    Device   => $self->global_config_( 'crypt_device' ),
-                 );
-    my $now = time;
-    return sha256_hex( "$$" . "$random$now" );
+    my $session;
+
+    do {
+        $session = '';
+        my $length = int( 16 + rand(4) );
+
+        for my $i (0 .. $length) {
+            my $random = $chars[int( rand(36) )];
+
+            # Just to add spice to things we sometimes lowercase the value
+
+            if ( rand(1) < rand(1) ) {
+                $random = lc($random);
+            }
+
+            $session .= $random;
+        }
+    } while ( defined( $self->{api_sessions__}{$session} ) );
+
+    return $session;
 }
 
 #----------------------------------------------------------------------------
@@ -1521,13 +1795,11 @@ sub generate_unique_session_key__
 #
 # $session        A session key previously returned by get_session_key
 #
-# Releases and invalidates the session key. Worker function that does
-# the work of release_session_key.
-#
-#                   **** DO NOT CALL DIRECTLY ****
-#
-# unless you want your session key released immediately, possibly
-# preventing asynchronous tasks from completing
+# Releases and invalidates the session key. Worker function that does the work
+# of release_session_key.
+#                   ****DO NOT CALL DIRECTLY****
+# unless you want your session key released immediately, possibly preventing
+# asynchronous tasks from completing
 #
 #----------------------------------------------------------------------------
 sub release_session_key_private__
@@ -1554,6 +1826,12 @@ sub release_session_key_private__
 sub valid_session_key__
 {
     my ( $self, $session ) = @_;
+
+    # This provides protection against someone using the XML-RPC
+    # interface and calling this API directly to fish for session
+    # keys, this must be called from within this module
+
+    return undef if ( caller ne 'Classifier::Bayes' );
 
     # If the session key is invalid then wait 1 second.  This is done
     # to prevent people from calling a POPFile API such as
@@ -1612,7 +1890,7 @@ sub get_session_key
 
     my $hash = md5_hex( $user . '__popfile__' . $pwd );
 
-    $self->{db_get_userid__}->execute( $user, $hash );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_userid__}, $user, $hash );
     my $result = $self->{db_get_userid__}->fetchrow_arrayref;
     if ( !defined( $result ) ) {
 
@@ -1638,43 +1916,6 @@ sub get_session_key
 
 #----------------------------------------------------------------------------
 #
-# get_user_id_from_session
-#
-# $session        A session key previously returned by get_session_key
-#
-# Returns the user ID associated with a session
-#
-#----------------------------------------------------------------------------
-sub get_user_id_from_session
-{
-    my ( $self, $session ) = @_;
-
-    return $self->valid_session_key__( $session );
-}
-
-#----------------------------------------------------------------------------
-#
-# get_user_name_from_session
-#
-# $session        A session key previously returned by get_session_key
-#
-# Returns the user name associated with a session
-#
-#----------------------------------------------------------------------------
-sub get_user_name_from_session
-{
-    my ( $self, $session ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    if ( defined($userid) ) {
-        return $self->get_user_name_from_id( $session, $userid );
-    } else {
-        return undef;
-    }
-}
-
-#----------------------------------------------------------------------------
-#
 # release_session_key
 #
 # $session        A session key previously returned by get_session_key
@@ -1687,157 +1928,8 @@ sub release_session_key
     my ( $self, $session ) = @_;
 
     $self->mq_post_( "RELSE", $session );
-
-    return undef;
 }
 
-#----------------------------------------------------------------------------
-#
-# get_administrator_session_key
-#
-# Returns a string based session key for the administrator. WARNING
-# this is not for external use.  This function bypasses all
-# authentication checks and gives admin access.  Should only be called
-# in the top-level POPFile process.
-#
-#----------------------------------------------------------------------------
-sub get_administrator_session_key
-{
-    my ( $self ) = @_;
-
-    my $session = $self->generate_unique_session_key__();
-    $self->{api_sessions__}{$session} = 1;
-    $self->db_update_cache__( $session );
-    $self->log_( 1, "get_administrator_session_key returning key $session" );
-    return $session;
-}
-
-#----------------------------------------------------------------------------
-#
-# get_single_user_session_key
-#
-# Returns a string based session key for the administrator. WARNING
-# this is not for external use.  This function bypasses all
-# authentication checks and gives admin access.  Should only be called
-# in the top-level POPFile process.
-#
-#----------------------------------------------------------------------------
-sub get_single_user_session_key
-{
-    my ( $self ) = @_;
-
-    my $single_user_session = $self->generate_unique_session_key__();
-    $self->{api_sessions__}{$single_user_session} = 1;
-    $self->db_update_cache__( $single_user_session );
-    $self->log_( 1, "get_session_key_from_token returning key $single_user_session for the single user mode" );
-
-    # Send the session to the parent so that it is recorded and can
-    # be correctly shutdown
-
-    $self->mq_post_( 'CREAT', $single_user_session, 1 );
-
-    return $single_user_session;
-}
-
-#----------------------------------------------------------------------------
-#
-# get_session_key_from_token (ADMIN ONLY)
-#
-# Gets a session key from a account token
-#
-# $session          Valid administrator session
-# $module           Name of the module that is passing the token
-# $token            The token (usually an account name)
-#
-# Returns undef on failure or a session key
-#
-#----------------------------------------------------------------------------
-sub get_session_key_from_token
-{
-    my ( $self, $session, $module, $token ) = @_;
-
-    # If we are in single user mode then return the single user
-    # mode session (a new administrator session) for compatibility
-    # with old versions of POPFile.
-
-    if ( $self->global_config_( 'single_user' ) == 1 ) {
-        # Generate a new session for the single user mode
-
-        return $self->get_single_user_session_key();
-    }
-
-    # Verify that the user has an administrator session set up
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return undef;
-    }
-
-    # If the this is not the pop3 module then return the administrator
-    # session since there is currently no token matching for non-POP3
-    # accounts.
-
-    if ( ( $module ne 'pop3' ) && ( $module ne 'insert' ) ) {
-        return $self->get_single_user_session_key();
-    }
-
-    my $user;
-
-    if ( $module eq 'pop3' ) {
-        my ( $server, $username ) = split( /:/, $token );
-
-        my $secure_server = $self->module_config_( 'pop3', 'secure_server' );
-
-        if ( defined( $secure_server ) && ( $secure_server eq $server ) ) {
-
-            # transparent proxy mode
-
-            $self->log_( 2, "Connect $server via transparent proxy mode" );
-
-            if ( !defined($server) || !defined($username) ) {
-                $self->log_( 1, "Unknown account $module:$token" );
-                return undef;
-            }
-
-            $user = $self->get_user_id( $session, $username );
-
-        } else {
-
-            # Check the token against the associations in the database and
-            # figure out which user is being talked about
-
-            my $result = $self->{db_get_user_from_account__}->execute(
-                                                              "$module:$token" );
-            if ( !defined( $result ) ) {
-                $self->log_( 1, "Unknown account $module:$token" );
-                return undef;
-            }
-
-            my $rows = $self->{db_get_user_from_account__}->fetchrow_arrayref;
-            $user = defined( $rows )?$rows->[0]:undef;
-        }
-    } elsif ( $module eq 'insert' ) {
-        # insert.pl
-
-        $user = $self->get_user_id( $session, $token );
-    }
-
-    if ( !defined( $user ) ) {
-        $self->log_( 1, "Unknown account $module:$token" );
-        return undef;
-    }
-
-    my $user_session = $self->generate_unique_session_key__();
-    $self->{api_sessions__}{$user_session} = $user;
-    $self->db_update_cache__( $user_session );
-    $self->log_( 1, "get_session_key_from_token returning key $user_session for user $self->{api_sessions__}{$user_session}" );
-
-    # Send the session to the parent so that it is recorded and can
-    # be correctly shutdown
-
-    $self->mq_post_( 'CREAT', $user_session, $user );
-
-    return $user_session;
-}
 
 #----------------------------------------------------------------------------
 #
@@ -1898,13 +1990,12 @@ sub get_top_bucket__
 sub classify
 {
     my ( $self, $session, $file, $templ, $matrix, $idmap ) = @_;
-    $self->log_( 1, "Starting classify" );
     my $msg_total = 0;
 
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->{unclassified__} = log( $self->user_config_( 1, 'unclassified_weight' ) );
+    $self->{unclassified__} = log( $self->config_( 'unclassified_weight' ) );
 
     $self->{magnet_used__}   = 0;
     $self->{magnet_detail__} = 0;
@@ -1922,7 +2013,6 @@ sub classify
     for my $bucket ($self->get_buckets_with_magnets( $session ))  {
         for my $type ($self->get_magnet_types_in_bucket( $session, $bucket )) {
             if ( $self->magnet_match__( $session, $self->{parser__}->get_header($type), $bucket, $type ) ) {
-                $self->log_( 1, "Matched message to magnet. Bucket is $bucket." );
                 return $bucket;
             }
         }
@@ -1947,7 +2037,7 @@ sub classify
     my @ok_buckets;
 
     for my $bucket (@buckets) {
-        if ( defined $self->{bucket_start__}{$userid}{$bucket} && $self->{bucket_start__}{$userid}{$bucket} != 0 ) {
+        if ( $self->{bucket_start__}{$userid}{$bucket} != 0 ) {
             $score{$bucket} = $self->{bucket_start__}{$userid}{$bucket};
             $matchcount{$bucket} = 0;
             push @ok_buckets, ( $bucket );
@@ -2001,13 +2091,12 @@ sub classify
     # winning bucket is.
 
     my $words;
-    $words = join( ',', map( $self->db_()->quote( $_ ), (sort keys %{$self->{parser__}{words__}}) ) );
-    $self->{get_wordids__} = $self->db_()->prepare(  # PROFILE BLOCK START
+    $words = join( ',', map( $self->{db__}->quote( $_ ), (sort keys %{$self->{parser__}{words__}}) ) );
+    $self->{get_wordids__} = $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
              "select id, word
                   from words
                   where word in ( $words )
                   order by id;" );                    # PROFILE BLOCK STOP
-    $self->{get_wordids__}->execute;
 
     my @id_list;
     my %temp_idmap;
@@ -2025,14 +2114,12 @@ sub classify
 
     my $ids = join( ',', @id_list );
 
-    $self->{db_classify__} = $self->db_()->prepare(            # PROFILE BLOCK START
+    $self->{db_classify__} = $self->validate_sql_prepare_and_execute(            # PROFILE BLOCK START
              "select matrix.times, matrix.wordid, buckets.name
                   from matrix, buckets
                   where matrix.wordid in ( $ids )
                     and matrix.bucketid = buckets.id
                     and buckets.userid = $userid;" );           # PROFILE BLOCK STOP
-
-    $self->{db_classify__}->execute;
 
     # %matrix maps wordids and bucket names to counts
     # $matrix{$wordid}{$bucket} == $count
@@ -2079,7 +2166,7 @@ sub classify
     my @ranking = sort {$score{$b} <=> $score{$a}} keys %score;
 
     my %raw_score;
-    my $base_score = defined $ranking[0] ? $score{$ranking[0]} : 0;
+    my $base_score = $score{$ranking[0]};
     my $total = 0;
 
     # If the first and second bucket are too close in their
@@ -2384,7 +2471,6 @@ sub classify
             }
         }
     }
-    $self->log_( 1, "Leaving classify. Class is $class." );
 
     return $class;
 }
@@ -2419,8 +2505,6 @@ sub classify
 sub classify_and_modify
 {
     my ( $self, $session, $mail, $client, $nosave, $class, $slot, $echo, $crlf ) = @_;
-
-    $self->log_( 1, "Starting classify_and_modify" );
 
     $echo = 1    unless (defined $echo);
     $crlf = $eol unless (defined $crlf);
@@ -2460,17 +2544,14 @@ sub classify_and_modify
 
     my $msg_file;
 
-    # User's id of the current session
-    my $userid = $self->valid_session_key__( $session );
-
     # If we don't yet know the classification then start the parser
 
     $class = '' if ( !defined( $class ) );
     if ( $class eq '' ) {
         $self->{parser__}->start_parse();
-        ( $slot, $msg_file ) = $self->history_()->reserve_slot( $session, $userid );
+        ( $slot, $msg_file ) = $self->{history__}->reserve_slot();
     } else {
-        $msg_file = $self->history_()->get_slot_file( $slot );
+        $msg_file = $self->{history__}->get_slot_file( $slot );
     }
 
     # We append .TMP to the filename for the MSG file so that if we are in
@@ -2479,7 +2560,6 @@ sub classify_and_modify
 
     open MSG, ">$msg_file" unless $nosave;
 
-    $self->log_( 1, "Reading mail message." );
     while ( my $line = $self->slurp_( $mail ) ) {
         my $fileline;
 
@@ -2604,7 +2684,7 @@ sub classify_and_modify
     my $xpl_insertion        = $self->get_bucket_parameter( $session, $classification, 'xpl'        );
     my $quarantine           = $self->get_bucket_parameter( $session, $classification, 'quarantine' );
 
-    my $modification = $self->user_config_( $userid, 'subject_mod_left' ) . $classification . $self->user_config_( $userid, 'subject_mod_right' );
+    my $modification = $self->config_( 'subject_mod_left' ) . $classification . $self->config_( 'subject_mod_right' );
 
     # Add the Subject line modification or the original line back again
     # Don't add the classification unless it is not present
@@ -2632,15 +2712,17 @@ sub classify_and_modify
 
     # Add the XPL header
 
-    my $xpl = $self->user_config_( $userid, 'xpl_angle' )?'<':'';
+    my $xpl = $self->config_( 'xpl_angle' )?'<':'';
 
     my $xpl_localhost = ($self->config_( 'localhostname' ) eq '')?"127.0.0.1":$self->config_( 'localhostname' );
 
     $xpl .= "http://";
+
     $xpl .= $self->module_config_( 'html', 'local' )?$xpl_localhost:$self->config_( 'hostname' );
+
     $xpl .= ":" . $self->module_config_( 'html', 'port' ) . "/jump_to_message?view=$slot";
 
-    if ( $self->user_config_( $userid, 'xpl_angle' ) ) {
+    if ( $self->config_( 'xpl_angle' ) ) {
         $xpl .= '>';
     }
 
@@ -2758,13 +2840,12 @@ sub classify_and_modify
             # file then copying to another) (perhaps a select on $mail
             # to predict if there is flushable data)
 
-            $self->flush_extra_( $mail, \*FLUSH, 0 );
+            $self->flush_extra_( $mail, \*FLUSH, 0);
             close FLUSH;
 
             # append any data we got to the actual temp file
 
-            if ( ( (-s "$msg_file.flush") > 0 ) &&
-                   ( open FLUSH, "<$msg_file.flush" ) ) {
+            if ( ( (-s "$msg_file.flush") > 0 ) && ( open FLUSH, "<$msg_file.flush" ) ) {
                 binmode FLUSH;
                 if ( open TEMP, ">>$msg_file" ) {
                     binmode TEMP;
@@ -2797,169 +2878,13 @@ sub classify_and_modify
 
     if ( $class eq '' ) {
         if ( $nosave ) {
-            $self->history_()->release_slot( $slot );
+            $self->{history__}->release_slot( $slot );
         } else {
-            $self->history_()->commit_slot( $session, $slot, $classification, $self->{magnet_detail__} );
+            $self->{history__}->commit_slot( $session, $slot, $classification, $self->{magnet_detail__} );
         }
     }
-    $self->log_( 1, "classify_and_modify done. Classification is $classification" );
 
     return ( $classification, $slot, $self->{magnet_used__} );
-}
-
-#----------------------------------------------------------------------------
-#
-# reclassify
-#
-# Called to inform the module about a reclassification from one bucket
-# to another
-#
-# session            Valid API session
-# messages           hash mapping message slots to new buckets
-#
-# Returns 0 if succesful, undef if there was an error
-#
-#----------------------------------------------------------------------------
-sub reclassify
-{
-
-    my ($self, $session, %messages ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    $self->log_( 0, "Performing some reclassification. " . scalar %messages );
-
-    my %work;
-    while ( my ( $slot, $newbucket ) = each %messages ) {
-        $self->log_(2, "Message $slot will be reclassified to $newbucket" );
-        push @{$work{$newbucket}},
-                $self->history_()->get_slot_file( $slot );
-        my @fields = $self->history_()->get_slot_fields( $slot, $session );
-        my $bucket = $fields[8];
-        $self->classifier_()->reclassified(
-            $session, $bucket, $newbucket, 0 );
-        $self->history_()->change_slot_classification(
-                $slot, $newbucket, $session, 0);
-    }
-
-    # At this point the work hash maps the buckets to lists of
-    # files to reclassify, so run through them doing bulk updates
-
-    foreach my $newbucket (keys %work) {
-        $self->classifier_()->add_messages_to_bucket(
-            $session, $newbucket, @{$work{$newbucket}} );
-
-        $self->log_( 1, "Reclassified " . $#{$work{$newbucket}} . " messages to $newbucket" );
-    }
-    return 0;
-}
-
-#----------------------------------------------------------------------------
-#
-# get_accounts (ADMIN ONLY)
-#
-# Returns a list of accounts associatd with the passed in user ID.  This
-# function is ADMIN ONLY.
-#
-# $session   A valid session key returned by a call to get_session_key
-# $id        A user id
-#
-#----------------------------------------------------------------------------
-sub get_accounts
-{
-    my ( $self, $session, $id ) = @_;
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return undef;
-    }
-
-    # If user is an admin then grab the accounts for the user requested
-
-    my $h = $self->db_()->prepare( "select account from accounts where userid = $id;" );
-    $h->execute;
-    my @accounts;
-    while ( my $row = $h->fetchrow_arrayref ) {
-        push ( @accounts, $row->[0] );
-    }
-    $h->finish;
-
-    return @accounts;
-}
-
-#----------------------------------------------------------------------------
-#
-# add_account (ADMIN ONLY)
-#
-# Add an account associated with a user
-#
-# $session   A valid session key returned by a call to get_session_key
-# $id        A user id
-# $module    The module adding the account
-# $account   The account to add
-#
-# Returns 1 if the account was added successfully, or 0 for an error,
-# -1 if another user already has that account associated with it
-# ----------------------------------------------------------------------------
-sub add_account
-{
-    my ( $self, $session, $id, $module, $account ) = @_;
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return 0;
-    }
-
-    # User is admin so try to insert the new account after checking to see
-    # if someone already has this account
-
-    my $result = $self->{db_get_user_from_account__}->execute( "$module:$account" );
-    if ( !defined( $result ) ) {
-        return 0;
-    }
-    if ( defined( $self->{db_get_user_from_account__}->fetchrow_arrayref ) ) {
-        return -1;
-    }
-
-    $account = $self->db_()->quote( "$module:$account" );
-    my $h = $self->db_()->prepare( "insert into accounts ( userid, account ) values ( $id, $account );" );
-    if ( !defined( $h->execute ) ) {
-        return 0;
-    }
-
-    return 1;
-}
-
-#----------------------------------------------------------------------------
-#
-# remove_account (ADMIN ONLY)
-#
-# Remove an account associated with a user
-#
-# $session   A valid session key returned by a call to get_session_key
-# $module    The module removing the account
-# $account   The account to remove
-#
-# Returns 1 if the account was successfully removed, 0 if not
-#
-#----------------------------------------------------------------------------
-sub remove_account
-{
-    my ( $self, $session, $module, $account ) = @_;
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return 0;
-    }
-
-    my $quoted_account = $self->db_()->quote( "$module:$account" );
-    my $result = $self->db_()->do( "delete from accounts where account = $quoted_account;" );
-
-    return defined( $result );
 }
 
 #----------------------------------------------------------------------------
@@ -3008,7 +2933,6 @@ sub get_bucket_id
 
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
-    return undef if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) );
 
     return $self->{db_bucketid__}{$userid}{$bucket}{id};
 }
@@ -3036,7 +2960,7 @@ sub get_bucket_name
         }
     }
 
-    return undef;
+    return '';
 }
 
 #----------------------------------------------------------------------------
@@ -3176,7 +3100,7 @@ sub get_bucket_word_list
     return undef if ( !defined( $userid ) );
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $result = $self->db_()->selectcol_arrayref(  # PROFILE BLOCK START
+    my $result = $self->{db__}->selectcol_arrayref(  # PROFILE BLOCK START
         "select words.word from matrix, words
          where matrix.wordid  = words.id and
                matrix.bucketid = $bucketid and
@@ -3205,7 +3129,7 @@ sub get_bucket_word_prefixes
     my $prev = '';
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $result = $self->db_()->selectcol_arrayref(   # PROFILE BLOCK START
+    my $result = $self->{db__}->selectcol_arrayref(   # PROFILE BLOCK START
         "select words.word from matrix, words
          where matrix.wordid  = words.id and
                matrix.bucketid = $bucketid;");        # PROFILE BLOCK STOP
@@ -3215,10 +3139,10 @@ sub get_bucket_word_prefixes
     # with "use locale" is memory and time consuming, and may cause
     # perl crash.
 
-    if ( $self->user_module_config_( 1, 'html', 'language' ) eq 'Nihongo' ) {
+    if ( $self->module_config_( 'html', 'language' ) eq 'Nihongo' ) {
         return grep {$_ ne $prev && ($prev = $_, 1)} sort map {substr_euc__($_,0,1)} @{$result};
     } else {
-        if  ( $self->user_module_config_( 1, 'html', 'language' ) eq 'Korean' ) {
+        if  ( $self->module_config_( 'html', 'language' ) eq 'Korean' ) {
             return grep {$_ ne $prev && ($prev = $_, 1)} sort map {$_ =~ /([\x20-\x80]|$eksc)/} @{$result};
         } else {
             return grep {$_ ne $prev && ($prev = $_, 1)} sort map {substr($_,0,1)}  @{$result};
@@ -3242,7 +3166,7 @@ sub get_word_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->{db_get_full_total__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_full_total__}, $userid );
     return $self->{db_get_full_total__}->fetchrow_arrayref->[0];
 }
 
@@ -3306,7 +3230,7 @@ sub get_unique_word_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->{db_get_unique_word_count__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_unique_word_count__}, $userid );
     return $self->{db_get_unique_word_count__}->fetchrow_arrayref->[0];
 }
 
@@ -3381,14 +3305,16 @@ sub get_bucket_parameter
 
     # If there is a non-default value for this parameter then return it.
 
-    $self->{db_get_bucket_parameter__}->execute( $self->{db_bucketid__}{$userid}{$bucket}{id}, $self->{db_parameterid__}{$parameter} );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_parameter__},
+        $self->{db_bucketid__}{$userid}{$bucket}{id},
+        $self->{db_parameterid__}{$parameter} );
     my $result = $self->{db_get_bucket_parameter__}->fetchrow_arrayref;
 
     # If this parameter has not been defined for this specific bucket then
     # get the default value
 
     if ( !defined( $result ) ) {
-        $self->{db_get_bucket_parameter_default__}->execute(  # PROFILE BLOCK START
+        $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_parameter_default__},  # PROFILE BLOCK START
             $self->{db_parameterid__}{$parameter} );          # PROFILE BLOCK STOP
         $result = $self->{db_get_bucket_parameter_default__}->fetchrow_arrayref;
     }
@@ -3396,591 +3322,6 @@ sub get_bucket_parameter
     if ( defined( $result ) ) {
         $self->{db_parameters__}{$userid}{$bucket}{$parameter} = $result->[0];
         return $result->[0];
-    } else {
-        return undef;
-    }
-}
-
-#----------------------------------------------------------------------------
-#
-# create_user (ADMIN ONLY)
-#
-# Creates a new user with a given name and optionally copies the
-# configuration of another user.
-#
-# $session     A valid session ID for an administrator
-# $new_user    The name for the new user
-# $clone       (optional) Name of user to clone
-#
-# Returns 0 for success, 1 for user already exists, 2 for other error,
-# 3 for clone failure and undef if caller isn't an admin.  If
-# successful also returns an initial password for the user.
-#
-# ----------------------------------------------------------------------------
-sub create_user
-{
-    my ( $self, $session, $new_user, $clone ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return ( undef, undef );
-    }
-
-    # Check to see if we already have a user with that name
-
-    if ( defined( $self->get_user_id( $session, $new_user ) ) ) {
-        return ( 1, undef );
-    }
-
-    my $password = $self->generate_users_password();
-
-    my $password_hash = md5_hex( $new_user . '__popfile__' . $password );
-
-    my $quoted_user = $self->db_()->quote( $new_user );
-    my $quoted_hash = $self->db_()->quote( $password_hash );
-    $self->db_()->do( "insert into users ( name, password ) values ( $quoted_user, $quoted_hash );" );
-
-    my $id = $self->get_user_id( $session, $new_user );
-
-    if ( !defined( $id ) ) {
-        return ( 2, undef );
-    }
-
-    # See if we need to clone the configuration of another user and
-    # only clone non-default values
-
-    if ( defined( $clone ) && ( $clone ne '' ) ) {
-        my $clid = $self->get_user_id( $session, $clone );
-        if ( !defined( $clid ) ) {
-            return ( 3, undef );
-        }
-        my $h = $self->db_()->prepare( "select utid, val from user_params where userid = $clid;" );
-        $h->execute;
-        my %add;
-        while ( my $row = $h->fetchrow_arrayref ) {
-            $add{$row->[0]} = $row->[1];
-        }
-        $h->finish;
-        foreach my $utid (keys %add) {
-            $self->db_()->do( "insert into user_params ( userid, utid, val ) values ( $id, $utid, '$add{$utid}' );" );
-        }
-
-        # Clone buckets
-
-        $h = $self->db_()->prepare( "select name, pseudo from buckets where userid = $clid;" );
-        $h->execute;
-        my %buckets;
-        while ( my $row = $h->fetchrow_arrayref ) {
-            $buckets{$row->[0]} = $row->[1];
-        }
-        $h->finish;
-        foreach my $name (keys %buckets) {
-            $self->db_()->do( "insert into buckets ( userid, name, pseudo ) values ( $id, '$name', $buckets{$name} );" );
-        }
-
-        # Fetch new bucket ids and cloned bucket ids
-
-        $h = $self->db_()->prepare(
-            "select bucket1.id, bucket2.id from buckets as bucket1, buckets as bucket2 
-                 where bucket1.userid = $id and bucket1.name = bucket2.name and bucket2.userid = $clid;" );
-        $h->execute;
-        my %new_buckets;
-        while ( my $row = $h->fetchrow_arrayref ) {
-            $new_buckets{$row->[1]} = $row->[0];
-        }
-        $h->finish;
-
-        # Clone bucket parameters
-
-        $h = $self->db_()->prepare(
-            "select bucketid, btid, val from buckets, bucket_params
-                 where userid = $clid and buckets.id = bucket_params.bucketid;" );
-        $h->execute;
-        my %bucket_params;
-        while (my $row = $h->fetchrow_arrayref ) {
-            $bucket_params{$new_buckets{$row->[0]}}{$row->[1]} = $row->[2];
-        }
-        $h->finish;
-
-        foreach my $bucketid ( keys %bucket_params ) {
-            foreach my $btid ( keys %{$bucket_params{$bucketid}} ) {
-                my $val = $self->db_()->quote( $bucket_params{$bucketid}{$btid} );
-                $self->db_()->do(
-                    "insert into bucket_params ( bucketid, btid, val ) 
-                         values ( $bucketid, $btid, $val );" );
-            }
-        }
-
-        # TODO : Clone magnets
-
-        # TODO : Clone corpus data (optional)
-
-    } else {
-
-        # If we are not cloning a user then they need at least the
-        # default settings
-
-        $self->db_()->do( "insert into buckets ( name, pseudo, userid ) values ( 'unclassified', 1, $id );" );
-    }
-
-    return ( 0, $password );
-}
-
-#----------------------------------------------------------------------------
-#
-# generate_users_password
-#
-# Generates user's initial password
-#
-#----------------------------------------------------------------------------
-sub generate_users_password
-{
-    my $password = '';
-    my @chars = split( //,'abcdefghijklmnopqurstuvwxyz0123456789' );
-
-    while ( length( $password ) < 8 ) {
-        my $c = $chars[int(rand($#chars+1))];
-        if ( int(rand(2)) == 1 ) {
-            $c = uc($c);
-        }
-        $password .= $c;
-    }
-    return $password;
-}
-
-#----------------------------------------------------------------------------
-#
-# remove_user (ADMIN ONLY)
-#
-# Removes an existing user
-#
-# $session     A valid session ID for an administrator
-# $user        The name of the user to remove
-#
-# Returns 0 for success, undef for wrong permissions and 1 for user
-# does not exist, 2 means tried to delete admin
-#
-# ----------------------------------------------------------------------------
-sub remove_user
-{
-    my ( $self, $session, $user ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return undef;
-    }
-
-    # Check that the named user is not an administrator
-
-    my $id = $self->get_user_id( $session, $user );
-
-    if ( defined( $id ) ) {
-        my ( $val, $def ) = $self->get_user_parameter_from_id( $id, 'GLOBAL_can_admin' );
-        if ( $val == 0 ) {
-            my $quoted_user = $self->db_()->quote( $user );
-            $self->db_()->do( "delete from users where name = $quoted_user;" );
-            return 0;
-        } else {
-            return 2;
-        }
-    }
-
-    return 1;
-}
-
-#----------------------------------------------------------------------------
-#
-# initialize_users_password (ADMIN ONLY)
-#
-# Initializes the password for the specified user
-#
-# $session     A valid session ID for an administrator
-# $user        The name of the user to change password
-#
-# Returns 0 for success, undef for wrong permissions and 1 for user
-# does not exist
-#
-# ----------------------------------------------------------------------------
-sub initialize_users_password
-{
-    my ( $self, $session, $user ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return undef;
-    }
-
-    my $id = $self->get_user_id( $session, $user );
-    my $password = $self->generate_users_password();
-
-    if ( defined( $id ) ) {
-        my $result = $self->set_password_for_user( $session, $id, $password );
-        $self->log_( 1, "Password initialized for user '$user' by user $userid" );
-        if ( $result == 1 ) {
-            return (0, $password);
-        }
-    }
-
-    return 1;
-}
-
-#----------------------------------------------------------------------------
-#
-# change_users_password (ADMIN ONLY)
-#
-# Changes the password for the specified user
-#
-# $session     A valid session ID for an administrator
-# $user        The name of the user to change password
-# $password    The new password
-#
-# Returns 0 for success, undef for wrong permissions and 1 for user
-# does not exist
-#
-# ----------------------------------------------------------------------------
-sub change_users_password
-{
-    my ( $self, $session, $user, $password ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return undef;
-    }
-
-    my $id = $self->get_user_id( $session, $user );
-
-    if ( defined( $id ) ) {
-        my $result = $self->set_password_for_user( $session, $id, $password );
-        $self->log_( 1, "Password changed for user '$user' by user $userid" );
-        if ( $result == 1 ) {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-#----------------------------------------------------------------------------
-#
-# validate_password
-#
-# Checks the password for the current user
-#
-# $session     A valid session ID
-# $password    A possible password to check
-#
-# Returns 1 if the password is valid, 0 otherwise
-#
-# ----------------------------------------------------------------------------
-sub validate_password
-{
-    my ( $self, $session, $password ) = @_;
-
-    # Lookup the user name from the session key
-
-    my $user = $self->get_user_name_from_session( $session );
-    if ( !defined( $user ) ) {
-        return 0;
-    }
-
-    my $hash = md5_hex( $user . '__popfile__' . $password );
-
-    $self->{db_get_userid__}->execute( $user, $hash );
-    my $result = $self->{db_get_userid__}->fetchrow_arrayref;
-    if ( !defined( $result ) ) {
-        return 0;
-    }
-
-    return 1;
-}
-
-#----------------------------------------------------------------------------
-#
-# set_password
-#
-# Sets the password for the current user
-#
-# $session     A valid session ID
-# $password    The new password
-#
-# Returns 1 if the password was updated, 0 if not
-#
-# ----------------------------------------------------------------------------
-sub set_password
-{
-    my ( $self, $session, $password ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return 0 if ( !defined( $userid ) );
-
-    return $self->set_password_for_user( $session, $userid, $password );
-}
-
-#----------------------------------------------------------------------------
-#
-# set_password_for_user
-#
-# Sets the password for the current user
-#
-# $session     A valid session ID
-# $userid      A user's id for change password
-# $password    The new password
-#
-# Returns 1 if the password was updated, 0 if not
-#
-# ----------------------------------------------------------------------------
-sub set_password_for_user
-{
-    my ( $self, $session, $userid, $password ) = @_;
-
-    # Get user id for the session
-
-    my $current_userid = $self->valid_session_key__( $session );
-    return 0 if ( !defined( $current_userid ) );
-
-    if ( $current_userid != $userid ) {
-        # If the current user id is not the specified user id, check can_admin
-
-        if ( !$self->is_admin_session( $session ) ) {
-            return 0;
-        }
-    }
-
-    # Lookup the user name from the user id
-
-    my $user = $self->get_user_name_from_id( $session, $userid );
-    if ( !defined( $user ) ) {
-        return 0;
-    }
-
-    my $hash = md5_hex( $user . '__popfile__' . $password );
-
-    my $quoted_hash = $self->db_()->quote( $hash );
-    $self->db_()->do( "update users set password = $quoted_hash where id = $userid;" );
-
-    return 1;
-}
-
-#----------------------------------------------------------------------------
-#
-# get_user_list (ADMIN ONLY)
-#
-# Returns a list of all users in the system
-#
-# $session     A valid session ID for an administrator
-#
-#----------------------------------------------------------------------------
-sub get_user_list
-{
-    my ( $self, $session ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return undef;
-    }
-
-    my %users;
-    $self->{db_get_user_list__}->execute();
-    while ( my $row = $self->{db_get_user_list__}->fetchrow_arrayref ) {
-        $users{$row->[0]} = $row->[1];
-    }
-
-    return \%users;
-}
-
-#----------------------------------------------------------------------------
-#
-# get_user_parameter_list (ADMIN ONLY)
-#
-# Returns a list of all parameters a user can have
-#
-# $session     A valid session ID for an administrator
-#
-#----------------------------------------------------------------------------
-sub get_user_parameter_list
-{
-    my ( $self, $session ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return undef;
-    }
-
-    return keys %{$self->{db_user_parameterid__}};
-}
-
-#----------------------------------------------------------------------------
-#
-# get_user_parameter
-#
-# Returns the value of a per user parameter
-#
-# $session     A valid session ID
-# $parameter   The name of the parameter
-#
-#----------------------------------------------------------------------------
-sub get_user_parameter
-{
-    my ( $self, $session, $parameter ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    my ( $val, $def )= $self->get_user_parameter_from_id( $userid,$parameter );
-
-    return $val;
-}
-
-#----------------------------------------------------------------------------
-#
-# get_user_id (ADMIN ONLY)
-#
-# Returns the database ID of a named user
-#
-# $session     A valid session ID
-# $user        The name of the user
-#
-#----------------------------------------------------------------------------
-sub get_user_id
-{
-    my ( $self, $session, $user ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    # Check that this user is an administrator
-
-    if ( !$self->is_admin_session( $session ) ) {
-        return undef;
-    }
-
-    my $quoted_user = $self->db_()->quote( $user );
-    my $h = $self->db_()->prepare( "select id from users where name = $quoted_user;" );
-    $h->execute;
-    if ( my $row = $h->fetchrow_arrayref ) {
-        $h->finish;
-        return $row->[0];
-    } else {
-        return undef;
-    }
-}
-
-#----------------------------------------------------------------------------
-#
-# is_admin_session
-#
-# Returns TRUE if the session is admin's
-#
-# $session     The valid session ID
-#
-#----------------------------------------------------------------------------
-sub is_admin_session
-{
-    my ( $self, $session ) = @_;
-
-    my $result = $self->get_user_parameter( $session, 'GLOBAL_can_admin' );
-
-    return ( defined($result) ? ( $result == 1 ) : undef );
-}
-
-#----------------------------------------------------------------------------
-#
-# get_user_parameter_from_id
-#
-# Returns the value of a per user parameter (and a boolean that
-# indicates whether this is the default value or not)
-#
-# $user        The ID of the user
-# $parameter   The name of the parameter
-#
-#----------------------------------------------------------------------------
-sub get_user_parameter_from_id
-{
-    my ( $self, $user, $parameter ) = @_;
-
-    # See if there's a cached value
-
-    if ( exists( $self->{cached_user_parameters__}{$user}{$parameter} ) ) {
-        $self->{cache_user_parameters__}{$user}{$parameter}{lastused} = time;
-        return ($self->{cached_user_parameters__}{$user}{$parameter}{value},
-                $self->{cached_user_parameters__}{$user}{$parameter}{default});
-    }
-
-    # If there is a non-default value for this parameter then return it.
-
-    $self->{db_get_user_parameter__}->execute( $user, $self->{db_user_parameterid__}{$parameter} );
-    my $result = $self->{db_get_user_parameter__}->fetchrow_arrayref;
-
-    # If this parameter has not been defined for this specific user then
-    # get the default value
-
-    my $default = 0;
-    if ( !defined( $result ) ) {
-        $self->{db_get_user_parameter_default__}->execute(  # PROFILE BLOCK START
-            $self->{db_user_parameterid__}{$parameter} );          # PROFILE BLOCK STOP
-        $result = $self->{db_get_user_parameter_default__}->fetchrow_arrayref;
-        $default = 1;
-    }
-
-    if ( defined( $result ) ) {
-        $self->{cached_user_parameters__}{$user}{$parameter}{value} =
-            $result->[0];
-        $self->{cached_user_parameters__}{$user}{$parameter}{default} =
-            $default;
-        $self->{cached_user_parameters__}{$user}{$parameter}{lastused} =
-            time;
-        return ( $result->[0], $default );
-    } else {
-        return ( undef, undef );
-    }
-}
-
-#----------------------------------------------------------------------------
-#
-# get_user_name_from_id
-#
-# Returns the name of a user
-#
-# $session     A valid session ID
-# $userid      The ID of the user
-#
-#----------------------------------------------------------------------------
-sub get_user_name_from_id
-{
-    my ( $self, $session, $id ) = @_;
-
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
-
-    my $h = $self->db_()->prepare( "select name from users where id = $id;" );
-    $h->execute;
-    if ( my $row = $h->fetchrow_arrayref ) {
-        $h->finish;
-        return $row->[0];
     } else {
         return undef;
     }
@@ -4016,59 +3357,10 @@ sub set_bucket_parameter
 
     # Exactly one row should be affected by this statement
 
-    $self->{db_set_bucket_parameter__}->execute( $bucketid, $btid, $value );
+    $self->validate_sql_prepare_and_execute( $self->{db_set_bucket_parameter__}, $bucketid, $btid, $value );
 
     if ( defined( $self->{db_parameters__}{$userid}{$bucket}{$parameter} ) ) {
         $self->{db_parameters__}{$userid}{$bucket}{$parameter} = $value;
-    }
-
-    return 1;
-}
-
-#----------------------------------------------------------------------------
-#
-# set_user_parameter_from_id
-#
-# Sets the value associated with a user specific parameter
-#
-# $user        The ID of the user
-# $parameter   The name of the parameter
-# $value       The new value
-#
-#----------------------------------------------------------------------------
-sub set_user_parameter_from_id
-{
-    my ( $self, $user, $parameter, $value ) = @_;
-
-    # Prevent user 1 from stopping being an admin
-
-    if ( ( $user == 1 ) &&
-         ( $parameter eq 'GLOBAL_can_admin' ) &&
-         ( $value != 1 ) ) {
-        return 0;
-    }
-
-    my $utid = $self->{db_user_parameterid__}{$parameter};
-
-    # Check to see if the parameter is being set to the default value
-    # if it is then remove the entry because it is a waste of space
-
-    my $default = 0;
-
-    $self->{db_get_user_parameter_default__}->execute( $utid );
-    my $result = $self->{db_get_user_parameter_default__}->fetchrow_arrayref;
-
-    if ( $result->[0] eq $value ) {
-        $default = 1;
-        $self->db_()->do( "delete from user_params where userid = $user and utid = $utid;" );
-    } else {
-        $self->{db_set_user_parameter__}->execute( $user, $utid, $value );
-    }
-
-    if ( exists( $self->{cached_user_parameters__}{$user}{$parameter} ) ) {
-        $self->{cached_user_parameters__}{$user}{$parameter}{lastused}= time;
-        $self->{cached_user_parameters__}{$user}{$parameter}{value} = $value;
-        $self->{cached_user_parameters__}{$user}{$parameter}{default}=$default;
     }
 
     return 1;
@@ -4110,8 +3402,8 @@ sub get_html_colored_message
 #
 # fast_get_html_colored_message
 #
-# Parser a mail message stored in a file and returns HTML representing
-# the message with coloring of the words
+# Parser a mail message stored in a file and returns HTML representing the message
+# with coloring of the words
 #
 # $session        A valid session key returned by a call to get_session_key
 # $file           The file to colorize
@@ -4162,9 +3454,9 @@ sub create_bucket
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $bucket = $self->db_()->quote( $bucket );
+    $bucket = $self->{db__}->quote( $bucket );
 
-    $self->db_()->do(                                                                    # PROFILE BLOCK START
+    $self->{db__}->do(                                                                    # PROFILE BLOCK START
         "insert into buckets ( name, pseudo, userid ) values ( $bucket, 0, $userid );" ); # PROFILE BLOCK STOP
     $self->db_update_cache__( $session );
 
@@ -4194,12 +3486,8 @@ sub delete_bucket
         return 0;
     }
 
-    my $quoted_bucket = $self->db_()->quote( $bucket );
-    $self->db_()->do(                                   # PROFILE BLOCK START
-        "delete from buckets where 
-             buckets.userid = $userid and 
-             buckets.name = $quoted_bucket and 
-             buckets.pseudo = 0;" );                    # PROFILE BLOCK STOP
+    $self->{db__}->do(                                                                        # PROFILE BLOCK START
+        "delete from buckets where buckets.userid = $userid and buckets.name = '$bucket';" ); # PROFILE BLOCK STOP
     $self->db_update_cache__( $session );
 
     return 1;
@@ -4230,17 +3518,12 @@ sub rename_bucket
         return 0;
     }
 
-    if (  defined( $self->{db_bucketid__}{$userid}{$new_bucket} ) ) {
-        $self->log_( 0, "Bucket named $new_bucket already exists" );
-        return 0;
-    }
-
-    my $id = $self->db_()->quote( $self->{db_bucketid__}{$userid}{$old_bucket}{id} );
-    $new_bucket = $self->db_()->quote( $new_bucket );
+    my $id = $self->{db__}->quote( $self->{db_bucketid__}{$userid}{$old_bucket}{id} );
+    $new_bucket = $self->{db__}->quote( $new_bucket );
 
     $self->log_( 1, "Rename bucket $old_bucket to $new_bucket" );
 
-    my $result = $self->db_()->do( "update buckets set name = $new_bucket where id = $id;" );
+    my $result = $self->{db__}->do( "update buckets set name = $new_bucket where id = $id;" );
 
     if ( !defined( $result ) || ( $result == -1 ) ) {
         return 0;
@@ -4356,7 +3639,7 @@ sub get_buckets_with_magnets
 
     my @result;
 
-    $self->{db_get_buckets_with_magnets__}->execute( $userid );
+    $self->validate_sql_prepare_and_execute( $self->{db_get_buckets_with_magnets__}, $userid );
     while ( my $row = $self->{db_get_buckets_with_magnets__}->fetchrow_arrayref ) {
         push @result, ($row->[0]);
     }
@@ -4384,15 +3667,13 @@ sub get_magnet_types_in_bucket
     my @result;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->db_()->prepare(
-        "select magnet_types.mtype from magnet_types, magnets, buckets
-             where magnet_types.id = magnets.mtid and
-                   magnets.bucketid = buckets.id and
-                   buckets.id = $bucketid
-                   group by magnet_types.mtype
-                   order by magnet_types.mtype;" );
+    my $h = $self->validate_sql_prepare_and_execute( "select magnet_types.mtype from magnet_types, magnets, buckets
+        where magnet_types.id = magnets.mtid and
+              magnets.bucketid = buckets.id and
+              buckets.id = $bucketid
+              group by magnet_types.mtype
+              order by magnet_types.mtype;" );
 
-    $h->execute;
     while ( my $row = $h->fetchrow_arrayref ) {
         push @result, ($row->[0]);
     }
@@ -4420,7 +3701,7 @@ sub clear_bucket
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
 
-    $self->db_()->do( "delete from matrix where matrix.bucketid = $bucketid;" );
+    $self->{db__}->do( "delete from matrix where matrix.bucketid = $bucketid;" );
     $self->db_update_cache__( $session );
 }
 
@@ -4442,7 +3723,7 @@ sub clear_magnets
 
     for my $bucket (keys %{$self->{db_bucketid__}{$userid}}) {
         my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-        $self->db_()->do( "delete from magnets where magnets.bucketid = $bucketid" );
+        $self->{db__}->do( "delete from magnets where magnets.bucketid = $bucketid" );
     }
 }
 
@@ -4467,14 +3748,12 @@ sub get_magnets
     my @result;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->db_()->prepare(
-        "select magnets.val from magnets, magnet_types
-             where magnets.bucketid = $bucketid and
-                   magnets.id != 0 and
-                   magnet_types.id = magnets.mtid and
-                   magnet_types.mtype = '$type' order by magnets.val;" );
+    my $h = $self->validate_sql_prepare_and_execute( "select magnets.val from magnets, magnet_types
+        where magnets.bucketid = $bucketid and
+              magnets.id != 0 and
+              magnet_types.id = magnets.mtid and
+              magnet_types.mtype = '$type' order by magnets.val;" );
 
-    $h->execute;
     while ( my $row = $h->fetchrow_arrayref ) {
         push @result, ($row->[0]);
     }
@@ -4503,15 +3782,14 @@ sub create_magnet
     return undef if ( !defined( $userid ) );
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $result = $self->db_()->selectrow_arrayref(
-        "select magnet_types.id from magnet_types
-             where magnet_types.mtype = '$type';" );
+    my $result = $self->{db__}->selectrow_arrayref("select magnet_types.id from magnet_types
+                                                        where magnet_types.mtype = '$type';" );
 
     my $mtid = $result->[0];
 
-    $text = $self->db_()->quote( $text );
+    $text = $self->{db__}->quote( $text );
 
-    $self->db_()->do( "insert into magnets ( bucketid, mtid, val )
+    $self->{db__}->do( "insert into magnets ( bucketid, mtid, val )
                                      values ( $bucketid, $mtid, $text );" );
 }
 
@@ -4533,9 +3811,8 @@ sub get_magnet_types
 
     my %result;
 
-    my $h = $self->db_()->prepare( "select magnet_types.mtype, magnet_types.header from magnet_types order by mtype;" );
+    my $h = $self->validate_sql_prepare_and_execute( "select magnet_types.mtype, magnet_types.header from magnet_types order by mtype;" );
 
-    $h->execute;
     while ( my $row = $h->fetchrow_arrayref ) {
         $result{$row->[0]} = $row->[1];
     }
@@ -4564,14 +3841,13 @@ sub delete_magnet
     return undef if ( !defined( $userid ) );
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $result = $self->db_()->selectrow_arrayref(
-        "select magnet_types.id from magnet_types
-             where magnet_types.mtype = '$type';" );
+    my $result = $self->{db__}->selectrow_arrayref("select magnet_types.id from magnet_types
+                                                        where magnet_types.mtype = '$type';" );
 
     my $mtid = $result->[0];
-    $text = $self->db_()->quote( $text );
+    $text = $self->{db__}->quote( $text );
 
-    $self->db_()->do( "delete from magnets
+    $self->{db__}->do( "delete from magnets
                             where magnets.bucketid = $bucketid and
                                   magnets.mtid = $mtid and
                                   magnets.val  = $text;" );
@@ -4612,11 +3888,10 @@ sub magnet_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    my $result = $self->db_()->selectrow_arrayref(
-        "select count(*) from magnets, buckets
-             where buckets.userid = $userid and
-                   magnets.id != 0 and
-                   magnets.bucketid = buckets.id;" );
+    my $result = $self->{db__}->selectrow_arrayref( "select count(*) from magnets, buckets
+        where buckets.userid = $userid and
+              magnets.id != 0 and
+              magnets.bucketid = buckets.id;" );
 
     if ( defined( $result ) ) {
         return $result->[0];
@@ -4646,9 +3921,7 @@ sub add_stopword
 
     # Pass language parameter to add_stopword()
 
-    # TODO : hardcoded 1
-
-    return $self->{parser__}->{mangle__}->add_stopword( $stopword, $self->user_module_config_( 1, 'html', 'language' ) );
+    return $self->{parser__}->{mangle__}->add_stopword( $stopword, $self->module_config_( 'html', 'language' ) );
 }
 
 sub remove_stopword
@@ -4660,10 +3933,115 @@ sub remove_stopword
 
     # Pass language parameter to remove_stopword()
 
-    # TODO : hardcoded 1
-
-    return $self->{parser__}->{mangle__}->remove_stopword( $stopword, $self->user_module_config_( 1, 'html', 'language' ) );
+    return $self->{parser__}->{mangle__}->remove_stopword( $stopword, $self->module_config_( 'html', 'language' ) );
 }
+
+
+#----------------------------------------------------------------------------
+#
+# db_quote
+#
+# Quote a string for use in a sql statement. Before calling DBI::quote on the
+# string the string is also checked for any null-bytes.
+#
+# $string   The string that should be quoted.
+#
+# returns the quoted string without any possible null-bytes
+#----------------------------------------------------------------------------
+sub db_quote {
+    my $self   = shift;
+    my $string = shift;
+
+    my $backup = $string;
+    if ( $string =~ s/\x00//g ) {
+        my ( $package, $file, $line ) = caller;
+        $self->log_( 0, "Found null-byte in string '$backup'. Called from package '$package' ($file), line $line." );
+    }
+
+    return $self->{db__}->quote( $string );
+}
+
+
+#----------------------------------------------------------------------------
+#
+# validate_sql_prepare_and_execute
+#
+# This method will prepare sql statements and execute them.
+# The statement itself and any binding parameters are also
+# tested for possible null-characters (\x00).
+# If you pass in a handle to a prepared statement, the statement
+# will be executed and possible binding-parameters are checked.
+#
+# $statement  The sql statement to prepare or the prepared statement handle
+# @args       The (optional) list of binding parameters
+#
+# Returns the result of prepare()
+#----------------------------------------------------------------------------
+sub validate_sql_prepare_and_execute {
+    my $self = shift;
+    my $sql_or_sth  = shift;
+    my @args = @_;
+
+    my $dbh = $self->db();
+    my $sth = undef;
+
+    # Is this a statement-handle or a sql string?
+    if ( (ref $sql_or_sth) =~ m/^DBI::/ ) {
+        $sth = $sql_or_sth;
+    }
+    else {
+        my $sql = $sql_or_sth;
+        $sql = $self->check_for_nullbytes( $sql );
+        $sth = $dbh->prepare( $sql );
+    }
+
+    my $execute_result = undef;
+
+    # Any binding-params?
+    if ( @args ) {
+        foreach my $arg ( @args ) {
+            $arg = $self->check_for_nullbytes( $arg );
+        }
+        $execute_result = $sth->execute( @args );
+    }
+    else {
+        $execute_result = $sth->execute();
+    }
+
+    unless ( $execute_result ) {
+        my ( $package, $file, $line ) = caller;
+        $self->log_( 0, "DBI::execute failed.  Called from package '$package' ($file), line $line." );
+    }
+
+    return $sth;
+}
+
+
+#----------------------------------------------------------------------------
+#
+# check_for_nullbytes
+#
+# Will check a passed-in string for possible null-bytes and log and error
+# message in case a null-byte is found.
+#
+# Will return the string with any null-bytes removed.
+#----------------------------------------------------------------------------
+sub check_for_nullbytes {
+    my $self = shift;
+    my $string = shift;
+
+    if ( defined $string ) {
+        my $backup = $string;
+
+        if ( my $count = ( $string =~ s/\x00//g ) ) {
+            my ( $package, $file, $line ) = caller( 1 );
+            $self->log_( 0, "Found $count null-character(s) in string '$backup'. Called from package '$package' ($file), line $line." );
+        }
+    }
+
+    return $string;
+}
+
 
 #----------------------------------------------------------------------------
 #----------------------------------------------------------------------------
@@ -4690,6 +4068,20 @@ sub wmformat
 
     $self->{wmformat__} = $value if (defined $value);
     return $self->{wmformat__};
+}
+
+sub db
+{
+    my ( $self ) = @_;
+
+    return $self->{db__};
+}
+
+sub history
+{
+    my ( $self, $history ) = @_;
+
+    $self->{history__} = $history;
 }
 
 1;

@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -15,10 +15,10 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-#   POPFile 0.22.0 Simplified Chinese Translation
+#   POPFile 1.0.0 Simplified Chinese Translation
 #   Created By Jedi Lin, 2004/09/19
 #   In fact translated from Traditional Chinese by Encode::HanConvert
-#   Modified By Jedi Lin, 2004/09/23
+#   Modified By Jedi Lin, 2007/12/25
 
 # Identify the language and character set used for the interface
 LanguageCode                            cn
@@ -29,10 +29,11 @@ LanguageDirection                       ltr
 ManualLanguage                          zh-cn
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 faq
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   套用
+ApplyChanges                            套用变更
 On                                      开
 Off                                     关
 TurnOn                                  打开
@@ -158,14 +159,14 @@ Configuration_XTCInsertion              在标头插入<br>X-Text-Classification
 Configuration_XPLInsertion              在标头插入<br>X-POPFile-Link
 Configuration_Logging                   日志
 Configuration_None                      无
-Configuration_ToScreen                  输出至屏幕
+Configuration_ToScreen                  输出至屏幕 (Console)
 Configuration_ToFile                    输出至档案
 Configuration_ToScreenFile              输出至屏幕及档案
 Configuration_LoggerOutput              日志输出方式
 Configuration_GeneralSkins              外观样式
 Configuration_SmallSkins                小型外观样式
 Configuration_TinySkins                 微型外观样式
-Configuration_CurrentLogFile            &lt;下载目前的日志档&gt;
+Configuration_CurrentLogFile            &lt;检视目前的日志档&gt;
 Configuration_SOCKSServer               SOCKS V 代理服务器主机
 Configuration_SOCKSPort                 SOCKS V 代理服务器连接埠
 Configuration_SOCKSPortUpdate           SOCKS V 代理服务器连接埠已更新为 %s
@@ -184,7 +185,7 @@ Advanced_RemoveWord                     移除字词
 Advanced_AllParameters                  所有的 POPFile 参数
 Advanced_Parameter                      参数
 Advanced_Value                          值
-Advanced_Warning                        这是完整的 POPFile 参数清单.  祇适合进阶使用者: 你可以变更任何参数值并按下 更新; 不过没有任何机制会检查这些参数值的有效性.  以粗体显示的项目表示已经从预设值被加以变更了.
+Advanced_Warning                        这是完整的 POPFile 参数清单.  祇适合进阶使用者: 你可以变更任何参数值并按下 更新; 不过没有任何机制会检查这些参数值的有效性.  以粗体显示的项目表示已经从预设值被加以变更了.  更详尽的选项信息请见 <a href="http://getpopfile.org/docs/OptionReference">OptionReference</a>.
 Advanced_ConfigFile                     组态档:
 
 History_Filter                          &nbsp;(祇显示 <font color="%s">%s</font> 邮筒)
@@ -213,7 +214,7 @@ History_Magnet                          &nbsp;(祇显示由吸铁所分类的邮
 History_NoMagnet                        &nbsp;(祇显示不是由吸铁所分类的邮件讯息)
 History_ResetSearch                     重设
 History_ChangedClass                    现在被分类为
-History_Purge                           马上删除
+History_Purge                           即刻到期
 History_Increase                        增加
 History_Decrease                        减少
 History_Column_Characters               变更寄件者, 收件者, 副本和主旨字段的宽度
@@ -232,8 +233,8 @@ Security_Error1                         连接埠一定要介于 1 和 65535 之
 Security_Stealth                        鬼鬼祟祟模式/服务器作业
 Security_NoStealthMode                  否 (鬼鬼祟祟模式)
 Security_StealthMode                    (鬼鬼祟祟模式)
-Security_ExplainStats                   (这个选项开启后, POPFile 每天都会传送一次下列三个数值到 www.usethesource.com 的一个脚本: bc (你的邮筒数量), mc (被 POPFile 分类过的邮件讯息总数) 和 ec (分类错误的总数).  这些数值会被储存到一个档案里, 然后会被我用来发布一些关于人们使用 POPFile 的情况跟其成效的统计数据.  我的网页服务器会保留其本身的日志档约 5 天, 然后就会加以删除; 我不会储存任何统计与单独 IP 地址间的关联性起来.)
-Security_ExplainUpdate                  (这个选项开启后, POPFile 每天都会传送一次下列三个数值到 www.usethesource.com 的一个脚本: ma (你的 POPFile 的主要版本编号), mi (你的 POPFile 的次要版本编号) 和 bn (你的 POPFile 的建号).  新版推出时, POPFile 会收到一份图形响应, 并且显示在画面顶端.  我的网页服务器会保留其本身的日志档约 5 天, 然后就会加以删除; 我不会储存任何更新检查与单独 IP 地址间的关联性起来.)
+Security_ExplainStats                   (这个选项开启后, POPFile 每天都会传送一次下列三个数值到 getpopfile.org 的一个脚本: bc (你的邮筒数量), mc (被 POPFile 分类过的邮件讯息总数) 和 ec (分类错误的总数).  这些数值会被储存到一个档案里, 然后会被我用来发布一些关于人们使用 POPFile 的情况跟其成效的统计数据.  我的网页服务器会保留其本身的日志档约 5 天, 然后就会加以删除; 我不会储存任何统计与单独 IP 地址间的关联性起来.)
+Security_ExplainUpdate                  (这个选项开启后, POPFile 每天都会传送一次下列三个数值到 getpopfile.org 的一个脚本: ma (你的 POPFile 的主要版本编号), mi (你的 POPFile 的次要版本编号) 和 bn (你的 POPFile 的建号).  新版推出时, POPFile 会收到一份图形响应, 并且显示在画面顶端.  我的网页服务器会保留其本身的日志档约 5 天, 然后就会加以删除; 我不会储存任何更新检查与单独 IP 地址间的关联性起来.)
 Security_PasswordTitle                  使用者接口口令
 Security_Password                       口令
 Security_PasswordUpdate                 口令已更新
@@ -262,7 +263,7 @@ Magnet_Error3                           建立新的吸铁 '%s' 于 '%s' 邮筒�
 Magnet_CurrentMagnets                   现用的吸铁
 Magnet_Message1                         下列的吸铁会让信件总是被分类到特定的邮筒里.
 Magnet_CreateNew                        建立新的吸铁
-Magnet_Explanation                      <b>有这些类别的吸铁可以用:</b> <ul><li><b>寄件者地址或名字:</b> 举例来说: john@company.com 就祇会吻合特定的地址, <br />company.com 会吻合到任何从 company.com 寄出来的人, <br />John Doe 会吻合特定的人, John 会吻合所有的 Johns</li><li><b>收件者/副本地址或名称:</b> 就跟寄件者一样: 但是吸铁祇会针对邮件讯息里的 To:/Cc: 地址生效</li> <li><b>主旨字词:</b> 例如: hello 会吻合所有主旨里有 hello 的邮件讯息</li></ul>
+Magnet_Explanation                      有这些类别的吸铁可以用:</b> <ul><li><b>寄件者地址或名字:</b> 举例来说: john@company.com 就祇会吻合特定的地址, <br />company.com 会吻合到任何从 company.com 寄出来的人, <br />John Doe 会吻合特定的人, John 会吻合所有的 Johns</li><li><b>收件者/副本地址或名称:</b> 就跟寄件者一样: 但是吸铁祇会针对邮件讯息里的 To:/Cc: 地址生效</li> <li><b>主旨字词:</b> 例如: hello 会吻合所有主旨里有 hello 的邮件讯息</li></ul>
 Magnet_MagnetType                       吸铁类别
 Magnet_Value                            值
 Magnet_Always                           总是分到邮筒
@@ -328,6 +329,7 @@ View_WordProbabilities                  正在显示字词可能性
 View_WordFrequencies                    正在显示字词频率
 View_WordScores                         正在显示字词得分
 View_Chart                              判定图表
+View_DownloadMessage                    下载邮件讯息
 
 Windows_TrayIcon                        是否要在 Windows 的系统常驻列显示 POPFile 图标?
 Windows_Console                         是否要在命令列窗口里执行 POPFile?
@@ -349,7 +351,7 @@ Configuration_InsertionTableSummary     这个表格含有一些按钮, 判断�
 Security_MainTableSummary               这个表格提供了几组控制, 能影响 POPFile 整体组态的安全, 是否要自动检查程序更新, 以及是否要把 POPFile 效能统计数据的一般信息传回程序作者的中央数据库.
 Advanced_MainTableSummary               这个表格提供了一份 POPFile 分类邮件讯息时所会忽略的字词清单, 因为他们在一般邮件讯息里的关联过于频繁.  她们会被按照字词开头的字亩被逐列整理.
 
-Imap_Bucket2Folder                      <b>%s</b> 邮筒的信件至邮件匣
+Imap_Bucket2Folder                      '<b>%s</b>' 邮筒的信件至邮件匣
 Imap_MapError                           你不能把超过一个的邮筒对应到单一的邮件匣里!
 Imap_Server                             IMAP 服务器主机名称:
 Imap_ServerNameError                    请输入服务器的主机名称!
@@ -372,9 +374,10 @@ Imap_UpdateError3                       请先组态联机细节.
 Imap_NoConnectionMessage                请先组态联机细节. 当你完成后, 这一页里就会出现更多可用的选项.
 Imap_WatchMore                          被监视邮件匣清单的邮件匣
 Imap_WatchedFolder                      被监视的邮件匣编号
+Imap_Use_SSL                            使用 SSL
 
 Shutdown_Message                        POPFile 已经被停掉了
 
-Help_Training                           当你初次使用 POPFile 时, 她啥也不懂而需要被加以调教. POPFile 的每一个邮筒都需要用邮件讯息来加以调教, 祇有当你重新把某个被 POPFile 错误分类的邮件讯息重新分类到正确的邮筒时, 才真的是在调教她. 同时你也得设定你的邮件用户端程序, 来按照 POPFile 的分类结果加以过滤邮件讯息. 关于设定用户端过滤器的信息可以在 <a href="http://getpopfile.org/docs/faq/EmailSorting">POPFile 文件计画</a>里被找到.
-Help_Bucket_Setup                       POPFile 除了未分类 (unclassified) 的假邮筒外, 还需要至少两个邮筒. 而 POPFile 的独特之处正在于她对电子邮件的区分更胜于此, 你甚至可以有任意数量的邮筒. 简单的设定会是像 "垃圾 (spam)", "个人 (personal)", 和 "工作 (work)" 邮筒.
+Help_Training                           当你初次使用 POPFile 时, 她啥也不懂而需要被加以调教. POPFile 的每一个邮筒都需要用邮件讯息来加以调教, 祇有当你重新把某个被 POPFile 错误分类的邮件讯息重新分类到正确的邮筒时, 才真的是在调教她. 同时你也得设定你的邮件用户端程序, 来按照 POPFile 的分类结果加以过滤邮件讯息. 关于设定用户端过滤器的信息可以在 <a href="http://getpopfile.org/docs/FAQ:EmailSorting">POPFile 文件计画</a>里被找到.
+Help_Bucket_Setup                       POPFile 除了 "未分类 (unclassified)" 的假邮筒外, 还需要至少两个邮筒. 而 POPFile 的独特之处正在于她对电子邮件的区分更胜于此, 你甚至可以有任意数量的邮筒. 简单的设定会是像 "垃圾 (spam)", "个人 (personal)", 和 "工作 (work)" 邮筒.
 Help_No_More                            别再显示这个说明了

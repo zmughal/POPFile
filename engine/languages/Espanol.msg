@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -183,8 +183,8 @@ Password_Error1                         Contraseña incorrecta
 Security_Error1                         El puerto seguro tiene que ser un nº entre 1 y 65535
 Security_Stealth                        Modo Oculto/Operación del Servidor
 Security_NoStealthMode                  No (Modo Oculto)
-Security_ExplainStats                   Con esto activado POPFile envia una vez al día los tres valores siguientes a un script en www.usethesource.com: <b>bc</b> (el nº de categorías que tienes), <b>mc</b> (el nº total de mensajes que ha clasificado POPFile) y <b>ec</b> (el nº total de errores de clasificación).  Estos se guardan en un archivo que yo utilizaré para publicar algunas estadísticas acerca de cómo usa la gente POPFile y cómo de bien les funciona.  Mi servidor web mantiene sus archivos log unos 5 días y luego se borran; Yo no guardo ninguna relación entre las estadísticas y sus direcciones IP individuales.
-Security_ExplainUpdate                  Con esto activado POPFile envia una vez al día los tres valores siguientes a un script en www.usethesource.com: <b>ma</b> (el nº de versión de tu POPFile), <b>mi</b> (el nº de revisión de tu POPFile) y <b>bn</b> (el nº de compilación de tu POPFile).  Si existe una nueva versión, POPFile recibe una respuesta en forma de gráfico que se muestra en la parte superior de la página.  Mi servidor web mantiene sus archivos log unos 5 días y luego se borran; Yo no guardo ninguna relación entre las comprobaciones de actualización y sus direcciones IP individuales.
+Security_ExplainStats                   Con esto activado POPFile envia una vez al día los tres valores siguientes a un script en getpopfile.org: <b>bc</b> (el nº de categorías que tienes), <b>mc</b> (el nº total de mensajes que ha clasificado POPFile) y <b>ec</b> (el nº total de errores de clasificación).  Estos se guardan en un archivo que yo utilizaré para publicar algunas estadísticas acerca de cómo usa la gente POPFile y cómo de bien les funciona.  Mi servidor web mantiene sus archivos log unos 5 días y luego se borran; Yo no guardo ninguna relación entre las estadísticas y sus direcciones IP individuales.
+Security_ExplainUpdate                  Con esto activado POPFile envia una vez al día los tres valores siguientes a un script en getpopfile.org: <b>ma</b> (el nº de versión de tu POPFile), <b>mi</b> (el nº de revisión de tu POPFile) y <b>bn</b> (el nº de compilación de tu POPFile).  Si existe una nueva versión, POPFile recibe una respuesta en forma de gráfico que se muestra en la parte superior de la página.  Mi servidor web mantiene sus archivos log unos 5 días y luego se borran; Yo no guardo ninguna relación entre las comprobaciones de actualización y sus direcciones IP individuales.
 Security_PasswordTitle                  Contraseña del Interface de Usuario
 Security_Password                       Contraseña
 Security_PasswordUpdate                 Contraseña actualizada
@@ -213,7 +213,7 @@ Magnet_Error3                           Crear imán nuevo '%s' en la categoría '%
 Magnet_CurrentMagnets                   Imanes Actuales
 Magnet_Message1                         Los siguientes imanes hacen que el correo sea clasificado siempre en la categoría especificada.
 Magnet_CreateNew                        Crear Imán Nuevo
-Magnet_Explanation                      <b>Hay tres tipos de imanes disponibles:</b> <ul><li><b>Dirección de procedencia o nombre del remitente:</b> Por ejemplo:<br /> <i>felipe@company.com</i> para capturar esta dirección específica, <br /><i>company.com</i> para capturar a cualquiera que envíe desde <i>company.com</i>, <br /><i>Felipe Martinez</i> para capturar esa persona específica,<br /> <i>Felipe</i> para capturar a todos los Felipes</li><li><b>Dirección <i>Para:</i> o nombre del destinatario:</b> Como un imán De: pero con la dirección <i>Para:</i> en un correo</li> <li><b>Palabras en el Asunto:</b> Por ejem.: <i>hola</i> para capturar todos los mensajes con <i>hola</i> en el asunto</li></ul>
+Magnet_Explanation                      Hay tres tipos de imanes disponibles:</b> <ul><li><b>Dirección de procedencia o nombre del remitente:</b> Por ejemplo:<br /> <i>felipe@company.com</i> para capturar esta dirección específica, <br /><i>company.com</i> para capturar a cualquiera que envíe desde <i>company.com</i>, <br /><i>Felipe Martinez</i> para capturar esa persona específica,<br /> <i>Felipe</i> para capturar a todos los Felipes</li><li><b>Dirección <i>Para:</i> o nombre del destinatario:</b> Como un imán De: pero con la dirección <i>Para:</i> en un correo</li> <li><b>Palabras en el Asunto:</b> Por ejem.: <i>hola</i> para capturar todos los mensajes con <i>hola</i> en el asunto</li></ul>
 Magnet_MagnetType                       Tipo de Imán
 Magnet_Value                            Valor
 Magnet_Always                           Ir siempre a categoría

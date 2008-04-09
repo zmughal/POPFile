@@ -1,4 +1,4 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for Bayes.pm
 #
@@ -19,57 +19,85 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/CVS' );
+test_assert( rmtree( 'corpus/CVS' ) > 0 );
 
 unlink 'popfile.db';
-unlink 'popfile.pid';
 unlink 'stopwords';
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
 mkdir 'messages';
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use Classifier::Bayes;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use Classifier::WordMangle;
+use POPFile::History;
 
-my %valid = ( 'POPFile/Database'       => 1,
-              'POPFile/Logger'         => 1,
-              'POPFile/MQ'             => 1,
-              'POPFile/History'        => 1,
-              'Classifier/Bayes'       => 1,
-              'Classifier/WordMangle'  => 1,
-              'Proxy/POP3'             => 1,
-              'POPFile/Configuration'  => 1 );
+# Load the test corpus
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $b = new Classifier::Bayes;
+my $w = new Classifier::WordMangle;
+my $h = new POPFile::History;
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-my $b = $POPFile->get_module( 'Classifier/Bayes' );
-my $h = $POPFile->get_module( 'POPFile/History'  );
-my $l = $POPFile->get_module( 'POPFile/Logger'   );
+$c->initialize();
 
-$b->module_config_( 'pop3', 'port', 9110 );
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
 
-$POPFile->CORE_start();
+$l->initialize();
+
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->start();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$h->configuration( $c );
+$h->mq( $mq );
+$h->logger( $l );
+
+$b->history( $h );
+$h->classifier( $b );
+
+$h->initialize();
+
+$b->module_config_( 'html', 'language', 'English' );
+$b->{parser__}->mangle( $w );
+$b->initialize();
+
+test_assert( $b->start() );
+test_assert( $h->start() );
 
 # Test the unclassified_probability parameter
 
 test_assert_equal( $b->{unclassified__}, log(100) );
-
-$b->user_config_( 1, 'unclassified_weight', 9 );
+$b->config_( 'unclassified_weight', 9 );
 test_assert( $b->start() );
-test_assert_equal( $b->{unclassified__}, log(  9) );
-
-$b->user_config_( 1, 'unclassified_weight', 5 );
+test_assert_equal( $b->{unclassified__}, log(9) );
+$b->config_( 'unclassified_weight', 5 );
 test_assert( $b->start() );
-test_assert_equal( $b->{unclassified__}, log(  5) );
+test_assert_equal( $b->{unclassified__}, log(5) );
 
 # test the API functions
 
@@ -78,324 +106,30 @@ test_assert_equal( $b->{unclassified__}, log(  5) );
 my $session;
 $session = $b->get_session_key( 'baduser', 'badpassword' );
 test_assert( !defined( $session ) );
-$session = $b->get_session_key( 'admin',   'badpassword' );
+$session = $b->get_session_key( 'admin', 'badpassword' );
 test_assert( !defined( $session ) );
-
-$session = $b->get_session_key( 'admin',   ''            );
-test_assert(  defined( $session ) );
+$session = $b->get_session_key( 'admin', '' );
+test_assert( defined( $session ) );
 test_assert( $session ne '' );
 $b->release_session_key( $session );
-$session = $b->get_session_key( 'admin',   ''            );
+$session = $b->get_session_key( 'admin', '' );
 test_assert( $session ne '' );
-
-# Test for validating session
-
-test_assert(  defined($b->valid_session_key__( $session )) );
-test_assert( !defined($b->valid_session_key__(       -1 )) );
-
-# Test for is_admin_session
-
-test_assert( $b->is_admin_session( $session ) );
-test_assert( !defined($b->is_admin_session( -1 )) );
-
-# Test for getting and setting the session key from an associated
-# account
-
-# create_user
-
-my ( $success,  $password  ) = $b->create_user( $session, 'testuser'  );
-test_assert_equal( $success, 0 );
-test_assert( $password ne '' );
-
-my ( $success2, $password2 ) = $b->create_user( $session, 'testuser2' );
-test_assert_equal( $success2, 0 );
-test_assert( $password2 ne '' );
-
-my ( $success3, $password3 )  = $b->create_user( $session, 'testuser'  );
-test_assert_equal( $success3, 1 );
-test_assert( !defined( $password3 ) );
-
-# get_user_list
-
-my @users = sort values %{$b->get_user_list( $session )};
-
-test_assert( $#users == 2 );
-test_assert( $users[0] eq 'admin'     );
-test_assert( $users[1] eq 'testuser'  );
-test_assert( $users[2] eq 'testuser2' );
-
-# remove_user
-
-test_assert( $b->remove_user( $session, 'testuser3' ) == 1 );
-test_assert( $b->remove_user( $session, 'testuser2' ) == 0 );
-
-@users = sort values %{$b->get_user_list( $session )};
-
-test_assert( $#users == 1 );
-test_assert( $users[0] eq 'admin'    );
-test_assert( $users[1] eq 'testuser' );
-
-$b->global_config_( 'single_user', 1 );
-
-# get_session_key_from_token
-
-my $session2 = $b->get_session_key_from_token( $session, 'smtp', 'token' );
-test_assert( $b->is_admin_session( $session2 ) );
-$session2    = $b->get_session_key_from_token( $session, 'nntp', 'token' );
-test_assert( $b->is_admin_session( $session2 ) );
-$session2    = $b->get_session_key_from_token( $session, 'pop',  'token' );
-test_assert( $b->is_admin_session( $session2 ) );
-$session2    = $b->get_session_key_from_token( $session, 'pop3', 'token' );
-test_assert( $b->is_admin_session( $session2 ) );
-
-$b->global_config_( 'single_user', 0 );
-
-$session2 = $b->get_session_key_from_token( $session, 'smtp', 'token' );
-test_assert( $b->is_admin_session( $session2 ) );
-$session2 = $b->get_session_key_from_token( $session, 'nntp', 'token' );
-test_assert( $b->is_admin_session( $session2 ) );
-$session2 = $b->get_session_key_from_token( $session, 'pop',  'token' );
-test_assert( $b->is_admin_session( $session2 ) );
-$session2 = $b->get_session_key_from_token( $session, 'pop3', 'token' );
-test_assert( !defined( $session2 ) );
-
-my $id2 = $b->get_user_id( $session, 'testuser2' );
-test_assert( !defined( $id2 ) );
-my $id1 = $b->get_user_id( $session, 'testuser'  );
-test_assert(  defined( $id1 ) );
-
-test_assert( $b->add_account( $session, $id1, 'pop3', 'foo:bar' ) ==  1 );
-test_assert( $b->add_account( $session, $id1, 'pop3', 'foo:bar' ) == -1 );
-
-my $session1 = $b->get_session_key_from_token( $session, 'pop3', 'fooz:bar' );
-test_assert( !defined( $session1 ) );
-$session1    = $b->get_session_key_from_token( $session, 'pop3', 'foo:bar'  );
-test_assert(  defined( $session1 ) );
-$b->release_session_key( $session1 );
-
-# transparent proxy
-
-$session1 = $b->get_session_key_from_token( $session, 'pop3', 'example.com:testuser' );
-test_assert( !defined( $session1 ) );
-
-$b->module_config_( 'pop3', 'secure_server', 'example.com' );
-$b->module_config_( 'pop3', 'secure_port', '110' );
-
-$session1 = $b->get_session_key_from_token( $session, 'pop3', 'example.com:testuser' );
-test_assert(  defined( $session1 ) );
-
-$session1 = $b->get_session_key_from_token( $session, 'pop3', 'fooz:bar' );
-test_assert( !defined( $session1 ) );
-
-$session1 = $b->get_session_key_from_token( $session, 'pop3', 'foo:bar'  );
-test_assert(  defined( $session1 ) );
-
-$b->module_config_( 'pop3', 'secure_server', '' );
-
-# get_user_parameter_list
-
-my @parameters = sort $b->get_user_parameter_list( $session );
-test_assert_equal( $#parameters, 35 );
-test_assert_equal( join( ' ', @parameters ), 'GLOBAL_can_admin GLOBAL_private_key GLOBAL_public_key bayes_subject_mod_left bayes_subject_mod_right bayes_unclassified_weight bayes_xpl_angle history_history_days html_column_characters html_columns html_date_format html_language html_last_reset html_last_update_check html_page_size html_send_stats html_session_dividers html_show_bucket_help html_show_configbars html_show_training_help html_skin html_test_language html_update_check html_wordtable_format imap_bucket_folder_mappings imap_expunge imap_hostname imap_login imap_password imap_port imap_training_mode imap_uidnexts imap_uidvalidities imap_update_interval imap_use_ssl imap_watched_folders' );
-
-test_assert(  $b->get_user_parameter( $session,  'GLOBAL_can_admin' ) );
-test_assert( !$b->get_user_parameter( $session1, 'GLOBAL_can_admin' ) );
-
-my ( $val, $def ) = $b->get_user_parameter_from_id( 1, 'GLOBAL_can_admin' );
-test_assert_equal( $val, 1 );
-test_assert_equal( $def, 0 );
-
-( $val, $def ) = $b->get_user_parameter_from_id( $id1, 'GLOBAL_can_admin' );
-test_assert_equal( $val, 0 );
-test_assert_equal( $def, 1 );
-$b->set_user_parameter_from_id( $id1, 'GLOBAL_can_admin', 1 );
-
-# Test for removing admin user
-
-test_assert_equal( $b->remove_user( $session, 'testuser' ), 2 );
-
-( $val, $def ) = $b->get_user_parameter_from_id( $id1, 'GLOBAL_can_admin' );
-test_assert_equal( $val, 1 );
-test_assert_equal( $def, 0 );
-
-$b->set_user_parameter_from_id( $id1, 'GLOBAL_can_admin', 0 );
-( $val, $def ) = $b->get_user_parameter_from_id( $id1, 'GLOBAL_can_admin' );
-test_assert_equal( $val, 0 );
-test_assert_equal( $def, 1 );
-
-test_assert_equal( $b->validate_password( $session1, '1234'    ), 0 );
-test_assert_equal( $b->validate_password( $session1, $password ), 1 );
-test_assert_equal( $b->validate_password( $session, '1234'     ), 0 );
-test_assert_equal( $b->validate_password( $session, ''         ), 1 );
-
-test_assert_equal( $b->set_password( $session1, ''    ), 1 );
-test_assert_equal( $b->validate_password( $session1, '1234'    ), 0 );
-test_assert_equal( $b->validate_password( $session1, ''        ), 1 );
-
-test_assert_equal( $b->set_password( $session, '1234' ), 1 );
-test_assert_equal( $b->validate_password( $session,  '1234'    ), 1 );
-test_assert_equal( $b->validate_password( $session,  ''        ), 0 );
-
-test_assert_equal( $b->set_password( $session, '' ), 1 );
-
-$b->release_session_key( $session1 );
-$session1 = $b->get_session_key( 'testuser', '' );
-test_assert( defined($session1) );
-
-# Test for executing admin only subroutines from non admin user
-
-test_assert( !$b->is_admin_session( $session1 ) );
-
-test_assert( !defined($b->create_user( $session1, 'testuser3' )) );
-test_assert( !defined($b->remove_user( $session1, 'testuser'     )) );
-
-test_assert( !defined($b->get_user_list( $session1 )) );
-test_assert( !defined($b->get_user_id( $session1, 'testuser' )) );
-
-test_assert( !defined($b->get_accounts( $session1, $id1 )) );
-test_assert_equal( $b->add_account( $session1, $id1, 'pop3', 'foo:bar2' ), 0 );
-test_assert_equal( $b->remove_account( $session1, $id1, 'pop3', 'foo:bar' ), 0 );
-
-test_assert( !defined($b->get_session_key_from_token( $session1, 'smtp', 'token' )) );
-
-test_assert( !defined($b->get_user_parameter_list( $session1 )) );
-
-test_assert( !defined($b->initialize_users_password( $session1, 'testuser4' )) );
-test_assert( !defined($b->change_users_password( $session1, 'testuser4', 'password4' )) );
-
-# get_user_id_from_session
-
-test_assert_equal( $b->get_user_id_from_session( $session  ),    1 );
-test_assert_equal( $b->get_user_id_from_session( $session1 ), $id1 );
-test_assert( !defined($b->get_user_id_from_session( -1 )) );
-
-# get_user_name_from_session_id
-
-test_assert_equal( $b->get_user_name_from_session( $session  ), 'admin'    );
-test_assert_equal( $b->get_user_name_from_session( $session1 ), 'testuser' );
-test_assert( !defined($b->get_user_name_from_session( -1 )) );
-
-# create_user with cloning admin
-
-my ( $success4, $password4 ) = $b->create_user( $session, 'testuser4', 'admin' );
-test_assert_equal( $success4, 0 );
-test_assert( defined( $password4 ) );
-test_assert( $password4 ne '' );
-
-my $id4 = $b->get_user_id( $session, 'testuser4' );
-test_assert( defined( $id4 ) );
-
-my $session4 = $b->get_session_key( 'testuser4', $password4 );
-
-# check if parameters are copied
-
-@parameters = sort $b->get_user_parameter_list ( $session );
-foreach my $parameter (@parameters) {
-    next if ( $parameter eq 'GLOBAL_can_admin' );
-
-    my ( $val1, $def1 ) = $b->get_user_parameter_from_id(    1, $parameter );
-    my ( $val4, $def4 ) = $b->get_user_parameter_from_id( $id4, $parameter );
-
-    test_assert_equal( $val1, $val4, $parameter );
-    test_assert_equal( $def1, $def4, $parameter );
-}
-
-# check if buckets and their parameters are copied
-
-my @buckets1 = sort $b->get_all_buckets( $session  );
-my @buckets4 = sort $b->get_all_buckets( $session4 );
-for my $i (0..3) {
-    test_assert_equal( $buckets1[$i], $buckets4[$i] );
-
-    my $bucket = $buckets1[$i];
-
-    # bucket color
-
-    my $color1 = $b->get_bucket_color( $session,  $bucket );
-    my $color4 = $b->get_bucket_color( $session4, $bucket );
-    test_assert_equal( $color1, $color4, "bucket color for $bucket" );
-
-    # bucket parameters
-
-    foreach my $parameter ( qw/quarantine subject xtc xpl/ ) {
-        my $value1 = $b->get_bucket_parameter( $session,  $bucket, $parameter );
-        my $value4 = $b->get_bucket_parameter( $session4, $bucket, $parameter );
-
-        test_assert_equal( $value1, $value4, "parameter $parameter for bucket $bucket" );
-    }
-}
-
-# word count (corpus does not be copied)
-
-test_assert_equal( $b->get_word_count( $session4 ), 0 );
-
-foreach my $bucket (@buckets4) {
-    test_assert_equal( $b->get_bucket_word_count(   $session4, $bucket ), 0 );
-    test_assert_equal( $b->get_bucket_unique_count( $session4, $bucket ), 0 );
-}
-
-$b->release_session_key( $session4 );
-
-# initialize_users_password
-
-my ( $success5, $password5 ) = $b->initialize_users_password( $session,  'testuser4' );
-test_assert_equal( $success5, 0 );
-test_assert( defined($password5) );
-# test_assert( $password4 ne $password5 );
-
-$session4 = $b->get_session_key( 'testuser4', $password5 );
-test_assert( defined($session4) );
-$b->release_session_key( $session4 );
-
-test_assert_equal( $b->initialize_users_password( $session, 'baduser' ), 1 );
-
-# change_users_password
-
-my $success6 = $b->change_users_password( $session, 'testuser4', 'password4' );
-test_assert_equal( $success6, 0 );
-
-$session4 = $b->get_session_key( 'testuser4', 'password4' );
-test_assert( defined($session4) );
-$b->release_session_key( $session4 );
-
-test_assert_equal( $b->change_users_password( $session, 'baduser', 'badpassword' ), 1 );
-
-# get_user_name_from_id
-
-my $username4 = $b->get_user_name_from_id( $session, $id4 );
-test_assert(  defined($username4) );
-test_assert_equal( $username4, 'testuser4' );
-
-$username4    = $b->get_user_name_from_id( $session,    0 );
-test_assert( !defined($username4) );
-
-# accounts
-
-my @accounts = $b->get_accounts( $session, 0 );
-test_assert( $#accounts == -1 );
-@accounts = $b->get_accounts( $session, $id1 );
-test_assert( $#accounts ==  0 );
-test_assert( $accounts[0] eq 'pop3:foo:bar' );
-
-test_assert( $b->remove_account( $session, 'pop3', 'foo:bar' ) == 1 );
-
-my $session3 = $b->get_session_key_from_token( $session, 'pop3', 'foo:bar' );
-test_assert( !defined( $session3 ) ); 
 
 # get_all_buckets
 
-my @all_buckets = sort $b->get_all_buckets( $session );
+my @all_buckets = $b->get_all_buckets( $session );
 test_assert_equal( $#all_buckets, 3 );
-test_assert_equal( $all_buckets[0], 'other'        );
-test_assert_equal( $all_buckets[1], 'personal'     );
-test_assert_equal( $all_buckets[2], 'spam'         );
+test_assert_equal( $all_buckets[0], 'other' );
+test_assert_equal( $all_buckets[1], 'personal' );
+test_assert_equal( $all_buckets[2], 'spam' );
 test_assert_equal( $all_buckets[3], 'unclassified' );
 
 # is_bucket
 
-test_assert(  $b->is_bucket( $session, 'personal'     ) );
-test_assert( !$b->is_bucket( $session, 'impersonal'   ) );
-test_assert( !$b->is_bucket( $session, 'unclassified' ) );
+test_assert_equal( $b->is_bucket( $session, 'personal' ),     1 );
+test_assert_equal( $b->is_bucket( $session, 'impersonal' ),   0 );
+test_assert_equal( $b->is_bucket( $session, 'impersonal' ),   0 );
+test_assert_equal( $b->is_bucket( $session, 'unclassified' ), 0 );
 
 # get_pseudo_buckets
 
@@ -405,32 +139,25 @@ test_assert_equal( $pseudo_buckets[0], 'unclassified' );
 
 # is_pseudo_bucket
 
-test_assert( !$b->is_pseudo_bucket( $session, 'personal'     ) );
-test_assert(  $b->is_pseudo_bucket( $session, 'unclassified' ) );
-test_assert( !$b->is_pseudo_bucket( $session, 'impersonal2'  ) );
+test_assert_equal( $b->is_pseudo_bucket( $session, 'personal' ),     0 );
+test_assert_equal( $b->is_pseudo_bucket( $session, 'unclassified' ), 1 );
+test_assert_equal( $b->is_pseudo_bucket( $session, 'impersonal2' ),   0 );
+test_assert_equal( $b->is_pseudo_bucket( $session, 'impersonal2' ),   0 );
+test_assert_equal( $b->is_bucket( $session, 'impersonal2' ),   0 );
 
 # get_buckets
 
-my @buckets = sort $b->get_buckets( $session );
+my @buckets = $b->get_buckets( $session );
 test_assert_equal( $#buckets, 2 );
-test_assert_equal( $buckets[0], 'other'    );
+test_assert_equal( $buckets[0], 'other' );
 test_assert_equal( $buckets[1], 'personal' );
-test_assert_equal( $buckets[2], 'spam'     );
-test_assert( !defined($buckets[3]) );
-
-# get_bucket_id, get_bucket_name
-
-my $spam_id = $b->get_bucket_id( $session, 'spam' );
-test_assert( defined( $spam_id ) );
-test_assert_equal( $b->get_bucket_name( $session, $spam_id ), 'spam' );
-
-test_assert( !defined($b->get_bucket_id( $session, 'badbucket' )) );
-test_assert( !defined($b->get_bucket_name( $session, -1 )) );
+test_assert_equal( $buckets[2], 'spam' );
+test_assert_equal( defined($buckets[3]), defined(undef)  );
 
 # get_bucket_word_count
 
-test_assert_equal( $b->get_bucket_word_count( $session, $buckets[0]),  1785 );
-test_assert_equal( $b->get_bucket_word_count( $session, $buckets[1]),   103 );
+test_assert_equal( $b->get_bucket_word_count( $session, $buckets[0]), 1785 );
+test_assert_equal( $b->get_bucket_word_count( $session, $buckets[1]), 103 );
 test_assert_equal( $b->get_bucket_word_count( $session, $buckets[2]), 12114 );
 
 # get_bucket_word_list and prefixes
@@ -459,53 +186,66 @@ test_assert_equal( $b->get_count_for_word( $session, $buckets[0], 'foo'), 0 );
 test_assert_equal( $b->get_count_for_word( $session, $buckets[1], 'foo'), 1 );
 test_assert_equal( $b->get_count_for_word( $session, $buckets[2], 'foo'), 0 );
 
+# Test validation of sql
+
+my $sql = "SELECT * FROM words WHERE word IN ( 'f\x00oo', 'baz' )";
+my $sth = $b->validate_sql_prepare_and_execute( $sql );
+test_assert_equal( ref $sth, 'DBI::st' );
+test_assert_equal( scalar @{$sth->fetchall_arrayref}, 2 );
+
+# same thing with bind-params
+$sql = "SELECT * FROM words WHERE word IN ( ?, ? )";
+$sth = $b->validate_sql_prepare_and_execute( $sql, "f\x00oo", 'baz' );
+test_assert_equal( ref $sth, 'DBI::st' );
+test_assert_equal( scalar @{$sth->fetchall_arrayref}, 2 );
+
+test_assert_equal( $b->db_quote("foo\x00bar" ), "'foobar'" );
+
 # get_unique_word_count
 
 test_assert_equal( $b->get_unique_word_count( $session ), 4012 );
 
 # get_bucket_unique_count
 
-test_assert_equal( $b->get_bucket_unique_count( $session, $buckets[0]),  656 );
-test_assert_equal( $b->get_bucket_unique_count( $session, $buckets[1]),    3 );
+test_assert_equal( $b->get_bucket_unique_count( $session, $buckets[0]), 656 );
+test_assert_equal( $b->get_bucket_unique_count( $session, $buckets[1]), 3 );
 test_assert_equal( $b->get_bucket_unique_count( $session, $buckets[2]), 3353 );
 
 # get_bucket_color
 
-test_assert_equal( $b->get_bucket_color( $session, $buckets[0] ), 'red'   );
-test_assert_equal( $b->get_bucket_color( $session, $buckets[1] ), 'green' );
-test_assert_equal( $b->get_bucket_color( $session, $buckets[2] ), 'blue'  );
-test_assert_equal( $b->get_bucket_color( $session, 'notabucket'), ''      );
+test_assert_equal( $b->get_bucket_color( $session, $buckets[0]), 'red' );
+test_assert_equal( $b->get_bucket_color( $session, $buckets[1]), 'green' );
+test_assert_equal( $b->get_bucket_color( $session, $buckets[2]), 'blue' );
+test_assert_equal( $b->get_bucket_color( $session, 'notabucket'), '');
 
 # get_buckets
 
-@buckets = $b->get_buckets( $session );
+my @buckets = $b->get_buckets( $session );
 test_assert_equal( $#buckets, 2 );
-test_assert_equal( $buckets[0], 'other'    );
+test_assert_equal( $buckets[0], 'other' );
 test_assert_equal( $buckets[1], 'personal' );
-test_assert_equal( $buckets[2], 'spam'     );
+test_assert_equal( $buckets[2], 'spam' );
 
 # set_bucket_color
 
-test_assert_equal( $b->get_bucket_color( $session, $buckets[0]), 'red'    );
+test_assert_equal( $b->get_bucket_color( $session, $buckets[0]), 'red' );
 $b->set_bucket_color( $session, $buckets[0], 'yellow' );
 test_assert_equal( $b->get_bucket_color( $session, $buckets[0]), 'yellow' );
-$b->set_bucket_color( $session, $buckets[0], 'red'    );
-test_assert_equal( $b->get_bucket_color( $session, $buckets[0]), 'red'    );
+$b->set_bucket_color( $session, $buckets[0], 'red' );
+test_assert_equal( $b->get_bucket_color( $session, $buckets[0]), 'red' );
 
 # get_bucket_parameter
 
 test_assert( !defined( $b->get_bucket_parameter( $session, $buckets[0], 'dummy' ) ) );
 test_assert_equal( $b->get_bucket_parameter( $session, $buckets[0], 'quarantine' ), 0 );
-test_assert_equal( $b->get_bucket_parameter( $session, $buckets[0], 'subject'    ), 1 );
+test_assert_equal( $b->get_bucket_parameter( $session, $buckets[0], 'subject' ), 1 );
 
 # set_bucket_parameter
 
 test_assert_equal( $b->get_bucket_parameter( $session, $buckets[0], 'quarantine' ), 0 );
-test_assert(  $b->set_bucket_parameter( $session, $buckets[0], 'quarantine', 1 ) );
+test_assert( $b->set_bucket_parameter( $session, $buckets[0], 'quarantine', 1 ) );
 test_assert_equal( $b->get_bucket_parameter( $session, $buckets[0], 'quarantine' ), 1 );
-test_assert(  $b->set_bucket_parameter( $session, $buckets[0], 'quarantine', 0 ) );
-
-test_assert( !$b->set_bucket_parameter( $session, 'badbucket', 'quarantine', 0 ) );
+test_assert( $b->set_bucket_parameter( $session, $buckets[0], 'quarantine', 0 ) );
 
 # get_html_colored_message
 
@@ -513,7 +253,7 @@ my $html = $b->get_html_colored_message(  $session, 'TestMailParse019.msg' );
 open FILE, "<TestMailParse019.clr";
 my $check = <FILE>;
 close FILE;
-test_assert_equal( $html, $check );
+# TODO test_assert_equal( $html, $check );
 
 if ( $html ne $check ) {
     my $color_test = 'get_html_colored_message';
@@ -527,22 +267,22 @@ if ( $html ne $check ) {
 
 # create_bucket
 
-test_assert(  $b->create_bucket( $session, 'zebra' ) );
+test_assert( $b->create_bucket( $session, 'zebra' ) );
 test_assert( !$b->create_bucket( $session, 'zebra' ) );
 
 @buckets = $b->get_buckets( $session );
 test_assert_equal( $#buckets, 3 );
-test_assert_equal( $buckets[0], 'other'    );
+test_assert_equal( $buckets[0], 'other' );
 test_assert_equal( $buckets[1], 'personal' );
-test_assert_equal( $buckets[2], 'spam'     );
-test_assert_equal( $buckets[3], 'zebra'    );
+test_assert_equal( $buckets[2], 'spam' );
+test_assert_equal( $buckets[3], 'zebra' );
 
-test_assert_equal( $b->get_bucket_parameter(  $session, 'zebra', 'count'      ), 0 );
-test_assert_equal( $b->get_bucket_parameter(  $session, 'zebra', 'subject'    ), 1 );
+test_assert_equal( $b->get_bucket_parameter(  $session, 'zebra', 'count' ), 0 );
+test_assert_equal( $b->get_bucket_parameter(  $session, 'zebra', 'subject' ), 1 );
 test_assert_equal( $b->get_bucket_parameter(  $session, 'zebra', 'quarantine' ), 0 );
 
-test_assert_equal( $b->get_bucket_word_count(   $session, 'zebra' ), 0 );
-test_assert_equal( $b->get_bucket_unique_count( $session, 'zebra' ), 0 );
+test_assert_equal( $b->get_bucket_word_count(  $session, 'zebra' ), 0 );
+test_assert_equal( $b->get_bucket_unique_count(  $session, 'zebra' ), 0 );
 
 test_assert_equal( $b->get_word_count( $session ), 14002 );
 
@@ -557,17 +297,14 @@ test_assert_equal( $buckets[1], 'personal' );
 test_assert_equal( $buckets[2], 'spam' );
 test_assert_equal( $buckets[3], 'zeotrope' );
 
-test_assert_equal( $b->get_bucket_parameter( $session, 'zeotrope', 'count'      ), 0 );
-test_assert_equal( $b->get_bucket_parameter( $session, 'zeotrope', 'subject'    ), 1 );
+test_assert_equal( $b->get_bucket_parameter( $session, 'zeotrope', 'count' ), 0 );
+test_assert_equal( $b->get_bucket_parameter( $session, 'zeotrope', 'subject' ), 1 );
 test_assert_equal( $b->get_bucket_parameter( $session, 'zeotrope', 'quarantine' ), 0 );
 
-test_assert_equal( $b->get_bucket_word_count(   $session, 'zeotrope' ), 0 );
+test_assert_equal( $b->get_bucket_word_count( $session, 'zeotrope' ), 0 );
 test_assert_equal( $b->get_bucket_unique_count( $session, 'zeotrope' ), 0 );
 
 test_assert_equal( $b->get_word_count( $session ), 14002 );
-
-test_assert( !$b->rename_bucket( $session, 'badbucket', 'badbucket2' ) );
-test_assert( !$b->rename_bucket( $session, 'spam',      'zeotrope'   ) );
 
 # add_message_to_bucket
 
@@ -598,7 +335,7 @@ foreach my $word (keys %words) {
 test_assert( $b->remove_message_from_bucket( $session, 'zeotrope', 'TestMailParse021.msg' ) );
 test_assert( $b->remove_message_from_bucket( $session, 'zeotrope', 'TestMailParse021.msg' ) );
 
-test_assert_equal( $b->get_bucket_word_count(   $session, 'zeotrope' ), 0 );
+test_assert_equal( $b->get_bucket_word_count( $session, 'zeotrope' ), 0 );
 test_assert_equal( $b->get_bucket_unique_count( $session, 'zeotrope' ), 0 );
 
 # add_messages_to_bucket
@@ -655,9 +392,9 @@ test_assert_equal( $types[0], 'from' );
 
 @types = $b->get_magnet_types_in_bucket(  $session, 'personal' );
 test_assert_equal( $#types, 2 );
-test_assert_equal( $types[0], 'from'    );
+test_assert_equal( $types[0], 'from' );
 test_assert_equal( $types[1], 'subject' );
-test_assert_equal( $types[2], 'to'      );
+test_assert_equal( $types[2], 'to' );
 
 # get_magnets
 
@@ -665,50 +402,50 @@ my @magnets = $b->get_magnets(  $session, 'zeotrope', 'from' );
 test_assert_equal( $#magnets, 0 );
 test_assert_equal( $magnets[0], 'francis' );
 
-@magnets = $b->get_magnets( $session, 'personal', 'from'    );
+@magnets = $b->get_magnets( $session, 'personal', 'from' );
 test_assert_equal( $#magnets, 1 );
-test_assert_equal( $magnets[0], 'foo'      );
+test_assert_equal( $magnets[0], 'foo' );
 test_assert_equal( $magnets[1], 'oldstyle' );
-@magnets = $b->get_magnets( $session, 'personal', 'to'      );
+@magnets = $b->get_magnets( $session, 'personal', 'to' );
 test_assert_equal( $#magnets, 0 );
 test_assert_equal( $magnets[0], 'baz@baz.com' );
 @magnets = $b->get_magnets( $session, 'personal', 'subject' );
 test_assert_equal( $#magnets, 0 );
-test_assert_equal( $magnets[0], 'bar'      );
+test_assert_equal( $magnets[0], 'bar' );
 
 # magnet_match__
 
-test_assert(  $b->magnet_match__( $session, 'foo',            'personal', 'from' ) );
-test_assert(  $b->magnet_match__( $session, 'barfoo',         'personal', 'from' ) );
-test_assert(  $b->magnet_match__( $session, 'foobar',         'personal', 'from' ) );
-test_assert(  $b->magnet_match__( $session, 'oldstylemagnet', 'personal', 'from' ) );
-test_assert( !$b->magnet_match__( $session, 'fo',             'personal', 'from' ) );
-test_assert( !$b->magnet_match__( $session, 'fobar',          'personal', 'from' ) );
-test_assert( !$b->magnet_match__( $session, 'oldstylmagnet',  'personal', 'from' ) );
+test_assert( $b->magnet_match__( $session, 'foo', 'personal', 'from' ) );
+test_assert( $b->magnet_match__( $session, 'barfoo', 'personal', 'from' ) );
+test_assert( $b->magnet_match__( $session, 'foobar', 'personal', 'from' ) );
+test_assert( $b->magnet_match__( $session, 'oldstylemagnet', 'personal', 'from' ) );
+test_assert( !$b->magnet_match__( $session, 'fo', 'personal', 'from' ) );
+test_assert( !$b->magnet_match__( $session, 'fobar', 'personal', 'from' ) );
+test_assert( !$b->magnet_match__( $session, 'oldstylmagnet', 'personal', 'from' ) );
 
-test_assert(  $b->magnet_match__( $session, 'baz@baz.com',       'personal', 'to'   ) );
-test_assert(  $b->magnet_match__( $session, 'dobaz@baz.com',     'personal', 'to'   ) );
-test_assert(  $b->magnet_match__( $session, 'dobaz@baz.com.edu', 'personal', 'to'   ) );
-test_assert( !$b->magnet_match__( $session, 'bam@baz.com',       'personal', 'to'   ) );
-test_assert( !$b->magnet_match__( $session, 'doba@baz.com',      'personal', 'to'   ) );
-test_assert( !$b->magnet_match__( $session, 'dobz@baz.com.edu',  'personal', 'to'   ) );
+test_assert( $b->magnet_match__( $session, 'baz@baz.com', 'personal', 'to' ) );
+test_assert( $b->magnet_match__( $session, 'dobaz@baz.com', 'personal', 'to' ) );
+test_assert( $b->magnet_match__( $session, 'dobaz@baz.com.edu', 'personal', 'to' ) );
+test_assert( !$b->magnet_match__( $session, 'bam@baz.com', 'personal', 'to' ) );
+test_assert( !$b->magnet_match__( $session, 'doba@baz.com', 'personal', 'to' ) );
+test_assert( !$b->magnet_match__( $session, 'dobz@baz.com.edu', 'personal', 'to' ) );
 
 $b->create_magnet( $session, 'zeotrope', 'from', '@yahoo.com' );
-test_assert(  $b->magnet_match__( $session, 'baz@yahoo.com', 'zeotrope', 'from' ) );
-test_assert(  $b->magnet_match__( $session, 'foo@yahoo.com', 'zeotrope', 'from' ) );
-test_assert( !$b->magnet_match__( $session, 'foo@yaho.com',  'zeotrope', 'from' ) );
+test_assert( $b->magnet_match__( $session, 'baz@yahoo.com', 'zeotrope', 'from' ) );
+test_assert( $b->magnet_match__( $session, 'foo@yahoo.com', 'zeotrope', 'from' ) );
+test_assert( !$b->magnet_match__( $session, 'foo@yaho.com', 'zeotrope', 'from' ) );
 $b->delete_magnet( $session, 'zeotrope', 'from', '@yahoo.com' );
 
 $b->create_magnet( $session, 'zeotrope', 'from', '__r' );
 test_assert( !$b->magnet_match__( $session, 'baz@rahoo.com', 'zeotrope', 'from' ) );
-test_assert(  $b->magnet_match__( $session, '@__r',          'zeotrope', 'from' ) );
+test_assert( $b->magnet_match__( $session, '@__r', 'zeotrope', 'from' ) );
 $b->delete_magnet( $session, 'zeotrope', 'from', '__r' );
 
 $b->create_magnet( $session, 'zeotrope', 'from', 'foo$bar' );
-test_assert( !$b->magnet_match__( $session, 'foo@bar',   'zeotrope', 'from' ) );
-test_assert( !$b->magnet_match__( $session, 'foo$baz',   'zeotrope', 'from' ) );
-test_assert(  $b->magnet_match__( $session, 'foo$bar',   'zeotrope', 'from' ) );
-test_assert(  $b->magnet_match__( $session, 'foo$barum', 'zeotrope', 'from' ) );
+test_assert( !$b->magnet_match__( $session, 'foo@bar', 'zeotrope', 'from' ) );
+test_assert( !$b->magnet_match__( $session, 'foo$baz', 'zeotrope', 'from' ) );
+test_assert( $b->magnet_match__( $session, 'foo$bar', 'zeotrope', 'from' ) );
+test_assert( $b->magnet_match__( $session, 'foo$barum', 'zeotrope', 'from' ) );
 $b->delete_magnet( $session, 'zeotrope', 'from', 'foo$bar' );
 
 # get_magnet_types
@@ -716,10 +453,10 @@ $b->delete_magnet( $session, 'zeotrope', 'from', 'foo$bar' );
 my %mtypes = $b->get_magnet_types( $session );
 my @mkeys = keys %mtypes;
 test_assert_equal( $#mkeys, 3 );
-test_assert_equal( $mtypes{from},    'From'    );
-test_assert_equal( $mtypes{to},      'To'      );
+test_assert_equal( $mtypes{from}, 'From' );
+test_assert_equal( $mtypes{to}, 'To' );
 test_assert_equal( $mtypes{subject}, 'Subject' );
-test_assert_equal( $mtypes{cc},      'Cc'      );
+test_assert_equal( $mtypes{cc}, 'Cc' );
 
 # delete_magnet
 
@@ -730,65 +467,18 @@ test_assert_equal( $b->magnet_count( $session ), 4 );
 test_assert_equal( $#mags, 0 );
 test_assert_equal( $mags[0], 'personal' );
 
-# send a message through the mq (doesn't actually use the MQ???)
+# send a message through the mq
 
 test_assert_equal( $b->get_bucket_parameter(  $session, 'zeotrope', 'count' ), 0 );
 $b->classified( $session, 'zeotrope' );
-$POPFile->CORE_service(1);
+$mq->service();
 test_assert_equal( $b->get_bucket_parameter(  $session, 'zeotrope', 'count' ), 1 );
 
-# clear_bucket (Generates orphans !!!)
+# clear_bucket
 
 $b->clear_bucket( $session, 'zeotrope' );
 test_assert_equal( $b->get_bucket_word_count( $session, 'zeotrope' ), 0 );
-# At this point we have orphans
 
-my $orphan_query = $b->db_()->prepare( "select count(*) from words where words.id in (select id from words except select wordid from matrix);" );
-
-my $single_orphan_query = $b->db_()->prepare( "select count(*) from words where words.word = 'srvexch.reichraming.helopal.com' AND words.id in (select id from words except select wordid from matrix);" );
-
-# Test the total number of orphans
-$orphan_query->execute();
-
-test_assert_equal( $orphan_query->fetchrow_arrayref->[0] , 160 );
-
-$orphan_query->finish;
-
-# Test a few specific orphaned words
-
-$single_orphan_query->execute();
-
-test_assert_equal( $single_orphan_query->fetchrow_arrayref->[0] , 1 );
-
-$single_orphan_query->finish;
-
-# Test clearing of orphans
-
-# This is not the usual delivery method of TICKD, but is better than
-# violating POPFile::Logger internals for a message anyone can send
-
-# THIS DOES NOT WORK, freezes.. calling cleanup directly
-
-# $b->mq_post_( 'TICKD' );
-
-# $POPFile->CORE_service();
-
-$b->cleanup_orphan_words__();
-
-# Test the total number of orphans
-$orphan_query->execute();
-
-test_assert_equal( $orphan_query->fetchrow_arrayref->[0] , 0 );
-
-$orphan_query->finish;
-
-# Test a few specific orphaned words
-
-$single_orphan_query->execute();
-
-test_assert_equal( $single_orphan_query->fetchrow_arrayref->[0] , 0 );
-
-$single_orphan_query->finish;
 # classify a message using a magnet
 
 $b->create_magnet( $session, 'zeotrope', 'from', 'cxcse231@yahoo.com' );
@@ -805,22 +495,20 @@ test_assert_equal( $#mags, -1 );
 
 # delete_bucket
 
-test_assert(  $b->delete_bucket( $session, 'zeotrope'  ) );
+test_assert( $b->delete_bucket( $session, 'zeotrope' ) );
 
 @buckets = $b->get_buckets( $session );
 test_assert_equal( $#buckets, 2 );
-test_assert_equal( $buckets[0], 'other'    );
+test_assert_equal( $buckets[0], 'other' );
 test_assert_equal( $buckets[1], 'personal' );
-test_assert_equal( $buckets[2], 'spam'     );
+test_assert_equal( $buckets[2], 'spam' );
 
 test_assert( !$b->is_bucket( $session, 'zeotrope' ) );
 test_assert( !$b->is_pseudo_bucket( $session, 'zeotrope' ) );
 
-test_assert( !$b->delete_bucket( $session, 'badbucket' ) );
-
 # getting and setting values
 
-test_assert_equal( $b->get_value_( $session, 'personal', 'foo' ),      log(1/103) );
+test_assert_equal( $b->get_value_( $session, 'personal', 'foo' ), log(1/103) );
 test_assert_equal( $b->get_sort_value_( $session, 'personal', 'foo' ), log(1/103) );
 
 test_assert_equal( $b->set_value_( $session, 'personal', 'foo', 0 ), 1 );
@@ -831,7 +519,7 @@ test_assert_equal( $b->get_not_likely_( $session ), $b->{not_likely__}{1} );
 $b->set_value_( $session, 'personal', 'foo', 100 );
 $b->db_update_cache__( $session );
 test_assert_equal( $b->get_base_value_( $session, 'personal', 'foo' ), 100 );
-test_assert_equal( $b->get_value_( $session, 'personal', 'foo' ),      log(100/202) );
+test_assert_equal( $b->get_value_( $session, 'personal', 'foo' ), log(100/202) );
 test_assert_equal( $b->get_sort_value_( $session, 'personal', 'foo' ), log(100/202) );
 
 # glob the tests directory for files called TestMailParse\d+.msg which consist of messages
@@ -856,13 +544,14 @@ for my $class_test (@class_tests) {
 # glob the tests directory for files called TestMailParse\d+.msg which consist of messages
 # to be sent through classify_and_modify
 
-$b->config_( 'msgdir', '../tests/' );
-$b->module_config_( 'html', 'port',  8080 );
-$b->module_config_( 'html', 'local',    1 );
-$b->module_config_( 1, 'pop3', 'local', 1 );
+$b->global_config_( 'msgdir', '../tests/' );
+$b->module_config_( 'html', 'port', 8080 );
+$b->module_config_( 'html', 'local', 1 );
+$b->global_config_( 'xtc',  1 );
+$b->global_config_( 'xpl',  1 );
+$b->module_config_( 'pop3', 'local', 1 );
+$b->global_config_( 'subject',  1 );
 $b->set_bucket_parameter( $session, 'spam', 'subject', 1 );
-$b->set_bucket_parameter( $session, 'spam', 'xtc',     1 );
-$b->set_bucket_parameter( $session, 'spam', 'xpl',     1 );
 
 my @modify_tests = sort glob 'TestMailParse*.msg';
 
@@ -874,11 +563,12 @@ for my $modify_file (@modify_tests) {
 
         my $output_file = $modify_file;
         $output_file    =~ s/msg/cam/;
+
         open CAM, "<$output_file";
         open OUTPUT, "<temp.out";
         while ( <OUTPUT> ) {
             my $output_line = $_;
-            my $cam_line    = <CAM> || '';
+            my $cam_line    = <CAM>;
             $output_line =~ s/[\r\n]//g;
             $cam_line =~ s/[\r\n]//g;
             if ( ( $output_line ne '.' ) || ( $cam_line ne '' ) ) {
@@ -889,7 +579,7 @@ for my $modify_file (@modify_tests) {
 
         close CAM;
         close OUTPUT;
-        $h->delete_slot( $slot, 0, $session, 0 );
+        $h->delete_slot( $slot );
         unlink( 'temp.out' );
     }
 }
@@ -908,7 +598,7 @@ $b->{parser__}->{mangle__}->load_stopwords();
 my @stopwords = sort $b->get_stopword_list( $session );
 test_assert_equal( $#stopwords, 1 );
 test_assert_equal( $stopwords[0], 'andnotthat' );
-test_assert_equal( $stopwords[1], 'notthis'    );
+test_assert_equal( $stopwords[1], 'notthis' );
 
 # add_stopword
 
@@ -916,8 +606,8 @@ test_assert( $b->add_stopword( $session, 'northat' ) );
 @stopwords = sort $b->get_stopword_list( $session );
 test_assert_equal( $#stopwords, 2 );
 test_assert_equal( $stopwords[0], 'andnotthat' );
-test_assert_equal( $stopwords[1], 'northat'    );
-test_assert_equal( $stopwords[2], 'notthis'    );
+test_assert_equal( $stopwords[1], 'northat' );
+test_assert_equal( $stopwords[2], 'notthis' );
 
 # remove_stopword
 
@@ -925,7 +615,7 @@ test_assert( $b->remove_stopword( $session, 'northat' ) );
 @stopwords = sort $b->get_stopword_list( $session );
 test_assert_equal( $#stopwords, 1 );
 test_assert_equal( $stopwords[0], 'andnotthat' );
-test_assert_equal( $stopwords[1], 'notthis'    );
+test_assert_equal( $stopwords[1], 'notthis' );
 
 # echo_to_dot_
 
@@ -989,7 +679,7 @@ while ( !eof( MAIL ) && !eof( TEMP ) ) {
     test_assert_regexp( $temp, $mail );
 }
 test_assert( !eof( MAIL ) );
-test_assert(  eof( TEMP ) );
+test_assert( eof( TEMP ) );
 close MAIL;
 close TEMP;
 
@@ -1012,15 +702,15 @@ binmode TEMP2;
 open MAIL, "<messages/one.msg";
 binmode MAIL;
 while ( !eof( MAIL ) && !eof( TEMP ) && !eof( TEMP2 ) ) {
-    my $temp  = <TEMP>;
+    my $temp = <TEMP>;
     my $temp2 = <TEMP2>;
-    my $mail  = <MAIL>;
+    my $mail = <MAIL>;
     test_assert_regexp( $temp2, $mail );
     last if ( $mail =~ /^\./ );
     test_assert_regexp( $temp, $mail );
 }
-test_assert( !eof( MAIL  ) );
-test_assert(  eof( TEMP  ) );
+test_assert( !eof( MAIL ) );
+test_assert( eof( TEMP ) );
 test_assert( !eof( TEMP2 ) );
 close MAIL;
 close TEMP;
@@ -1203,7 +893,7 @@ unlink( 'messages/popfile0=0.cls' );
 unlink( 'messages/popfile0=0.msg' );
 open CLIENT, ">temp.tmp";
 open MAIL, "<messages/one.msg";
-( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 1, '', 0, 1 );
+my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 1, '', 0, 1 );
 close CLIENT;
 close MAIL;
 
@@ -1214,7 +904,7 @@ test_assert( !(-e $h->get_slot_file( $slot ) ) );
 
 open CLIENT, ">temp.tmp";
 open MAIL, "<messages/one.msg";
-( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 0 );
+my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 0 );
 close CLIENT;
 close MAIL;
 
@@ -1227,7 +917,7 @@ test_assert_equal( ( -s 'temp.tmp' ), 0 );
 
 open CLIENT, ">temp.tmp";
 open MAIL, "<messages/one.msg";
-( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, 'other', 0, 1 );
+my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, 'other', 0, 1 );
 close CLIENT;
 close MAIL;
 
@@ -1250,7 +940,8 @@ foreach my $prefix (@INC) {
 
 if ( $have_text_kakasi ) {
 
-    $b->user_module_config_( 1, 'html', 'language', 'Nihongo' );
+    $b->module_config_( 'html', 'language', 'Nihongo' );
+    $b->{parser__}->mangle( $w );
     $b->initialize();
     test_assert( $b->start() );
 
@@ -1341,6 +1032,6 @@ if ( $have_text_kakasi ) {
     print "\nWarning: Japanese tests skipped because Text::Kakasi was not found\n";
 }
 
-$POPFile->CORE_stop();
+$b->stop();
 
 1;

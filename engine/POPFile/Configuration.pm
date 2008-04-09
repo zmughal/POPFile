@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 0
+# POPFILE LOADABLE MODULE
 package POPFile::Configuration;
 
 use POPFile::Module;
@@ -34,8 +34,7 @@ use strict;
 use warnings;
 use locale;
 
-use Getopt::Long qw(:config pass_through);
-use File::Path;
+use Getopt::Long;
 
 #----------------------------------------------------------------------------
 # new
@@ -117,29 +116,6 @@ sub initialize
 
     $self->global_config_( 'message_cutoff', 100000 );
 
-    # Set to 1 if POPFile only supports a single user (the
-    # administrator) This is the default setting and mirrors the up
-    # until v0.23.0 operation of POPFile as a single user program.  If
-    # set to 0 then multiple users are supported.
-
-    $self->global_config_( 'single_user', 1 );
-
-    # The Strength value used in calls to Crypt::Random::makerandom_octet
-    # The default is weak (0), but should work on all systems without
-    # blocking POPFile. Set this to 1 if your syste provides enough
-    # entropy and you need extra-random randomness.
-
-    $self->global_config_( 'crypt_strength', 0 );
-
-    # The random number device that should be used in calls to
-    # Crypt::Random::makerandom_octet. Depending on the Strength
-    # value Crypt::Random uses either /dev/random (Strength 1)
-    # or /dev/urandom (Strength 0). If you have another
-    # device that can produce random numbers, you can configure
-    # it with this variable.
-
-    $self->global_config_( 'crypt_device', '' );
-
     # Register for the TICKD message which is sent hourly by the
     # Logger module.   We use this to hourly save the configuration file
     # so that POPFile's configuration is saved in case of a hard crash.
@@ -168,23 +144,12 @@ sub start
 
     $self->{started__} = 1;
 
-    # Check to see if the PID file is present, if it is then another
-    # POPFile may be running, warn the user and terminate, note the 0
-    # at the end means that we allow the piddir to be absolute and
-    # outside the user sandbox
+    # Check to see if the PID file is present, if it is then another POPFile
+    # may be running, warn the user and terminate, note the 0 at the end
+    # means that we allow the piddir to be absolute and outside the user
+    # sandbox
 
-    eval { mkpath( $self->config_( 'piddir' ) ) };
-    if ( $@ ) {
-        $self->log_( 0, "Failed to create directory " . $self->config_( 'piddir' ) );
-    }
-    eval { mkpath( $self->global_config_( 'msgdir' ) ) };
-    if ( $@ ) {
-        $self->log_( 0, "Failed to create directory " . $self->global_config_( 'piddir' ) );
-    }
-
-    $self->{pid_file__} = $self->get_user_path( $self->path_join(
-                                                    $self->config_( 'piddir' ),
-                                                    'popfile.pid' ), 0 ) ;
+    $self->{pid_file__} = $self->get_user_path( $self->config_( 'piddir' ) . 'popfile.pid', 0 );
 
     if (defined($self->live_check_())) {
         return 0;
@@ -199,14 +164,11 @@ sub start
 #
 # service
 #
-# service() is a called periodically to give the module a chance to do
-# housekeeping work.
+# service() is a called periodically to give the module a chance to do housekeeping work.
 #
-# If any problem occurs that requires POPFile to shutdown service()
-# should return 0 and the top level process will gracefully terminate
-# POPFile including calling all stop() methods.  In normal operation
-# return 1.
-#
+# If any problem occurs that requires POPFile to shutdown service() should return 0 and
+# the top level process will gracefully terminate POPFile including calling all stop()
+# methods.  In normal operation return 1.#
 # ----------------------------------------------------------------------------
 sub service
 {
@@ -239,8 +201,8 @@ sub stop
     my ( $self ) = @_;
 
     $self->save_configuration();
+
     $self->delete_pid_();
-    $self->SUPER::stop();
 }
 
 # ----------------------------------------------------------------------------
@@ -291,7 +253,7 @@ sub live_check_
             return $pid;
         } else {
             print STDERR "\nThe other POPFile ($oldpid) failed to signal back, starting new copy ($$)\n";
-    }
+	}
     }
     return undef;
 }
@@ -314,8 +276,7 @@ sub check_pid_
 #
 # get_pid_
 #
-# returns the pidfile proccess ID if a pid file is present, undef
-# otherwise (0 might be a valid PID)
+# returns the pidfile proccess ID if a pid file is present, undef otherwise (0 might be a valid PID)
 #
 # ----------------------------------------------------------------------------
 sub get_pid_
@@ -388,8 +349,8 @@ sub parse_command_line
     #
     # So its possible to do
     #
-    # --set bayes_param=value --set=-bayes_param=value
-    #     --set -bayes_param=value -- -bayes_param value
+    # --set bayes_param=value --set=-bayes_param=value --set
+    # -bayes_param=value -- -bayes_param value
 
     if ( !GetOptions( "set=s" => \@set_options ) ) {
         return 0;
@@ -402,17 +363,17 @@ sub parse_command_line
     my @options;
 
     for my $i (0..$#set_options) {
-        $set_options[$i] =~ /-?(.+?)=(.+)/;
+        $set_options[$i] =~ /-?(.+)=(.+)/;
 
-        if ( !defined( $1 ) ) {
+	if ( !defined( $1 ) ) {
             print STDERR "\nBad option: $set_options[$i]\n";
             return 0;
-        }
+	}
 
         push @options, ("-$1");
         if ( defined( $2 ) ) {
             push @options, ($2);
-        }
+	}
     }
 
     push @options, @ARGV;
@@ -435,11 +396,8 @@ sub parse_command_line
                         return 0;
                     }
                 } else {
-                    if ( $options[$i] ne '--' ) {
-                        print STDERR "\nUnknown option: $options[$i]\n";
-                        return 0;
-                    }
-                    ++$i;
+                    print STDERR "\nUnknown option $options[$i]\n";
+                    return 0;
                 }
             } else {
                 print STDERR "\nExpected a command line option and got $options[$i]\n";
@@ -475,69 +433,61 @@ sub upgrade_parameter__
 
     my %upgrades = ( # PROFILE BLOCK START
 
-                  # Parameters that are now handled by Classifier::Bayes
+                     # Parameters that are now handled by Classifier::Bayes
 
-                  'corpus',                   'bayes_corpus',
-                  'unclassified_probability', 'bayes_unclassified_probability',
+                     'corpus',                   'bayes_corpus',
+                     'unclassified_probability',
+                         'bayes_unclassified_probability',
 
-                  # Parameters that are now handled by POPFile::Configuration
+                     # Parameters that are now handled by
+                     # POPFile::Configuration
 
-                  'piddir',                   'config_piddir',
+                     'piddir',                   'config_piddir',
 
-                  # Parameters that are now global to POPFile
+                     # Parameters that are now global to POPFile
 
-                  'debug',                    'GLOBAL_debug',
-                  'msgdir',                   'GLOBAL_msgdir',
-                  'timeout',                  'GLOBAL_timeout',
+                     'debug',                    'GLOBAL_debug',
+                     'msgdir',                   'GLOBAL_msgdir',
+                     'timeout',                  'GLOBAL_timeout',
 
-                  # Parameters that are now handled by POPFile::Logger
+                     # Parameters that are now handled by POPFile::Logger
 
-                  'logdir',                   'logger_logdir',
+                     'logdir',                   'logger_logdir',
 
-                  # Parameters that are now handled by Proxy::POP3
+                     # Parameters that are now handled by Proxy::POP3
 
-                  'localpop',                 'pop3_local',
-                  'port',                     'pop3_port',
-                  'sport',                    'pop3_secure_port',
-                  'server',                   'pop3_secure_server',
-                  'separator',                'pop3_separator',
-                  'toptoo',                   'pop3_toptoo',
+                     'localpop',                 'pop3_local',
+                     'port',                     'pop3_port',
+                     'sport',                    'pop3_secure_port',
+                     'server',                   'pop3_secure_server',
+                     'separator',                'pop3_separator',
+                     'toptoo',                   'pop3_toptoo',
 
-                  # Parameters that are now handled by UI::HTML
+                     # Parameters that are now handled by UI::HTML
 
-                  'language',                 'html_language',
-                  'last_reset',               'html_last_reset',
-                  'last_update_check',        'html_last_update_check',
-                  'localui',                  'html_local',
-                  'page_size',                'html_page_size',
-                  'password',                 'html_password',
-                  'send_stats',               'html_send_stats',
-                  'skin',                     'html_skin',
-                  'test_language',            'html_test_language',
-                  'update_check',             'html_update_check',
-                  'ui_port',                  'html_port',
+                     'language',                 'html_language',
+                     'last_reset',               'html_last_reset',
+                     'last_update_check',        'html_last_update_check',
+                     'localui',                  'html_local',
+                     'page_size',                'html_page_size',
+                     'password',                 'html_password',
+                     'send_stats',               'html_send_stats',
+                     'skin',                     'html_skin',
+                     'test_language',            'html_test_language',
+                     'update_check',             'html_update_check',
+                     'ui_port',                  'html_port',
 
-                  # Parameters that have moved from the UI::HTML to
-                  # POPFile::History
+                     # Parameters the have moved from the UI::HTML to
+                     # POPFile::History
 
-                  'archive',                  'history_archive',
-                  'archive_classes',          'history_archive_classes',
-                  'archive_dir',              'history_archive_dir',
-                  'history_days',             'history_history_days',
-                  'html_archive',             'history_archive',
-                  'html_archive_classes',     'history_archive_classes',
-                  'html_archive_dir',         'history_archive_dir',
-                  'html_history_days',        'history_history_days',
-
-                  # Parameters that have moved from Classifier::Bayes to
-                  # POPFile::Database
-
-                  'bayes_bad_sqlite_version', 'database_bad_sqlite_version',
-                  'bayes_database',           'database_database',
-                  'bayes_dbauth',             'database_dbauth',
-                  'bayes_dbconnect',          'database_dbconnect',
-                  'bayes_dbuser',             'database_dbuser',
-                  'bayes_sqlite_tweaks',      'database_sqlite_tweaks'
+                     'archive',                  'history_archive',
+                     'archive_classes',          'history_archive_classes',
+                     'archive_dir',              'history_archive_dir',
+                     'history_days',             'history_history_days',
+                     'html_archive',             'history_archive',
+                     'html_archive_classes',     'history_archive_classes',
+                     'html_archive_dir',         'history_archive_dir',
+                     'html_history_days',        'history_history_days',
 
     ); # PROFILE BLOCK STOP
 
@@ -573,7 +523,14 @@ sub load_configuration
 
                 $parameter = $self->upgrade_parameter__($parameter);
 
-                if (defined($self->{configuration_parameters__}{$parameter})) {
+                # There's a special hack here inserted so that even if
+                # the HTML module is not loaded the html_language
+                # parameter is loaded and not discarded.  That's done
+                # so that the Japanese users can use insert.pl
+                # etc. which rely on knowing the language
+
+                if (defined($self->{configuration_parameters__}{$parameter}) ||
+                    ( $parameter eq 'html_language' ) ) {
                     $self->{configuration_parameters__}{$parameter}{value} =
                         $value;
                 } else {
@@ -630,19 +587,19 @@ sub get_user_path
 {
     my ( $self, $path, $sandbox ) = @_;
 
-    return $self->path_join( $self->{popfile_user__}, $path, $sandbox );
+    return $self->path_join__( $self->{popfile_user__}, $path, $sandbox );
 }
 
 sub get_root_path
 {
     my ( $self, $path, $sandbox ) = @_;
 
-    return $self->path_join( $self->{popfile_root__}, $path, $sandbox );
+    return $self->path_join__( $self->{popfile_root__}, $path, $sandbox );
 }
 
 # ----------------------------------------------------------------------------
 #
-# path_join
+# path_join__
 #
 # Join two paths togther
 #
@@ -652,7 +609,7 @@ sub get_root_path
 #                    paths and paths containing .. are not accepted).
 #
 # ----------------------------------------------------------------------------
-sub path_join
+sub path_join__
 {
     my ( $self, $left, $right, $sandbox ) = @_;
 
@@ -749,3 +706,4 @@ sub deprecated_parameter
 }
 
 1;
+

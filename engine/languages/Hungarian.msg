@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -151,8 +151,8 @@ Password_Error1                         Rossz jelszó
 Security_Error1                         A secure port egy szám kell hogy legyen 1 és 65535 között
 Security_Stealth                        Lopakodó (Stealth) Üzemmód/Szerver Múködés
 Security_NoStealthMode                  Nem (Stealth Üzemmód)
-Security_ExplainStats                   (Ha ez be van kapcsolva, akkor a POPFile naponta egyszer elküldi a következõ 3 változó értékét egy script-nek a www.usethesource.com-ra: bc (a konténerek száma) mc (a POPFile által osztályozott üzenetek száma) ec (az osztályozási hibák száma). Ezeket az adatokat egy állomámyban tartom, és arra használom õket hogy néhány statisztikai adatok publikáljak a POPFile hatékonyságáról és arról hogy az emberek hogyan hasynálják a programot. A Web szerverem kb. 5 napig õrzi meg az információt, majd törli. Nem tárolok semmiféle kapcsolatot a begyûjtött adatok és az IP cimek között.)
-Security_ExplainUpdate                  (Ha ez be van kapcsolva, akkor a POPFile naponta egyszer elküldi a következõ 3 változó értékét egy script-nek a www.usethesource.com-ra: ma (az általad használt POPFile fõ verziószáma) mi (az általad használt POPFile al-verziószáma) bn (az általad használt POPFile build száma). Az általad használt POPFile kapni fog egy grafikát a szervertõl, ami a lap tetején lesz látható ha egy újabb verzió elérhetõ. Ezeket az adatokat egy állomámyban tartom, és arra használom õket hogy néhány statisztikai adatok publikáljak a POPFile hatékonyságáról és arról hogy az emberek hogyan hasynálják a programot. A Web szerverem kb. 5 napig õrzi meg az információt, majd törli. Nem tárolok semmiféle kapcsolatot a begyûjtött adatok és az IP cimek között.) 
+Security_ExplainStats                   (Ha ez be van kapcsolva, akkor a POPFile naponta egyszer elküldi a következõ 3 változó értékét egy script-nek a getpopfile.org-ra: bc (a konténerek száma) mc (a POPFile által osztályozott üzenetek száma) ec (az osztályozási hibák száma). Ezeket az adatokat egy állomámyban tartom, és arra használom õket hogy néhány statisztikai adatok publikáljak a POPFile hatékonyságáról és arról hogy az emberek hogyan hasynálják a programot. A Web szerverem kb. 5 napig õrzi meg az információt, majd törli. Nem tárolok semmiféle kapcsolatot a begyûjtött adatok és az IP cimek között.)
+Security_ExplainUpdate                  (Ha ez be van kapcsolva, akkor a POPFile naponta egyszer elküldi a következõ 3 változó értékét egy script-nek a getpopfile.org-ra: ma (az általad használt POPFile fõ verziószáma) mi (az általad használt POPFile al-verziószáma) bn (az általad használt POPFile build száma). Az általad használt POPFile kapni fog egy grafikát a szervertõl, ami a lap tetején lesz látható ha egy újabb verzió elérhetõ. Ezeket az adatokat egy állomámyban tartom, és arra használom õket hogy néhány statisztikai adatok publikáljak a POPFile hatékonyságáról és arról hogy az emberek hogyan hasynálják a programot. A Web szerverem kb. 5 napig õrzi meg az információt, majd törli. Nem tárolok semmiféle kapcsolatot a begyûjtött adatok és az IP cimek között.) 
 Security_PasswordTitle                  Felhaszálói felület jelszó
 Security_Password                       Jelszó
 Security_PasswordUpdate                 Az új jelszó: %s
@@ -174,7 +174,7 @@ Magnet_Error3                           Hozd létre a '%s' mágnest a '%s' konténe
 Magnet_CurrentMagnets                   Mágnesek
 Magnet_Message1                         A következõ mágnes minden egyes levelet a megadott konténerbe fog irányitani.
 Magnet_CreateNew                        Hozz létre új mágnest
-Magnet_Explanation                      <b>Három fajta mágnes létezik:</b> <ul><li><b>Feladó cime vagy neve:</b> Például: john@company.com, ha egy bizonyos email cimet keresünk<br>company.com ha mindenkit meg akarunk találni aki a company.com cimrõl jön, <br>"John Doe" ha egy bizonyos embert akarunk kiszûrni, John meg fog találni minden John-t<li><b>Cimyett cime vagy neve:</b> Ugyanaz mint a Feladó, de ez a Cimzett nevében és cimében keres.<li><b>Téma:</b> Például: hello meg fog találni minden email-t aminek a szó "hello" a témájában szerepel</ul>
+Magnet_Explanation                      Három fajta mágnes létezik:</b> <ul><li><b>Feladó cime vagy neve:</b> Például: john@company.com, ha egy bizonyos email cimet keresünk<br>company.com ha mindenkit meg akarunk találni aki a company.com cimrõl jön, <br>"John Doe" ha egy bizonyos embert akarunk kiszûrni, John meg fog találni minden John-t<li><b>Cimyett cime vagy neve:</b> Ugyanaz mint a Feladó, de ez a Cimzett nevében és cimében keres.<li><b>Téma:</b> Például: hello meg fog találni minden email-t aminek a szó "hello" a témájában szerepel</ul>
 Magnet_MagnetType                       Mágnes tipus
 Magnet_Value                            Érték
 Magnet_Always                           Mindig a konténerbe megy
