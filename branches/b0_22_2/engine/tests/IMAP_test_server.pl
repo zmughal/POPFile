@@ -54,7 +54,7 @@ my $spool = "imap.spool";
 
 # if nothing happens with in $idle_timeout seconds
 # we call exit.
-my $idle_timeout = 6;
+my $idle_timeout = 60;
 
 my @mailboxes = qw/INBOX spam personal other unclassified/;
 
