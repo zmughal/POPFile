@@ -345,7 +345,7 @@ sub release_slot
 
     unlink $file;
 
-    # It's not possible that the directory for the slot file is empty
+    # It's now possible that the directory for the slot file is empty
     # and we want to delete it so that things get cleaned up automatically
 
     $file =~ s/popfile[a-f0-9]{2}\.msg$//i;
@@ -353,17 +353,10 @@ sub release_slot
     my $depth = 3;
 
     while ( $depth > 0 ) {
-        my @files = glob( $file . '*' );
-
-        if ( $#files == -1 ) {
-            if ( !( rmdir( $file ) ) ) {
-                last;
-            }
-            $file =~ s![a-f0-9]{2}/$!!i;
-        } else {
+        if ( !( rmdir( $file ) ) ) {
             last;
         }
-
+        $file =~ s![a-f0-9]{2}/$!!i;
         $depth--;
     }
 }
@@ -587,7 +580,7 @@ sub commit_history__
             ${$header{$h}}[0] =
                  $self->{classifier__}->{parser__}->decode_string(
                      ${$header{$h}}[0] );
-            
+
             if ( !defined ${$header{$h}}[0] || ${$header{$h}}[0] =~ /^\s*$/ ) {
                 if ( $h ne 'cc' ) {
                     ${$header{$h}}[0] = "<$h header missing>";
@@ -595,7 +588,7 @@ sub commit_history__
                     ${$header{$h}}[0] = '';
                 }
             }
-            
+
             ${$header{$h}}[0] =~ s/\0//g;
             ${$header{$h}}[0] = $self->db__()->quote( ${$header{$h}}[0] );
         }
