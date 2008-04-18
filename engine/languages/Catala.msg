@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2007 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 # 2005/08/09 Translated by David Gimeno i Ayuso <info@sima-pc.com>
 #
