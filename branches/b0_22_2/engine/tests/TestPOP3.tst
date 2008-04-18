@@ -64,7 +64,7 @@ sub pipeready
 sub server
 {
     my ( $client, $apop ) = @_;
-    my @messages = sort glob 'TestMailParse*.msg';
+    my @messages = sort glob 'TestMails/TestMailParse*.msg';
     my $goslow = 0;
     my $hang   = 0;
     my $slowlf = 0;
@@ -182,7 +182,7 @@ sub server
         }
 
         if ( $command =~ /RSET/i ) {
-            @messages = sort glob 'TestMailParse*.msg';
+            @messages = sort glob 'TestMails/TestMailParse*.msg';
             print $client "+OK Reset$eol";
             next;
         }
@@ -194,7 +194,7 @@ sub server
 
         if ( $command =~ /DELE (.*)/i ) {
             my $index = $1 - 1;
-            if ( defined( $messages[$index] ) && 
+            if ( defined( $messages[$index] ) &&
                  ( $messages[$index] ne '' ) ) {
                 $messages[$index] = '';
                 print $client "+OK Deleted $1$eol";
@@ -206,7 +206,7 @@ sub server
 
         if ( $command =~ /RETR (\d+)/i ) {
             my $index = $1 - 1;
-            if ( defined( $messages[$index] ) && 
+            if ( defined( $messages[$index] ) &&
                  ( $messages[$index] ne '' ) ) {
                  print $client "+OK " . ( -s $messages[$index] ) . "$eol";
 
@@ -238,7 +238,6 @@ sub server
                  close FILE;
 
                  print $client ".$eol";
-
             } else {
                 print $client "-ERR No such message $1$eol";
             }
@@ -289,7 +288,7 @@ sub server
         }
 
         if ( $command =~ /CAPA|AUTH/i ) {
-            print $client "+OK I can handle$eol" . "AUTH$eol" . 
+            print $client "+OK I can handle$eol" . "AUTH$eol" .
                 "USER$eol" . "APOP$eol.$eol";
             next;
         }
@@ -307,7 +306,7 @@ sub server
 
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-test_assert( rmtree( 'corpus/CVS' ) > 0 );
+rmtree( 'corpus/CVS' );
 test_assert( scalar(`rm -rf messages/*`) == 0 );
 
 my $c = new POPFile::Configuration;
@@ -456,7 +455,7 @@ if ( $pid == 0 ) {
                                     Reuse     => 1 );
 
     my $selector = new IO::Select( $server );
-    
+
     my $apop_server = 0;
 
     while ( 1 ) {
@@ -466,7 +465,7 @@ if ( $pid == 0 ) {
                 close $client;
             }
         }
-        
+
         if ( pipeready( $dserverreader ) ) {
             my $command = <$dserverreader>;
 
@@ -571,7 +570,7 @@ if ( $pid == 0 ) {
         close $dreader;
         close $uwriter;
         $dwriter->autoflush(1);
-        
+
         close $dserverreader;
         close $userverwriter;
         $dserverwriter->autoflush(1);
@@ -613,7 +612,7 @@ if ( $pid == 0 ) {
         test_assert_equal( $result,
             "-ERR Transparent proxying not configured: set secure server/port$eol" );
 
-        # Check that we can connect to the remote POP3 server 
+        # Check that we can connect to the remote POP3 server
         # (should still be waiting for us)
 
         print $client "USER 127.0.0.1:8110:gooduser$eol";
@@ -657,7 +656,7 @@ if ( $pid == 0 ) {
 
         my $count = 0;
         my $size  = 0;
-        my @messages = sort glob 'TestMailParse*.msg';
+        my @messages = sort glob 'TestMails/TestMailParse*.msg';
         for my $i (0..$#messages) {
             if ( $messages[$i] ne '' ) {
                 $count += 1;
@@ -772,10 +771,9 @@ if ( $pid == 0 ) {
 
         test_assert( open FILE, "<$cam" );
         binmode FILE;
-        while ( <FILE> ) {
-            my $line = $_;
+        while ( my $line = <FILE> ) {
             $result = <$client>;
-            my $logline = "File [$_], $client [$result]";
+            my $logline = "File $cam [$line], $client [$result]";
             $logline =~ s/[\r\n]//g;
             $result =~ s/view=2/view=popfile0=0.msg/;
             $result =~ s/\r|\n//g;
@@ -813,7 +811,9 @@ if ( $pid == 0 ) {
             $ml =~ s/[\r\n]//g;
             test_assert_equal( $fl, $ml );
         }
-        test_assert( !eof(FILE) );
+        # Why should the original be longer than the slot file?
+        # test_assert( !eof(FILE) );
+        test_assert( eof(FILE) );
         test_assert( eof(HIST) );
         close FILE;
         close HIST;
@@ -1188,7 +1188,6 @@ if ( $pid == 0 ) {
             $result = <$client>;
             $result =~ s/view=6/view=popfile0=0.msg/;
             test_assert( $result =~ /\015/ );
-            $result =~ s/\015//;
             test_assert_equal( $result, $line );
             if ( $headers == 0 ) {
                 $countdown -= 1;
@@ -1474,12 +1473,12 @@ if ( $pid == 0 ) {
         test_assert_equal( $result,
             "-ERR APOP not supported between mail client and POPFile.$eol" );
 
-        # Check that we can connect to the remote POP3 server 
+        # Check that we can connect to the remote POP3 server
         # (should still be waiting for us)
 
         print $client "APOP 127.0.0.1:8110:gooduser md5$eol";
         $result = <$client>;
-        test_assert_equal( $result, 
+        test_assert_equal( $result,
             "-ERR APOP not supported between mail client and POPFile.$eol" );
 
         print $client "QUIT$eol";
@@ -1511,15 +1510,15 @@ if ( $pid == 0 ) {
 
         print $client "APOP 127.0.0.1:8111:gooduser md5$eol";
         $result = <$client>;
-        test_assert_equal( $result, 
+        test_assert_equal( $result,
             "-ERR APOP not supported between mail client and POPFile.$eol" );
 
-        # Check that we can connect to the remote POP3 server 
+        # Check that we can connect to the remote POP3 server
         # (should still be waiting for us)
 
         print $client "APOP 127.0.0.1:8110:gooduser md5$eol";
         $result = <$client>;
-        test_assert_equal( $result, 
+        test_assert_equal( $result,
             "-ERR APOP not supported between mail client and POPFile.$eol" );
 
         print $client "QUIT$eol";
@@ -1536,14 +1535,14 @@ if ( $pid == 0 ) {
         close $client;
 
         # Test POPFile->server APOP
-        
+
         # Server that doesn't do APOP at all
-        
+
         print $dserverwriter "__APOPOFF\n";
 
         $line = <$userverreader>;
         test_assert_equal( $line, "OK\n" );
-        
+
         $client = IO::Socket::INET->new(
                         Proto    => "tcp",
                         PeerAddr => 'localhost',
@@ -1620,7 +1619,7 @@ if ( $pid == 0 ) {
         }
 
         close $client;
-        
+
         # Bad user
 
         $client = IO::Socket::INET->new(
@@ -1636,7 +1635,7 @@ if ( $pid == 0 ) {
             "+OK POP3 POPFile (test suite) server ready$eol" );
 
         print $client "USER 127.0.0.1:8110:baduser:apop$eol";
-        
+
         $result = <$client>;
         test_assert_equal( $result, "+OK hello baduser$eol" );
 
@@ -1657,7 +1656,7 @@ if ( $pid == 0 ) {
         }
 
         close $client;
-        
+
         # Good user, bad pass
 
         $client = IO::Socket::INET->new(
@@ -1673,7 +1672,7 @@ if ( $pid == 0 ) {
             "+OK POP3 POPFile (test suite) server ready$eol" );
 
         print $client "USER 127.0.0.1:8110:gooduser:apop$eol";
-        
+
         $result = <$client>;
         test_assert_equal( $result, "+OK hello gooduser$eol" );
 
@@ -1733,11 +1732,11 @@ if ( $pid == 0 ) {
         }
 
         close $client;
-                
+
         # re-disable APOP on the server so we don't mess with anything else
 
         print $dserverwriter "__APOPOFF\n";
-        
+
         $line = <$userverreader>;
         test_assert_equal( $line, "OK\n" );
 

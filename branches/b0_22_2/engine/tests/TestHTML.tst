@@ -26,10 +26,10 @@
 
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-test_assert( rmtree( 'corpus/CVS' ) > 0 );
-test_assert( rmtree( 'corpus/other/CVS' ) > 0 );
-test_assert( rmtree( 'corpus/spam/CVS' ) > 0 );
-test_assert( rmtree( 'corpus/personal/CVS' ) > 0 );
+rmtree( 'corpus/CVS' );
+rmtree( 'corpus/other/CVS' );
+rmtree( 'corpus/spam/CVS' );
+rmtree( 'corpus/personal/CVS' );
 rmtree( 'messages' );
 `rm -f __db.*`;  # todo: make tool independent
 unlink 'popfile.cfg';
@@ -39,21 +39,6 @@ unlink( 'stopwords' );
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
 mkdir 'messages';
-my @messages = glob '*.msg';
-
-my $count = 0;
-my $dl    = 0;
-foreach my $msg (@messages) {
-    next if ( $msg =~ /TestMailParse026/ );
-    my $name = "messages/popfile$dl" . "=" . "$count";
-    test_assert( (`cp $msg $name.msg` || 0) == 0 );
-    $msg =~ s/\.msg$/\.cls/;
-    test_assert( (`cp $msg $name.cls` || 0) == 0 );
-    $count += 1;
-    if ( rand(1) > 0.5 ) {
-        $dl += 1;
-    }
-}
 
 use POSIX ":sys_wait_h";
 
@@ -171,7 +156,7 @@ $l->mq( $mq );
 $l->logger( $l );
 
 $l->initialize();
-$l->config_( 'level', 0 );
+$l->config_( 'level', 2 );
 $l->start();
 $mq->configuration( $c );
 $mq->mq( $mq );
@@ -217,7 +202,6 @@ $h->mq( $mq );
 $h->logger( $l );
 test_assert(1);
 $h->initialize();
-test_assert(1);
 $h->version( 'vtest.suite.ver' );
 our $version = $h->version();
 
@@ -228,6 +212,41 @@ our $sk = $h->session_key();
 test_assert( defined( $sk ) );
 test_assert( $sk ne '' );
 
+my $session = $b->get_session_key( 'admin', '' );
+
+my @messages = glob 'TestMails/TestMailParse*.msg';
+foreach my $msg (@messages) {
+    next if ( $msg =~ /TestMailParse026/ );
+    my $cls = $msg;
+    $cls =~ s/\.msg$/\.cls/;
+    if ( open my $CLS, '<', $cls ) {
+        my $class = <$CLS>;
+        $class =~ s/[\r\n]//g;
+        close $CLS;
+        my ( $slot, $msg_file ) = $hi->reserve_slot();
+        `cp $msg $msg_file`;
+        $hi->commit_slot( $session, $slot, $class, 0 );
+    }
+#    my $name = "messages/00/00/01/popfile$count";
+#    test_assert( (`cp $msg $name.msg` || 0) == 0 );
+#
+#    if ( -e "$name.cls" ) {
+#        test_assert( (`cp $msg $name.cls` || 0) == 0 );
+#    }
+#    $count += 1;
+#    if ( rand(1) > 0.5 ) {
+#        $dl += 1;
+#    }
+}
+$mq->service();
+$hi->service();
+
+#    $mq->reaper();
+#    $mq->stop();
+#    $hi->stop();
+#    $b->release_session_key( $session );
+#    $b->stop();
+#exit 0;
 test_assert_equal( $h->url_encode_( ']' ), '%5d' );
 test_assert_equal( $h->url_encode_( '[' ), '%5b' );
 test_assert_equal( $h->url_encode_( '[]' ), '%5b%5d' );
@@ -464,7 +483,7 @@ EOM
                 @forms = HTML::Form->parse( $response );
                 if ( $response->code == 302 ) {
                     $content = get(url("http://127.0.0.1:$port" . $response->headers->header('Location')));
-                    @forms = HTML::Form->parse( $content, "http://127.0.0.1:port" );
+                    @forms = HTML::Form->parse( $content, "http://127.0.0.1:$port" );
                 } else {
                     test_assert_equal( $response->code, 200, "From script line $line_number" );
                     $content = $response->content;

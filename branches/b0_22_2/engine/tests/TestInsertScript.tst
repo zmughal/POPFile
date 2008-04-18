@@ -28,7 +28,7 @@ my @stdout;
 rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-test_assert( rmtree( 'corpus/CVS' ) > 0 );
+rmtree( 'corpus/CVS' );
 test_assert( `rm popfile.db` == 0);
 
 unlink 'stopwords';
@@ -53,7 +53,7 @@ test_assert_regexp( shift @stdout, 'insert mail messages into' );
 # Bad bucket name
 
 open STDERR, ">temp.tmp";
-system("$insert none TestMailParse021.wrd");
+system("$insert none TestMails/TestMailParse021.wrd");
 close STDERR;
 $code = ($? >> 8);
 test_assert( $code != 0 );
@@ -80,7 +80,7 @@ test_assert_regexp( $line, 'Error: File `doesnotexist\' does not exist, insert a
 
 my %words;
 
-open WORDS, "<TestMailParse021.wrd";
+open WORDS, "<TestMails/TestMailParse021.wrd";
 while ( <WORDS> ) {
     if ( /(.+) (\d+)/ ) {
         $words{$1} = $2;
@@ -89,7 +89,7 @@ while ( <WORDS> ) {
 close WORDS;
 
 open STDERR, ">temp.tmp";
-@stdout =`$insert personal TestMailParse021.msg`;
+@stdout =`$insert personal TestMails/TestMailParse021.msg`;
 $code = ($? >> 8);
 close STDERR;
 

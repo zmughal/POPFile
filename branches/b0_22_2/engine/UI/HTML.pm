@@ -1796,14 +1796,14 @@ sub corpus_page
                 my $bucket_color = $self->get_bucket_parameter__( $bucket, 'color' );
                 my $form_color = $self->{form_}{"${bucket}_color"};
 
-                if ( $form_color ne $bucket_color ) {
+                if ( $form_color && $form_color ne $bucket_color ) {
                     $self->set_bucket_parameter__( $bucket, 'color', $form_color );
                 }
             }
         }
     }
-    
-    
+
+
     my $session = $self->{api_session__};
     my @corpus_data;
     foreach my $bucket ( @buckets ) {
@@ -2522,7 +2522,7 @@ sub history_page
             if ( ( $last != -1 ) && ( $self->{form_}{sort} =~ /inserted/ ) && ( $self->config_( 'session_dividers' ) ) ) {
                 $row_data{History_If_Session} = ( abs( $$row[7] - $last ) > 300 );
             }
-            # we set this here so feedback lines will also 
+            # we set this here so feedback lines will also
             # get the correct colspan:
             $row_data{History_Colspan} = $colspan+1;
 

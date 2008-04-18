@@ -24,7 +24,7 @@
 rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-test_assert( rmtree( 'corpus/CVS' ) > 0 );
+rmtree( 'corpus/CVS' );
 unlink 'stopwords';
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
@@ -356,7 +356,7 @@ test_assert_equal( $cl->{words__}{'popfile.sourceforge.net'}, 1 );
 $cl->update_tag( "faketag(|", "foo", 0, 0 );
 $cl->update_tag( "faketag(|", "foo", 1, 0 );
 
-# glob the tests directory for files called TestMailParse\d+.msg which consist of messages
+# glob the tests directory for files called TestMails/TestMailParse\d+.msg which consist of messages
 # to be parsed with the resulting values for the words hash in TestMailParse\d+.wrd
 
 # Since the [[:alpha:]] regular expression is affected by the system locale, fix the
@@ -366,7 +366,7 @@ use POSIX qw( locale_h );
 my $current_locale = setlocale( LC_CTYPE );
 setlocale( LC_CTYPE, 'C' );
 
-my @parse_tests = sort glob 'TestMailParse*.msg';
+my @parse_tests = sort glob 'TestMails/TestMailParse*.msg';
 
 for my $parse_test (@parse_tests) {
     my $words = $parse_test;
@@ -381,7 +381,7 @@ for my $parse_test (@parse_tests) {
     while ( <WORDS> ) {
         if ( /^(.+) (\d+)/ ) {
             my ( $word, $value ) = ( $1, $2 );
-            test_assert_equal( $cl->{words__}{$word}, $value, "$words $word $value" );
+            test_assert_equal( $cl->{words__}{$word}, $value, "$words: $cl->{words__}{$word} $word $value" );
             delete $cl->{words__}{$word};
         }
     }
@@ -409,19 +409,19 @@ for my $parse_test (@parse_tests) {
 setlocale( LC_CTYPE, $current_locale );
 
 # Check that from, to and subject get set correctly when parsing a message
-$cl->parse_file( 'TestMailParse013.msg' );
+$cl->parse_file( 'TestMails/TestMailParse013.msg' );
 test_assert_equal( $cl->{from__},    'RN <rrr@nnnnnnnnn.com>'                        );
 test_assert_equal( $cl->{to__},      '"Armlet Forum" <armlet-forum@news.palmos.com>' );
 test_assert_equal( $cl->{subject__}, '(Archive Copy) RE: CW v9 and armlets...'       );
-$cl->parse_file( 'TestMailParse018.msg' );
+$cl->parse_file( 'TestMails/TestMailParse018.msg' );
 $cl->{to__} =~ /(\Qbugtracker\E@\Qrltvty.com\E)/;
 test_assert_equal( $1, 'bugtracker@rltvty.com' );
-$cl->parse_file( 'TestMailParse019.msg' );
+$cl->parse_file( 'TestMails/TestMailParse019.msg' );
 $cl->{to__} =~ /(\Qbugtracker\E@\Qrltvty.com\E)/;
 test_assert_equal( $1, 'bugtracker@rltvty.com' );
 
 # Check that multi-line To: and CC: headers get handled properly
-$cl->parse_file( 'TestMailParse021.msg' );
+$cl->parse_file( 'TestMails/TestMailParse021.msg' );
 #$cl->{to__} =~ s/[\r\n]//g;
 test_assert_equal( $cl->{to__},      'dsmith@ctaz.com, dsmith@dol.net, dsmith@dirtur.com, dsmith@dialpoint.net, dsmith@crosscountybank.com,<dsmith@cybersurf.net>, <dsmith@dotnet.com>, <dsmith@db.com>, <dsmith@cs.com>, <dsmith@crossville.com>,<dsmith@dreamscape.com>, <dsmith@cvnc.net>, <dsmith@dmrtc.net>, <dsmith@datarecall.net>,<dsmith@dasia.net>' );
 #$cl->{cc__} =~ s/[\r\n]//g;
@@ -429,7 +429,7 @@ test_assert_equal( $cl->{cc__},      'dsmith@dmi.net, dsmith@datamine.net, dsmit
 
 # Test colorization
 
-my @color_tests = ( 'TestMailParse015.msg', 'TestMailParse019.msg' );
+my @color_tests = ( 'TestMails/TestMailParse015.msg', 'TestMails/TestMailParse019.msg' );
 
 my $session = $b->get_session_key( 'admin', '' );
 
@@ -476,7 +476,7 @@ test_assert_equal($cl->decode_string("=?ISO-8859-1?B?QWxhZGRpbjpvcGVuIHNlc2FtZQ=
 
 # test get_header
 
-$cl->parse_file( 'TestMailParse022.msg' );
+$cl->parse_file( 'TestMails/TestMailParse022.msg' );
 test_assert_equal( $cl->get_header( 'from' ), 'test@test.com'  );
 test_assert_equal( $cl->get_header( 'to' ), 'someone@somewhere.com'  );
 test_assert_equal( $cl->get_header( 'cc' ), '<someoneelse@somewhere.com>'  );
@@ -508,9 +508,9 @@ test_assert_equal( $subject[2], 'parts' );
 
 # test first20
 
-$cl->parse_file( 'TestMailParse022.msg' );
+$cl->parse_file( 'TestMails/TestMailParse022.msg' );
 test_assert_equal( $cl->first20(), ' This is the title image tag ALT string' );
-$cl->parse_file( 'TestMailParse021.msg' );
+$cl->parse_file( 'TestMails/TestMailParse021.msg' );
 test_assert_equal( $cl->first20(), ' Take Control of Your Computer With This Top of the Line Software Norton SystemWorks Software Suite Professional Edition Includes Six' );
 
 # test splitline quoted-printable handling
@@ -591,18 +591,18 @@ if ( $have_text_kakasi ) {
     $cl->{kakasi_mutex__} = new POPFile::Mutex( 'mailparse_kakasi' );
     $cl->{need_kakasi_mutex__} = 1;
 
-    my @parse_tests = sort glob 'TestNihongo*.msg';
-    
+    my @parse_tests = sort glob 'TestMails/TestNihongo*.msg';
+
     for my $parse_test (@parse_tests) {
-        
+
         my $words = $parse_test;
         $words    =~ s/msg/wrd/;
-        
+
         # Parse the document and then check the words hash against the words in the
         # wrd file
-        
+
         $cl->parse_file( $parse_test );
-        
+
         open WORDS, "<$words";
         while ( <WORDS> ) {
             if ( /^(.+) (\d+)/ ) {
@@ -612,15 +612,15 @@ if ( $have_text_kakasi ) {
             }
         }
         close WORDS;
-        
+
         foreach my $missed ( sort( keys %{$cl->{words__}} ) ) {
             test_assert( 0, "$missed $cl->{words__}{$missed} missing in $words" );
-        
+
             # Only use this if once you KNOW FOR CERTAIN that it's
             # not going to update the WRD files with bogus entries
             # First manually check the test failures and then switch the
             # 0 to 1 and run once
-        
+
             if ( 0 ) {
                  open UPDATE, ">>$words";
                  print UPDATE "$missed $cl->{words__}{$missed}\n";
