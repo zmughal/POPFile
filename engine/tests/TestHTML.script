@@ -67,7 +67,7 @@ GET /
 
 MATCH <title>POPFile Control Center</title>
 MATCH <html lang="en">
-MATCH <link rel="stylesheet" type="text/css" href="skins/default/style.css" title="POPFile-Style">
+MATCH <link rel="stylesheet" type="text/css" href="skins/simplyblue/style.css" title="POPFile">
 MATCH <link rel="icon" href="favicon.ico">
 
 # Common MIDDLE parts (i.e. the tabs)
@@ -87,7 +87,9 @@ MATCH Advanced</a>
 
 # Common BOTTOM parts
 
-MATCH <a class="bottomLink" href="http://popfile.sourceforge.net/manual/en/manual.html">
+MATCH <a class="bottomLink" href="http://getpopfile.org/">POPFile Home Page</a>
+MATCH <a class="bottomLink" href="http://getpopfile.org/docs/FAQ">FAQ</a>
+MATCH <a class="bottomLink" href="http://getpopfile.org/docs/index.php">Documentation</a>
 MATCH $version
 
 # Verify that each of the pages highlights the correct item on
@@ -138,12 +140,14 @@ GET /history
 # are links from the bucket names, check that the basic
 # sort options are present
 
+MATCH &quot;Dr. Robert Ezenshtein&quot; &lt;phrekiesomeone\@
+MATCH asdfsomebody\@mbnet.fi
 MATCH &lt;subject header missing&gt;
-MATCH from: Leandro
-MATCH jI775QsT823y17g\@aol.com
-MATCH Re: screename change again lol
-MATCH &lt;from header missing&gt;
 MATCH &lt;to header missing&gt;
+MATCH blank
+MATCH &lt;elia\@tpkm.ru&gt;
+MATCH Enlarge your package Doctor ApprovedNHOB
+MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
 MATCH <a href="/buckets?session=$sk&amp;showbucket=spam">
 MATCH
 <span style="color:blue">
@@ -160,14 +164,11 @@ ENDMATCH
 # Check the page navigator
 
 MATCH
-Jump to page: 
+Jump to page:
 <b>1</b>
 [<a href="/history?start_message=20&amp;session=$sk&amp;sort=-inserted">2</a>]
 [<a href="/history?start_message=20&amp;session=$sk&amp;sort=-inserted">Next &gt;</a>]
 ENDMATCH
-MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
-MATCH XoSeXyGoDdEsSm\@hotmail.com
-MATCH from: Leandro
 GET /history?start_message=20&amp;session=$sk&amp;sort=-inserted
 MATCH
 Jump to page:
@@ -175,8 +176,10 @@ Jump to page:
 [<a href="/history?start_message=0&amp;session=$sk&amp;sort=-inserted">1</a>]
 <b>2</b>
 ENDMATCH
-NOTMATCH XoSeXyGoDdEsSm\@hotmail.com
-NOTMATCH from: Leandro
+NOTMATCH &quot;Dr. Robert Ezenshtein&quot; &lt;phrekiesomeone\@
+NOTMATCH asdfsomebody\@mbnet.fi
+NOTMATCH &lt;elia\@tpkm.ru&gt;
+NOTMATCH Enlarge your package Doctor ApprovedNHOB
 NOTMATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
 GET /history
 
@@ -248,7 +251,7 @@ MATCH Jump to page
 
 # Check filter
 
-SETINPUT filter personal 
+SETINPUT filter personal
 CLICK setfilter
 MATCH <option value="personal" selected style="color: green">
 NOTMATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
@@ -266,7 +269,7 @@ Jump to page:
 ENDMATCH
 GET /history?start_message=20&amp;session=$sk&amp;filter=spam
 NOTMATCH Testing Refresh
-SETINPUT filter other 
+SETINPUT filter other
 CLICK setfilter
 MATCH No messages.
 SETINPUT filter __filter__magnet
@@ -546,13 +549,13 @@ NOTMATCH Testing Refresh
 
 # Check delete some messages
 
-MATCH from: Leandro
-MATCH spamaddy
+MATCH gentoo-announce
+MATCH Armlet Forum
 SETINPUT remove_20 on
-SETINPUT remove_28 on
+SETINPUT remove_13 on
 CLICK clearchecked
-NOTMATCH from: Leandro
-NOTMATCH spamaddy
+NOTMATCH gentoo-announce
+NOTMATCH Armlet Forum
 
 # Check delete page of messages
 
@@ -560,7 +563,7 @@ GET /history
 CLICK clearpage
 NOTMATCH Jump to message
 MATCH Recent Messages (9)
-MATCH ADV: Turn Back the Hands of Time
+MATCH Hello,Let us enjoy life
 
 # Check delete all messages
 
@@ -599,7 +602,7 @@ MAGNETIS  spam subject newmagnet
 SETINPUT text0 foo
 SETINPUT type0 from
 SETSUBMIT bucket0 personal
-MATCH Magnet 'from: foo' already exists in bucket 'personal' 
+MATCH Magnet 'from: foo' already exists in bucket 'personal'
 
 SETINPUT text0 fo
 SETINPUT type0 from
@@ -714,10 +717,10 @@ GET /configuration
 
 # Check skin change
 
-MATCH <link rel="stylesheet" type="text/css" href="skins/default/style.css" title="POPFile-Style">
-CONFIGIS html_skin default
+MATCH <link rel="stylesheet" type="text/css" href="skins/simplyblue/style.css" title="POPFile">
+CONFIGIS html_skin simplyblue
 SETSUBMIT skin oceanblue
-MATCH <link rel="stylesheet" type="text/css" href="skins/oceanblue/style.css" title="POPFile-Style">
+MATCH <link rel="stylesheet" type="text/css" href="skins/oceanblue/style.css" title="POPFile">
 CONFIGIS html_skin oceanblue
 SETSUBMIT skin default
 CONFIGIS html_skin default
@@ -917,7 +920,7 @@ MATCH Updated password
 SETSUBMIT password
 INPUTIS password
 CONFIGIS html_password b61124a488acc5f4406e74272629ee86
-MATCH Updated password 
+MATCH Updated password
 
 # Advanced Page
 
@@ -1008,29 +1011,28 @@ ENDMATCH
 
 # Check statistics displayed correctly
 
-MATCH >1,785 (12.74%)<
-MATCH >103 (0.73%)<
-MATCH >12,114 (86.51%)<
+MATCH 1,785 (12.74%)
+MATCH 103 (0.73%)
+MATCH 12,114 (86.51%)
 
-MATCH <td bgcolor="red" title="other (12.74%)" width="12%"><img src="pix.gif" alt="" height="20" width="1" /></td>
-MATCH <td bgcolor="green" title="personal (0.73%)" width="1%"><img src="pix.gif" alt="" height="20" width="1" /></td>
-MATCH <td bgcolor="blue" title="spam (86.51%)" width="86%"><img src="pix.gif" alt="" height="20" width="1" /></td>
+MATCH <td bgcolor="green" title="personal (75.61)" width="75.61%">
+MATCH <td bgcolor="blue" title="spam (24.39)" width="24.39%">
 
 # Check Reset Statistics
 
 MATCH
 <td align="right">
-134
+656
 </td>
 ENDMATCH
 MATCH
 <td align="right">
-1
+3
 </td>
 ENDMATCH
 MATCH
 <td align="right">
-99.25%
+99.39%
 </td>
 ENDMATCH
 CLICK reset_stats
@@ -1039,7 +1041,11 @@ MATCH
 Not enough data
 </td>
 ENDMATCH
-MATCH >0 (  0.00%)<
+MATCH
+<td align="right">
+0 (  0.00%)
+</td>
+ENDMATCH
 
 # Check bucket creation
 
@@ -1048,7 +1054,7 @@ SETSUBMIT cname newbucket0-_
 MATCH newbucket0-_
 MATCH Created bucket named newbucket0-_
 MATCH
-<td>
+<td align="left">
 <a href="/buckets?session=$sk&amp;showbucket=newbucket0-_">
 <span style="color:black">
 newbucket0-_
@@ -1071,9 +1077,9 @@ MATCH other
 
 # Check set bucket color
 
-GET /buckets?color=blue&bucket=newbucket0-_&session=$sk
+GET /buckets?newbucket0-__color=blue&bucket=newbucket0-_&bucket_settings=1&session=$sk
 MATCH
-<td>
+<td align="left">
 <a href="/buckets?session=$sk&amp;showbucket=newbucket0-_">
 <span style="color:blue">
 newbucket0-_
@@ -1091,7 +1097,7 @@ SETINPUT oname newbucket0-_
 SETSUBMIT newname sensible
 MATCH Renamed bucket newbucket0-_ to sensible
 MATCH
-<td>
+<td align="left">
 <a href="/buckets?session=$sk&amp;showbucket=sensible">
 <span style="color:blue">
 sensible
@@ -1119,7 +1125,7 @@ MATCH other
 # Check word lookup
 
 SETSUBMIT word xxxxxx
-MATCH <b>xxxxxx</b> does not appear in any of the buckets 
+MATCH <b>xxxxxx</b> does not appear in any of the buckets
 SETSUBMIT word used
 MATCH <b>used</b> is most likely to appear in <font color="red">other</font>
 MATCH 0.0005602241
@@ -1134,40 +1140,40 @@ MATCH Deleted bucket personal
 SETSUBMIT name other
 MATCH Deleted bucket other
 
-HIDDEN 1
-INPUTIS subject 1
-PARAMETERIS spam subject 1
-SETSUBMIT subject 1
-INPUTIS subject 2
+#HIDDEN 1
+INPUTIS spam_subject
 PARAMETERIS spam subject 0
-SETSUBMIT subject 2
-INPUTIS subject 1
+SETSUBMIT spam_subject off
+INPUTIS spam_subject
+PARAMETERIS spam subject 0
+SETSUBMIT spam_subject on
+INPUTIS spam_subject on
 PARAMETERIS spam subject 1
-HIDDEN 0
+#HIDDEN 0
 
 # Check operation of Quarantine
 
-HIDDEN 1
-INPUTIS quarantine 2
+#HIDDEN 1
+INPUTIS spam_quarantine 
 PARAMETERIS spam quarantine 0
-SETSUBMIT quarantine 2
-INPUTIS quarantine 1
+SETSUBMIT spam_quarantine on
+INPUTIS spam_quarantine on
 PARAMETERIS spam quarantine 1
-SETSUBMIT quarantine 1
-INPUTIS quarantine 2
+SETSUBMIT spam_quarantine off
+INPUTIS spam_quarantine 
 PARAMETERIS spam quarantine 0
-HIDDEN 0
+#HIDDEN 0
 
 # Check operation of color change
 
-GET /buckets?color=feldspar&amp;bucket=spam&amp;session=$sk
-MATCH <option value="feldspar"  selected style="color: feldspar">
+GET /buckets?spam_color=purple&bucket=spam&bucket_settings=1&session=$sk
+MATCH <option value="purple"  selected style="color: purple">
 
 # Check individual bucket page for accuracy
 
 MATCH /buckets?session=$sk&amp;showbucket=spam
 GET /buckets?session=$sk&amp;showbucket=spam
-MATCH Detail for <font color="feldspar">spam</font>
+MATCH Detail for <font color="purple">spam</font>
 MATCH 12,114
 MATCH (3,353 distinct)
 MATCH
@@ -1183,7 +1189,7 @@ MATCH <a class="wordListLink" href="/buckets?session=$sk&amp;lookup=Lookup&amp;w
 # Check clearing of individual bucket
 
 CLICK clearbucket
-MATCH 
+MATCH
 <th scope="row" class="bucketsLabel">
 Total word count
 </th>
@@ -1278,4 +1284,4 @@ GET /security
 GET /shutdown
 MATCH Enter password:
 SETSUBMIT password secret
-MATCH POPFile has shut down  
+MATCH POPFile has shut down

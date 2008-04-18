@@ -24,7 +24,7 @@
 rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-test_assert( rmtree( 'corpus/CVS' ) > 0 );
+rmtree( 'corpus/CVS' );
 
 sub my_handler
 {
@@ -163,11 +163,6 @@ close FILE;
 open FILE, "<temp.tmp";
 my $line = <FILE>;
 test_assert_equal( $line, "HTTP/1.0 404 Error$eol" );
-$line = <FILE>;
-test_assert( defined( $line ) );
-test_assert( $line =~ /^$eol$/ );
-$line = <FILE>;
-test_assert( !defined( $line ) );
 close FILE;
 
 # http_file_ tests
@@ -178,11 +173,6 @@ close FILE;
 open FILE, "<temp.tmp";
 my $line = <FILE>;
 test_assert_equal( $line, "HTTP/1.0 404 Error$eol" );
-$line = <FILE>;
-test_assert( defined( $line ) );
-test_assert( $line =~ /^$eol$/ );
-$line = <FILE>;
-test_assert( !defined( $line ) );
 close FILE;
 
 open FILE, ">send.tmp";
