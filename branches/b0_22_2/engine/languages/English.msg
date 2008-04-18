@@ -25,7 +25,7 @@ LanguageDirection                       ltr
 ManualLanguage                          en
 
 # These are where to find the documents on the Wiki
-WikiLink                                
+WikiLink                                index.php
 FAQLink                                 FAQ
 RequestFeatureLink                      RequestFeature
 MailingListLink                         mailing_lists
