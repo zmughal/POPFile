@@ -5,7 +5,7 @@
 #
 # Builds the POPFile packing list of required modules
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
