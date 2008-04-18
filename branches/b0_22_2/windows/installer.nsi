@@ -1119,6 +1119,7 @@ use_file_association:
   Goto continue
 
 notes_ignored:
+  BringToFront
 
   ; There may be a slight delay at this point and on some systems the 'WELCOME' page may appear
   ; in two stages (first an empty MUI page appears and a little later the page contents appear).
