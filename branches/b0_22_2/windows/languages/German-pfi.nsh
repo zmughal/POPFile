@@ -117,7 +117,7 @@
 ; Shared: Message displayed when wizard does not seem to belong to the current installation [adduser.nsi, runpopfile.nsi]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_COMPAT_NOTFOUND      "Fehler: Kompatible Version von ${C_PFI_PRODUCT} konnte nicht gefunden werden!"
+!insertmacro PFI_LANG_STRING PFI_LANG_COMPAT_NOTFOUND      "Fehler: Es konnte keine kompatible Version von ${C_PFI_PRODUCT} gefunden werden!"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Shared: Message box shown (before the WELCOME page) if another installer is running [installer.nsi, adduser.nsi]
@@ -137,7 +137,7 @@
 
 ; Used in message box shown if SFN support has been disabled [installer.nsi, adduser.nsi]
 
-!insertmacro PFI_LANG_STRING PFI_LANG_DIRSELECT_MBNOSFN    "To install on the '$G_PLS_FIELD_1' drive${MB_NL}${MB_NL}please select a folder location which does not contain spaces"
+!insertmacro PFI_LANG_STRING PFI_LANG_DIRSELECT_MBNOSFN    "Für eine Installation auf Laufwerk '$G_PLS_FIELD_1'${MB_NL}${MB_NL}, wählen Sie bitte einen Ordner, dessen Namen keine Leerzeichen enthält."
 
 ; Used in message box shown if existing files found when installing [installer.nsi, adduser.nsi]
 
@@ -159,11 +159,11 @@
 
 ; Installation Progress Reports displayed above the progress bar [installer.nsi, adduser.nsi, getssl.nsh]
 
-!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_ENDSEC     "Klicken Sie auf Weiter um fortzufahren"
+!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_ENDSEC     "Klicken Sie auf Weiter, um fortzufahren"
 
 ; Progress Reports displayed above the progress bar when downloading/installing SSL support [addssl.nsi, getssl.nsh]
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_CHECKIFRUNNING  "Checking if POPFile is running..."
+!insertmacro PFI_LANG_STRING PFI_LANG_PROG_CHECKIFRUNNING  "Prüfe, ob POPFile läuft..."
 
 ; Installation Log Messages [installer.nsi, adduser.nsi]
 
@@ -171,7 +171,7 @@
 
 ; Installation Log Messages [installer.nsi, addssl.nsi]
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_SAVELOG         "Saving install log file..."
+!insertmacro PFI_LANG_STRING PFI_LANG_PROG_SAVELOG         "Installations-Protokoll wird gespeichert..."
 
 ; Message Box text strings [installer.nsi, adduser.nsi, pfi-library.nsh]
 
@@ -183,7 +183,7 @@
 ; Shared: Message box shown if problem detected when trying to save the log file [installer.nsi, addssl.nsi, backup.nsi, restore.nsi]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_SAVELOG_ERROR     "Error: problem detected when saving the log file"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_SAVELOG_ERROR     "Fehler: Protokolldatei konnte nicht gespeichert werden"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Shared: Message boxes shown if uninstallation is not straightforward [installer.nsi, adduser.nsi]
@@ -233,7 +233,7 @@
 ; The PFI_LANG_WELCOME_INFO_TEXT string should end with a '${IO_NL}${IO_NL}$_CLICK' sequence).
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_WELCOME_INFO_TEXT    "Dieser Assistent wird Sie durch die Installation von POPFile führen.${IO_NL}${IO_NL}Es wird empfohlen vor der Installation alle anderen Programme zu schließen.${IO_NL}${IO_NL}$_CLICK"
+!insertmacro PFI_LANG_STRING PFI_LANG_WELCOME_INFO_TEXT    "Dieser Assistent wird Sie durch die Installation von POPFile führen.${IO_NL}${IO_NL}Es wird empfohlen, vor der Installation alle anderen Programme zu schließen.${IO_NL}${IO_NL}$_CLICK"
 !insertmacro PFI_LANG_STRING PFI_LANG_WELCOME_ADMIN_TEXT   "ACHTUNG:${IO_NL}${IO_NL}Der aktuell angemeldete Benutzer hat KEINE Administratorrechte.${IO_NL}${IO_NL}Falls Sie Mehrbenutzerunterstützung benötigen, sollten Sie die Installation abbrechen und POPFile unter einem Administratorkonto installieren."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -258,8 +258,8 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_B    "POPFile benötigt keinen speziellen Browser und wird mit fast jedem Browser funktionieren.${IO_NL}${IO_NL}"
 !insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_C    "Eine minimale Version des Perl-Interpreters wird installiert werden.${IO_NL}${IO_NL}"
 !insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_D    "Die Perlversion, die von POPFile installiert wird, verwendet einige Komponenten des Internet Explorers und benötigt daher mindestes Internet Explorer 5.5."
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_E    "Das Installationsprogramm hat festgestellt, daß der Internet Explorer auf diesem System installiert ist $G_PLS_FIELD_1${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_F    "Es ist möglich, daß einige Funktionen von POPFile auf diesem System nicht korrekt funktionieren.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_E    "Das Installationsprogramm hat festgestellt, dass der Internet Explorer auf diesem System installiert ist $G_PLS_FIELD_1${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_F    "Es ist möglich, dass einige Funktionen von POPFile auf diesem System nicht korrekt funktionieren.${IO_NL}${IO_NL}"
 !insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_G    "Falls Sie irgendwelche Probleme mit POPFile haben, versuchen Sie zunächst ein Update auf eine neuere Version des Internet Explorers."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -274,8 +274,8 @@
 !insertmacro PFI_LANG_STRING DESC_SecIMAP                  "Installiert das POPFile IMAP Modul"
 !insertmacro PFI_LANG_STRING DESC_SecNNTP                  "Installiert POPFiles NNTP Proxy"
 !insertmacro PFI_LANG_STRING DESC_SecSMTP                  "Installiert POPFiles SMTP Proxy"
-!insertmacro PFI_LANG_STRING DESC_SecSOCKS                 "Installiert zusätliche Perl Module, die es den POPFile Proxies erlauben, SOCKS zu verwenden"
-!insertmacro PFI_LANG_STRING DESC_SecSSL                   "Downloads and installs the Perl components and SSL libraries which allow POPFile to make SSL connections to mail servers"
+!insertmacro PFI_LANG_STRING DESC_SecSOCKS                 "Installiert zusätzliche Perl Module, die es den POPFile Proxies erlauben, SOCKS zu verwenden"
+!insertmacro PFI_LANG_STRING DESC_SecSSL                   "Installiert zusätzliche Perl Module, mit deren Hilfe POPFile über eine SSL-gesicherte Verbindung mit dem Mail-Server kommunizieren kann."
 !insertmacro PFI_LANG_STRING DESC_SecXMLRPC                "Installiert das POPFile XMLRPC Modul, das Zugriff zum POPFile-API erlaubt, und die benötigten Perl Komponenten"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -303,40 +303,40 @@
 ; Page Title and Sub-title displayed in the page header
 ; $G_WINUSERNAME holds the Windows login name and $G_WINUSERTYPE holds 'Admin', 'Power', 'User', 'Guest' or 'Unknown'
 
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_TITLE        "Setup Summary for '$G_WINUSERNAME' ($G_WINUSERTYPE)"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SUBTITLE     "These settings will be used to install the POPFile program"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_TITLE        "Zusammenfassung der Installation für '$G_WINUSERNAME' ($G_WINUSERTYPE)"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SUBTITLE     "Diese Einstellungen werden für die Installation von POPFile verwendet werden"
 
 ; Display selected installation location and whether or not an upgrade will be performed
 ; $G_ROOTDIR holds the installation location, e.g. C:\Program Files\POPFile
 
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NEWLOCN      "New POPFile installation at $G_PLS_FIELD_2"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_UPGRADELOCN  "Upgrade existing POPFile installation at $G_PLS_FIELD_2"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NEWLOCN      "Neue POPFile Installation in $G_PLS_FIELD_2"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_UPGRADELOCN  "Upgrade der bestehenden POPFile Installation in $G_PLS_FIELD_2"
 
 ; By default all of these components are installed (but Kakasi is only installed when Japanese/Nihongo language is chosen)
 
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_BASICLIST    "Basic POPFile components to be installed:"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_POPFILECORE  "POPFile program files"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_MINPERL      "Minimal Perl"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_DEFAULTSKIN  "Default UI Skin"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_DEFAULTLANG  "Default UI Language"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_EXTRASKINS   "Additional UI Skins"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_EXTRALANGS   "Additional UI Languages"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_KAKASI       "Kakasi package"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_BASICLIST    "Folgende Basiskomponenten werden installiert:"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_POPFILECORE  "POPFile Programm-Dateien"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_MINPERL      "Minimal-Perl"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_DEFAULTSKIN  "Standard-Skin"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_DEFAULTLANG  "Standard-Sprache"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_EXTRASKINS   "Zusätzliche Skins"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_EXTRALANGS   "Zusätzliche Sprachen"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_KAKASI       "Kakasi-Paket (Unterstützung für Japanisch)"
 
 ; By default none of the optional components is installed (user has to select them)
 
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_OPTIONLIST   "Optional POPFile components to be installed:"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NONE         "(none)"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_IMAP         "IMAP module"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NNTP         "NNTP proxy"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SMTP         "SMTP proxy"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SOCKS        "SOCKS support"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SSL          "SSL support"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_XMLRPC       "XMLRPC module"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_OPTIONLIST   "Folgende optionale POPFile Komponenten werden installiert:"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NONE         "(keine)"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_IMAP         "IMAP Modul"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NNTP         "NNTP Proxy"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SMTP         "SMTP Proxy"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SOCKS        "SOCKS Unterstützung"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SSL          "SSL Unterstützung"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_XMLRPC       "XMLRPC Modul"
 
 ; The last line in the summary explains how to change the installation selections
 
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_BACKBUTTON   "To make changes, use the 'Back' button to return to previous pages"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_BACKBUTTON   "Wenn Sie noch Änderungen vornehmen wollen, drücken Sie bitte den 'Zurück'-Knopf"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - INSTFILES [installer.nsi]
@@ -349,14 +349,14 @@
 
 ; Installation Progress Reports displayed above the progress bar
 
-!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_CORE       "Installiere Kernkomponenten..."
+!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_CORE       "Installiere Basiskomponenten..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_PERL       "Installiere Minimal-Perl-Umgebung..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_SKINS      "Installiere Skins..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_XMLRPC     "Installiere POPFile XMLRPC Dateien..."
 
 ; Message box used to get permission to delete the old minimal Perl before installing the new one
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MINPERL_MBREMOLD     "Delete everything in old minimal Perl folder before installing the new version ?${MB_NL}${MB_NL}($G_PLS_FIELD_1)"
+!insertmacro PFI_LANG_STRING PFI_LANG_MINPERL_MBREMOLD     "Soll der komplette Inhalt des alten Minimal-Perl Ordners gelöscht werden, bevor die neue Version installiert wird?${MB_NL}${MB_NL}($G_PLS_FIELD_1)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Custom Page - Select uninstaller mode [installer.nsi]
@@ -364,18 +364,18 @@
 
 ; Page Title and Sub-title displayed in the page header of the uninstaller's first page
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_TITLE        "Select POPFile uninstaller mode"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_SUBTITLE     "Modify or uninstall the installation in the $INSTDIR folder"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_TITLE        "In welchem Modus soll die Deinstallation durchgeführt werden?"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_SUBTITLE     "Die Installation im Ordner $INSTDIR verändern oder deinstallieren"
 
 ; Text for the MODIFY mode radio-button and the label underneath it
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "Modify the existing POPFile installation"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(e.g. add SSL Support)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "Die bestehende POPFile Installation verändern"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(z.B. SSL-Unterstützung hinzufügen)"
 
 ; Text for the UNINSTALL mode radio-button and the label underneath it
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_RADIO   "Uninstall the POPFile program"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_LABEL   "(remove all of the POPFile program files from the computer)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_RADIO   "POPFile deinstallieren"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_LABEL   "(alle POPFile Programmkomponenten entfernen)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_DIRECTORY [installer.nsi]
@@ -383,16 +383,16 @@
 
 ; Page Title/Sub-Title shown in the page header
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TITLE         "Location of existing POPFile installation"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_SUBTITLE      "This is where the selected POPFile components will be installed"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TITLE         "Ordner der existierenden POPFile Installation"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_SUBTITLE      "Hier werden die ausgewählten POPFile Komponenten installiert werden"
 
 ; Text explaining what this page shows
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "Setup will modify the POPFile installation in this folder by adding extra components to it. To change the component selection, click the Back button. $_CLICK"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "Das Setup-Programm wird die POPFile-Installation in diesem Ornder ändern und zusätzliche Komponenten hier installieren. Um die Auswahl dieser Komponenten zu verändern, klicken Sie bitte auf den 'Zurück'-Knopf. $_CLICK"
 
 ; Text shown above the box showing the folder where the extra components will be installed
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TEXT_DESTN    "Destination folder for the new POPFile components"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TEXT_DESTN    "Zielordner für die neuen POPFile-Komponenten"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_INSTFILES [installer.nsi]
@@ -400,17 +400,17 @@
 
 ; Page Sub-title displayed when MODIFYING the installation (one of the standard MUI strings is used for the Title)
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_SUBTITLE     "Please wait while $(^NameDA) is being updated"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_SUBTITLE     "Bitte warten Sie einen Moment währen $(^NameDA) auf den neuesten Stand gebracht wird"
 
 ; Page Title and Sub-Title shown instead of the default "Uninstallation complete..." page header
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_TITLE     "Add/Remove operation complete"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_SUBTITLE  "Add/Remove operation was completed successfully."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_TITLE     "Hinzufügen/Entfernen erledigt"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_SUBTITLE  "Hinzufügen/Entfernen erfolgreich abgeschlossen."
 
 ; Page Title and Sub-Title shown instead of the default "Uninstallation Aborted..." page header
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_TITLE    "Add/Remove operation aborted"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_SUBTITLE "Add/Remove operation was not completed successfully."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_TITLE    "Hinzufügen/Entfernen abgebrochen"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_SUBTITLE "Hinzufügen/Entfernen wurde nicht beendet."
 
 ; Uninstall Progress Reports displayed above the progress bar
 
@@ -426,14 +426,14 @@
 
 ; Message Box text strings
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "Wollen Sie alle Dateien im POPFile-Verzeichnis löschen?${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(Wenn Sie irgendetwas erstellt haben, was sie behalten möchten, wählen Sie Nein)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "Wollen Sie alle Dateien im POPFile-Verzeichnis löschen?${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(Wenn Sie dort irgendetwas gespeichert haben, was sie behalten möchten, wählen Sie Nein)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_FINISH [installer.nsi]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TITLE      "Completing the $(^NameDA) Component Add/Remove Wizard"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TEXT       "Click Finish to close this wizard."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TITLE      "Beende die $(^NameDA) Komponente des Hinzifügen/Entfernen Assistenten"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TEXT       "Klicken Sie auf 'Beenden', um den Assistenten abzuschließen."
 
 ###########################################################################
 ###########################################################################
@@ -442,27 +442,27 @@
 ; SSL Setup: Standard MUI Page - WELCOME
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PSS_LANG_WELCOME_TITLE        "Welcome to the $(^NameDA) Wizard"
-!insertmacro PFI_LANG_STRING PSS_LANG_WELCOME_TEXT         "This utility will download and install the files needed to allow POPFile to use SSL when accessing mail servers.${IO_NL}${IO_NL}This version does not configure any email accounts to use SSL, it just installs the necessary Perl components and DLLs.${IO_NL}${IO_NL}This product downloads and installs software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/)${IO_NL}${IO_NL}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${IO_NL}${IO_NL}   PLEASE SHUT DOWN POPFILE NOW${IO_NL}${IO_NL}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${IO_NL}${IO_NL}$_CLICK"
+!insertmacro PFI_LANG_STRING PSS_LANG_WELCOME_TITLE        "Willkommen bei $(^NameDA) Assistenten"
+!insertmacro PFI_LANG_STRING PSS_LANG_WELCOME_TEXT         "Dieses Hilfsprogramm wird die benötigten Dateien herunterladen und installieren, die POPFile braucht, um über SSL-gesicherte Verbindungen mit Mailservern zu kommunizieren.${IO_NL}${IO_NL}Email-Konten werden nicht verändert werden. Es werden lediglich die für SSL-Verbindungen nötigen Dateien installiert werden.${IO_NL}${IO_NL}Es werden Dateien heruntergeladen und installiert, die vom OpenSSL-Projekt für den Gebrauch des OpenSSL-Toolkit entwickelt wurden (http://www.openssl.org/)${IO_NL}${IO_NL}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${IO_NL}${IO_NL}   BITTE BEENDEN SIE POPFILE JETZT${IO_NL}${IO_NL}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~${IO_NL}${IO_NL}$_CLICK"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; SSL Setup: Standard MUI Page - LICENSE
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PSS_LANG_LICENSE_SUBHDR       "Please review the license terms before using $(^NameDA)."
-!insertmacro PFI_LANG_STRING PSS_LANG_LICENSE_BOTTOM       "If you accept the terms of the agreement, click the check box below. You must accept the agreement to use $(^NameDA). $_CLICK"
+!insertmacro PFI_LANG_STRING PSS_LANG_LICENSE_SUBHDR       "Bitte sehen Sie sich die Lizenzbedingunden an, bevor Sie $(^NameDA) benutzen."
+!insertmacro PFI_LANG_STRING PSS_LANG_LICENSE_BOTTOM       "Wenn Sie mit den Bedinungen einverstanden sind, dann kreuzen Sie bitte das Kästchen unten an. Sie müssen die Bedingungen akzeptieren, um $(^NameDA) zu benutzen. $_CLICK"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; SSL Setup: Standard MUI Page - DIRECTORY
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TITLE       "Choose existing POPFile 0.22 (or later) installation"
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_SUBTITLE    "SSL support should only be added to an existing POPFile installation"
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_TOP    "SSL support must be installed using the same installation folder as the POPFile program${MB_NL}${MB_NL}This utility will add SSL support to the version of POPFile which is installed in the following folder. To install in a different POPFile installation, click Browse and select another folder. $_CLICK"
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_DESTN  "Existing POPFile 0.22 (or later) installation folder"
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TITLE       "Wählen Sie die bestehende POPFile 0.22 (oder höher) Installation"
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_SUBTITLE    "SSL-Unterstützung solle nur zu einer bestehenden POPFile-Installation hinzugefügt werden"
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_TOP    "Die SSL-Unterstützung muss in den gleichen Ordner installiert werden wie das POPFile Programm${MB_NL}${MB_NL}Die SSL-Unterstützung wird zu dem POPFile Programm hinzugefügt werden, das im folgenden Ordner installiert ist. Um sie in einen anderen Ordner zu installieren, klicken Sie auf 'Auswählen' und wählen Sie den gewünschten Ordner aus. $_CLICK"
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_DESTN  "Ordner der bestehenden POPFile-Installation (0.22 oder höher)"
 
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_MB_WARN_1   "POPFile 0.22 (or later) does NOT seem to be installed in${MB_NL}${MB_NL}$G_PLS_FIELD_1"
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_MB_WARN_2   "Are you sure you want to use this folder ?"
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_MB_WARN_1   "POPFile 0.22 (oder höher) scheint NICHT in ${MB_NL}${MB_NL}$G_PLS_FIELD_1 installiert zu sein."
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_MB_WARN_2   "Sind Sie sicher, dass Sie diesen Ordner benutzen wollen?"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; SSL Setup: Standard MUI Page - INSTFILES
@@ -470,48 +470,48 @@
 
 ; Initial page header
 
-!insertmacro PFI_LANG_STRING PSS_LANG_STD_HDR              "Installing SSL support (for POPFile 0.22 or later)"
-!insertmacro PFI_LANG_STRING PSS_LANG_STD_SUBHDR           "Please wait while the SSL files are downloaded and installed..."
+!insertmacro PFI_LANG_STRING PSS_LANG_STD_HDR              "Installiere SSL-Unterstützung"
+!insertmacro PFI_LANG_STRING PSS_LANG_STD_SUBHDR           "Bitte warten Sie, während die SSL-Unterstützungsdateien heruntergeladen und installiert werden..."
 
 ; Successful completion page header
 
-!insertmacro PFI_LANG_STRING PSS_LANG_END_HDR              "POPFile SSL Support installation completed"
-!insertmacro PFI_LANG_STRING PSS_LANG_END_SUBHDR           "SSL support for POPFile has been installed successfully"
+!insertmacro PFI_LANG_STRING PSS_LANG_END_HDR              "POPFile SSL-Unterstützung wurde installiert"
+!insertmacro PFI_LANG_STRING PSS_LANG_END_SUBHDR           "Die SSL-Unterstützung für POPFile wurde erfolgreich installiert"
 
 ; Unsuccessful completion page header
 
-!insertmacro PFI_LANG_STRING PSS_LANG_ABORT_HDR            "POPFile SSL Support installation failed"
-!insertmacro PFI_LANG_STRING PSS_LANG_ABORT_SUBHDR         "The attempt to add SSL support to POPFile has failed"
+!insertmacro PFI_LANG_STRING PSS_LANG_ABORT_HDR            "Installation schlug fehl"
+!insertmacro PFI_LANG_STRING PSS_LANG_ABORT_SUBHDR         "Der Versuch, die POPFile SSL-Unterstützung zu installieren schlug fehl"
 
 ; Progress reports
 
-!insertmacro PFI_LANG_STRING PSS_LANG_PROG_INITIALISE      "Initializing..."
-!insertmacro PFI_LANG_STRING PSS_LANG_PROG_USERCANCELLED   "POPFile SSL Support installation cancelled by the user"
-!insertmacro PFI_LANG_STRING PSS_LANG_PROG_SUCCESS         "POPFile SSL support installed"
+!insertmacro PFI_LANG_STRING PSS_LANG_PROG_INITIALISE      "Initialisierung..."
+!insertmacro PFI_LANG_STRING PSS_LANG_PROG_USERCANCELLED   "Installation vom Benutzer abgebrochen"
+!insertmacro PFI_LANG_STRING PSS_LANG_PROG_SUCCESS         "POPFile SSL-Unterstützung wurde installiert"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; SSL Setup: Standard MUI Page - FINISH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TITLE         "Completing the $(^NameDA) Wizard"
-!insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TEXT          "SSL support for POPFile has been installed.${IO_NL}${IO_NL}You can now start POPFile and configure POPFile and your email client to use SSL.${IO_NL}${IO_NL}Click Finish to close this wizard."
+!insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TEXT          "SSL-Unterstützung für POPFile wurde installliert.${IO_NL}${IO_NL}Sie können jetzt POPFile starten und für eine SSL-Verbindung konfigurieren.${IO_NL}${IO_NL}Klicken Sie auf 'Fertigstellen', um den Assistenten zu beenden."
 
-!insertmacro PFI_LANG_STRING PSS_LANG_FINISH_README        "Important information"
+!insertmacro PFI_LANG_STRING PSS_LANG_FINISH_README        "Wichtige Information"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; SSL Setup: Miscellaneous Strings
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PSS_LANG_MUTEX                "Another copy of the SSL Setup wizard is running!"
+!insertmacro PFI_LANG_STRING PSS_LANG_MUTEX                "Eine andere Instanz des SSL-Setup Assistenten läuft bereits!"
 
-!insertmacro PFI_LANG_STRING PSS_LANG_COMPAT_NOTFOUND      "Warning: Cannot find compatible version of POPFile !"
+!insertmacro PFI_LANG_STRING PSS_LANG_COMPAT_NOTFOUND      "Warnung: Kann keine kompatible POPFile Version finden!"
 
-!insertmacro PFI_LANG_STRING PSS_LANG_ABORT_WARNING        "Are you sure you want to quit the $(^NameDA) Wizard?"
+!insertmacro PFI_LANG_STRING PSS_LANG_ABORT_WARNING        "Sind sie sicher, dass Sie den $(^NameDA) Assistenten beenden wollen?"
 
-!insertmacro PFI_LANG_STRING PSS_LANG_PREPAREPATCH         "Updating Module.pm (to avoid slow speed SSL downloads)"
-!insertmacro PFI_LANG_STRING PSS_LANG_PATCHSTATUS          "Module.pm patch status: $G_PLS_FIELD_1"
-!insertmacro PFI_LANG_STRING PSS_LANG_PATCHCOMPLETED       "Module.pm file has been updated"
-!insertmacro PFI_LANG_STRING PSS_LANG_PATCHFAILED          "Module.pm file has not been updated"
+!insertmacro PFI_LANG_STRING PSS_LANG_PREPAREPATCH         "Update von Module.pm (zur Beschleunigung von SSL-Verbindungen)"
+!insertmacro PFI_LANG_STRING PSS_LANG_PATCHSTATUS          "Module.pm Patch Status: $G_PLS_FIELD_1"
+!insertmacro PFI_LANG_STRING PSS_LANG_PATCHCOMPLETED       "Module.pm-Update beendet"
+!insertmacro PFI_LANG_STRING PSS_LANG_PATCHFAILED          "Module.pm wurde nicht verändert"
 
 ###########################################################################
 ###########################################################################
@@ -522,33 +522,33 @@
 
 ; Progress reports
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_STARTDOWNLOAD   "Downloading $G_PLS_FIELD_1 file from $G_PLS_FIELD_2"
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILECOPY        "Copying $G_PLS_FIELD_2 files..."
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILEEXTRACT     "Extracting files from $G_PLS_FIELD_2 archive..."
+!insertmacro PFI_LANG_STRING PFI_LANG_PROG_STARTDOWNLOAD   "Lade $G_PLS_FIELD_1 von $G_PLS_FIELD_2"
+!insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILECOPY        "Kopiere $G_PLS_FIELD_2 Dateien..."
+!insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILEEXTRACT     "Extrahiere Dateien aus dem $G_PLS_FIELD_2 Archiv..."
 
-!insertmacro PFI_LANG_STRING PFI_LANG_TAKE_SEVERAL_SECONDS "(this may take several seconds)"
+!insertmacro PFI_LANG_STRING PFI_LANG_TAKE_SEVERAL_SECONDS "(diese kann einige Sekunden dauern)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: Message Box strings used when installing SSL Support [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_CHECKINTERNET     "The SSL Support files will be downloaded from the Internet.${MB_NL}${MB_NL}Your Internet connection seems to be down or disabled.${MB_NL}${MB_NL}Please reconnect and click Retry to resume installation"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_CHECKINTERNET     "Die Dateien für die SSL-Unterstützung werden aus dem Internet geladen.${MB_NL}${MB_NL}Sie scheinen nicht mit dem Internet verbunden zu sein.${MB_NL}${MB_NL}Bitte stellen Sie eine Internetverbindung her und klicken Sie dann auf 'Wiederholen'"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_1      "Download of $G_PLS_FIELD_1 file failed"
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_2      "(error: $G_PLS_FIELD_2)"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_1      "Download der Datei $G_PLS_FIELD_1 schlug fehl"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_2      "(Fehler: $G_PLS_FIELD_2)"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_UNPACKFAIL        "Error detected while installing files in $G_PLS_FIELD_1 folder"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_UNPACKFAIL        "Fehler bei der Installation in den Ordner $G_PLS_FIELD_1"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "Unable to install the optional SSL files!${MB_NL}${MB_NL}To try again later use the 'Add/Remove Programs' entry${MB_NL}${MB_NL}for POPFile ${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}${C_POPFILE_RC}"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "Die Dateien für die SSL-Unterstützung konnten nicht installiert werden!${MB_NL}${MB_NL}Um es noch einmal zu versuchen, benutzen Sie bitte später den Menüpunkt 'Programme hinzufügen/entfernen' ${MB_NL}${MB_NL}für POPFile ${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}${C_POPFILE_RC}"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: Strings used when patching SSL.pm from IO::Socket::SSL [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_SSLPREPAREPATCH      "Downgrading SSL.pm to v0.97"
-!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHSTATUS       "SSL.pm patch status: $G_PLS_FIELD_2"
-!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHCOMPLETED    "SSL.pm file has been downgraded to v0.97"
-!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHFAILED       "SSL.pm file has not been downgraded to v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPREPAREPATCH      "Downgrade von SSL.pm auf v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHSTATUS       "SSL.pm Patch Status: $G_PLS_FIELD_2"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHCOMPLETED    "SSL.pm wurde auf Version v0.97 geändert"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHFAILED       "SSL.pm wurde nicht geändert"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: NSISdl strings (displayed by the plugin which downloads the SSL files) [getssl.nsh]
@@ -584,14 +584,14 @@
 ; string set to a space (" ") [using "" here will generate compiler warnings]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_DOWNLOADING   "Downloading %s"
-!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_CONNECTING    "Connecting ..."
-!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_SECOND        "second"
-!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_MINUTE        "minute"
-!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_HOUR          "hour"
-!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_PLURAL        "s"
+!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_DOWNLOADING   "Herunterladen von %s"
+!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_CONNECTING    "Stelle Verbindung her..."
+!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_SECOND        "Sekunde"
+!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_MINUTE        "Minute"
+!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_HOUR          "Stunde"
+!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_PLURAL        "n"
 !insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_PROGRESS      "%dkB (%d%%) of %dkB @ %d.%01dkB/s"
-!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_REMAINING     " (%d %s%s remaining)"
+!insertmacro PFI_LANG_STRING PFI_LANG_NSISDL_REMAINING     " (%d %s%s verbleiben)"
 
 ###########################################################################
 ###########################################################################
@@ -602,7 +602,7 @@
 ; The PFI_LANG_ADDUSER_INFO_TEXT string should end with a '${IO_NL}${IO_NL}$_CLICK' sequence).
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_ADDUSER_INFO_TEXT    "Dieser Assistent wird Sie durch die Konfiguration von POPFile für den Benutzer '$G_WINUSERNAME' führen.${IO_NL}${IO_NL}Es wird empfohlen, daß Sie alle anderen Anwendungen schließen, bevor Sie weitermachen.${IO_NL}${IO_NL}$_CLICK"
+!insertmacro PFI_LANG_STRING PFI_LANG_ADDUSER_INFO_TEXT    "Dieser Assistent wird Sie durch die Konfiguration von POPFile für den Benutzer '$G_WINUSERNAME' führen.${IO_NL}${IO_NL}Es wird empfohlen, alle anderen Anwendungen zu schließen, bevor Sie fortfahren.${IO_NL}${IO_NL}$_CLICK"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Standard MUI Page - DIRECTORY [adduser.nsi]
@@ -612,7 +612,7 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_USERDIR_TITLE        "Wählen Sie das Datenverzeichnis für '$G_WINUSERNAME'"
 !insertmacro PFI_LANG_STRING PFI_LANG_USERDIR_SUBTITLE     "Wählen Sie das Verzeichnis, in dem die Daten für '$G_WINUSERNAME' gespeichert werden sollen."
-!insertmacro PFI_LANG_STRING PFI_LANG_USERDIR_TEXT_TOP     "Diese Version von POPFile verwendet seperate Datendateien für jeden angemeldeten Benutzer.${MB_NL}${MB_NL}Setup wird das folgende Verzeichnis verwenden, um alle zum Benutzer '$G_WINUSERNAME' gehörenden Daten zu speichern. Um ein anderes Verzeichnis für diesen Benutzer zu verwenden, klicken Sie auf Durchsuchen und wählen Sie ein anderes Verzeichnis. $_CLICK"
+!insertmacro PFI_LANG_STRING PFI_LANG_USERDIR_TEXT_TOP     "Diese Version von POPFile verwendet seperate Datendateien für jeden angemeldeten Benutzer.${MB_NL}${MB_NL}Setup wird das folgende Verzeichnis verwenden, um alle zum Benutzer '$G_WINUSERNAME' gehörenden Daten zu speichern. Um ein anderes Verzeichnis für diesen Benutzer zu verwenden, klicken Sie auf 'Durchsuchen' und wählen Sie ein anderes Verzeichnis. $_CLICK"
 !insertmacro PFI_LANG_STRING PFI_LANG_USERDIR_TEXT_DESTN   "Verzeichnis zur Speicherung der POPFile-Daten für '$G_WINUSERNAME'"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -630,9 +630,9 @@
 
 ; Installation Progress Reports displayed above the progress bar
 
-!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_CORPUS     "Erstelle Corpus Backup. Dies kann einige Sekunden dauern..."
+!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_CORPUS     "Erstelle Korpus Backup. Dies kann einige Sekunden dauern..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_SQLBACKUP  "Erstelle Sicherungskopie der alten SQLite Datenbank..."
-!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_FINDCORPUS "Suche nach vorhandenem nur-Text oder BerkeleyDB Corpus..."
+!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_FINDCORPUS "Suche nach vorhandenem nur-Text oder BerkeleyDB Korpus..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_MAKEBAT    "Erstelle die 'pfi-run.bat' Batch Datei..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_REGSET     "Aktualisieren Registry und Umgebungsvariablen..."
 
@@ -648,7 +648,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_C           "Wählen Sie 'Ja', um diese zu aktualisieren (die alte Datei wird gespeichert unter 'stopwords.bak')"
 !insertmacro PFI_LANG_STRING PFI_LANG_MBSTPWDS_D           "Wählen Sie 'Nein', um die alte Datei zu behalten (die neue Datei wird gespeichert unter 'stopwords.default')"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MBCORPUS_1           "Beim Erstellen eines Backups der alten Corpus Dateien ist ein Fehler aufgetreten."
+!insertmacro PFI_LANG_STRING PFI_LANG_MBCORPUS_1           "Beim Erstellen eines Backups der alten Korpus Dateien ist ein Fehler aufgetreten."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Message box warnings used when verifying the installation folder chosen by user [adduser.nsi]
@@ -802,7 +802,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_TEXT_2    "WICHTIG: BEENDEN SIE DIE BETROFFENEN EMAILPROGRAMME JETZT!${IO_NL}${IO_NL}Diese Funktion befindet sich noch in Entwicklung (einige Outlook Konten können z.B. nicht gefunden werden).${IO_NL}${IO_NL}Bitte überprüfen Sie, ob die Neukonfiguration erfolgreich war (bevor Sie das Emailprogramm verwenden)."
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_CANCEL    "Die Konfiguration wurde vom Benutzer abgebrochen"
-!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_NOMATCHES "No suitable email clients found"
+!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_NOMATCHES "Keine geeigneten Emailprogramme gefunden"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Text used on buttons to skip configuration of email clients [adduser.nsi]
@@ -865,9 +865,9 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSERVER      "POP3 Server:"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBUSERNAME    "POP3 Benutzername:"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOEPORT      "POP3 Port:"
-!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSMTPLOGIN   "SMTP username will be set to ' $G_PLS_FIELD_2'"
+!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSMTPLOGIN   "SMTP Login wird auf '$G_PLS_FIELD_2' gesetzt"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOLDVALUE    "aktuell"
-!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBQUESTION    "Account zur Nutzung mit POPFile konfigurieren ?"
+!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBQUESTION    "Konto zur Nutzung mit POPFile konfigurieren?"
 
 ; Title and Column headings for report/log files
 
@@ -907,7 +907,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_EUCFG_IO_CANCELLED   "Eudora Konfiguration vom Benutzer abgebrochen"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_EUCFG_IO_INTRO_1     "POPFile hat die folgenden Eudorabenutzer entdeckt"
-!insertmacro PFI_LANG_STRING PFI_LANG_EUCFG_IO_INTRO_2     " und kann diese automatisch für die Benutzung mit POPFile konfigurieren."
+!insertmacro PFI_LANG_STRING PFI_LANG_EUCFG_IO_INTRO_2     "und kann diese automatisch für die Benutzung mit POPFile konfigurieren."
 !insertmacro PFI_LANG_STRING PFI_LANG_EUCFG_IO_CHECKBOX    "Diesen Benutzer für POPFile einrichten"
 !insertmacro PFI_LANG_STRING PFI_LANG_EUCFG_IO_DOMINANT    "<Dominant> personality"
 !insertmacro PFI_LANG_STRING PFI_LANG_EUCFG_IO_PERSONA     "Benutzer"
@@ -954,7 +954,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_ADDUSER_FINISH_INFO "POPFile wurde für '$G_WINUSERNAME' eingerichtet.${IO_NL}${IO_NL}Klicken sie auf Finish, um diesen Assistenten zu beenden.."
 
 !insertmacro PFI_LANG_STRING PFI_LANG_FINISH_RUN_TEXT      "POPFile Benutzeroberfläche"
-!insertmacro PFI_LANG_STRING PFI_LANG_FINISH_WEB_LINK_TEXT "Click here to visit the POPFile web site"
+!insertmacro PFI_LANG_STRING PFI_LANG_FINISH_WEB_LINK_TEXT "Klicken Sie hier, um die POPFile Webseite zu besuchen"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Standard MUI Page - Uninstall Confirmation Page (for the 'Add POPFile User' wizard) [adduser.nsi]
@@ -985,16 +985,16 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_OUTEXPRESS   "Outlook Express Einstellungen wiederherstellen..."
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_OUTLOOK      "Outlook Einstellungen wiederherstellen..."
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_EUDORA       "Eudora Einstellungen wiederherstellen..."
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_DBMSGDIR     "Deleting corpus and 'Recent Messages' directory..."
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_CONFIG       "Deleting configuration data..."
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_EXESTATUS    "Checking program status..."
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_REGISTRY     "Deleting POPFile registry entries..."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_DBMSGDIR     "Lösche Korpus und Nachrichten-Historie..."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_CONFIG       "Lösche Konfigurationsdateien..."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_EXESTATUS    "Überprüfe Programm-Status..."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_PROG_REGISTRY     "Lösche POPFile Registry Einträge..."
 
 ; Uninstall Log Messages
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_EXPRUN        "Outlook Express is still running!"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_OUTRUN        "Outlook is still running!"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_EUDRUN        "Eudora is still running!"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_EXPRUN        "Outlook Express läuft noch!"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_OUTRUN        "Outlook läuft noch!"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_EUDRUN        "Eudora läuft noch!"
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_IGNORE        "User requested restore while email program is running"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_OPENED        "Geöffnet"
@@ -1029,21 +1029,21 @@
 ; Corpus Conversion: Standard MUI Page - INSTFILES [MonitorCC.nsi]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_TITLE        "POPFile Corpus-Konvertierung"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUBTITLE     "Der bestehende Corpus muß konvertiert werden, um mit der neuen Version von POPFile verwendet werden zu können."
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_TITLE        "POPFile Korpus-Konvertierung"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUBTITLE     "Der bestehende Korpus muß konvertiert werden, um mit der neuen Version von POPFile verwendet werden zu können."
 
-!insertmacro PFI_LANG_STRING PFI_LANG_ENDCONVERT_TITLE     "POPFile Corpus-Konvertierung abgeschlossen"
+!insertmacro PFI_LANG_STRING PFI_LANG_ENDCONVERT_TITLE     "POPFile Korpus-Konvertierung abgeschlossen"
 !insertmacro PFI_LANG_STRING PFI_LANG_ENDCONVERT_SUBTITLE  "Bitte klicken Sie Beenden, um fortzufahren."
 
-!insertmacro PFI_LANG_STRING PFI_LANG_BADCONVERT_TITLE     "POPFile Corpus: Konvertierung fehlgeschlagen"
+!insertmacro PFI_LANG_STRING PFI_LANG_BADCONVERT_TITLE     "POPFile Korpus: Konvertierung fehlgeschlagen"
 !insertmacro PFI_LANG_STRING PFI_LANG_BADCONVERT_SUBTITLE  "Bitte klicken Sie auf Abbrechen, um fortzufahren."
 
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_MUTEX        "Eine andere Version der Corpus Konvertierung läuft bereits!"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PRIVATE      "Die 'Corpus Konvertierung' ist Teil des POPFile Installationsprogramms"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_MUTEX        "Eine andere Version der Korpus Konvertierung läuft bereits!"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PRIVATE      "Die 'Korpus Konvertierung' ist Teil des POPFile Installationsprogramms"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_NOFILE       "Fehler: Konvertierungsdatendatei existiert nicht!"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_NOPOPFILE    "Fehler: POPFile Pfad nicht gefunden"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_STARTERR     "Ein Fehler ist beim Start des Konvertierungsprozesses aufgetreten"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_FATALERR     "Ein schwerer Fehler ist während der Konvertierung des Corpus aufgetreten!"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_FATALERR     "Ein schwerer Fehler ist während der Konvertierung des Korpus aufgetreten!"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_ESTIMATE     "Geschätzte Wartezeit: "
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_MINUTES      "Minuten"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_WAITING      "(warte auf Konvertierung der ersten Datei)"
