@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2003-2007 John Graham-Cumming
+# Copyright (c) 2003-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -153,13 +153,13 @@
 
 ; Installation Progress Reports displayed above the progress bar [installer.nsi, adduser.nsi]
 
-!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_UPGRADE    "Suche evtl. existierende ältere Versionen..."
+!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_UPGRADE    "Suche nach installierten ältere Versionen..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_SHORT      "Erzeuge Verknüpfungen..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_LANGS      "Installiere Sprachdateien..."
 
 ; Installation Progress Reports displayed above the progress bar [installer.nsi, adduser.nsi, getssl.nsh]
 
-!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_ENDSEC     "Klicken Sie auf Weiter, um fortzufahren"
+!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_ENDSEC     "Klicken Sie auf 'Weiter', um fortzufahren"
 
 ; Progress Reports displayed above the progress bar when downloading/installing SSL support [addssl.nsi, getssl.nsh]
 
@@ -271,12 +271,12 @@
 !insertmacro PFI_LANG_STRING DESC_SecLangs                 "Installiert Unterstützung für weitere (nicht-englische) Sprachen."
 
 !insertmacro PFI_LANG_STRING DESC_SubSecOptional           "Zusätzliche POPFile Komponenten (für fortgeschrittene Benutzer)"
-!insertmacro PFI_LANG_STRING DESC_SecIMAP                  "Installiert das POPFile IMAP Modul"
-!insertmacro PFI_LANG_STRING DESC_SecNNTP                  "Installiert POPFiles NNTP Proxy"
-!insertmacro PFI_LANG_STRING DESC_SecSMTP                  "Installiert POPFiles SMTP Proxy"
-!insertmacro PFI_LANG_STRING DESC_SecSOCKS                 "Installiert zusätzliche Perl Module, die es den POPFile Proxies erlauben, SOCKS zu verwenden"
-!insertmacro PFI_LANG_STRING DESC_SecSSL                   "Installiert zusätzliche Perl Module, mit deren Hilfe POPFile über eine SSL-gesicherte Verbindung mit dem Mail-Server kommunizieren kann."
-!insertmacro PFI_LANG_STRING DESC_SecXMLRPC                "Installiert das POPFile XMLRPC Modul, das Zugriff zum POPFile-API erlaubt, und die benötigten Perl Komponenten"
+!insertmacro PFI_LANG_STRING DESC_SecIMAP                  "Installiert das POPFile IMAP-Modul"
+!insertmacro PFI_LANG_STRING DESC_SecNNTP                  "Installiert POPFiles NNTP-Proxy"
+!insertmacro PFI_LANG_STRING DESC_SecSMTP                  "Installiert POPFiles SMTP-Proxy"
+!insertmacro PFI_LANG_STRING DESC_SecSOCKS                 "Installiert zusätzliche Perl-Module, die es den POPFile Proxies erlauben, SOCKS zu verwenden"
+!insertmacro PFI_LANG_STRING DESC_SecSSL                   "Installiert zusätzliche Perl-Module, mit deren Hilfe POPFile über eine SSL-gesicherte Verbindung mit dem Mail-Server kommunizieren kann."
+!insertmacro PFI_LANG_STRING DESC_SecXMLRPC                "Installiert das POPFile XMLRPC-Modul, das Zugriff zum POPFile-API erlaubt, und die benötigten Perl Komponenten"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - DIRECTORY (for POPFile program files) [installer.nsi]
@@ -285,7 +285,7 @@
 ; Page Title shown in the page header and Text shown above the box showing the folder selected for the installation
 
 !insertmacro PFI_LANG_STRING PFI_LANG_ROOTDIR_TITLE        "Wählen Sie ein Verzeichnis für die Programminstallation"
-!insertmacro PFI_LANG_STRING PFI_LANG_ROOTDIR_TEXT_DESTN   "Zielverzeichnis für das POPFile-Programm"
+!insertmacro PFI_LANG_STRING PFI_LANG_ROOTDIR_TEXT_DESTN   "Zielverzeichnis für die POPFile Programmdateien"
 
 ; Message box warnings used when verifying the installation folder chosen by user
 
@@ -327,12 +327,12 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_OPTIONLIST   "Folgende optionale POPFile Komponenten werden installiert:"
 !insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NONE         "(keine)"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_IMAP         "IMAP Modul"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NNTP         "NNTP Proxy"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SMTP         "SMTP Proxy"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SOCKS        "SOCKS Unterstützung"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SSL          "SSL Unterstützung"
-!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_XMLRPC       "XMLRPC Modul"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_IMAP         "IMAP-Modul"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_NNTP         "NNTP-Proxy"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SMTP         "SMTP-Proxy"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SOCKS        "SOCKS-Unterstützung"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_SSL          "SSL-Unterstützung"
+!insertmacro PFI_LANG_STRING PFI_LANG_SUMMARY_XMLRPC       "XMLRPC-Modul"
 
 ; The last line in the summary explains how to change the installation selections
 
@@ -352,7 +352,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_CORE       "Installiere Basiskomponenten..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_PERL       "Installiere Minimal-Perl-Umgebung..."
 !insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_SKINS      "Installiere Skins..."
-!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_XMLRPC     "Installiere POPFile XMLRPC Dateien..."
+!insertmacro PFI_LANG_STRING PFI_LANG_INST_PROG_XMLRPC     "Installiere POPFile XMLRPC-Dateien..."
 
 ; Message box used to get permission to delete the old minimal Perl before installing the new one
 
@@ -400,7 +400,7 @@
 
 ; Page Sub-title displayed when MODIFYING the installation (one of the standard MUI strings is used for the Title)
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_SUBTITLE     "Bitte warten Sie einen Moment währen $(^NameDA) auf den neuesten Stand gebracht wird"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_SUBTITLE     "Bitte warten Sie einen Moment während $(^NameDA) auf den neuesten Stand gebracht wird"
 
 ; Page Title and Sub-Title shown instead of the default "Uninstallation complete..." page header
 
@@ -410,7 +410,7 @@
 ; Page Title and Sub-Title shown instead of the default "Uninstallation Aborted..." page header
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_TITLE    "Hinzufügen/Entfernen abgebrochen"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_SUBTITLE "Hinzufügen/Entfernen wurde nicht beendet."
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_SUBTITLE "Hinzufügen/Entfernen wurde nicht abgeschlossen."
 
 ; Uninstall Progress Reports displayed above the progress bar
 
@@ -420,13 +420,13 @@
 
 ; Uninstall Log Messages
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_SHUTDOWN      "Beende POPFile am Port"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_SHUTDOWN      "Beende POPFile an Port"
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_DELROOTDIR    "Alle Dateien im POPFile-Verzeichnis löschen"
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_DELROOTERR    "Hinweis: Es konnten nicht alle Dateien im POPFile-Verzeichnis gelöscht werden"
 
 ; Message Box text strings
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "Wollen Sie alle Dateien im POPFile-Verzeichnis löschen?${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(Wenn Sie dort irgendetwas gespeichert haben, was sie behalten möchten, wählen Sie Nein)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "Wollen Sie alle Dateien im POPFile-Verzeichnis löschen?${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(Wenn Sie selbst dort irgendetwas gespeichert haben, was sie behalten möchten, wählen Sie Nein)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_FINISH [installer.nsi]
@@ -450,15 +450,15 @@
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !insertmacro PFI_LANG_STRING PSS_LANG_LICENSE_SUBHDR       "Bitte sehen Sie sich die Lizenzbedingunden an, bevor Sie $(^NameDA) benutzen."
-!insertmacro PFI_LANG_STRING PSS_LANG_LICENSE_BOTTOM       "Wenn Sie mit den Bedinungen einverstanden sind, dann kreuzen Sie bitte das Kästchen unten an. Sie müssen die Bedingungen akzeptieren, um $(^NameDA) zu benutzen. $_CLICK"
+!insertmacro PFI_LANG_STRING PSS_LANG_LICENSE_BOTTOM       "Wenn Sie mit den Bedingungen einverstanden sind, dann kreuzen Sie bitte das Kästchen unten an. Sie müssen die Bedingungen akzeptieren, um $(^NameDA) zu benutzen. $_CLICK"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; SSL Setup: Standard MUI Page - DIRECTORY
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TITLE       "Wählen Sie die bestehende POPFile 0.22 (oder höher) Installation"
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_SUBTITLE    "SSL-Unterstützung solle nur zu einer bestehenden POPFile-Installation hinzugefügt werden"
-!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_TOP    "Die SSL-Unterstützung muss in den gleichen Ordner installiert werden wie das POPFile Programm${MB_NL}${MB_NL}Die SSL-Unterstützung wird zu dem POPFile Programm hinzugefügt werden, das im folgenden Ordner installiert ist. Um sie in einen anderen Ordner zu installieren, klicken Sie auf 'Auswählen' und wählen Sie den gewünschten Ordner aus. $_CLICK"
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_SUBTITLE    "SSL-Unterstützung sollte nur zu einer bestehenden POPFile-Installation hinzugefügt werden"
+!insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_TOP    "Die SSL-Unterstützung muss in den gleichen Ordner installiert werden wie das POPFile Programm${MB_NL}${MB_NL}Die SSL-Unterstützung wird zu den POPFile Programmdateien hinzugefügt werden, das im folgenden Ordner installiert ist. Um sie in einen anderen Ordner zu installieren, klicken Sie auf 'Auswählen' und wählen Sie den gewünschten Ordner aus. $_CLICK"
 !insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_TEXT_DESTN  "Ordner der bestehenden POPFile-Installation (0.22 oder höher)"
 
 !insertmacro PFI_LANG_STRING PSS_LANG_DESTNDIR_MB_WARN_1   "POPFile 0.22 (oder höher) scheint NICHT in ${MB_NL}${MB_NL}$G_PLS_FIELD_1 installiert zu sein."
@@ -493,7 +493,7 @@
 ; SSL Setup: Standard MUI Page - FINISH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TITLE         "Completing the $(^NameDA) Wizard"
+!insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TITLE         "Der $(^NameDA) Assistent wird vervollständigt"
 !insertmacro PFI_LANG_STRING PSS_LANG_FINISH_TEXT          "SSL-Unterstützung für POPFile wurde installliert.${IO_NL}${IO_NL}Sie können jetzt POPFile starten und für eine SSL-Verbindung konfigurieren.${IO_NL}${IO_NL}Klicken Sie auf 'Fertigstellen', um den Assistenten zu beenden."
 
 !insertmacro PFI_LANG_STRING PSS_LANG_FINISH_README        "Wichtige Information"
@@ -682,7 +682,7 @@
 ; TempTranslationNote: PFI_LANG_OPTIONS_MBPOP3_C = PFI_LANG_OPTIONS_MBPOP3_3
 
 !insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBPOP3_A     "Der POP3-Port kann nicht übernommen werden. '$G_POP3'."
-!insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBPOP3_B     "Der Port muß eine Zahl zwischen 1 und 65535 sein."
+!insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBPOP3_B     "Der Port muss eine Zahl zwischen 1 und 65535 sein."
 !insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBPOP3_C     "Bitte korrigieren Sie ihre Eingabe für den POP3-Port."
 
 ; TempTranslationNote: PFI_LANG_OPTIONS_MBGUI_A = PFI_LANG_OPTIONS_MBGUI_1 + " '$G_GUI'."
@@ -690,7 +690,7 @@
 ; TempTranslationNote: PFI_LANG_OPTIONS_MBGUI_C = PFI_LANG_OPTIONS_MBGUI_3
 
 !insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBGUI_A      "Der Port für die Benutzeroberfläche kann nicht übernommen werden. '$G_GUI'."
-!insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBGUI_B      "Der Port muß eine Zahl zwischen 1 und 65535 sein."
+!insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBGUI_B      "Der Port muss eine Zahl zwischen 1 und 65535 sein."
 !insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBGUI_C      "Bitte korrigieren Sie ihre Eingabe für den Port für die Benutzeroberfläche."
 
 !insertmacro PFI_LANG_STRING PFI_LANG_OPTIONS_MBDIFF_1     "POP3-Port und Port für die Benutzeroberfläche dürfen nicht identisch sein."
@@ -714,8 +714,8 @@
 ; into alphabetic order. For example, the Portuguese (Brazil) translation of this string
 ; starts "admin|admin-lista|..." (which is "admin|list-admin|..." in English)
 
-!insertmacro PFI_LANG_STRING PFI_LANG_CBP_DEFAULT_BUCKETS  "spam|personal|work|other"
-!insertmacro PFI_LANG_STRING PFI_LANG_CBP_SUGGESTED_NAMES  "admin|business|computers|family|financial|general|hobby|inbox|junk|list-admin|miscellaneous|not_spam|other|personal|recreation|school|security|shopping|spam|travel|work"
+!insertmacro PFI_LANG_STRING PFI_LANG_CBP_DEFAULT_BUCKETS  "spam|persoenlich|arbeit|sonstiges"
+!insertmacro PFI_LANG_STRING PFI_LANG_CBP_SUGGESTED_NAMES  "admin|geschaeftlich|computer|familie|finanziell|generell|hobby|inbox|muell|list-admin|vermischtes|kein_spam|anderes|persoenlich|freizeit|schule|sicherheit|einkaufen|spam|reisen|arbeit"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Custom Page - POPFile Classification Bucket Creation [CBP.nsh]
@@ -728,7 +728,7 @@
 
 ; Text strings displayed on the custom page
 
-!insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_INTRO         "Nach der Installation können Sie die Anzahl der Kategorien (und deren Name) ohne Probleme an ihre Bedürfnisse anpassen.${IO_NL}${IO_NL}Kategorienamen bestehen aus Kleinbuchstaben, Ziffern von 0 bis 9, Bindestrich oder Unterstrich."
+!insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_INTRO         "Nach der Installation können Sie die Anzahl der Kategorien (und deren Name) ohne Probleme an ihre Bedürfnisse anpassen.${IO_NL}${IO_NL}Kategorienamen bestehen aus Kleinbuchstaben, Ziffern von 0 bis 9, Bindestrich oder Unterstrich (keine Umlaute)."
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_CREATE        "Erstellen Sie eine neue Kategorie, indem Sie entweder einen Namen aus der Liste wählen oder einen Namen ihrer Wahl eingeben."
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_DELETE        "Um eine oder mehr Kategorien von der Liste zu löschen, markieren Sie die entsprechenden 'Entfernen' Kästchen und klicken Sie auf 'Weiter'."
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_LISTHDR       "Bereits eingerichtete Kategorien"
@@ -743,7 +743,7 @@
 ; TempTranslationNote: PFI_LANG_CBP_IO_MSG_D = PFI_LANG_CBP_IO_MSG_4 + " $G_PLS_FIELD_1 " + PFI_LANG_CBP_IO_MSG_5
 
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_MSG_A         "Sie müssen keine weiteren Kategorien hinzufügen"
-!insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_MSG_B         "Sie müssen MINDESTENS zwei Kategorien angeben"
+!insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_MSG_B         "Sie müssen mindestens zwei Kategorien angeben"
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_MSG_C         "Mindestens eine weitere Kategorie wird benötigt"
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_IO_MSG_D         "Der Installer kann nicht mehr als $G_PLS_FIELD_1 Kategorien anlegen."
 
@@ -766,12 +766,12 @@
 ; TempTranslationNote: PFI_LANG_CBP_MBNAMERR_C = PFI_LANG_CBP_MBNAMERR_4
 
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBNAMERR_A       "Der Name '$G_PLS_FIELD_1' ist ungültig."
-!insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBNAMERR_B       "Kategorienamen können nur Kleinbuchstaben von a bis z, Ziffern von 0 bis 9, - oder _ enthalten"
+!insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBNAMERR_B       "Kategorienamen können nur Kleinbuchstaben von a bis z, Ziffern von 0 bis 9, - oder _ enthalten (keine Umlaute)"
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBNAMERR_C       "Bitte wählen Sie einen anderen Namen für die neue Kategorie."
 
-!insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBCONTERR_1      "POPFile benötigt MINDESTES ZWEI Kategorien, um ihre Emails klassifizieren zu können."
+!insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBCONTERR_1      "POPFile benötigt mindestens ZWEI Kategorien, um ihre Emails klassifizieren zu können."
 !insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBCONTERR_2      "Bitte geben Sie den Namen einer zu erstellenden Kategorie ein,${MB_NL}${MB_NL}indem Sie entweder einen der Vorschläge aus der Liste auswählen${MB_NL}${MB_NL}oder indem Sie einen Namen Ihrer Wahl eingeben."
-!insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBCONTERR_3      "Sie müssen MINDESTENS ZWEI Kategorien anlegen, bevor Sie die Installation fortsetzen können."
+!insertmacro PFI_LANG_STRING PFI_LANG_CBP_MBCONTERR_3      "Sie müssen mindestens ZWEI Kategorien anlegen, bevor Sie die Installation fortsetzen können."
 
 ; TempTranslationNote: PFI_LANG_CBP_MBDONE_A = "$G_PLS_FIELD_1 " + PFI_LANG_CBP_MBDONE_1
 ; TempTranslationNote: PFI_LANG_CBP_MBDONE_B = PFI_LANG_CBP_MBDONE_2
@@ -799,7 +799,7 @@
 ; Text displayed on the custom page
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_TEXT_1    "Programme, die mit (*) markiert sind, können automatisch konfiguriert werden - vorausgesetzt, einfache Konten werden verwendet.${IO_NL}${IO_NL}Es wird dringendst empfohlen, Konten, die eine Authentifizierung benötigen, manuell zu konfigurieren."
-!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_TEXT_2    "WICHTIG: BEENDEN SIE DIE BETROFFENEN EMAILPROGRAMME JETZT!${IO_NL}${IO_NL}Diese Funktion befindet sich noch in Entwicklung (einige Outlook Konten können z.B. nicht gefunden werden).${IO_NL}${IO_NL}Bitte überprüfen Sie, ob die Neukonfiguration erfolgreich war (bevor Sie das Emailprogramm verwenden)."
+!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_TEXT_2    "WICHTIG: BEENDEN SIE JETZT DIE BETROFFENEN EMAILPROGRAMME!${IO_NL}${IO_NL}Diese Funktion befindet sich noch in Entwicklung (einige Outlook Konten können z.B. nicht gefunden werden).${IO_NL}${IO_NL}Bitte überprüfen Sie, ob die Neukonfiguration erfolgreich war bevor Sie das Emailprogramm verwenden."
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_CANCEL    "Die Konfiguration wurde vom Benutzer abgebrochen"
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_NOMATCHES "Keine geeigneten Emailprogramme gefunden"
@@ -865,7 +865,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSERVER      "POP3 Server:"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBUSERNAME    "POP3 Benutzername:"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOEPORT      "POP3 Port:"
-!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSMTPLOGIN   "SMTP Login wird auf '$G_PLS_FIELD_2' gesetzt"
+!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSMTPLOGIN   "SMTP Benutzername wird auf '$G_PLS_FIELD_2' gesetzt"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOLDVALUE    "aktuell"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBQUESTION    "Konto zur Nutzung mit POPFile konfigurieren?"
 
@@ -951,7 +951,7 @@
 
 ; $G_WINUSERNAME holds the Windows login name of the user running the wizard
 
-!insertmacro PFI_LANG_STRING PFI_LANG_ADDUSER_FINISH_INFO "POPFile wurde für '$G_WINUSERNAME' eingerichtet.${IO_NL}${IO_NL}Klicken sie auf Finish, um diesen Assistenten zu beenden.."
+!insertmacro PFI_LANG_STRING PFI_LANG_ADDUSER_FINISH_INFO "POPFile wurde für '$G_WINUSERNAME' eingerichtet.${IO_NL}${IO_NL}Klicken sie auf 'Fertigstellen', um diesen Assistenten zu beenden.."
 
 !insertmacro PFI_LANG_STRING PFI_LANG_FINISH_RUN_TEXT      "POPFile Benutzeroberfläche"
 !insertmacro PFI_LANG_STRING PFI_LANG_FINISH_WEB_LINK_TEXT "Klicken Sie hier, um die POPFile Webseite zu besuchen"
@@ -974,7 +974,7 @@
 ; $G_WINUSERNAME holds the Windows login name for the user running the uninstall wizard
 
 !insertmacro PFI_LANG_STRING PFI_LANG_REMOVING_TITLE       "Deinstalliere POPFile-Daten für den Benutzer '$G_WINUSERNAME'"
-!insertmacro PFI_LANG_STRING PFI_LANG_REMOVING_SUBTITLE    "Bitten werden Sie, während die Konfiguratoinsdateien für diesen Benutzer gelöscht werden."
+!insertmacro PFI_LANG_STRING PFI_LANG_REMOVING_SUBTITLE    "Bitten warten Sie, während die Konfiguratoinsdateien für diesen Benutzer gelöscht werden."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Standard MUI Page - UNPAGE_INSTFILES [adduser.nsi]
@@ -1018,7 +1018,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_3         "Klicken Sie auf 'Nein', um diese Fehler zu ignorieren und alles zu löschen"
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBRERUN_4         "Klicken Sie auf 'Ja', um diese Daten zu behalten (und einen späteren Versuch zu ermöglichen)"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_2        "Wollen Sie alle Dateien im Benutzerdatenverzeichnis löschen?${MB_NL}${MB_NL}$G_USERDIR${MB_NL}${MB_NL}(Wenn Sie irgendetwas erstellt haben, was sie behalten möchten, wählen Sie Nein)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_2        "Wollen Sie alle Dateien im Benutzerdatenverzeichnis löschen?${MB_NL}${MB_NL}$G_USERDIR${MB_NL}${MB_NL}(Wenn Sie hier irgendetwas gespeichert haben, was Sie behalten möchten, wählen Sie 'Nein')"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBDELMSGS_1       "Möchten Sie alle Dateien aus der Liste der 'Aktuellen Nachrichten' entfernen?"
 
@@ -1030,7 +1030,7 @@
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_TITLE        "POPFile Korpus-Konvertierung"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUBTITLE     "Der bestehende Korpus muß konvertiert werden, um mit der neuen Version von POPFile verwendet werden zu können."
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUBTITLE     "Der bestehende Korpus muss konvertiert werden, um mit der neuen Version von POPFile verwendet werden zu können."
 
 !insertmacro PFI_LANG_STRING PFI_LANG_ENDCONVERT_TITLE     "POPFile Korpus-Konvertierung abgeschlossen"
 !insertmacro PFI_LANG_STRING PFI_LANG_ENDCONVERT_SUBTITLE  "Bitte klicken Sie Beenden, um fortzufahren."
@@ -1049,7 +1049,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_WAITING      "(warte auf Konvertierung der ersten Datei)"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_TOTALFILES   "Es müssen insgesamt $G_BUCKET_COUNT Dateien konvertiert werden"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PROGRESS_N   "Nach $G_ELAPSED_TIME.$G_DECPLACES Minuten müssen noch $G_STILL_TO_DO Dateien konvertiert werden"
-!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PROGRESS_1   "Nach $G_ELAPSED_TIME.$G_DECPLACES Minuten muß noch eine Datei konvertiert werden"
+!insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_PROGRESS_1   "Nach $G_ELAPSED_TIME.$G_DECPLACES Minuten muss noch eine Datei konvertiert werden"
 !insertmacro PFI_LANG_STRING PFI_LANG_CONVERT_SUMMARY      "Die Konvertierung dauerte $G_ELAPSED_TIME.$G_DECPLACES Minuten"
 
 ###########################################################################
