@@ -1033,6 +1033,7 @@ loop:
 close_files:
   FileClose ${L_INPUT_FILE_HANDLE}
   FileClose ${L_OUTPUT_FILE_HANDLE}
+  SetFileAttributes "$PLUGINSDIR\${C_README}.txt" READONLY
 
   Pop ${L_TEMP}
   Pop ${L_OUTPUT_FILE_HANDLE}

@@ -191,6 +191,7 @@ save_HKLM_root_sfn:
   File /nonfatal "/oname=$G_ROOTDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
 
 copy_txt_version:
+  SetFileAttributes "$G_ROOTDIR\${C_README}" READONLY
   CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_README}.txt" "$G_ROOTDIR\${C_README}.txt"
 
   ; The experimental 'setup-repack587.exe' installer installed some NSIS-based replacements
