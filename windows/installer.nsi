@@ -1498,7 +1498,7 @@ Section /o "XMLRPC" SecXMLRPC
   File "${C_PERL_DIR}\lib\Net\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\SOAP"
-  File /r "${C_PERL_DIR}\site\lib\SOAP\*"
+  File /r "${C_PERL_DIR}\lib\SOAP\*"
 
   SetOutPath "$G_MPLIBDIR\Time"
   File /r "${C_PERL_DIR}\lib\Time\*"
@@ -1510,7 +1510,7 @@ Section /o "XMLRPC" SecXMLRPC
   File /r "${C_PERL_DIR}\lib\XML\*"
 
   SetOutPath "$G_MPLIBDIR\XMLRPC"
-  File /r "${C_PERL_DIR}\site\lib\XMLRPC\*"
+  File /r "${C_PERL_DIR}\lib\XMLRPC\*"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
