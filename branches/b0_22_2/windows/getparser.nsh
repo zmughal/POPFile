@@ -231,7 +231,7 @@
         File "${C_PERL_DIR}\site\lib\Text\Kakasi.pm"
 
         SetOutPath "$G_MPLIBDIR\auto\Text\Kakasi"
-        File "${C_PERL_DIR}\site\lib\auto\Text\Kakasi\*"
+        File /x .packlist "${C_PERL_DIR}\site\lib\auto\Text\Kakasi\*"
     !endif
 
 !macroend
