@@ -53,11 +53,11 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.36" compiler,
-  ; released 29 March 2008. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.36"
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
@@ -107,7 +107,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 11 August 2007 19:06:24
+  ; Tested with the inetc.dll plugin timestamped 4 May 2008 10:27:40
 
   ;------------------------------------------------
   ; This script requires the 'md5dll' NSIS plugin
@@ -270,7 +270,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.3.2"
+  !define C_PFI_VERSION  "0.3.3"
 
   ; Mention the wizard's version number in the window title
 
