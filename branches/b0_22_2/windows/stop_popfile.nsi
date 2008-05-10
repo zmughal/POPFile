@@ -81,11 +81,11 @@
 # The '/WAIT' parameter is important, otherwise the 'failed' case will not be detected.
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.36" compiler,
-  ; released 29 March 2008. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.36"
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
@@ -125,7 +125,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.6.7"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.6.8"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 

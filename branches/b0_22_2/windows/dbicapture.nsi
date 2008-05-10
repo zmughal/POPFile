@@ -24,11 +24,11 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.36" compiler,
-  ; released 29 March 2008. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.36-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.36"
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
@@ -88,7 +88,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.6"
+  !define C_VERSION             "0.0.7"
 
   !define C_OUTFILE             "dbicapture.exe"
 
