@@ -631,8 +631,11 @@
   !define MUI_FINISHPAGE_RUN_FUNCTION         "RunUI"
 
   ; Provide a checkbox to let user display the Release Notes for this version of POPFile
+  ; (MUI_FINISHPAGE_SHOWREADME_TEXT is set to the MUI default string here in order to
+  ; work around a NSIS compiler bug which corrupts the Japanese version of the string)
 
   !define MUI_FINISHPAGE_SHOWREADME
+  !define MUI_FINISHPAGE_SHOWREADME_TEXT      "$(MUI_TEXT_FINISH_SHOWREADME)"
   !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
   !define MUI_FINISHPAGE_SHOWREADME_FUNCTION  "ShowReadMe"
 
