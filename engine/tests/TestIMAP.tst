@@ -255,6 +255,15 @@ sub test_imap_module {
     $im->service();
     test_assert_equal( $im->config_('uidvalidities'), $uidvalis );
 
+    # What happens when we get unsolicited responses from the server?
+    $im->disconnect_folders__();
+    $im->log_( 0, "---- Testing unsolicited BYE response" );
+    $im->config_( 'login', 'unsolicitedBYE' );
+    $im->{last_update__} = 0;
+    $im->service();
+    test_assert( ! %{$im->{folders__}}, 'Folder hash is empty' );
+
+
     # Check what happens when we time out
     $im->log_( 0, "---- Testing time-out behaviour for the module." );
     $im->config_( 'login', 'timeOut1' );
