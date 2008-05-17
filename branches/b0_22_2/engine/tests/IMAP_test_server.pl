@@ -76,6 +76,7 @@ my $state           = 'Not Authenticated';
 my $drop_connection_at  = -1;
 my $uidvalidity         =  1;
 my $time_out_at         = -1;
+my $unsolicited         = '';
 
 
 # Create the spool directory
@@ -251,10 +252,13 @@ sub handle_command
                     $uidvalidity = 2;
                 }
                 elsif ( $user =~ /^duplicateMessage/ ) {
-
+                    # TODO: something seems to be missing here
                 }
                 elsif ( $user =~ /^timeOut(\d+)$/ ) {
                     $time_out_at = $1;
+                }
+                elsif ( $user =~ /unsolicited(.+)$/ ) {
+                    $unsolicited = $1;
                 }
             }
 
@@ -309,8 +313,15 @@ sub handle_command
 
     # NOOP
         if ( $command =~ /^NOOP/ ) {
-            print $client "$tag OK NOOP complete.$eol";
-            return;
+            if ( $unsolicited ) {
+                print $client "* $unsolicited$eol";
+                $client->shutdown( 2 );
+                return;
+            }
+            else {
+                print $client "$tag OK NOOP complete.$eol";
+                return;
+            }
         }
 
     # EXPUNGE
