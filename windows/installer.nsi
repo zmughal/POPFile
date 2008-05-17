@@ -20,7 +20,7 @@
 #                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
 #                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2005 John Graham-Cumming
+# Copyright (c) 2002-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -45,20 +45,24 @@
 #  (3) installer-SecPOPFile-func.nsh - functions used by the above 'include' file
 #  (4) installer-SecMinPerl-body.nsh - body of section used to install the basic minimal Perl
 #  (5) installer-Uninstall.nsh       - source for the POPFile uninstaller (uninstall.exe)
+#  (6) getssl.nsh                    - section & functions used to download the SSL support files
+#  (7) getparser.nsh                 - macro-based sections and functions to install the Nihongo Parser
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -66,17 +70,12 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
-; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date
-; (if the default multi-language installer is compiled).
-;
-; There may be further warnings which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or
-; more language tables. The 'pfi-languages.nsh' file lists all of the language table codes
-; used by the POPFile installer and other NSIS-based utilities.
-;
-; NOTE: The language selection menu order used in this script assumes that the NSIS MUI
-; 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
-; [see 'SMALL NSIS PATCH REQUIRED' in the 'pfi-languages.nsh' file]
+; Normally no NSIS compiler warnings are expected. However there may be some warnings
+; which mention "PFI_LANG_NSISDL_PLURAL" is not set in one or more language tables.
+; These "PFI_LANG_NSISDL_PLURAL" warnings can be safely ignored (at present only the
+; 'Japanese-pfi.nsh' file generates this warning).
 
 ; INSTALLER SIZE: The LZMA compression method is used to reduce the size of the 'setup.exe'
 ; file by around 25% compared to the default compression method but at the expense of greatly
@@ -105,6 +104,25 @@
 # makensis.exe /DC_POPFILE_MAJOR_VERSION=0 /DC_POPFILE_MINOR_VERSION=21 /DC_POPFILE_REVISION=1 /DC_POPFILE_RC installer.nsi
 #--------------------------------------------------------------------------
 
+  ;------------------------------------------------
+  ; This script requires the 'UAC' NSIS plugin
+  ;------------------------------------------------
+
+  ; The new 'User Account Control' (UAC) feature in Windows Vista makes it difficult to install
+  ; POPFile from a 'standard' user account. This script uses a special NSIS plugin (UAC) which
+  ; allows the 'POPFile program files' part of the installation to be run at the 'admin' level
+  ; and the user-specific POPFile configuration part to be run at the 'user' level.
+  ;
+  ; The 'NSIS Wiki' page for the 'UAC' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/UAC_plug-in
+  ;
+  ; To compile this script, copy the 'UAC.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'UAC' source and example files can be unzipped to the
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with version v0.0.8 (20080310) of the 'UAC' plugin,
+  ; timestamped 10 March 2008 20:17:46.
+
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
 #--------------------------------------------------------------------------
@@ -115,13 +133,6 @@
 # of the non-English *-pfi.nsh files are up-to-date), supply the command-line switch
 # /DENGLISH_MODE when compiling the installer. This switch only affects the language used by
 # the installer, it does not affect which files get installed.
-#
-# /DNO_KAKASI
-#
-# When the default compression mode is used to compile the installer, the Kakasi package and
-# the additional Perl components it requires cause the installer to almost double in size.
-# If the /DNO_KAKASI command-line switch is used, the installer will be built without these
-# additional packages so the compile time and the installer size will be greatly reduced.
 #
 #--------------------------------------------------------------------------
 
@@ -158,19 +169,29 @@
 #--------------------------------------------------------------------------
 # Support for Japanese text processing
 #
-# This version of the installer installs the Kakasi package and the Text::Kakasi Perl module
-# used by POPFile when processing Japanese text. Further information about Kakasi, including
-# 'download' links for the Kakasi package and the Text::Kakasi Perl module, can be found at
-# http://kakasi.namazu.org/
+# Japanese text does not use spaces between words so POPFile uses a parser to split the text
+# into words so the text can be analysed properly. POPFile 0.22.5 (and earlier) only supported
+# one parser (Kakasi) for Japanese text. Starting with the 1.0.0 release a choice of three
+# parsers is offered: Kakasi, MeCab and Internal.
+#
+# The 'Kakasi' parser is suggested as the default parser for new installations as it offers
+# a reasonable compromise between accuracy and speed. 'MeCab' uses much larger dictionaries
+# than Kakasi (about 40 MB instead of about 2 MB) and is therefore more accurate at parsing.
+# The 'Internal' parser does not use dictionaries so it is less accurate but it is faster
+# than the other two parsers.
+#
+# Further information about Kakasi, including 'download' links for the Kakasi package and the
+# Text::Kakasi Perl module, can be found at http://kakasi.namazu.org/
+# (ActivePerl's PPM4 can also be used to download and install the Text::Kakasi Perl module).
+#
+# Further information about MeCab can be found at http://sourceforge.net/projects/mecab
+# Since the MeCab package is much larger than the Kakasi one, the installation files are not
+# included in the installer. If the MeCab parser is selected then the MeCab files (about 13 MB)
+# will be downloaded from the POPFile project's website during the installation.
 #
 # This version of the installer also installs the complete Perl 'Encode' collection of modules
 # to complete the Japanese support requirements.
 #
-# The Kakasi package and the additional Perl modules almost double the size of the installer
-# (assuming that the default compression method is used). If the command-line switch
-# /DNO_KAKASI is used then a smaller installer can be built by omitting the Japanese support.
-#
-# SMALL NSIS PATCH REQUIRED: See 'pfi-languages.nsh' for details.
 #--------------------------------------------------------------------------
 
   ;------------------------------------------------
@@ -183,7 +204,9 @@
   ; Select LZMA compression to reduce 'setup.exe' size by around 30%
   ;--------------------------------------------------------------------------
 
-  SetCompressor lzma
+##  SetCompress off
+
+  SetCompressor /solid lzma
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -230,16 +253,90 @@
   ; Mention the POPFile version number in the titles of the installer & uninstaller windows
 
   Caption                "${C_PFI_PRODUCT} ${C_PFI_VERSION} Setup"
-  UninstallCaption       "${C_PFI_PRODUCT} ${C_PFI_VERSION} Uninstall"
+  UninstallCaption       "${C_PFI_PRODUCT} ${C_PFI_VERSION} Add/Remove"
 
   !define C_README        "v${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.change"
   !define C_RELEASE_NOTES "..\engine\${C_README}"
 
+  ; Some releases may include a Japanese translation of the release notes
+
+  !define C_JAPANESE_RELEASE_NOTES "${C_RELEASE_NOTES}.nihongo"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;
+  ; The POPFile installer has two stages; the first stage (setup.exe) installs the
+  ; POPFile program and then calls the second stage (adduser.exe) to configure POPFile
+  ; for the current user.
+  ;
+  ; The first stage has to be able to write to the default installation folder
+  ; (C:\Program Files\POPFile, or its equivalent) and be able to create/update
+  ; some HKLM registry entries so it requires 'administrator' privileges. The
+  ; second stage creates user-specific environment variables and HKCU registry
+  ; entries so it requires 'current user' privileges.
+  ;
+  ; A special NSIS plugin (UAC) is used to allow these two stages of the
+  ; installer to run with the required privileges. Although this script is
+  ; used to create the 'administrator' privileges stage of the installer
+  ; the UAC plugin requires this script to specify 'user' instead of 'admin'
+  ; when requesting the execution level.
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
   ;----------------------------------------------------------------------
   ; Root directory for the Perl files (used when building the installer)
+  ; and the version number and build number required for the minimal Perl
   ;----------------------------------------------------------------------
 
   !define C_PERL_DIR      "C:\Perl"
+  !define C_PERL_VERSION  "5.8.8"
+  !define C_PERL_BUILD    "822"
+
+  ;----------------------------------------------------------------------
+  ; Recently there have been some significant changes to the structure and
+  ; behaviour of ActivePerl. These changes have affected the way in which
+  ; the minimal Perl is assembled therefore a new compile-time check has
+  ; been introduced to ensure that a suitable ActivePerl installation is
+  ; available for use in preparing the minimal Perl used by POPFile.
+  ;----------------------------------------------------------------------
+
+  !system 'if exist ".\ap-version.nsh" del ".\ap-version.nsh"'
+  !system '".\toolkit\ap-vcheck.exe" ${C_PERL_DIR}'
+  !include /NONFATAL ".\ap-version.nsh"
+
+  ; The above '!system' call can fail on older (slower/Win9x?) systems so if the expected
+  ; output file is not found we try a safer version of the '!system' call. If this call
+  ; also fails then the NSIS compiler will stop with a fatal error.
+
+  !ifndef C_AP_STATUS
+    !system 'start /w toolkit\ap-vcheck.exe ${C_PERL_DIR}'
+    !include ".\ap-version.nsh"
+   !endif
+
+  ; Delete the "include" file after it has been read
+
+  !delfile ".\ap-version.nsh"
+
+  ; Now we can check that the location defined in ${C_PERL_DIR} is suitable
+
+  !if "${C_AP_STATUS}" == "failure"
+    !error "${MB_NL}${MB_NL}Fatal error:${MB_NL}\
+        ${MB_NL}   ActivePerl version check failed${MB_NL}\
+        ${MB_NL}   (${C_AP_ERRORMSG})${MB_NL}"
+  !endif
+
+  ; For this build of the installer we require an exact match for the ActivePerl version number _and_ build number
+
+  !if "${C_AP_VERSION}.${C_AP_BUILD}" != "${C_PERL_VERSION}.${C_PERL_BUILD}"
+    !error "${MB_NL}${MB_NL}Fatal error:${MB_NL}\
+        ${MB_NL}   ActivePerl ${C_PERL_VERSION} Build ${C_PERL_BUILD} is required for this installer\
+        ${MB_NL}   but ActivePerl ${C_AP_VERSION} Build ${C_AP_BUILD} has been detected in the\
+        ${MB_NL}   $\"${C_AP_FOLDER}$\" folder${MB_NL}"
+  !endif
+
+  !echo "${MB_NL}\
+      ${MB_NL}   ActivePerl version ${C_AP_VERSION} Build ${C_AP_BUILD} will be used to prepare the minimal Perl${MB_NL}${MB_NL}"
 
   ;----------------------------------------------------------------------------------
   ; Root directory for the Kakasi package.
@@ -277,14 +374,16 @@
 
   Var G_GUI                ; GUI port (1-65535)
 
-  Var G_PFIFLAG            ; Multi-purpose variable:
-                           ; (1) used to indicate if banner was shown before the 'WELCOME' page
-                           ; (2) used to avoid unnecessary Install/Upgrade button text updates
+  Var G_PFIFLAG            ; used to indicate if banner was shown before the 'WELCOME' page
 
   Var G_NOTEPAD            ; path to notepad.exe ("" = not found in search path)
 
   Var G_WINUSERNAME        ; current Windows user login name
   Var G_WINUSERTYPE        ; user group ('Admin', 'Power', 'User', 'Guest' or 'Unknown')
+
+  Var G_PARSER             ; used to indicate which Nihongo (Japanese) parser is to be installed
+                           ; (1) Internal, (2) Kakasi (the default), or (3) MeCab
+                           ; (if "MeCab" is selected then it will be downloaded during the install)
 
   Var G_SSL_ONLY           ; 1 = SSL-only installation, 0 = normal installation
 
@@ -366,28 +465,24 @@
 
   VIProductVersion "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Automatic email classification"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
   !ifndef ENGLISH_MODE
-    !ifndef NO_KAKASI
-      VIAddVersionKey "Build"               "Multi-Language installer (with Kakasi)"
-    !else
-      VIAddVersionKey "Build"               "Multi-Language installer (without Kakasi)"
-    !endif
+      VIAddVersionKey "Build"               "Multi-Language installer"
   !else
-    !ifndef NO_KAKASI
-      VIAddVersionKey "Build"               "English-Mode installer (with Kakasi)"
-    !else
-      VIAddVersionKey "Build"               "English-Mode installer (without Kakasi)"
-    !endif
+      VIAddVersionKey "Build"               "English-Mode installer"
   !endif
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -441,13 +536,17 @@
 
   !define MUI_WELCOMEFINISHPAGE_BITMAP        "special.bmp"
 
+  !define MUI_UNWELCOMEFINISHPAGE_BITMAP      "special.bmp"
+
   ;----------------------------------------------------------------
-  ;  Interface Settings - Installer FINISH Page Interface Settings
+  ;  Interface Settings - Installer/Uninstaller FINISH Page Interface Settings
   ;----------------------------------------------------------------
 
   ; Debug aid: Hide the installation log but let user display it (using "Show details" button)
 
   !define MUI_FINISHPAGE_NOAUTOCLOSE
+
+  !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
   ;----------------------------------------------------------------
   ;  Interface Settings - Abort Warning Settings
@@ -465,6 +564,10 @@
 
   !define MUI_CUSTOMFUNCTION_GUIINIT          "PFIGUIInit"
 
+  ; Use a custom 'un.onGUIInit' function to add language-specific texts to custom page INI files
+
+  !define MUI_CUSTOMFUNCTION_UNGUIINIT        "un.PFIGUIInit"
+
   ;----------------------------------------------------------------
   ; Language Settings for MUI pages
   ;----------------------------------------------------------------
@@ -478,6 +581,7 @@
   ; This makes it easy to recover from a previous 'bad' choice of language for the installer
 
   !define MUI_LANGDLL_ALWAYSSHOW
+  !define MUI_LANGDLL_ALLLANGUAGES
 
   ; Remember user's language selection and offer this as the default when re-installing
   ; (uninstaller also uses this setting to determine which language is to be used)
@@ -494,11 +598,10 @@
   ; Installer Page - WELCOME
   ;---------------------------------------------------
 
-  ; Use a "pre" function for the 'WELCOME' page to get the user name and user rights
-  ; (For this build, if user has 'Admin' rights we perform a multi-user install,
-  ; otherwise we perform a single-user install)
+  ; Use a "pre" function for the 'WELCOME' page to remove the banner
+  ; (if one has been displayed)
 
-  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "CheckUserRights"
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "RemoveBanner"
 
   !define MUI_WELCOMEPAGE_TEXT                "$(PFI_LANG_WELCOME_INFO_TEXT)"
 
@@ -524,6 +627,12 @@
 ##  !define MUI_LICENSEPAGE_RADIOBUTTONS
 
   !insertmacro MUI_PAGE_LICENSE               "..\engine\license"
+
+  ;---------------------------------------------------
+  ; Installer Page - Allow user to select the "Nihongo" parser, if "Nihongo" language selected
+  ;---------------------------------------------------
+
+  Page custom ChooseParser HandleParserSelection
 
   ;---------------------------------------------------
   ; Installer Page - Select Components to be installed
@@ -587,24 +696,116 @@
   !define MUI_PAGE_CUSTOMFUNCTION_PRE         "InstallUserData"
 
   ; Provide a checkbox to let user display the Release Notes for this version of POPFile
+  ; (MUI_FINISHPAGE_SHOWREADME_TEXT is set to the MUI default string here in order to
+  ; work around a NSIS compiler bug which corrupts the Japanese version of the string)
 
   !define MUI_FINISHPAGE_SHOWREADME
+  !define MUI_FINISHPAGE_SHOWREADME_TEXT      "$(MUI_TEXT_FINISH_SHOWREADME)"
   !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
   !define MUI_FINISHPAGE_SHOWREADME_FUNCTION  "ShowReadMe"
 
   !insertmacro MUI_PAGE_FINISH
 
   ;---------------------------------------------------
+  ; Uninstaller Page - Select "Change" or "Uninstall" Mode
+  ;---------------------------------------------------
+
+  UninstPage custom un.SelectMode
+
+  ;---------------------------------------------------
+  ; Uninstaller Page - Allow user to select the "Nihongo" parser, if "Nihongo" language selected
+  ;---------------------------------------------------
+
+  UninstPage custom un.ChooseParser un.HandleParserSelection
+
+  ;---------------------------------------------------
+  ; Uninstaller Page - Select Components to be installed in "Change" mode
+  ;---------------------------------------------------
+
+  ; Use a "pre" function to skip the COMPONENTS page if uninstalling POPFile
+
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "un.ComponentsCheckModeFlag"
+
+  ; Override some default strings because we are ADDING components, not uninstalling them
+
+  !define MUI_PAGE_HEADER_SUBTEXT             "$(MUI_TEXT_COMPONENTS_SUBTITLE)"
+  !define MUI_COMPONENTSPAGE_TEXT_TOP         "$(^ComponentsText)"
+  !define MUI_COMPONENTSPAGE_TEXT_COMPLIST    "$(^ComponentsSubText2_NoInstTypes)"
+
+  !insertmacro MUI_UNPAGE_COMPONENTS
+
+  ;---------------------------------------------------
+  ; Uninstaller Page - Check available space in "Change" mode
+  ;---------------------------------------------------
+
+  ; Use a "pre" function to skip the DIRECTORY page when uninstalling
+
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "un.DirectoryCheckModeFlag"
+
+  ; We are only going to add files to an existing installation so the DIRECTORY
+  ; page is for information only (it shows the required space, available space
+  ; and the location which will be used)
+
+  !define MUI_PAGE_CUSTOMFUNCTION_SHOW        "un.MakeDirectoryPageReadOnly"
+
+  ; Replace the default text because we are NOT uninstalling POPFile
+
+  !define MUI_PAGE_HEADER_TEXT                "$(PFI_LANG_UN_DIR_TITLE)"
+  !define MUI_PAGE_HEADER_SUBTEXT             "$(PFI_LANG_UN_DIR_SUBTITLE)"
+
+  !define MUI_DIRECTORYPAGE_TEXT_TOP          "$(PFI_LANG_UN_DIR_EXPLANATION)"
+
+  !define MUI_DIRECTORYPAGE_TEXT_DESTINATION  "$(PFI_LANG_UN_DIR_TEXT_DESTN)"
+
+  !insertmacro MUI_UNPAGE_DIRECTORY
+
+  ;---------------------------------------------------
   ; Uninstaller Page - Confirmation Page
   ;---------------------------------------------------
+
+  ; Use a "pre" function to skip the confirmation page if not uninstalling POPFile
+
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "un.UninstallCheckModeFlag"
 
   !insertmacro MUI_UNPAGE_CONFIRM
 
   ;---------------------------------------------------
-  ; Uninstaller Page - Uninstall POPFile
+  ; Uninstaller Page - Modify or Uninstall POPFile
   ;---------------------------------------------------
 
+  ; Override the standard "Uninstallation complete..." page header
+
+  !define MUI_INSTFILESPAGE_FINISHHEADER_TEXT     "$(PFI_LANG_UN_INST_OK_TITLE)"
+  !define MUI_INSTFILESPAGE_FINISHHEADER_SUBTEXT  "$(PFI_LANG_UN_INST_OK_SUBTITLE)"
+
+  ; Override the standard "Uninstallation Aborted..." page header
+
+  !define MUI_INSTFILESPAGE_ABORTHEADER_TEXT      "$(PFI_LANG_UN_INST_BAD_TITLE)"
+  !define MUI_INSTFILESPAGE_ABORTHEADER_SUBTEXT   "$(PFI_LANG_UN_INST_BAD_SUBTITLE)"
+
+  ; Use a "show" function to adjust the header for the INSTFILES page when "Change" mode is selected
+
+  !define MUI_PAGE_CUSTOMFUNCTION_SHOW            "un.AdjustUninstHeaderText"
+
   !insertmacro MUI_UNPAGE_INSTFILES
+
+  ;---------------------------------------------------
+  ; Uninstaller Page - FINISH
+  ;---------------------------------------------------
+
+  ; Override the standard "Uninstall complete" text
+
+  !define MUI_FINISHPAGE_TITLE                    "$(PFI_LANG_UN_FINISH_TITLE)"
+  !define MUI_FINISHPAGE_TEXT                     "$(PFI_LANG_UN_FINISH_TEXT)"
+  !define MUI_FINISHPAGE_TITLE_3LINES
+
+  ; If we need a reboot then we might have been modifying the installation
+  ; so override the standard "reboot to complete the uninstall" text
+  ; (Quick fix: this is less confusing than having the wrong text on an uninstall)
+
+  !define MUI_FINISHPAGE_TEXT_REBOOT              "$(MUI_TEXT_FINISH_INFO_REBOOT)"
+
+  !insertmacro MUI_UNPAGE_FINISH
 
 #--------------------------------------------------------------------------
 # Language Support for the installer and uninstaller
@@ -616,7 +817,7 @@
 
   ; At least one language must be specified for the installer (the default is "English")
 
-  !insertmacro PFI_LANG_LOAD "English"
+  !insertmacro PFI_LANG_LOAD "English" "-"
 
   ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
 
@@ -624,6 +825,21 @@
 
         !include "pfi-languages.nsh"
 
+  !endif
+
+  ;--------------------------------------------------------------------------
+  ; The strings used in connection with the installation of the "Nihongo Parser"
+  ; are only provided in two languages: Japanese (for the normal multi-language
+  ; build of the installer) and English (for the special "English-only" build).
+  ; Therefore the necessary strings are simply defined as constants in separate
+  ; files, only one of which is included at build time (instead of putting the
+  ; strings in the *-pfi.nsh files used for all of the other translated text).
+  ;--------------------------------------------------------------------------
+
+  !ifdef ENGLISH_MODE
+      !include "languages\English-parser.nsh"
+  !else
+      !include "languages\Japanese-parser.nsh"
   !endif
 
 #--------------------------------------------------------------------------
@@ -674,12 +890,26 @@
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
+  ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
+  ReserveFile "${NSISDIR}\Plugins\inetc.dll"
+  ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
+  ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
+  ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
+  ReserveFile "${NSISDIR}\Plugins\UAC.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
+  ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
+  ReserveFile "${NSISDIR}\Plugins\ZipDLL.dll"
   ReserveFile "ioG.ini"
+  ReserveFile "ioP.ini"
+  ReserveFile "ioUM.ini"
   ReserveFile "${C_RELEASE_NOTES}"
+  ReserveFile /nonfatal "${C_JAPANESE_RELEASE_NOTES}"
+  ReserveFile "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
+
+;  ReserveFile "SSL_pm.pat"     ; 0.22.5 (and later releases) do not need any SSL patches (yet)
 
 #--------------------------------------------------------------------------
 # Installer Function: .onInit - installer starts by offering a choice of languages
@@ -687,7 +917,76 @@
 
 Function .onInit
 
+  ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
+
+  !define L_UAC_0   $0
+  !define L_UAC_1   $1
+  !define L_UAC_2   $2
+  !define L_UAC_3   $3
+
   ; The reason why '.onInit' preserves the registers it uses is that it makes debugging easier!
+
+  Push ${L_UAC_0}
+  Push ${L_UAC_1}
+  Push ${L_UAC_2}
+  Push ${L_UAC_3}
+
+  ; Initialise the G_WINUSERNAME and $G_WINUSERTYPE globals _before_ trying to elevate
+  ; as this makes it easier to cope with the visible and hidden processes after elevation
+
+  ; The 'UserInfo' plugin may return an error if run on a Win9x system but since Win9x systems
+  ; do not support different account types, we treat this error as if user has 'Admin' rights.
+
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
+
+  ; Assume Win9x system, so user has 'Admin' rights
+  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
+
+  StrCpy $G_WINUSERNAME "UnknownUser"
+  StrCpy $G_WINUSERTYPE "Admin"
+  Goto UAC_Elevate
+
+got_name:
+  Pop $G_WINUSERNAME
+  StrCmp $G_WINUSERNAME "" 0 get_usertype
+  StrCpy $G_WINUSERNAME "UnknownUser"
+
+get_usertype:
+  UserInfo::GetAccountType
+  Pop $G_WINUSERTYPE
+  StrCmp $G_WINUSERTYPE "Admin" UAC_Elevate
+  StrCmp $G_WINUSERTYPE "Power" UAC_Elevate
+  StrCmp $G_WINUSERTYPE "User" UAC_Elevate
+  StrCmp $G_WINUSERTYPE "Guest" UAC_Elevate
+  StrCpy $G_WINUSERTYPE "Unknown"
+
+  ; Use the UAC plugin to ensure that this installer runs with 'administrator' privileges
+  ; (UAC = Vista's new "User Account Control" feature).
+
+UAC_Elevate:
+  UAC::RunElevated
+  StrCmp 1223 ${L_UAC_0} UAC_ElevationAborted   ; Jump if UAC dialog was aborted by user
+  StrCmp 0 ${L_UAC_0} 0 UAC_Err                 ; If ${L_UAC_0} is not 0 then an error was detected
+  StrCmp 1 ${L_UAC_1} 0 UAC_Success             ; Are we the real deal or just the wrapper ?
+  Quit                                          ; UAC not supported (probably pre-NT6), run as normal
+
+UAC_Err:
+  MessageBox mb_iconstop "Unable to elevate , error ${L_UAC_0}"
+  Abort
+
+UAC_ElevationAborted:
+  MessageBox mb_iconstop "This installer requires admin access, aborting!"
+  Abort
+
+UAC_Success:
+  StrCmp 1 ${L_UAC_3} continue                ; Jump if we are a member of the admin group (any OS)
+  StrCmp 3 ${L_UAC_1} 0 UAC_ElevationAborted  ; Can we try to elevate again ?
+  MessageBox mb_iconstop "This installer requires admin access, try again"
+  goto UAC_Elevate                            ; ... try again
+
+continue:
 
   !define L_INPUT_FILE_HANDLE   $R9
   !define L_OUTPUT_FILE_HANDLE  $R8
@@ -704,7 +1003,18 @@ Function .onInit
   !endif
 
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioG.ini"
+  !insertmacro MUI_INSTALLOPTIONS_EXTRACT "ioP.ini"
+
+  ; The 1.0.0 release introduced some significant improvements to the support for
+  ; the Japanese language so a Japanese version of the release notes was provided
+  ; for that release. If future releases do not have a Japanese translation of these
+  ; notes then the normal English version will be used.
+
   File "/oname=$PLUGINSDIR\${C_README}" "${C_RELEASE_NOTES}"
+  StrCmp $LANGUAGE ${LANG_JAPANESE} 0 make_txt_file
+  File /nonfatal "/oname=$PLUGINSDIR\${C_README}" "${C_JAPANESE_RELEASE_NOTES}"
+
+make_txt_file:
 
   ; Ensure the release notes are in a format which the standard Windows NOTEPAD.EXE can use.
   ; When the "POPFile" section is processed, the converted release notes will be copied to the
@@ -726,6 +1036,7 @@ loop:
 close_files:
   FileClose ${L_INPUT_FILE_HANDLE}
   FileClose ${L_OUTPUT_FILE_HANDLE}
+  SetFileAttributes "$PLUGINSDIR\${C_README}.txt" READONLY
 
   Pop ${L_TEMP}
   Pop ${L_OUTPUT_FILE_HANDLE}
@@ -734,6 +1045,37 @@ close_files:
   !undef L_INPUT_FILE_HANDLE
   !undef L_OUTPUT_FILE_HANDLE
   !undef L_TEMP
+
+  Pop ${L_UAC_3}
+  Pop ${L_UAC_2}
+  Pop ${L_UAC_1}
+  Pop ${L_UAC_0}
+
+  !undef L_UAC_0
+  !undef L_UAC_1
+  !undef L_UAC_2
+  !undef L_UAC_3
+
+FunctionEnd
+
+
+#--------------------------------------------------------------------------
+# Installer Function: .OnInstFailed               (required by UAC plugin)
+#--------------------------------------------------------------------------
+
+Function .OnInstFailed
+
+  UAC::Unload     ; Must call unload!
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: .OnInstSuccess              (required by UAC plugin)
+#--------------------------------------------------------------------------
+
+Function .OnInstSuccess
+
+  UAC::Unload     ; Must call unload!
 
 FunctionEnd
 
@@ -781,11 +1123,12 @@ use_file_association:
   Goto continue
 
 notes_ignored:
+  BringToFront
 
   ; There may be a slight delay at this point and on some systems the 'WELCOME' page may appear
   ; in two stages (first an empty MUI page appears and a little later the page contents appear).
   ; This looks a little strange (and may prompt the user to start clicking buttons too soon)
-  ; so we display a banner to reassure the user. The banner will be removed by 'CheckUserRights'
+  ; so we display a banner to reassure the user. The banner will be removed by 'RemoveBanner'
 
   StrCpy $G_PFIFLAG "banner displayed"
 
@@ -793,18 +1136,24 @@ notes_ignored:
 
 continue:
 
-  !ifndef NO_KAKASI
+  ; If 'Nihongo' (Japanese) language has been selected for the installer, ensure the
+  ; 'Nihongo Parser' entry is shown on the COMPONENTS page to confirm that a parser will
+  ; be installed. The "Nihongo Parser Selection" page appears immediately before the
+  ; COMPONENTS page.
 
-      ; Ensure the 'Kakasi' section is selected if 'Japanese' has been chosen
-
-      Call HandleKakasi
-
-  !endif
+  Call ShowOrHideNihongoParser
 
   StrCpy $G_SSL_ONLY "0"    ; assume a full installation is required
-  Call PFI_GetParameters
-  Pop ${L_RESERVED}
-  StrCmp ${L_RESERVED} "/SSL" 0 exit
+  Call PFI_GetParameters    ; The UAC plugin may modify the command-line
+  Push "/SSL"               ; so we need to check for "/SSL" anywhere on
+  Call PFI_StrStr           ; the command-line (instead of assuming the
+  Pop ${L_RESERVED}         ; command-line is either /SSL or empty)
+  StrCmp ${L_RESERVED} "" exit
+  StrCpy ${L_RESERVED} ${L_RESERVED} 5
+  StrCmp ${L_RESERVED} "/SSL" sslonly
+  StrCmp ${L_RESERVED} "/SSL " 0 exit
+
+sslonly:
   StrCpy $G_SSL_ONLY "1"    ; just download and install the SSL support files
 
 exit:
@@ -812,36 +1161,6 @@ exit:
 
   !undef L_RESERVED
 
-FunctionEnd
-
-#--------------------------------------------------------------------------
-# Installer Function: .onVerifyInstDir
-#
-# This function is called every time the user changes the installation directory. It ensures
-# that the button used to start the installation process is labelled "Install" or "Upgrade"
-# depending upon the currently selected directory. As this function is called EVERY time the
-# directory is altered, the button text is only updated when a change is required.
-#
-# The '$G_PFIFLAG' global variable is initialized by 'CheckForExistingLocation'
-# (the "pre" function for the PROGRAM DIRECTORY page).
-#--------------------------------------------------------------------------
-
-Function .onVerifyInstDir
-
-  IfFileExists "$INSTDIR\popfile.pl" upgrade
-  StrCmp $G_PFIFLAG "install" exit
-  StrCpy $G_PFIFLAG "install"
-  GetDlgItem $G_DLGITEM $HWNDPARENT 1
-  SendMessage $G_DLGITEM ${WM_SETTEXT} 0 "STR:$(^InstallBtn)"
-  Goto exit
-
-upgrade:
-  StrCmp $G_PFIFLAG "upgrade" exit
-  StrCpy $G_PFIFLAG "upgrade"
-  GetDlgItem $G_DLGITEM $HWNDPARENT 1
-  SendMessage $G_DLGITEM ${WM_SETTEXT} 0 "STR:$(PFI_LANG_INST_BTN_UPGRADE)"
-
-exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
@@ -859,7 +1178,7 @@ Section "-StartLog"
   DetailPrint "------------------------------------------------------------"
   DetailPrint "Command-line: $CMDLINE"
   DetailPrint "User Details: $G_WINUSERNAME ($G_WINUSERTYPE)"
-  DetailPrint "PFI Language: $LANGUAGE"
+  DetailPrint "PFI Language: $(^Language) ($LANGUAGE)"
   DetailPrint "------------------------------------------------------------"
   Call PFI_GetDateTimeStamp
   Pop $G_PLS_FIELD_1
@@ -921,6 +1240,9 @@ Section "Skins" SecSkins
   SetOutPath "$G_ROOTDIR\skins\coolgreen"
   File "..\engine\skins\coolgreen\*.*"
 
+  SetOutPath "$G_ROOTDIR\skins\coolmint"
+  File "..\engine\skins\coolmint\*.*"
+
   SetOutPath "$G_ROOTDIR\skins\coolorange"
   File "..\engine\skins\coolorange\*.*"
 
@@ -936,14 +1258,11 @@ Section "Skins" SecSkins
   SetOutPath "$G_ROOTDIR\skins\green"
   File "..\engine\skins\green\*.*"
 
-  SetOutPath "$G_ROOTDIR\skins\klingon"
-  File "..\engine\skins\klingon\*.*"
-
   SetOutPath "$G_ROOTDIR\skins\lavish"
   File "..\engine\skins\lavish\*.*"
 
-  SetOutPath "$G_ROOTDIR\skins\lrclaptop"
-  File "..\engine\skins\lrclaptop\*.*"
+  SetOutPath "$G_ROOTDIR\skins\ocean"
+  File "..\engine\skins\ocean\*.*"
 
   SetOutPath "$G_ROOTDIR\skins\oceanblue"
   File "..\engine\skins\oceanblue\*.*"
@@ -951,20 +1270,14 @@ Section "Skins" SecSkins
   SetOutPath "$G_ROOTDIR\skins\orange"
   File "..\engine\skins\orange\*.*"
 
-  SetOutPath "$G_ROOTDIR\skins\osx"
-  File "..\engine\skins\osx\*.*"
-
   SetOutPath "$G_ROOTDIR\skins\orangecream"
   File "..\engine\skins\orangecream\*.*"
 
+  SetOutPath "$G_ROOTDIR\skins\osx"
+  File "..\engine\skins\osx\*.*"
+
   SetOutPath "$G_ROOTDIR\skins\outlook"
   File "..\engine\skins\outlook\*.*"
-
-  SetOutPath "$G_ROOTDIR\skins\prjbluegrey"
-  File "..\engine\skins\prjbluegrey\*.*"
-
-  SetOutPath "$G_ROOTDIR\skins\prjsteelbeach"
-  File "..\engine\skins\prjsteelbeach\*.*"
 
   SetOutPath "$G_ROOTDIR\skins\simplyblue"
   File "..\engine\skins\simplyblue\*.*"
@@ -983,9 +1296,6 @@ Section "Skins" SecSkins
 
   SetOutPath "$G_ROOTDIR\skins\strawberryrose"
   File "..\engine\skins\strawberryrose\*.*"
-
-  SetOutPath "$G_ROOTDIR\skins\tinydefault"
-  File "..\engine\skins\tinydefault\*.*"
 
   SetOutPath "$G_ROOTDIR\skins\tinygrey"
   File "..\engine\skins\tinygrey\*.*"
@@ -1019,6 +1329,11 @@ Section "Languages" SecLangs
   SetOutPath "$G_ROOTDIR\languages"
   File "..\engine\languages\*.msg"
 
+  ; After the 1.0.0 release the Brazilian Portuguese UI language file was
+  ; renamed so we remove the old version of the file to avoid confusion
+
+  Delete "$G_ROOTDIR\languages\Portugues do Brasil.msg"
+
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
@@ -1027,111 +1342,82 @@ Section "Languages" SecLangs
 
 SectionEnd
 
-!ifndef NO_KAKASI
-    #--------------------------------------------------------------------------
-    # Installer Section: (optional) Kakasi component
-    #
-    # This component is automatically installed if 'Japanese' has been selected
-    # as the language for the installer. Normally this component is not seen in
-    # the 'Components' list, but if an English-mode installer is built this
-    # component will be made visible to allow it to be selected by the user.
-    #--------------------------------------------------------------------------
+#==========================================================================
+#==========================================================================
+# The macro-based 'Section' and 'Function' definitions used to handle the
+# selection and installation of the Nihongo Parser are in a separate file
+#==========================================================================
+#==========================================================================
 
-    Section "Kakasi" SecKakasi
+  !include "getparser.nsh"
 
-      !insertmacro SECTIONLOG_ENTER "Kakasi"
+#==========================================================================
+#==========================================================================
 
-      !define L_RESERVED  $0    ; used in system.dll call
+#--------------------------------------------------------------------------
+# Installer Section: Nihongo Parser component (listed on COMPONENTS page when
+# Nihongo language selected, otherwise it is hidden by the 'ShowOrHideNihongoParser'
+# function)
+#
+# Note that this section must always be executed and must always come before
+# the sections for the 'Kakasi', 'MeCab' and 'Internal' Nihongo parsers
+#--------------------------------------------------------------------------
 
-      Push ${L_RESERVED}
+  !insertmacro SECTION_NIHONGO_PARSER ""
 
-      ;--------------------------------------------------------------------------
-      ; Install Kakasi package
-      ;--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Installer Section: (optional) Kakasi component (one of the three Nihongo parsers supported)
+#
+# Although the COMPONENTS page will show a 'Nihongo Parser' component when the installer
+# language is set to 'Nihongo', the individual parser components are never shown there.
+#--------------------------------------------------------------------------
 
-      SetOutPath "$G_ROOTDIR"
-      File /r "${C_KAKASI_DIR}\kakasi"
+  !insertmacro SECTION_KAKASI ""
 
-      ; Add Environment Variables for Kakasi
+#--------------------------------------------------------------------------
+# Installer Section: (optional) MeCab component (one of the three Nihongo parsers supported)
+#
+# Although the COMPONENTS page will show a 'Nihongo Parser' component when the installer
+# language is set to 'Nihongo', the individual parser components are never shown there.
+#--------------------------------------------------------------------------
 
-      Push "ITAIJIDICTPATH"
-      Push "$G_ROOTDIR\kakasi\share\kakasi\itaijidict"
+  !insertmacro SECTION_MECAB ""
 
-      StrCmp $G_WINUSERTYPE "Admin" all_users_1
-      Call PFI_WriteEnvStr
-      Goto next_var
+#--------------------------------------------------------------------------
+# Installer Function: VerifyMeCabInstall
+#
+# Inputs:
+#         (top of stack)     - full path to the top-level MeCab folder
+# Outputs:
+#         (top of stack)     - result ("OK" or "fail")
+#--------------------------------------------------------------------------
 
-    all_users_1:
-      Call PFI_WriteEnvStrNTAU
+  !insertmacro FUNCTION_VERIFY_MECAB_INSTALL ""
 
-    next_var:
-      Push "KANWADICTPATH"
-      Push "$G_ROOTDIR\kakasi\share\kakasi\kanwadict"
+#--------------------------------------------------------------------------
+# Installer Function: GetMeCabFile
+#
+# Inputs:
+#         (top of stack)     - full URL used to download the MeCab file
+# Outputs:
+#         (top of stack)     - status returned by the download plugin
+#--------------------------------------------------------------------------
 
-      StrCmp $G_WINUSERTYPE "Admin" all_users_2
-      Call PFI_WriteEnvStr
-      Goto set_env
+  !insertmacro FUNCTION_GETMECABFILE ""
 
-    all_users_2:
-      Call PFI_WriteEnvStrNTAU
+#--------------------------------------------------------------------------
+# Installer Section: (optional) Internal component (one of the three Nihongo parsers supported)
+#
+# Although the COMPONENTS page will show a 'Nihongo Parser' component when the installer
+# language is set to 'Nihongo', the individual parser components are never shown there.
+#--------------------------------------------------------------------------
 
-    set_env:
-      IfRebootFlag set_vars_now
+  !insertmacro SECTION_INTERNALPARSER ""
 
-      ; Running on a non-Win9x system which already has the correct Kakaksi environment data
-      ; or running on a non-Win9x system
-
-      Call PFI_IsNT
-      Pop ${L_RESERVED}
-      StrCmp ${L_RESERVED} "0" continue
-
-      ; Running on a non-Win9x system so we ensure the Kakasi environment variables
-      ; are updated to match this installation
-
-    set_vars_now:
-      System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
-                    i("ITAIJIDICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\itaijidict").r0'
-      StrCmp ${L_RESERVED} 0 0 itaiji_set_ok
-      MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (ITAIJIDICTPATH)"
-
-    itaiji_set_ok:
-      System::Call 'Kernel32::SetEnvironmentVariableA(t, t) \
-                    i("KANWADICTPATH", "$G_ROOTDIR\kakasi\share\kakasi\kanwadict").r0'
-      StrCmp ${L_RESERVED} 0 0 continue
-      MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_CONVERT_ENVNOTSET) (KANWADICTPATH)"
-
-    continue:
-
-      ;--------------------------------------------------------------------------
-      ; Install Perl modules: base.pm, the entire Encode collection and Text::Kakasi
-      ; (bytes.pm and bytes_heavy.pl are also required but these files became part of
-      ; the standard minimal Perl when support for encrypted cookies was added for 0.23.0)
-      ;--------------------------------------------------------------------------
-
-      SetOutPath "$G_MPLIBDIR"
-      File "${C_PERL_DIR}\lib\base.pm"
-      File "${C_PERL_DIR}\lib\Encode.pm"
-
-      SetOutPath "$G_MPLIBDIR\Encode"
-      File /r "${C_PERL_DIR}\lib\Encode\*"
-
-      SetOutPath "$G_MPLIBDIR\auto\Encode"
-      File /r "${C_PERL_DIR}\lib\auto\Encode\*"
-
-      SetOutPath "$G_MPLIBDIR\Text"
-      File "${C_PERL_DIR}\site\lib\Text\Kakasi.pm"
-
-      SetOutPath "$G_MPLIBDIR\auto\Text\Kakasi"
-      File "${C_PERL_DIR}\site\lib\auto\Text\Kakasi\*"
-
-      Pop ${L_RESERVED}
-
-      !undef L_RESERVED
-
-      !insertmacro SECTIONLOG_EXIT "Kakasi"
-
-    SectionEnd
-!endif
+#--------------------------------------------------------------------------
+# Installer Section Group: Optional POPFile Modules which are not part of the
+# basic (i.e. default) POPFile installation.
+#--------------------------------------------------------------------------
 
 SubSection /e "Optional modules" SubSecOptional
 
@@ -1198,36 +1484,36 @@ Section /o "XMLRPC" SecXMLRPC
   ; Perl modules required to support the POPFile XMLRPC component
 
   SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\site\lib\LWP.pm"
+  File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\re.pm"
-  File "${C_PERL_DIR}\site\lib\URI.pm"
+  File "${C_PERL_DIR}\lib\URI.pm"
 
   SetOutPath "$G_MPLIBDIR\HTTP"
-  File /r "${C_PERL_DIR}\site\lib\HTTP\*"
+  File /r "${C_PERL_DIR}\lib\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\LWP"
-  File /r "${C_PERL_DIR}\site\lib\LWP\*"
+  File /r "${C_PERL_DIR}\lib\LWP\*"
 
   SetOutPath "$G_MPLIBDIR\Net"
-  File "${C_PERL_DIR}\site\lib\Net\HTT*"
+  File "${C_PERL_DIR}\lib\Net\HTT*"
 
   SetOutPath "$G_MPLIBDIR\Net\HTTP"
-  File "${C_PERL_DIR}\site\lib\Net\HTTP\*"
+  File "${C_PERL_DIR}\lib\Net\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\SOAP"
-  File /r "${C_PERL_DIR}\site\lib\SOAP\*"
+  File /r "${C_PERL_DIR}\lib\SOAP\*"
 
   SetOutPath "$G_MPLIBDIR\Time"
   File /r "${C_PERL_DIR}\lib\Time\*"
 
   SetOutPath "$G_MPLIBDIR\URI"
-  File /r "${C_PERL_DIR}\site\lib\URI\*"
+  File /r "${C_PERL_DIR}\lib\URI\*"
 
   SetOutPath "$G_MPLIBDIR\XML"
-  File /r "${C_PERL_DIR}\site\lib\XML\*"
+  File /r "${C_PERL_DIR}\lib\XML\*"
 
   SetOutPath "$G_MPLIBDIR\XMLRPC"
-  File /r "${C_PERL_DIR}\site\lib\XMLRPC\*"
+  File /r "${C_PERL_DIR}\lib\XMLRPC\*"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
@@ -1258,6 +1544,9 @@ Section /o "IMAP" SecIMAP
 
   SetOutpath "$G_ROOTDIR\Services"
   File "..\engine\Services\IMAP.pm"
+
+  SetOutpath "$G_ROOTDIR\Services\IMAP"
+  File "..\engine\Services\IMAP\Client.pm"
 
   Delete "$G_ROOTDIR\POPFile\IMAP.pm"
   Delete "$G_ROOTDIR\Server\IMAP.pm"
@@ -1308,6 +1597,8 @@ SectionEnd
 
   !include "getssl.nsh"
 
+  !insertmacro SSL_SUPPORT_FOR_INSTALLER
+
 SubSectionEnd
 
 #--------------------------------------------------------------------------
@@ -1319,7 +1610,7 @@ SubSectionEnd
 Section "-StopLog"
 
   SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_PROG_SAVELOG) $(PFI_LANG_TAKE_SEVERAL_SECONDS)"
+  DetailPrint "$(PFI_LANG_PROG_SAVELOG)"
   SetDetailsPrint listonly
   Call PFI_GetDateTimeStamp
   Pop $G_PLS_FIELD_1
@@ -1356,15 +1647,13 @@ SectionEnd
 
 #--------------------------------------------------------------------------
 # Component-selection page descriptions
-#
-# There is no need to provide any translations for the 'SecKakasi' description
-# because it is only visible when the installer is built in ENGLISH_MODE.
 #--------------------------------------------------------------------------
 
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecPOPFile}     $(DESC_SecPOPFile)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSkins}       $(DESC_SecSkins)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecLangs}       $(DESC_SecLangs)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecParser}      "${C_NPLS_DESC_SecParser}"
     !insertmacro MUI_DESCRIPTION_TEXT ${SubSecOptional} $(DESC_SubSecOptional)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecNNTP}        $(DESC_SecNNTP)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSMTP}        $(DESC_SecSMTP)
@@ -1372,35 +1661,28 @@ SectionEnd
     !insertmacro MUI_DESCRIPTION_TEXT ${SecIMAP}        $(DESC_SecIMAP)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSOCKS}       $(DESC_SecSOCKS)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSSL}         $(DESC_SecSSL)
-    !ifndef NO_KAKASI
-      !insertmacro MUI_DESCRIPTION_TEXT ${SecKakasi} "Kakasi (used to process Japanese email)"
-    !endif
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
-!ifndef NO_KAKASI
-    #--------------------------------------------------------------------------
-    # Installer Function: HandleKakasi
-    #
-    # This function ensures that when 'Japanese' has been selected as the language
-    # for the installer, the 'Kakasi' section is invisibly selected for installation
-    # (if any other language is selected, we do not select the invisible 'Kakasi' section).
-    #
-    # If the installer is built in ENGLISH_MODE then the 'Kakasi' section will be visible
-    # to allow it to be selected if it is required.
-    #--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Installer Function: ShowOrHideNihongoParser
+#
+# (called by 'PFIGUIInit', our custom '.onGUIInit' function)
+#
+# This function ensures that when 'Nihongo' (Japanese) has been selected as the
+# language for the installer, 'Nihongo Parser' appears in the list of components.
+#
+# If any other language is selected, this component is hidden from view and the
+# three parser sections are disabled (i.e. unselected so nothing gets installed).
+#
+# The default parser is 'Kakasi', as used by POPFile 0.22.5 and earlier releases,
+# and this default is set up here, including the initial state of the three
+# radio buttons used on the "Choose Parser" custom page.
+#
+# Note that the 'Nihongo Parser' section is _always_ executed, even if the user
+# does not select the 'Nihongo' language.
+#--------------------------------------------------------------------------
 
-    Function HandleKakasi
-
-      !insertmacro UnselectSection ${SecKakasi}
-
-      !ifndef ENGLISH_MODE
-            SectionSetText ${SecKakasi} ""            ; this makes the component invisible
-            StrCmp $LANGUAGE ${LANG_JAPANESE} 0 exit
-            !insertmacro SelectSection ${SecKakasi}
-          exit:
-      !endif
-    FunctionEnd
-!endif
+  !insertmacro FUNCTION_SHOW_OR_HIDE_NIHONGO_PARSER ""
 
 #--------------------------------------------------------------------------
 # Installer Function: CheckPerlRequirementsPage
@@ -1454,6 +1736,21 @@ exit:
   !undef L_TEMP
 
 FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: ChooseParser
+#
+# Unlike English and many other languages, Japanese text does not use spaces to separate
+# the words so POPFile has to use a parser in order to analyse the words in a Japanese
+# message. The 1.0.0 release of POPFile is the first to offer a choice of parser (previous
+# releases of POPFile always used the "Kakasi" parser).
+#
+# Three parsers are currently supported: Internal, Kakasi and MeCab. The installer contains
+# all of the files needed for the first two but the MeCab parser uses a large dictionary
+# (a 12 MB download) which will be downloaded during installation if MeCab is selected.
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_CHOOSEPARSER ""
 
 #--------------------------------------------------------------------------
 # Installer Function: GetPermissionToInstall
@@ -1536,13 +1833,21 @@ check_langs:
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_EXTRALANGS)"
 
 check_kakasi:
-  !ifndef NO_KAKASI
-      !insertmacro PFI_SectionNotSelected ${SecKakasi} end_basic
-      StrCpy ${L_TEMP} ""
-      StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_KAKASI)"
+  !insertmacro PFI_SectionNotSelected ${SecKakasi} check_mecab
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}${C_NPLS_SUMMARY_KAKASI}"
 
-    end_basic:
-  !endif
+check_mecab:
+  !insertmacro PFI_SectionNotSelected ${SecMeCab} check_internal
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}${C_NPLS_SUMMARY_MECAB}"
+
+check_internal:
+  !insertmacro PFI_SectionNotSelected ${SecInternalParser} end_basic
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}${C_NPLS_SUMMARY_INTERNAL}"
+
+end_basic:
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${L_TEMP}${IO_NL}${IO_NL}\
       $(PFI_LANG_SUMMARY_OPTIONLIST)"
 
@@ -1600,73 +1905,31 @@ end_optional:
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: CheckUserRights
+# Installer Function: RemoveBanner
 # (the "pre" function for the 'WELCOME' page)
-#
-# On systems which support different types of user, recommend that POPFile is installed by
-# a user with 'Administrative' rights (this makes it easier to use POPFile's multi-user mode).
 #--------------------------------------------------------------------------
 
-Function CheckUserRights
+Function RemoveBanner
 
-  !define L_WELCOME_TEXT  $R9
-
-  Push ${L_WELCOME_TEXT}
-
-  ; The 'UserInfo' plugin may return an error if run on a Win9x system but since Win9x systems
-  ; do not support different account types, we treat this error as if user has 'Admin' rights.
-
-  ClearErrors
-  UserInfo::GetName
-  IfErrors 0 got_name
-
-  ; Assume Win9x system, so user has 'Admin' rights
-  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
-
-  StrCpy $G_WINUSERNAME "UnknownUser"
-  StrCpy $G_WINUSERTYPE "Admin"
-  Goto exit
-
-got_name:
-  Pop $G_WINUSERNAME
-  StrCmp $G_WINUSERNAME "" 0 get_usertype
-  StrCpy $G_WINUSERNAME "UnknownUser"
-
-get_usertype:
-  UserInfo::GetAccountType
-  Pop $G_WINUSERTYPE
-  StrCmp $G_WINUSERTYPE "Admin" exit
-  StrCmp $G_WINUSERTYPE "Power" not_admin
-  StrCmp $G_WINUSERTYPE "User" not_admin
-  StrCmp $G_WINUSERTYPE "Guest" not_admin
-  StrCpy $G_WINUSERTYPE "Unknown"
-
-not_admin:
-
-  ; On the 'WELCOME' page, add a note recommending that POPFile is installed by a user
-  ; with 'Administrator' rights
-
-  !insertmacro MUI_INSTALLOPTIONS_READ "${L_WELCOME_TEXT}" "ioSpecial.ini" "Field 3" "Text"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioSpecial.ini" "Field 3" "Text" \
-      "${L_WELCOME_TEXT}\
-      ${IO_NL}${IO_NL}\
-      $(PFI_LANG_WELCOME_ADMIN_TEXT)"
-
-exit:
-  Pop ${L_WELCOME_TEXT}
-
-  StrCmp $G_PFIFLAG "no banner" no_banner
+  StrCmp $G_PFIFLAG "no banner" exit
 
   ; Remove the banner which was displayed by the 'PFIGUIInit' function
 
   Sleep ${C_MIN_BANNER_DISPLAY_TIME}
   Banner::destroy
 
-no_banner:
-
-  !undef L_WELCOME_TEXT
+exit:
 
 FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: HandleParserSelection
+# (the "leave" function for the Nihongo Parser selection page)
+#
+# Used to handle user input on the Nihongo Parser selection page.
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_HANDLE_PARSER_SELECTION ""
 
 #--------------------------------------------------------------------------
 # Installer Function: CheckSSLOnlyFlag
@@ -1684,9 +1947,9 @@ Function CheckSSLOnlyFlag
   !insertmacro UnselectSection ${SecMinPerl}
   !insertmacro UnselectSection ${SecSkins}
   !insertmacro UnselectSection ${SecLangs}
-  !ifndef NO_KAKASI
-    !insertmacro UnselectSection ${SecKakasi}
-  !endif
+  !insertmacro UnselectSection ${SecKakasi}
+  !insertmacro UnselectSection ${SecMeCab}
+  !insertmacro UnselectSection ${SecInternalParser}
   !insertmacro UnselectSection ${SecNNTP}
   !insertmacro UnselectSection ${SecSMTP}
   !insertmacro UnselectSection ${SecXMLRPC}
@@ -1714,11 +1977,6 @@ FunctionEnd
 #--------------------------------------------------------------------------
 
 Function CheckForExistingLocation
-
-  ; Initialize the $G_PFIFLAG used by the '.onVerifyInstDir' function to avoid sending
-  ; unnecessary messages to change the text on the button used to start the installation
-
-  StrCpy $G_PFIFLAG ""
 
   ReadRegStr $INSTDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
   StrCmp $INSTDIR "" try_HKLM
@@ -1841,6 +2099,7 @@ check_options:
   ; If user has NOT selected a program component on the COMPONENTS page and we find that the
   ; version we are about to upgrade includes that program component then the user is asked for
   ; permission to upgrade the component [To do: disable the component if user says 'No' ??]
+  ; Check the components in alphabetic order for the sake of convenience.
 
   !insertmacro SectionFlagIsSet ${SecIMAP} ${SF_SELECTED} check_nntp look_for_imap
 
@@ -1879,15 +2138,26 @@ look_for_smtp:
   !insertmacro SelectSection ${SecSMTP}
 
 check_socks:
-  !insertmacro SectionFlagIsSet ${SecSOCKS} ${SF_SELECTED} check_xmlrpc look_for_socks
+  !insertmacro SectionFlagIsSet ${SecSOCKS} ${SF_SELECTED} check_ssl look_for_socks
 
 look_for_socks:
-  IfFileExists "$G_ROOTDIR\lib\IO\Socket\Socks.pm" 0 check_xmlrpc
+  IfFileExists "$G_ROOTDIR\lib\IO\Socket\Socks.pm" 0 check_ssl
   StrCpy $G_PLS_FIELD_1 "SOCKS support"
   MessageBox MB_YESNO|MB_ICONQUESTION "$(MBCOMPONENT_PROB_1)\
       ${MB_NL}${MB_NL}\
-      $(MBCOMPONENT_PROB_2)" IDNO check_xmlrpc
+      $(MBCOMPONENT_PROB_2)" IDNO check_ssl
   !insertmacro SelectSection ${SecSOCKS}
+
+check_ssl:
+  !insertmacro SectionFlagIsSet ${SecSSL} ${SF_SELECTED} check_xmlrpc look_for_ssl
+
+look_for_ssl:
+  IfFileExists "$G_ROOTDIR\lib\Net\SSLeay.pm" 0 check_xmlrpc
+  StrCpy $G_PLS_FIELD_1 "SSL Support"
+  MessageBox MB_YESNO|MB_ICONQUESTION "$(MBCOMPONENT_PROB_1)\
+      ${MB_NL}${MB_NL}\
+      $(MBCOMPONENT_PROB_2)" IDNO check_xmlrpc
+  !insertmacro SelectSection ${SecSSL}
 
 check_xmlrpc:
   !insertmacro SectionFlagIsSet ${SecXMLRPC} ${SF_SELECTED} continue look_for_xmlrpc
@@ -1915,6 +2185,8 @@ FunctionEnd
 
 Function InstallUserData
 
+  !define L_UAC_0   $0
+
   ; If we are only downloading and installing the SSL support files, display the FINISH page
 
   StrCmp $G_SSL_ONLY "1" exit
@@ -1924,17 +2196,28 @@ Function InstallUserData
   ; 'setup.exe' installer.
   ; [Future builds may pass more than just a command-line switch to the wizard]
 
+  ; Use the UAC plugin to ensure that adduser.exe runs with 'current user' privileges
+  ; (UAC = Vista's new "User Account Control" feature).
+  ;
+  ; WARNING: The UAC plugin uses $0, $1, $2 and $3 registers
+
   IfRebootFlag special_case
-  Exec '"$G_ROOTDIR\adduser.exe" /install'
+  Push ${L_UAC_0}
+  UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/install" ""
+  Pop ${L_UAC_0}
   Abort
 
 special_case:
-  Exec '"$G_ROOTDIR\adduser.exe" /installreboot'
+  Push ${L_UAC_0}
+  UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/installreboot" ""
+  Pop ${L_UAC_0}
   Abort
 
 exit:
 
   ; Display the FINISH page
+
+  !undef L_UAC_0
 
 FunctionEnd
 
@@ -2032,64 +2315,6 @@ FunctionEnd
 #--------------------------------------------------------------------------
 
 ;!insertmacro ShowPleaseWaitBanner "un."
-
-#--------------------------------------------------------------------------
-# Installer Function: NSIS2IO
-#
-# Convert an NSIS string to a form suitable for use by InstallOptions
-#
-# Inputs:
-#         (top of stack)     - a string to be used on an InstallOptions page
-# Outputs:
-#         (top of stack)     - a safe version of the input which will be displayed correctly
-#
-# Usage:
-#         Push "C:\Install\Workshop\restore"        ; InstallOptions treats '\r' as a CR char
-#         Call NSIS2IO
-#         Pop $R0
-#
-#         ($R0 will now hold "C:\\Install\\Workshop\\restore"
-#          to make InstallOptions display "C:\Install\Workshop\restore"
-#          instead of "C:\Install\Workshop
-#          estore")
-#
-#--------------------------------------------------------------------------
-
-Function NSIS2IO
-  Exch $0               ; The source
-  Push $1               ; The output
-  Push $2               ; Temporary char
-  StrCpy $1 ""          ; Initialise the output
-
-loop:
-  StrCpy $2 $0 1        ; Get the next source char
-  StrCmp $2 "" done     ; Abort when none left
-  StrCpy $0 $0 "" 1     ; Remove it from the source
-  StrCmp $2 "\" "" +3   ; Back-slash?
-  StrCpy $1 "$1\\"
-  Goto loop
-
-  StrCmp $2 "$\r" "" +3 ; Carriage return?
-  StrCpy $1 "$1\r"
-  Goto loop
-
-  StrCmp $2 "$\n" "" +3 ; Line feed?
-  StrCpy $1 "$1\n"
-  Goto loop
-
-  StrCmp $2 "$\t" "" +3 ; Tab?
-  StrCpy $1 "$1\t"
-  Goto loop
-
-  StrCpy $1 "$1$2"      ; Anything else
-  Goto loop
-
-done:
-  StrCpy $0 $1
-  Pop $2
-  Pop $1
-  Exch $0
-FunctionEnd
 
 #--------------------------------------------------------------------------
 # End of 'installer.nsi'

@@ -7,7 +7,7 @@
 #                 to run POPFile for the first time. Some simple "repair work" can also
 #                 be done using this wizard.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -33,18 +33,20 @@
 #  (4) adduser-Uninstall.nsh   - source for the 'User Data' uninstaller (uninstalluser.exe)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -52,13 +54,10 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
-; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date
-; (if the default multi-language installer is compiled).
-;
-; NOTE: The language selection menu order used in this script assumes that the NSIS MUI
-; 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
-; [see 'SMALL NSIS PATCH REQUIRED' in the 'pfi-languages.nsh' file]
+; NOTE: The language selection menu order used in this script assumes that "Nihongo" is
+; used instead of "Japanese" in the language selection menu (see the 'pfi-languages.nsh' file)
 
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
@@ -129,7 +128,7 @@
 #
 # For example, to remove support for the 'Dutch' language, comment-out the line
 #
-#     !insertmacro PFI_LANG_LOAD "Dutch"
+#     !insertmacro PFI_LANG_LOAD "Dutch"        "-"        ; Language 1043
 #
 # in the 'pfi-languages.nsh' file, and comment-out the line
 #
@@ -215,6 +214,12 @@
 
   Caption                "Add POPFile User v${C_PFI_VERSION}"
   UninstallCaption       "Remove POPFile User v${C_PFI_VERSION}"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
   ;----------------------------------------------------------------------
   ; Default location for POPFile User Data files (popfile.cfg and others)
@@ -341,10 +346,13 @@
 
   VIProductVersion                          "${C_PFI_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "POPFile User wizard"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Add/Remove POPFile User wizard"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -355,6 +363,7 @@
     VIAddVersionKey "Build"                 "English-Mode"
   !endif
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -484,6 +493,7 @@
   ; This makes it easy to recover from a previous 'bad' choice of language for the installer
 
   !define MUI_LANGDLL_ALWAYSSHOW
+  !define MUI_LANGDLL_ALLLANGUAGES
 
   ; Remember user's language selection and offer this as the default when re-installing
   ; (uninstaller also uses this setting to determine which language is to be used)
@@ -621,8 +631,11 @@
   !define MUI_FINISHPAGE_RUN_FUNCTION         "RunUI"
 
   ; Provide a checkbox to let user display the Release Notes for this version of POPFile
+  ; (MUI_FINISHPAGE_SHOWREADME_TEXT is set to the MUI default string here in order to
+  ; work around a NSIS compiler bug which corrupts the Japanese version of the string)
 
   !define MUI_FINISHPAGE_SHOWREADME
+  !define MUI_FINISHPAGE_SHOWREADME_TEXT      "$(MUI_TEXT_FINISH_SHOWREADME)"
   !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
   !define MUI_FINISHPAGE_SHOWREADME_FUNCTION  "ShowReadMe"
 
@@ -664,7 +677,7 @@
 
   ; At least one language must be specified for the installer (the default is "English")
 
-  !insertmacro PFI_LANG_LOAD "English"
+  !insertmacro PFI_LANG_LOAD "English" "-"
 
   ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
 
@@ -716,8 +729,11 @@
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
+  ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
+  ReserveFile "${NSISDIR}\Plugins\MoreInfo.dll"
   ReserveFile "${NSISDIR}\Plugins\nsExec.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
+  ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "ioA.ini"
@@ -740,14 +756,26 @@ Function .onInit
   Call PFI_GetParameters
   Pop $G_PFISETUP
   StrCpy $G_PFIFLAG $G_PFISETUP 9
-  StrCmp $G_PFIFLAG "/restore=" special_case
-  StrCmp $G_PFISETUP "/install" special_case
+  StrCmp $G_PFIFLAG "/restore=" restore_case
+  StrCmp $G_PFISETUP "/install" install_case
   StrCmp $G_PFISETUP "/installreboot" 0 normal_startup
   SetRebootFlag true
 
-special_case:
+install_case:
   ReadRegStr $LANGUAGE \
+             "HKLM" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
+  Goto extract_files
+
+restore_case:
+  ReadRegStr $G_PFIFLAG \
              "HKCU" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
+  StrCmp $G_PFIFLAG "" try_installer_language
+  StrCpy $LANGUAGE $G_PFIFLAG
+  Goto extract_files
+
+try_installer_language:
+  ReadRegStr $LANGUAGE \
+             "HKLM" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
   Goto extract_files
 
 normal_startup:
@@ -924,9 +952,18 @@ save_HKLM_root_sfn:
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" 0 update_HKCU_data
   IfFileExists "$G_ROOTDIR\uninstall.exe" 0 update_HKCU_data
+  ClearErrors
+  ReadRegStr ${L_TEMP} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  IfErrors update_AllUsers_uninstall
+  StrCpy ${L_TEMP} ${L_TEMP} 1
+  StrCmp ${L_TEMP} '6' update_HKCU_data
+
+update_AllUsers_uninstall:
+  SetShellVarContext all
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" \
                  "$G_ROOTDIR\uninstall.exe"
+  SetShellVarContext current
 
 update_HKCU_data:
 
@@ -1193,7 +1230,7 @@ skip_rel_notes:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?FrequentlyAskedQuestions"
+              "http://getpopfile.org/docs/FAQ"
 
   !ifndef ENGLISH_MODE
       Goto support
@@ -1201,7 +1238,7 @@ skip_rel_notes:
     japanese_faq:
       WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions"
+                  "http://getpopfile.org/docs/JP:FAQ"
 
     support:
   !endif
@@ -1220,17 +1257,17 @@ skip_rel_notes:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?POPFileDocumentationProject"
+              "http://getpopfile.org/docs"
 
   !ifndef ENGLISH_MODE
-      Goto pfidiagnostic
+      Goto user_data_shortcut
 
     japanese_wiki:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_POPFileDocumentationProject"
+                  "http://getpopfile.org/docs/jp"
 
-    pfidiagnostic:
+    user_data_shortcut:
   !endif
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk" 0 pfidiag_entries
@@ -1239,7 +1276,7 @@ skip_rel_notes:
                  "$G_USERDIR"
 
 pfidiag_entries:
-  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 dbstatus_check
+  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 msgcapture_entry
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\PFI Diagnostic utility.lnk"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
@@ -1251,7 +1288,11 @@ pfidiag_entries:
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk" \
                  "$G_ROOTDIR\pfidiag.exe" "/shortcut"
 
-dbstatus_check:
+msgcapture_entry:
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk" NORMAL
+  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk" \
+                 "$G_ROOTDIR\runpopfile.exe" "/msgcapture"
+
   IfFileExists "$G_ROOTDIR\pfidbstatus.exe" 0 silent_shutdown
   Push $G_USERDIR
   Call PFI_GetSQLdbPathName
@@ -1285,17 +1326,46 @@ set_autostart_set:
 
 end_autostart_set:
 
-  ; Create entry in the Control Panel's "Add/Remove Programs" list
+  ; Create "User Data" entry in the Control Panel's "Add/Remove Programs" list
 
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "DisplayName" "${C_PFI_PRODUCT} Data ($G_WINUSERNAME)"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "UninstallString" "$G_USERDIR\uninstalluser.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "InstallLocation" "$G_USERDIR"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "NoModify" "1"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "NoRepair" "1"
 
+  ; Create "POPFile" (program) entry in "Add/Remove Programs" list (if target is Vista)
+
+  IfFileExists "$G_ROOTDIR\uninstall.exe" 0 all_done
+  ClearErrors
+  ReadRegStr ${L_TEMP} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+  IfErrors all_done
+  StrCpy ${L_TEMP} ${L_TEMP} 1
+  StrCmp ${L_TEMP} '6' 0 all_done
+
+  MoreInfo::GetFileVersion "$G_ROOTDIR\uninstall.exe"
+  Pop ${L_TEMP}
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayName" "${C_PFI_PRODUCT} ${L_TEMP}"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "InstallLocation" "$G_ROOTDIR"
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoModify" "0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "ModifyPath" '"$G_ROOTDIR\uninstall.exe" /MODIFY'
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoElevateOnModify" "1"
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoRepair" "1"
+
+all_done:
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_BE_PATIENT)"
   SetDetailsPrint listonly
@@ -1670,7 +1740,6 @@ use_inherited_lang:
   StrCmp ${L_LANG} "Chinese-Traditional-BIG5" special_case
   StrCmp ${L_LANG} "English-UK" special_case
   StrCmp ${L_LANG} "Hebrew" special_case
-  StrCmp ${L_LANG} "Klingon" special_case
   Goto use_installer_lang
 
 special_case:
@@ -1708,7 +1777,7 @@ use_installer_lang:
         !insertmacro PFI_UI_LANG_CONFIG "NORWEGIAN" "Norsk"
         !insertmacro PFI_UI_LANG_CONFIG "POLISH" "Polish"
         !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESE" "Portugues"
-        !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESEBR" "Portugues do Brasil"
+        !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESEBR" "Portugues-do-Brasil"
         !insertmacro PFI_UI_LANG_CONFIG "RUSSIAN" "Russian"
         !insertmacro PFI_UI_LANG_CONFIG "SLOVAK" "Slovak"
         !insertmacro PFI_UI_LANG_CONFIG "FINNISH" "Suomi"
@@ -1809,7 +1878,7 @@ Section "-MakeBatchFile" SecMakeBatch
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM Debug command: Start POPFile in foreground using 'popfile.pl'${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
-  FileWrite ${L_FILEHANDLE} "$\"%POPFILE_ROOT%\perl.exe$\" $\"%POPFILE_ROOT%\popfile.pl$\" --verbose${MB_NL}"
+  FileWrite ${L_FILEHANDLE} "$\"%POPFILE_ROOT%\perl.exe$\" $\"%POPFILE_ROOT%\popfile.pl$\"${MB_NL}"
   FileWrite ${L_FILEHANDLE} "goto exit${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM Debug command: Start POPFile using the 'Message Capture' utility${MB_NL}"
@@ -2019,7 +2088,7 @@ check_config:
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "1" check_restore_log
   StrCpy $G_SFN_DISABLED "1"
-  
+
   ; Short file names are not supported here, so we cannot accept any path containing spaces.
 
   Push $G_USERDIR
@@ -2206,6 +2275,16 @@ FunctionEnd
 # is case-sensitive so we have to convert the skin name to lowercase otherwise the current
 # skin will not be shown in the Configuration page of the UI (the UI will show the first entry
 # in the list ("blue") instead of the skin currently in use).
+#
+# For the 0.22.5 release POPFile switched from using an old version of the DBD::SQLite package
+# to the newer DBD::SQLite2 package. This change lets POPFile use the most recent SQLite 2.x
+# libraries (POPFile cannot use SQLite3.x libraries yet). If upgrading an installation that
+# currently uses DBD::SQLite then change the configuration in popfile.cfg to use DBD::SQLite2.
+#
+# The 1.0.0 release introduced the ability to select the parser used to split Japanese text
+# into words. Previous releases only supported the 'Kakasi' parser but 1.0.0 offers a choice
+# of 'Kakasi', 'MeCab' or 'Internal', controlled by the new 'bayes_nihongo_parser' parameter.
+# Valid values for this new popfile.cfg parameter are kakasi, mecab or internal.
 #--------------------------------------------------------------------------
 
 Function CheckExistingConfigData
@@ -2221,6 +2300,7 @@ Function CheckExistingConfigData
   !define L_LANG_OLD  $R1     ; old style UI lang parameter
   !define L_TEXTEND   $R0     ; used to ensure correct handling of lines longer than 1023 chars
   !define L_SKIN      $9      ; current skin setting
+  !define L_PARSER    $8      ; current Nihongo parser setting (introduced in 1.0.0 release)
 
   Push ${L_CFG}
   Push ${L_CLEANCFG}
@@ -2233,6 +2313,7 @@ Function CheckExistingConfigData
   Push ${L_LANG_OLD}
   Push ${L_TEXTEND}
   Push ${L_SKIN}
+  Push ${L_PARSER}
 
   StrCpy $G_POP3 ""
   StrCpy $G_GUI ""
@@ -2244,12 +2325,21 @@ Function CheckExistingConfigData
   StrCpy ${L_LANG_NEW} ""
   StrCpy ${L_LANG_OLD} ""
 
+  StrCpy ${L_PARSER} ""
+
   ; See if we can get the current pop3 and gui port from an existing configuration.
   ; There may be more than one entry for these ports in the file - use the last one found
   ; (but give priority to any "html_port" entry).
 
-  FileOpen  ${L_CFG} "$G_USERDIR\popfile.cfg" r
   FileOpen  ${L_CLEANCFG} "$PLUGINSDIR\popfile.cfg" w
+  ClearErrors
+  FileOpen  ${L_CFG} "$G_USERDIR\popfile.cfg" r
+  IfErrors 0 found_eol
+
+  ; This is a clean install so set the UI skin to the default setting
+  ; (there is a skin called 'default' but for the 1.0.0 release we use 'simplyblue')
+
+  FileWrite ${L_CLEANCFG} "html_skin simplyblue${MB_NL}"
 
 found_eol:
   StrCpy ${L_TEXTEND} "<eol>"
@@ -2276,6 +2366,10 @@ loop:
   StrCmp ${L_CMPRE} "windows_trayicon " got_trayicon
   StrCpy ${L_CMPRE} ${L_LNE} 16
   StrCmp ${L_CMPRE} "windows_console " got_console
+  StrCmp ${L_CMPRE} "bayes_dbconnect " got_dbconnect
+
+  StrCpy ${L_CMPRE} ${L_LNE} 21
+  StrCmp ${L_CMPRE} "bayes_nihongo_parser " got_parser
 
   ; do not transfer any UI language settings to the copy of popfile.cfg
 
@@ -2308,6 +2402,20 @@ got_console:
   StrCpy ${L_CONSOLE} ${L_LNE} 1 16
   Goto loop
 
+got_dbconnect:
+  Push ${L_LNE}
+  Push "dbi:SQLite:"
+  Call PFI_StrStr
+  Pop ${L_CMPRE}
+  StrCmp ${L_CMPRE} "" copy_lne
+  StrCpy ${L_CMPRE} ${L_CMPRE} "" 11
+  StrCpy ${L_LNE} "bayes_dbconnect dbi:SQLite2:${L_CMPRE}"
+  Goto copy_lne
+
+got_parser:
+  StrCpy ${L_PARSER} ${L_LNE} "" 21
+  Goto loop
+
 got_lang_new:
   StrCpy ${L_LANG_NEW} ${L_LNE} "" 14
   Goto loop
@@ -2328,20 +2436,48 @@ got_skin:
   Call PFI_TrimNewlines
   Pop ${L_SKIN}
 
+  ; Originally the skins were all defined in a single 'skins'
+  ; folder. When the new skin template system was introduced
+  ; each skin was given its own folder with the folder's name
+  ; being used to select the skin. These folder names are in
+  ; lowercase so if we are upgrading a very old installation
+  ; we use the 'PFI_SkinCaseChange' macro to ensure that the
+  ; skin parameter in popfile.cfg uses lowercase.
+  ;
+  ; For the 1.0.0 release some significant skin changes have
+  ; been made:
+  ;
+  ; (a) the almost identical 'lrclaptop', 'tinydefault' and
+  ;     'smalldefault' skins have been merged into a revised
+  ;     version of 'smalldefault'
+  ;
+  ; (b) the 'klingon', 'prjbluegrey' and 'prjsteelbeach' skins
+  ;     have been dropped so we fallback to the default skin
+  ;     if any of these skins is currently selected
+  ;
+  ;     (Note that for the 1.0.0 release the default skin is
+  ;     'simplyblue' even though there's a skin called 'default')
+  ;
+  ; The 'PFI_SkinCaseChange' macro provides an easy way to achieve
+  ; the necessary changes if the user currently uses any of the
+  ; merged or dropped skins.
+
   !insertmacro PFI_SkinCaseChange "CoolBlue"       "coolblue"
   !insertmacro PFI_SkinCaseChange "CoolBrown"      "coolbrown"
   !insertmacro PFI_SkinCaseChange "CoolGreen"      "coolgreen"
   !insertmacro PFI_SkinCaseChange "CoolOrange"     "coolorange"
   !insertmacro PFI_SkinCaseChange "CoolYellow"     "coolyellow"
+  !insertmacro PFI_SkinCaseChange "klingon"        "simplyblue"
   !insertmacro PFI_SkinCaseChange "Lavish"         "lavish"
-  !insertmacro PFI_SkinCaseChange "LRCLaptop"      "lrclaptop"
+  !insertmacro PFI_SkinCaseChange "LRCLaptop"      "smalldefault"
   !insertmacro PFI_SkinCaseChange "orangeCream"    "orangecream"
-  !insertmacro PFI_SkinCaseChange "PRJBlueGrey"    "prjbluegrey"
-  !insertmacro PFI_SkinCaseChange "PRJSteelBeach"  "prjsteelbeach"
+  !insertmacro PFI_SkinCaseChange "PRJBlueGrey"    "simplyblue"
+  !insertmacro PFI_SkinCaseChange "PRJSteelBeach"  "simplyblue"
   !insertmacro PFI_SkinCaseChange "SimplyBlue"     "simplyblue"
   !insertmacro PFI_SkinCaseChange "Sleet"          "sleet"
   !insertmacro PFI_SkinCaseChange "Sleet-RTL"      "sleet-rtl"
   !insertmacro PFI_SkinCaseChange "StrawberryRose" "strawberryrose"
+  !insertmacro PFI_SkinCaseChange "tinydefault"    "smalldefault"
 
 save_skin_setting:
   StrCpy ${L_LNE} "${L_CMPRE}${L_SKIN}${MB_NL}"
@@ -2384,11 +2520,28 @@ check_trayicon:
   StrCmp ${L_TRAYICON} "0" found_trayicon
   StrCmp ${L_TRAYICON} "1" found_trayicon
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "?"
-  Goto close_cleancopy
+  Goto check_parser
 
 found_trayicon:
   FileWrite ${L_CLEANCFG} "windows_trayicon ${L_TRAYICON}${MB_NL}"
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "${L_TRAYICON}"
+
+check_parser:
+  StrCmp ${L_PARSER} "" parser_not_previously_defined
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "NihongoParser" "${L_PARSER}"
+  ReadRegStr ${L_CMPRE} HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
+  StrCmp ${L_CMPRE} "" retain_setting
+  StrCpy ${L_PARSER} ${L_CMPRE}
+
+retain_setting:
+  FileWrite ${L_CLEANCFG} "bayes_nihongo_parser ${L_PARSER}${MB_NL}"
+  Goto close_cleancopy
+
+parser_not_previously_defined:
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "NihongoParser" "?"
+  ReadRegStr ${L_CMPRE} HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
+  StrCmp ${L_CMPRE} "" close_cleancopy
+  FileWrite ${L_CLEANCFG} "bayes_nihongo_parser ${L_CMPRE}${MB_NL}"
 
 close_cleancopy:
   FileClose ${L_CLEANCFG}
@@ -2479,6 +2632,7 @@ default_gui:
   StrCpy $G_GUI "8081"
 
 ports_ok:
+  Pop ${L_PARSER}
   Pop ${L_SKIN}
   Pop ${L_TEXTEND}
   Pop ${L_LANG_OLD}
@@ -2502,6 +2656,7 @@ ports_ok:
   !undef L_LANG_OLD
   !undef L_TEXTEND
   !undef L_SKIN
+  !undef L_PARSER
 
 FunctionEnd
 
@@ -2608,9 +2763,9 @@ show_defaults:
     StrCmp $LANGUAGE ${LANG_KOREAN} button_text
   !endif
 
-  ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
+  ; Field 5 = 'Run POPFile at startup' checkbox control
 
-  GetDlgItem $G_DLGITEM $G_HWND 1204            ; Field 5 = 'Run POPFile at startup' checkbox
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioA.ini" "Field 5" "HWND"
   CreateFont $G_FONT "MS Shell Dlg" 10 700      ; use larger & bolder version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
 
@@ -3379,7 +3534,7 @@ continue:
   Call PFI_SetTrayIconMode
   SetOutPath $G_ROOTDIR
   ClearErrors
-  Exec '"$G_ROOTDIR\popfile.exe" --verbose'
+  Exec '"$G_ROOTDIR\popfile.exe"'
   IfErrors 0 startup_ok
   StrCmp ${L_CONSOLE} "f" error_msg
   Sleep ${C_MIN_BANNER_DISPLAY_TIME}

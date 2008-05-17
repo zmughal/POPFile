@@ -4,7 +4,7 @@ package Classifier::MailParse;
 #
 # MailParse.pm --- Parse a mail message or messages into words
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -24,7 +24,6 @@ package Classifier::MailParse;
 # ----------------------------------------------------------------------------
 
 use strict;
-use warnings;
 use locale;
 
 use MIME::Base64;
@@ -43,9 +42,9 @@ my $eksc = "(?:$ksc5601|[\x81-\xC6][\x41-\xFE])"; #extended ksc
 
 # These are used for Japanese support
 
-my %encoding_candidates = (                       # PROFILE BLOCK START
+my %encoding_candidates = (
     'Nihongo' => [ 'cp932', 'euc-jp', '7bit-jis' ]
-);                                                # PROFILE BLOCK STOP
+);
 
 my $ascii = '[\x00-\x7F]'; # ASCII chars
 my $two_bytes_euc_jp = '(?:[\x8E\xA1-\xFE][\xA1-\xFE])'; # 2bytes EUC-JP chars
@@ -53,19 +52,15 @@ my $three_bytes_euc_jp = '(?:\x8F[\xA1-\xFE][\xA1-\xFE])'; # 3bytes EUC-JP chars
 my $euc_jp = "(?:$ascii|$two_bytes_euc_jp|$three_bytes_euc_jp)"; # EUC-JP chars
 
 # Symbols in EUC-JP chars which cannot be considered a part of words
-
 my $symbol_row1_euc_jp = '(?:[\xA1][\xA1-\xBB\xBD-\xFE])';
 my $symbol_row2_euc_jp = '(?:[\xA2][\xA1-\xFE])';
 my $symbol_row8_euc_jp = '(?:[\xA8][\xA1-\xFE])';
 my $symbol_euc_jp = "(?:$symbol_row1_euc_jp|$symbol_row2_euc_jp|$symbol_row8_euc_jp)";
 
-# Cho-on kigou(symbol in Japanese), a special symbol which can appear
-# in middle of words
-
+# Cho-on kigou(symbol in Japanese), a special symbol which can appear in middle of words
 my $cho_on_symbol = '(?:\xA1\xBC)';
 
 # Non-symbol EUC-JP chars
-
 my $non_symbol_two_bytes_euc_jp = '(?:[\x8E\xA3-\xA7\xB0-\xFE][\xA1-\xFE])';
 my $non_symbol_euc_jp = "(?:$non_symbol_two_bytes_euc_jp|$three_bytes_euc_jp|$cho_on_symbol)";
 
@@ -78,7 +73,7 @@ my $euc_jp_katakana = '(?:(?:\xA5[\xA1-\xF6])+(?:\xA1[\xA6\xBC\xB3\xB4])*)+'; # 
 my $euc_jp_hkatakana = '(?:\x8E[\xA6-\xDF])+'; # One or more Half-width Katakana characters
 my $euc_jp_kanji = '[\xB0-\xF4][\xA1-\xFE](?:[\xB0-\xF4][\xA1-\xFE]|\xA1\xB9)?'; # One or two Kanji characters
 
-my $euc_jp_word = '(' .        # PROFILE BLOCK START
+my $euc_jp_word = '(' . 
     $euc_jp_alphanum . '|' . 
     $euc_jp_hiragana . '|' . 
     $euc_jp_katakana . '|' . 
@@ -86,10 +81,10 @@ my $euc_jp_word = '(' .        # PROFILE BLOCK START
     $euc_jp_kanji . '|' . 
     $euc_jp_symbol . '|' . 
     $ascii . '+|' .
-    $three_bytes_euc_jp . ')'; # PROFILE BLOCK STOP
+    $three_bytes_euc_jp . ')';
 
-# HTML entity mapping to character codes, this maps things like &amp;
-# to their corresponding character code
+# HTML entity mapping to character codes, this maps things like &amp; to their corresponding
+# character code
 
 my %entityhash = ('aacute'  => 225,     'Aacute'  => 193,     'Acirc'   => 194,     'acirc'   => 226, # PROFILE BLOCK START
                   'acute'   => 180,     'AElig'   => 198,     'aelig'   => 230,     'Agrave'  => 192,
@@ -244,9 +239,8 @@ sub new
     $self->{lang__} = '';
     $self->{first20__}      = '';
 
-    # For support Quoted Printable in Japanese text, save encoded text
-    # in multiple lines
-
+    # For support Quoted Printable in Japanese text, save encoded text in 
+    # multiple lines
     $self->{prev__} = '';
 
     # Object for the Nihongo (Japanese) parser.
@@ -283,12 +277,12 @@ sub get_color__
         if ( defined( $id ) ) {
             my @buckets = $self->{bayes__}->get_buckets( $self->{color__} );
 
-            return $self->{bayes__}->get_bucket_color( $self->{color__}, # PROFILE BLOCK START
+            return $self->{bayes__}->get_bucket_color( $self->{color__},
                 $self->{bayes__}->get_top_bucket__(
                     $self->{color_userid__},
                     $id,
                     $self->{color_matrix__},
-                    \@buckets ) );                                       # PROFILE BLOCK STOP
+                    \@buckets ) );
         } else {
             return 'black';
         }
@@ -299,10 +293,9 @@ sub get_color__
 #
 # compute_rgb_distance
 #
-# Given two RGB colors compute the distance between them by
-# considering them as points in 3 dimensions and calculating the
-# distance between them (or equivalently the length of a vector
-# between them)
+# Given two RGB colors compute the distance between them by considering them as points
+# in 3 dimensions and calculating the distance between them (or equivalently the length
+# of a vector between them)
 #
 # $left          One color
 # $right         The other color
@@ -312,9 +305,10 @@ sub compute_rgb_distance
 {
     my ( $self, $left, $right ) = @_;
 
-    # TODO: store front/back colors in a RGB hash/array converting to
-    # a hh hh hh format and back is a waste as is repeatedly decoding
-    # from hh hh hh format
+    # TODO: store front/back colors in a RGB hash/array
+    #       converting to a hh hh hh format and back
+    #       is a waste as is repeatedly decoding
+    #       from hh hh hh format
 
     # Figure out where the left color is and then subtract the right
     # color (point from it) to get the vector
@@ -325,8 +319,8 @@ sub compute_rgb_distance
     $right =~ /^(..)(..)(..)$/;
     my ( $r, $g, $b ) = ( $rl - hex($1), $gl - hex($2), $bl - hex($3) );
 
-    # Now apply Pythagoras in 3D to get the distance between them, we
-    # return the int because we don't need decimal level accuracy
+    # Now apply Pythagoras in 3D to get the distance between them, we return
+    # the int because we don't need decimal level accuracy
 
     print "rgb distance: $left -> $right = " . int( sqrt( $r*$r + $g*$g + $b*$b ) ) . "\n" if $self->{debug__};
 
@@ -337,30 +331,27 @@ sub compute_rgb_distance
 #
 # compute_html_color_distance
 #
-# Calls compute_rgb_distance to set up htmlcolordistance__ from the
-# current HTML back and font colors
+# Calls compute_rgb_distance to set up htmlcolordistance__ from the current HTML back and
+# font colors
 #
 # ----------------------------------------------------------------------------
 sub compute_html_color_distance
 {
     my ( $self ) = @_;
 
-    # TODO: store front/back colors in a RGB hash/array converting to
-    # a hh hh hh format and back is a waste as is repeatedly decoding
-    # from hh hh hh format
+    # TODO: store front/back colors in a RGB hash/array
+    #       converting to a hh hh hh format and back
+    #       is a waste as is repeatedly decoding
+    #       from hh hh hh format
 
-    if ( $self->{htmlfontcolor__} ne '' && $self->{htmlbackcolor__} ne '' ) {
-        $self->{htmlcolordistance__} = $self->compute_rgb_distance( # PROFILE BLOCK START
-            $self->{htmlfontcolor__}, $self->{htmlbackcolor__} );   # PROFILE BLOCK STOP
-    }
+    $self->{htmlcolordistance__} = $self->compute_rgb_distance( $self->{htmlfontcolor__}, $self->{htmlbackcolor__} );
 }
 
 # ----------------------------------------------------------------------------
 #
 # map_color
 #
-# Convert an HTML color value into its canonical lower case
-# hexadecimal form with no #
+# Convert an HTML color value into its canonical lower case hexadecimal form with no #
 #
 # $color        A color value found in a tag
 #
@@ -380,9 +371,8 @@ sub map_color
         return $self->{color_map__}{$color};
     } else {
 
-        # Do this after checking the color map, as there is no "#blue"
-        # color TODO: The #, however, is optional in IE.. Do we
-        # pseudo-word this?
+        # Do this after checking the color map, as there is no "#blue" color
+        # TODO: The #, however, is optional in IE.. Do we pseudo-word this?
 
         $color =~ s/^#//;
 
@@ -404,9 +394,10 @@ sub map_color
 
         $quotient += 1 if (length($color) % 3);
 
-        # right-pad entire value to get past the next full multiple of
-        # the quotient ("abc abc abc" needs at least one more
-        # character to make three even triplets)
+        # right-pad entire value to get past the next
+        # full multiple of the quotient ("abc abc abc"
+        # needs at least one more character to make
+        # three even triplets)
 
         $color .= "00" . "0" x $quotient;
 
@@ -452,8 +443,8 @@ sub map_color
 #
 # increment_word
 #
-# Updates the word frequency for a word without performing any
-# coloring or transformation on the word
+# Updates the word frequency for a word without performing any coloring or transformation
+# on the word
 #
 # $word     The word
 #
@@ -472,8 +463,8 @@ sub increment_word
 #
 # update_pseudoword
 #
-# Updates the word frequency for a pseudoword, note that this differs
-# from update_word because it does no word mangling
+# Updates the word frequency for a pseudoword, note that this differs from update_word
+# because it does no word mangling
 #
 # $prefix       The pseudoword prefix (e.g. header)
 # $word         The pseudoword (e.g. Mime-Version)
@@ -495,7 +486,7 @@ sub update_pseudoword
                 $literal =~ s/</&lt;/g;
                 $literal =~ s/>/&gt;/g;
                 my $color = $self->get_color__($mword);
-                my $to    = "<b style=\"color:$color\"><a title=\"$mword\">$literal</a></b>";
+                my $to    = "<b><font color=\"$color\"><a title=\"$mword\">$literal</a></font></b>";
                 $self->{ut__} .= $to . ' ';
             }
         }
@@ -515,12 +506,11 @@ sub update_pseudoword
 #
 # $word         The word that is being updated
 # $encoded      1 if the line was found in encoded text (base64)
-# $before       The character that appeared before the word in the original
-#               line
+# $before       The character that appeared before the word in the original line
 # $after        The character that appeared after the word in the original line
-# $prefix       A string to prefix any words with in the corpus, used for the
-#               special
+# $prefix       A string to prefix any words with in the corpus, used for the special
 #               identification of values found in for example the subject line
+#
 # ----------------------------------------------------------------------------
 sub update_word
 {
@@ -539,11 +529,11 @@ sub update_word
             my $color = $self->get_color__($mword);
             if ( $encoded == 0 )  {
                 $after = '&' if ( $after eq '>' );
-                if ( !( $self->{ut__} =~ s/($before)\Q$word\E($after)/$1<b style=\"color:$color\">$word<\/b>$2/ ) ) {
+                if ( !( $self->{ut__} =~ s/($before)\Q$word\E($after)/$1<b><font color=\"$color\">$word<\/font><\/b>$2/ ) ) {
                     print "Could not find $word for colorization\n" if ( $self->{debug__} );
                 }
             } else {
-                $self->{ut__} .= "<span style=\"color:$color\">$word<\/span> ";
+                $self->{ut__} .= "<font color=\"$color\">$word<\/font> ";
             }
         }
 
@@ -559,9 +549,8 @@ sub update_word
 #
 # $bigline      The line to split into words and add to the word counts
 # $encoded      1 if the line was found in encoded text (base64)
-# $prefix       A string to prefix any words with in the corpus, used for the
-#               special identification of values found in for example the
-#               subject line
+# $prefix       A string to prefix any words with in the corpus, used for the special
+#               identification of values found in for example the subject line
 #
 # ----------------------------------------------------------------------------
 sub add_line
@@ -571,22 +560,20 @@ sub add_line
 
     print "add_line: [$bigline]\n" if $self->{debug__};
 
-    # If the line is really long then split at every 1k and feed it to
-    # the parser below
+    # If the line is really long then split at every 1k and feed it to the parser below
 
-    # Check the HTML back and font colors to ensure that we are not
-    # about to add words that are hidden inside invisible ink
+    # Check the HTML back and font colors to ensure that we are not about to
+    # add words that are hidden inside invisible ink
 
     if ( $self->{htmlfontcolor__} ne $self->{htmlbackcolor__} ) {
 
-        # If we are adding a line and the colors are different then we
-        # will add a count for the color difference to make sure that
-        # we catch camouflage attacks using similar colors, if the
-        # color similarity is less than 100.  I chose 100 somewhat
-        # arbitrarily but classic black text on white background has a
-        # distance of 441, red/blue or green on white has distance
-        # 255.  100 seems like a reasonable upper bound for tracking
-        # evil spammer tricks with similar colors
+        # If we are adding a line and the colors are different then we will
+        # add a count for the color difference to make sure that we catch
+        # camouflage attacks using similar colors, if the color similarity
+        # is less than 100.  I chose 100 somewhat arbitrarily but classic
+        # black text on white background has a distance of 441, red/blue or
+        # green on white has distance 255.  100 seems like a reasonable upper
+        # bound for tracking evil spammer tricks with similar colors
 
         if ( $self->{htmlcolordistance__} < 100 ) {
             $self->update_pseudoword( 'html', "colordistance$self->{htmlcolordistance__}", $encoded, '' );
@@ -595,12 +582,11 @@ sub add_line
         while ( $p < length($bigline) ) {
             my $line = substr($bigline, $p, 1024);
 
-            # mangle up html character entities these are just the low
-            # ISO-Latin1 entities see:
-            # http://www.w3.org/TR/REC-html32#latin1 TODO: find a way
-            # to make this (and other similar stuff) highlight without
-            # using the encoded content printer or modifying
-            # $self->{ut__}
+            # mangle up html character entities
+            # these are just the low ISO-Latin1 entities
+            # see: http://www.w3.org/TR/REC-html32#latin1
+            # TODO: find a way to make this (and other similar stuff) highlight
+            #       without using the encoded content printer or modifying $self->{ut__}
 
             while ( $line =~ m/(&(\w{3,6});)/g ) {
                 my $from = $1;
@@ -608,11 +594,10 @@ sub add_line
 
                 if ( defined( $to ) ) {
 
-                    # HTML entities confilict with DBCS and EUC-JP 
-                    # chars. Replace entities with blanks.
+                    # HTML entities confilict with DBCS and EUC-JP chars. Replace entities with blanks.
 
                     if ( $self->{lang__} eq 'Korean' || $self->{lang__} eq 'Nihongo' ) {
-                        $to = ' ';
+                            $to = ' ';
                     } else {
                         $to = chr($to);
                     }
@@ -626,9 +611,7 @@ sub add_line
 
                 # Don't decode odd (nonprintable) characters or < >'s.
 
-                if ( ( ( $2 < 255 ) && ( $2 > 63 ) ) || # PROFILE BLOCK START
-                     ( $2 == 61 ) ||
-                     ( ( $2 < 60 ) && ( $2 > 31 ) ) ) { # PROFILE BLOCK STOP
+                if ( ( ( $2 < 255 ) && ( $2 > 63 ) ) || ( $2 == 61 ) || ( ( $2 < 60 ) && ( $2 > 31 ) ) ) {
                     my $from = $1;
                     my $to   = chr($2);
 
@@ -636,14 +619,12 @@ sub add_line
                         $line       =~ s/$from/$to/g;
                         $self->{ut__} =~ s/$from/$to/g;
                         print "$from -> $to\n" if $self->{debug__};
-                        $self->update_pseudoword( 'html',              # PROFILE BLOCK START
-                                   'numericentity', $encoded, $from ); # PROFILE BLOCK STOP
+                        $self->update_pseudoword( 'html', 'numericentity', $encoded, $from );
                     }
                 }
             }
 
-            # Pull out any email addresses in the line that are marked
-            # with <> and have an @ in them
+            # Pull out any email addresses in the line that are marked with <> and have an @ in them
 
             while ( $line =~ s/(mailto:)?([[:alpha:]0-9\-_\.]+?@([[:alpha:]0-9\-_\.]+\.[[:alpha:]0-9\-_]+))([\"\&\)\?\:\/ >\&\;]|$)// )  {
                 update_word($self, $2, $encoded, ($1?$1:''), '[\&\?\:\/ >\&\;]', $prefix);
@@ -651,7 +632,6 @@ sub add_line
             }
 
             # Grab domain names
-
             while ( $line =~ s/(([[:alpha:]0-9\-_]+\.)+)(com|edu|gov|int|mil|net|org|aero|biz|coop|info|museum|name|pro)([^[:alpha:]0-9\-_\.]|$)/$4/i )  {
                  add_url($self, "$1$3", $encoded, '', '', $prefix);
             }
@@ -681,15 +661,14 @@ sub add_line
             }
 
             if ( $self->{lang__} eq 'Nihongo' ) {
-
                 # In Japanese mode, non-symbol EUC-JP characters should be
                 # matched.
                 #
                 # ^$euc_jp*? is added to avoid incorrect matching.
-                # For example, EUC-JP char represented by code A4C8,
-                # should not match the middle of two EUC-JP chars
-                # represented by CCA4 and C8BE, the second byte of the
-                # first char and the first byte of the second char.
+                # For example, EUC-JP char represented by code A4C8, should not
+                # match the middle of two EUC-JP chars represented by CCA4 and
+                # C8BE, the second byte of the first char and the first byte of
+                # the second char.
 
                 # In Japanese, one character words are common, so care about
                 # words between 2 and 45 characters
@@ -705,12 +684,10 @@ sub add_line
             } else {
                 if ( $self->{lang__} eq 'Korean' ) {
 
-                    # In Korean mode, [[:alpha:]] in regular
-                    # expression is changed to 2bytes chars to support
-                    # 2 byte characters.
+                    # In Korean mode, [[:alpha:]] in regular expression is changed to 2bytes chars
+                    # to support 2 byte characters.
                     #
-                    # In Korean, care about words between 2 and 45
-                    # characters.
+                    # In Korean, care about words between 2 and 45 characters.
 
                     while ( $line =~ s/(([A-Za-z]|$eksc)([A-Za-z\']|$eksc){1,44})([_\-,\.\"\'\)\?!:;\/& \t\n\r]{0,5}|$)// ) {
                         if ( ( $self->{in_headers__} == 0 ) && ( $self->{first20count__} < 20 ) ) {
@@ -722,11 +699,9 @@ sub add_line
                     }
                 } else {
 
-                    # Only care about words between 3 and 45
-                    # characters since short words like an, or, if are
-                    # too common and the longest word in English
-                    # (according to the OED) is
-                    # pneumonoultramicroscopicsilicovolcanoconiosis
+                    # Only care about words between 3 and 45 characters since short words like
+                    # an, or, if are too common and the longest word in English (according to
+                    # the OED) is pneumonoultramicroscopicsilicovolcanoconiosis
 
                     while ( $line =~ s/([[:alpha:]][[:alpha:]\']{1,44})([_\-,\.\"\'\)\?!:;\/& \t\n\r]{0,5}|$)// ) {
                         if ( ( $self->{in_headers__} == 0 ) && ( $self->{first20count__} < 20 ) ) {
@@ -752,8 +727,8 @@ sub add_line
 #
 # update_tag
 #
-# Extract elements from within HTML tags that are considered important
-# 'words' for analysis such as domain names, alt tags,
+# Extract elements from within HTML tags that are considered important 'words' for analysis
+# such as domain names, alt tags,
 #
 # $tag      The tag name
 # $arg      The arguments
@@ -765,17 +740,16 @@ sub update_tag
 {
     my ( $self, $tag, $arg, $end_tag, $encoded ) = @_;
 
-    # TODO: Make sure $tag only ever gets alphanumeric input (in some
-    # cases it has been demonstrated that things like ()| etc can end
-    # up in $tag
+    # TODO: Make sure $tag only ever gets alphanumeric input (in some cases it
+    #       has been demonstrated that things like ()| etc can end up in $tag
 
     $tag =~ s/[\r\n]//g;
     $arg =~ s/[\r\n]//g;
 
     print "HTML " . ($end_tag?"closing":'') . " tag $tag with argument " . $arg . "\n" if ($self->{debug__});
 
-    # End tags do not require any argument decoding but we do look at
-    # them to make sure that we handle /font to change the font color
+    # End tags do not require any argument decoding but we do look at them
+    # to make sure that we handle /font to change the font color
 
     if ( $end_tag ) {
         if ( $tag =~ /^font$/i ) {
@@ -823,16 +797,17 @@ sub update_tag
     my $quote;
     my $end_quote;
 
-    # Strip the first attribute while there are any attributes Match
-    # the closing attribute character, if there is none (this allows
-    # nested single/double quotes), match a space or > or EOL
+    # Strip the first attribute while there are any attributes
+    # Match the closing attribute character, if there is none
+    # (this allows nested single/double quotes),
+    # match a space or > or EOL
 
     my $original;
 
     while ( $arg =~ s/[ \t]*((\w+)[ \t]*=[ \t]*(([\"\'])(.*?)\4|([^ \t>]+)($|([ \t>]))))// ) {
         $original  = $1;
         $attribute = $2;
-        $value     = $5 || $6 || '';
+        $value     = $5 || $6;
         $quote     = '';
         $end_quote = '[\> \t\&\n]';
         if (defined $4) {
@@ -848,9 +823,9 @@ sub update_tag
             print "   attribute(s) " . $1 . " with no value\n" if ($self->{debug__});
         }
 
-        # Toggle for parsing script URI's.  Should be left off (0)
-        # until more is known about how different html rendering
-        # clients behave.
+        # Toggle for parsing script URI's.
+        # Should be left off (0) until more is known about how different html
+        # rendering clients behave.
 
         my $parse_script_uri = 0;
 
@@ -860,9 +835,9 @@ sub update_tag
              ( ( $tag =~ /^img|frame|iframe$/i )
                || ( $tag =~ /^script$/i && $parse_script_uri ) ) ) { # PROFILE BLOCK STOP
 
-            # "CID:" links refer to an origin-controlled attachment to
-            # a html email.  Adding strings from these, even if they
-            # appear to be hostnames, may or may not be beneficial
+            # "CID:" links refer to an origin-controlled attachment to a html email.
+            # Adding strings from these, even if they appear to be hostnames, may or
+            # may not be beneficial
 
             if ($value =~ /^(cid)\:/i ) {
 
@@ -870,18 +845,16 @@ sub update_tag
 
                 $self->update_pseudoword( 'html', 'cidsrc' );
 
-                # TODO: I've seen virus messages try to use a CID:
-                # href
+                # TODO: I've seen virus messages try to use a CID: href
 
 
             } else {
 
                 my $host = add_url( $self, $value, $encoded, $quote, $end_quote, '' );
 
-                # If the host name is not blank (i.e. there was a
-                # hostname in the url and it was an image, then if the
-                # host was not this host then report an off machine
-                # image
+                # If the host name is not blank (i.e. there was a hostname in the url
+                # and it was an image, then if the host was not this host then report
+                # an off machine image
 
                 if ( ( $host ne '' ) && ( $tag =~ /^img$/i ) ) {
                     if ( $host ne 'localhost' ) {
@@ -907,8 +880,8 @@ sub update_tag
 
             if ($value =~ /^mailto:/i) {
                 if ( $tag =~ /^a$/ && $value =~ /^mailto:([[:alpha:]0-9\-_\.]+?@([[:alpha:]0-9\-_\.]+?))([>\&\?\:\/\" \t]|$)/i )  {
-                    update_word( $self, $1, $encoded, 'mailto:', ($3?'[\\\>\&\?\:\/]':$end_quote), '' );
-                    add_url( $self, $2, $encoded, '@', ($3?'[\\\&\?\:\/]':$end_quote), '' );
+                   update_word( $self, $1, $encoded, 'mailto:', ($3?'[\\\>\&\?\:\/]':$end_quote), '' );
+                   add_url( $self, $2, $encoded, '@', ($3?'[\\\&\?\:\/]':$end_quote), '' );
                 }
             } else {
 
@@ -925,7 +898,7 @@ sub update_tag
         if ( $attribute =~ /^alt$/i && $tag =~ /^img$/i )  {
             add_line($self, $value, $encoded, '');
             next;
-        }
+         }
 
         # Tags with working background attributes
 
@@ -973,10 +946,7 @@ sub update_tag
         # Font sizes
 
         if ( ( $attribute =~ /^size$/i ) && ( $tag =~ /^font$/i ) ) {
-
-            # TODO: unify font size scaling to use the same scale
-            # across size specifiers
-
+            #TODO: unify font size scaling to use the same scale across size specifiers
             $self->update_pseudoword( 'html', "fontsize$value", $encoded, $original );
             next;
         }
@@ -1023,8 +993,8 @@ sub update_tag
 
                 my $size = $style->{'font-size'};
 
-                # TODO: unify font size scaling to use the same scale
-                # across size specifiers approximate font sizes here:
+                # TODO: unify font size scaling to use the same scale across size specifiers
+                # approximate font sizes here:
                 # http://www.dejeu.com/web/tools/tech/css/variablefontsizes.asp
 
                 if ($size =~ /(((\+|\-)?\d?\.?\d+)(em|ex|px|%|pt|in|cm|mm|pt|pc))|(xx-small|x-small|small|medium|large|x-large|xx-large)/) {
@@ -1119,10 +1089,9 @@ sub update_tag
 
         # TODO: move this up into the style part above
 
-        # Tags with style attributes (this one may impact
-        # performance!!!)  most container tags accept styles, and the
-        # background style may not be in a predictable location
-        # (search the entire value)
+        # Tags with style attributes (this one may impact performance!!!)
+        # most container tags accept styles, and the background style may
+        # not be in a predictable location (search the entire value)
 
         if ( $attribute =~ /^style$/i && $tag =~ /^(body|td|tr|table|span|div|p)$/i ) {
             add_url( $self, $1, $encoded, '[\']', '[\']', '' ) if ( $value =~ /background\-image:[ \t]?url\([ \t]?\'(.*)\'[ \t]?\)/i );
@@ -1158,11 +1127,9 @@ sub update_tag
 # $encoded      1 if the domain was found in encoded text (base64)
 # $before       The character that appeared before the URL in the original line
 # $after        The character that appeared after the URL in the original line
-# $prefix       A string to prefix any words with in the corpus, used for the
-#               special identification of values found in for example the
-#               subject line
-# $noadd        If defined indicates that only parsing should be done, no
-#               word updates
+# $prefix       A string to prefix any words with in the corpus, used for the special
+#               identification of values found in for example the subject line
+# $noadd        If defined indicates that only parsing should be done, no word updates
 #
 # Returns the hostname
 #
@@ -1198,8 +1165,7 @@ sub add_url
         $self->update_pseudoword( 'html', 'encodedurl', $encoded, $oldurl ) if ( !defined( $noadd ) );
     }
 
-    # Extract authorization information from the URL
-    # (e.g. http://foo@bar.com)
+    # Extract authorization information from the URL (e.g. http://foo@bar.com)
 
     $authinfo = $1 if ( $url =~ s/^(([[:alpha:]0-9\-_\.\;\:\&\=\+\$\,]+)(\@|\%40))+// );
 
@@ -1211,9 +1177,9 @@ sub add_url
     } else {
         if ( $url =~ /(([^:\/])+)/ ) {
 
-            # Some other hostname format found, maybe Read here for
-            # reference: http://www.pc-help.org/obscure.htm Go here
-            # for comparison: http://www.samspade.org/t/url
+            # Some other hostname format found, maybe
+            # Read here for reference: http://www.pc-help.org/obscure.htm
+            # Go here for comparison: http://www.samspade.org/t/url
 
             # save the possible hostname
 
@@ -1228,8 +1194,7 @@ sub add_url
             my $quad = 1;
             my $number;
 
-            # iterate through the possible hostname, build dotted quad
-            # format
+            # iterate through the possible hostname, build dotted quad format
 
             while ($host_candidate =~ s/\G^((0x)[0-9A-Fa-f]+|0[0-7]+|[0-9]+)(\.)?//) {
                 my $hex = $2;
@@ -1241,8 +1206,8 @@ sub add_url
 
                 if (defined $hex) {
 
-                    # hex number trim arbitrary octets that are
-                    # greater than most significant bit
+                    # hex number
+                    # trim arbitrary octets that are greater than most significant bit
 
                     $quad_candidate =~ s/.*(([0-9A-F][0-9A-F]){4})$/$1/i;
                     $number = hex( $quad_candidate );
@@ -1254,9 +1219,8 @@ sub add_url
                         $number = oct($1);
                     } else {
 
-                        # assume decimal number deviates from the
-                        # obscure.htm document here, no current
-                        # browsers overflow
+                        # assume decimal number
+                        # deviates from the obscure.htm document here, no current browsers overflow
 
                         $number = int($quad_candidate);
                     }
@@ -1326,14 +1290,12 @@ sub add_url
 
         update_word( $self, $host, $encoded, $temp_before, $temp_after, $prefix) if ( !defined( $noadd ) );
 
-        # decided not to care about tld's beyond the verification
-        # performed when grabbing $host special subTLD's can just get
-        # their own classification weight (eg, .bc.ca)
-        # http://www.0dns.org has a good reference of ccTLD's and
-        # their sub-tld's if desired
+        # decided not to care about tld's beyond the verification performed when
+        # grabbing $host
+        # special subTLD's can just get their own classification weight (eg, .bc.ca)
+        # http://www.0dns.org has a good reference of ccTLD's and their sub-tld's if desired
 
         if ( $hostform eq 'name' ) {
-
             # recursively add the roots of the domain
 
             while ( $host =~ s/^([^\.]+\.)?(([^\.]+\.?)*)(\.[^\.]+)$/$2$4/ ) {
@@ -1347,8 +1309,7 @@ sub add_url
         }
     }
 
-    # $protocol $authinfo $host $port $query $hash may be processed
-    # below if desired
+    # $protocol $authinfo $host $port $query $hash may be processed below if desired
     return $host;
 }
 
@@ -1356,8 +1317,8 @@ sub add_url
 #
 # parse_html
 #
-# Parse a line that might contain HTML information, returns 1 if we
-# are still inside an unclosed HTML tag
+# Parse a line that might contain HTML information, returns 1 if we are still inside an
+# unclosed HTML tag
 #
 # $line     A line of text
 # $encoded  1 if this HTML was found inside encoded (base64) text
@@ -1407,9 +1368,8 @@ sub parse_html
     while ( $found && ( $line ne '' ) ) {
         $found = 0;
 
-        # If we are in an HTML tag then look for the close of the tag,
-        # if we get it then handle the tag, if we don't then keep
-        # building up the arguments of the tag
+        # If we are in an HTML tag then look for the close of the tag, if we get it then
+        # handle the tag, if we don't then keep building up the arguments of the tag
 
         if ( $self->{in_html_tag__} )  {
             if ( $line =~ s/^([^>]*?)>// ) {
@@ -1428,9 +1388,8 @@ sub parse_html
             }
         }
 
-        # Does the line start with a HTML tag that is closed (i.e. has
-        # both the < and the > present)?  If so then handle that tag
-        # immediately and continue
+        # Does the line start with a HTML tag that is closed (i.e. has both the < and the
+        # > present)?  If so then handle that tag immediately and continue
 
         if ( $line =~ s/^<([\/]?)([A-Za-z]+)([^>]*?)>// )  {
             update_tag( $self, $2, $3, ( $1 eq '/' ), $encoded );
@@ -1438,9 +1397,9 @@ sub parse_html
             next;
         }
 
-        # Does the line consist of just a tag that has no closing >
-        # then set up the global vars that record the tag and return 1
-        # to indicate to the caller that we have an unclosed tag
+        # Does the line consist of just a tag that has no closing > then set up the global
+        # vars that record the tag and return 1 to indicate to the caller that we have an
+        # unclosed tag
 
         if ( $line =~ /^<([\/]?)([A-Za-z][^ >]+)([^>]*)$/ )  {
             $self->{html_end}    = ( $1 eq '/' );
@@ -1450,11 +1409,9 @@ sub parse_html
             return 1;
         }
 
-        # There could be something on the line that needs parsing
-        # (such as a word), if we reach here then we are not in an
-        # unclosed tag and so we can grab everything from the start of
-        # the line to the end or the first < and pass it to the line
-        # parser
+        # There could be something on the line that needs parsing (such as a word), if we reach here
+        # then we are not in an unclosed tag and so we can grab everything from the start of the line
+        # to the end or the first < and pass it to the line parser
 
         if ( $line =~ s/^([^<]+)(<|$)/$2/ ) {
             $found = 1;
@@ -1469,15 +1426,14 @@ sub parse_html
 #
 # parse_file
 #
-# Read messages from file and parse into a list of words and
-# frequencies, returns a colorized HTML version of message if color is
-# set
+# Read messages from file and parse into a list of words and frequencies, returns a colorized
+# HTML version of message if color__ is set
 #
 # $file     The file to open and parse
 # $max_size The maximum size of message to parse, or 0 for unlimited
-# $reset    If set to 0 then the list of words from a previous parse is not
-#           reset, this can be used to do multiple parses and build a single
-#           word list.  By default this is set to 1 and the word list is reset
+# $reset    If set to 0 then the list of words from a previous parse is not reset, this
+#           can be used to do multiple parses and build a single word list.  By default
+#           this is set to 1 and the word list is reset
 #
 # ----------------------------------------------------------------------------
 sub parse_file
@@ -1494,14 +1450,14 @@ sub parse_file
     open MSG, "<$file";
     binmode MSG;
 
-    # Read each line and find each "word" which we define as a
-    # sequence of alpha characters
+    # Read each line and find each "word" which we define as a sequence of alpha
+    # characters
 
     while (<MSG>) {
         $size_read += length($_);
         $self->parse_line( $_ );
-        if ( ( $max_size > 0 ) &&           # PROFILE BLOCK START
-             ( $size_read > $max_size ) ) { # PROFILE BLOCK STOP
+        if ( ( $max_size > 0 ) &&
+             ( $size_read > $max_size ) ) {
             last;
         }
     }
@@ -1528,13 +1484,12 @@ sub parse_file
 #
 # start_parse
 #
-# Called to reset internal variables before parsing.  This is
-# automatically called when using the parse_file API, and must be
-# called before the first call to parse_line.
+# Called to reset internal variables before parsing.  This is automatically called when using
+# the parse_file API, and must be called before the first call to parse_line.
 #
-# $reset    If set to 0 then the list of words from a previous parse is not
-#           reset, this can be used to do multiple parses and build a single
-#           word list.  By default this is set to 1 and the word list is reset
+# $reset    If set to 0 then the list of words from a previous parse is not reset, this
+#           can be used to do multiple parses and build a single word list.  By default
+#           this is set to 1 and the word list is reset
 #
 # ----------------------------------------------------------------------------
 sub start_parse
@@ -1564,9 +1519,9 @@ sub start_parse
 
     $self->{base64__}       = '';
 
-    # Variable to note that the temporary colorized storage is
-    # "frozen", and what type of freeze it is (allows nesting of
-    # reasons to freeze colorization)
+    # Variable to note that the temporary colorized storage is "frozen",
+    # and what type of freeze it is (allows nesting of reasons to freeze
+    # colorization)
 
     $self->{in_html_tag__} = 0;
 
@@ -1622,9 +1577,8 @@ sub start_parse
 #
 # stop_parse
 #
-# Called at the end of a parse job.  Automatically called if
-# parse_file is used, must be called after the last call to
-# parse_line.
+# Called at the end of a parse job.  Automatically called if parse_file is used, must be
+# called after the last call to parse_line.
 #
 # ----------------------------------------------------------------------------
 sub stop_parse
@@ -1633,19 +1587,17 @@ sub stop_parse
 
     $self->{colorized__} .= $self->clear_out_base64();
 
-    # If we reach here and discover that we think that we are in an
-    # unclosed HTML tag then there has probably been an error (such as
-    # a < in the text messing things up) and so we dump whatever is
-    # stored in the HTML tag out
+    # If we reach here and discover that we think that we are in an unclosed HTML tag then there
+    # has probably been an error (such as a < in the text messing things up) and so we dump
+    # whatever is stored in the HTML tag out
 
     if ( $self->{in_html_tag__} ) {
         $self->add_line( $self->{html_tag__} . ' ' . $self->{html_arg__}, 0, '' );
     }
 
-    # if we are here, and still have headers stored, we must have a
-    # bodyless message
+    # if we are here, and still have headers stored, we must have a bodyless message
 
-    # TODO: Fix me
+    #TODO: Fix me
 
     if ( $self->{header__} ne '' ) {
         $self->parse_header( $self->{header__}, $self->{argument__}, $self->{mime__}, $self->{encoding__} );
@@ -1670,9 +1622,8 @@ sub stop_parse
 #
 # parse_line
 #
-# Called to parse a single line from a message.  If using this API
-# directly then be sure to call start_parse before the first call to
-# parse_line.
+# Called to parse a single line from a message.  If using this API directly then be sure
+# to call start_parse before the first call to parse_line.
 #
 # $line               Line of file to parse
 #
@@ -1683,8 +1634,7 @@ sub parse_line
 
     if ( $read ne '' ) {
 
-        # For the Mac we do further splitting of the line at the CR
-        # characters
+        # For the Mac we do further splitting of the line at the CR characters
 
         while ( $read =~ s/(.*?)[\r\n]+// )  {
             my $line = "$1\r\n";
@@ -1729,8 +1679,7 @@ sub parse_line
 
             if ($self->{in_headers__}) {
 
-                # temporary colorization while in headers is handled
-                # within parse_header
+                # temporary colorization while in headers is handled within parse_header
 
                 $self->{ut__} = '';
 
@@ -1753,16 +1702,14 @@ sub parse_line
                     next;
                 }
 
-                # Append to argument if the next line begins with
-                # whitespace (isn't a new header)
+                # Append to argument if the next line begins with whitespace (isn't a new header)
 
                 if ( $line =~ /^([\t ])([^\r\n]+)/ ) {
                     $self->{argument__} .= "$eol$1$2";
                     next;
                 }
 
-                # If we have an email header then split it into the
-                # header and its argument
+                # If we have an email header then split it into the header and its argument
 
                 if ( $line =~ /^([A-Za-z\-]+):[ \t]*([^\n\r]*)/ )  {
 
@@ -1782,8 +1729,7 @@ sub parse_line
 
             # If we are in a mime document then spot the boundaries
 
-            if ( ( $self->{mime__} ne '' ) &&                     # PROFILE BLOCK START
-                 ( $line =~ /^\-\-($self->{mime__})(\-\-)?/ ) ) { # PROFILE BLOCK STOP
+            if ( ( $self->{mime__} ne '' ) && ( $line =~ /^\-\-($self->{mime__})(\-\-)?/ ) ) {
 
                 # approach each mime part with fresh eyes
 
@@ -1791,9 +1737,8 @@ sub parse_line
 
                 if ( !defined( $2 ) ) {
 
-                    # This means there was no trailing -- on the mime
-                    # boundary (which would have indicated the end of
-                    # a boundary, so now we have a new part of the
+                    # This means there was no trailing -- on the mime boundary (which would
+                    # have indicated the end of a boundary, so now we have a new part of the
                     # document, hence we need to look for new headers
 
                     print "Hit MIME boundary --$1\n" if $self->{debug__};
@@ -1816,11 +1761,9 @@ sub parse_line
 
                     $boundary =~ s/(.*)/\Q$1\E/g;
 
-                    # Remove the boundary we just found from the
-                    # boundary list.  The list is stored in
-                    # $self->{mime__} and consists of mime boundaries
-                    # separated by the alternation characters | for
-                    # use within a regexp
+                    # Remove the boundary we just found from the boundary list.  The list
+                    # is stored in $self->{mime__} and consists of mime boundaries separated
+                    # by the alternation characters | for use within a regexp
 
                     my $temp_mime = '';
 
@@ -1842,8 +1785,8 @@ sub parse_line
                 next;
             }
 
-            # If we are doing base64 decoding then look for suitable
-            # lines and remove them for decoding
+            # If we are doing base64 decoding then look for suitable lines and remove them
+            # for decoding
 
             if ( $self->{encoding__} =~ /base64/i ) {
                 $line =~ s/[\r\n]//g;
@@ -1864,8 +1807,8 @@ sub parse_line
 #
 # clear_out_base64
 #
-# If there's anything in the {base64__} then decode it and parse it,
-# returns colorization information to be added to the colorized output
+# If there's anything in the {base64__} then decode it and parse it, returns colorization
+# information to be added to the colorized output
 #
 # ----------------------------------------------------------------------------
 sub clear_out_base64
@@ -1924,38 +1867,37 @@ sub clear_out_base64
 # quoted printable encoding
 # ----------------------------------------------------------------------------
 sub decode_string
-{
-
-    # I choose not to use "$mystring = MIME::Base64::decode( $1 );"
+{    # I choose not to use "$mystring = MIME::Base64::decode( $1 );"
     # because some spam mails have subjects like: "Subject: adjpwpekm
     # =?ISO-8859-1?Q?=B2=E1=A4=D1=AB=C7?= dopdalnfjpw".  Therefore we
     # proceed along the string, from left to right, building a new
     # string from the decoded and non-decoded parts
 
     my ( $self, $mystring, $lang ) = @_;
-
+    
     my $charset = '';
-
+    
     return '' if (!defined($mystring));
 
     $lang = $self->{lang__} if ( !defined( $lang ) || ( $lang eq '' ) );
-
+    
     my $output = '';
     my $last_is_encoded = 0;
-
+    
+    
     while ( $mystring =~ m/(.*?)(=\?([\w-]+)\?(B|Q)\?(.*?)\?=)/igc ) {
         my ($pre, $atom, $encoding, $value);
         ($pre, $atom, $charset, $encoding, $value) = ($1, $2, $3, $4, $5);
-
-        $output .= $pre unless ($last_is_encoded && defined($atom) # PROFILE BLOCK START
-                                    && $pre =~ /^[\t ]+$/);        # PROFILE BLOCK STOP( Per RFC 2047 section 6.2 )
+        
+        $output .= $pre unless ($last_is_encoded && defined($atom) # Per RFC 2047 section 6.2
+                                    && $pre =~ /^[\t ]+$/);
 
         if (defined($atom)) {
             if ($encoding eq "B" || $encoding eq "b") {
+
                 $value = decode_base64( $value );
 
                 # for Japanese header
-
                 if ($lang eq 'Nihongo') {
                     $value = convert_encoding( $value, $charset, 'euc-jp', '7bit-jis', @{$encoding_candidates{$self->{lang__}}} );
                 }
@@ -1967,7 +1909,6 @@ sub decode_string
                 $value =~ s/\x00/NUL/g;
 
                 # for Japanese header
-
                 if ($lang eq 'Nihongo') {
                     $value = convert_encoding( $value, $charset, 'euc-jp', '7bit-jis', @{$encoding_candidates{$self->{lang__}}} );
                 }
@@ -1980,7 +1921,6 @@ sub decode_string
     }
 
     # grab the unmatched tail (thanks to /gc and \G)
-
     $output .= $1 if ($mystring =~ m/\G(.*)/g);
 
     return $output;
@@ -2017,10 +1957,9 @@ sub parse_header
     print "Header ($header) ($argument)\n" if ($self->{debug__});
 
     # After a discussion with Tim Peters and some looking at emails
-    # I'd received I discovered that the header names (case sensitive)
-    # are very significant in identifying different types of mail, for
-    # example much spam uses MIME-Version, MiME-Version and
-    # Mime-Version
+    # I'd received I discovered that the header names (case sensitive) are
+    # very significant in identifying different types of mail, for example
+    # much spam uses MIME-Version, MiME-Version and Mime-Version
 
     my $fix_argument = $argument;
     $fix_argument =~ s/</&lt;/g;
@@ -2032,7 +1971,7 @@ sub parse_header
     if ( $self->update_pseudoword( 'header', $header, 0, $header ) ) {
         if ( $self->{color__} ne '' ) {
             my $color     = $self->get_color__("header:$header" );
-            $self->{ut__} =  "<b style=\"color:$color\">$header</b>: $fix_argument\015\012";
+            $self->{ut__} =  "<b><font color=\"$color\">$header</font></b>: $fix_argument\015\012";
         }
     } else {
         if ( $self->{color__} ne '' ) {
@@ -2043,20 +1982,19 @@ sub parse_header
     # Check the encoding type in all RFC 2047 encoded headers
 
     if ( $argument =~ /=\?([^\r\n\t ]{1,40})\?(Q|B)/i ) {
-        update_word( $self, $1, 0, '', '', 'charset' );
+            update_word( $self, $1, 0, '', '', 'charset' );
     }
 
     # Handle the From, To and Cc headers and extract email addresses
     # from them and treat them as words
 
-    # For certain headers we are going to mark them specially in the
-    # corpus by tagging them with where they were found to help the
-    # classifier do a better job.  So if you have
+    # For certain headers we are going to mark them specially in the corpus
+    # by tagging them with where they were found to help the classifier
+    # do a better job.  So if you have
     #
     # From: foo@bar.com
     #
-    # then we'll add from:foo@bar.com to the corpus and not just
-    # foo@bar.com
+    # then we'll add from:foo@bar.com to the corpus and not just foo@bar.com
 
     my $prefix = '';
 
@@ -2111,7 +2049,6 @@ sub parse_header
         if ( $self->{subject__} eq '' ) {
 
             # In Japanese mode, parse subject with Nihongo (Japanese) parser
-
             $argument = $self->{nihongo_parser__}{parse}( $self, $argument ) if ( $self->{lang__} eq 'Nihongo' && $argument ne '' );
 
             $self->{subject__} = $argument;
@@ -2124,11 +2061,10 @@ sub parse_header
     if ( $header =~ /^X-Spam-Status$/i) {
 
         # We have found a header added by SpamAssassin. We expect to
-        # find keywords in here that will help us classify our
-        # messages
+        # find keywords in here that will help us classify our messages
 
-        # We will find the keywords after the phrase "tests=" and
-        # before SpamAssassin's version number or autolearn= string
+        # We will find the keywords after the phrase "tests=" and before
+        # SpamAssassin's version number or autolearn= string
 
         (my $sa_keywords = $argument) =~ s/[\r\n ]//sg;
         $sa_keywords =~ s/^.+tests=(.+)/$1/;
@@ -2143,14 +2079,12 @@ sub parse_header
     }
 
     if ( $header =~ /^X-SpamViper-Score$/ ) {
-
-        # This is a header that was added by SpamViper. Works just
-        # like the SpamAssassin header.
+        # This is a header that was added by SpamViper. Works just like the
+        # SpamAssassin header.
 
         ( my $sv_keywords = $argument ) =~ s/[\r\n]//g;
 
-        # The keywords can be found after the phrase "Mail scored X
-        # points":
+        # The keywords can be found after the phrase "Mail scored X points":
 
         $sv_keywords =~ s/Mail scored \d+ points //;
         $sv_keywords =~ s/[\t ]//g;
@@ -2192,8 +2126,7 @@ sub parse_header
 
                 if ($mime ne '') {
 
-                    # Fortunately the pipe character isn't a valid
-                    # mime boundary character!
+                    # Fortunately the pipe character isn't a valid mime boundary character!
 
                     $mime = join('|', $mime, $boundary);
                 } else {
@@ -2211,9 +2144,8 @@ sub parse_header
         return ( $mime, $encoding );
     }
 
-    # Look for the different encodings in a MIME document, when we hit
-    # base64 we will do a special parse here since words might be
-    # broken across the boundaries
+    # Look for the different encodings in a MIME document, when we hit base64 we will
+    # do a special parse here since words might be broken across the boundaries
 
     if ( $header =~ /^Content-Transfer-Encoding$/i ) {
         $encoding = $argument;
@@ -2248,8 +2180,7 @@ sub parse_header
 #                     Uses the second part of the "ruleset" grammar
 #
 # $line         The line to match
-# $braces       1 if braces are included, 0 if excluded. Defaults to 0.
-#               (optional)
+# $braces       1 if braces are included, 0 if excluded. Defaults to 0. Optional.
 # Returns       A hash of properties containing their expressions
 #
 # ----------------------------------------------------------------------------
@@ -2280,11 +2211,8 @@ sub parse_css_style
 # parse_css_color - Parses a CSS color string
 #
 # $color        The string to parse
-# Returns       (r,g,b) triplet in list context, rrggbb (hex) color in scalar
-#               context
-#
-# In case of an error: (-1,-1,-1) in list context, "error" in scalar
-# context
+# Returns       (r,g,b) triplet in list context, rrggbb (hex) color in scalar context
+# In case of an error: (-1,-1,-1) in list context, "error" in scalar context
 #
 # ----------------------------------------------------------------------------
 
@@ -2356,9 +2284,7 @@ sub parse_css_color
         }
 
         if (!$found) {
-
-            # here we have a combination of percentages and integers
-            # or some other oddity
+            # here we have a combination of percentages and integers or some other oddity
             $ispercent = 0;
             $error = 1
         }
@@ -2384,7 +2310,6 @@ sub parse_css_color
 
     }
     if ($color =~ /^(aqua|black|blue|fuchsia|gray|green|lime|maroon|navy|olive|purple|red|silver|teal|white|yellow)$/i ) {
-
         # these are the only CSS defined colours
 
         print "       CSS textual color form: $color\n" if $self->{debug__};
@@ -2392,7 +2317,6 @@ sub parse_css_color
         my $new_color = map_color( $self, $color );
 
         # our color map may have failed
-
         $error = 1 if ($new_color eq $color);
         ($r, $g, $b) = (hex($1), hex($2), hex($3)) if ( $new_color =~ /^(..)(..)(..)$/);
         $found = 1;
@@ -2400,10 +2324,10 @@ sub parse_css_color
 
     $found = 0 if ($error);
 
-    if ( $found &&                                    # PROFILE BLOCK START
-         defined($r) && ( 0 <= $r) && ($r <= 255) &&
+    if ( defined($r) && ( 0 <= $r) && ($r <= 255) && # PROFILE BLOCK START
          defined($g) && ( 0 <= $g) && ($g <= 255) &&
-         defined($b) && ( 0 <= $b) && ($b <= 255) ) { # PROFILE BLOCK STOP
+         defined($b) && ( 0 <= $b) && ($b <= 255) &&
+         $found ) {                                 # PROFILE BLOCK STOP
         if (wantarray) {
             return ( $r, $g, $b );
         } else {
@@ -2421,8 +2345,7 @@ sub parse_css_color
 
 # ----------------------------------------------------------------------------
 #
-# match_attachment_filename - Matches a line like 'attachment;
-# filename="<filename>"
+# match_attachment_filename - Matches a line  like 'attachment; filename="<filename>"
 #
 # $line         The line to match
 # Returns       The first match (= "attchment" if found)
@@ -2461,8 +2384,8 @@ sub file_extension
 }
 # ----------------------------------------------------------------------------
 #
-# add_attachment_filename - Adds a file name and extension as pseudo
-# words attchment_name and attachment_ext
+# add_attachment_filename - Adds a file name and extension as pseudo words attchment_name
+#                         and attachment_ext
 #
 # $filename     The filename to add to the list of words
 #
@@ -2491,9 +2414,8 @@ sub add_attachment_filename
 
 # ----------------------------------------------------------------------------
 #
-# handle_disposition - Parses Content-Disposition header to extract
-# filename.  If filename found, at the file name and extension to the
-# word list
+# handle_disposition - Parses Content-Disposition header to extract filename.
+#                      If filename found, at the file name and extension to the word list
 #
 # $params     The parameters of the Content-Disposition header
 #
@@ -2511,8 +2433,7 @@ sub handle_disposition
 
 # ----------------------------------------------------------------------------
 #
-# splitline - Escapes characters so a line will print as plain-text
-# within a HTML document.
+# splitline - Escapes characters so a line will print as plain-text within a HTML document.
 #
 # $line         The line to escape
 # $encoding     The value of any current encoding scheme
@@ -2554,6 +2475,13 @@ sub quickmagnets
    return $self->{quickmagnets__};
 }
 
+sub mangle
+{
+    my ( $self, $value ) = @_;
+
+    $self->{mangle__} = $value;
+}
+
 # ----------------------------------------------------------------------------
 #
 # convert_encoding
@@ -2563,15 +2491,14 @@ sub quickmagnets
 # $string       The string to be converted
 # $from         Original encoding
 # $to           The encoding which the string is converted to
-# $default      The default encoding that is used when $from is invalid or not 
-#               defined
+# $default      The default encoding that is used when $from is invalid or not defined
 # @candidates   Candidate encodings for guessing
 # ----------------------------------------------------------------------------
 sub convert_encoding
 {
     my ( $string, $from, $to, $default, @candidates ) = @_;
 
-    # If the string contains only ascii characters, do nothing.
+    # If the string contains only ascii characters, do nothing
     return $string if ( $string =~ /^[\r\n\t\x20-\x7E]*$/ );
 
     require Encode;
@@ -2582,7 +2509,7 @@ sub convert_encoding
     my $enc = Encode::Guess::guess_encoding( $string, @candidates );
 
     if(ref $enc){
-        $from = $enc->name;
+        $from= $enc->name;
     } else {
 
         # If guess does not work, check whether $from is valid.
@@ -2618,8 +2545,8 @@ sub convert_encoding
 # Parse a line with Kakasi
 #
 # Japanese needs to be parsed by language processing filter, "Kakasi"
-# before it is passed to Bayes classifier because words are not
-# splitted by spaces.
+# before it is passed to Bayes classifier because words are not splitted
+# by spaces.
 #
 # $line          The line to be parsed
 #
@@ -2719,8 +2646,8 @@ sub init_mecab
     # Initialize MeCab (-F %M\s -U %M\s -E \n is passed to MeCab as argument).
     # Insert white spaces after words.
 
-    $self->{nihongo_parser__}{obj_mecab}               # PROFILE BLOCK START
-        = MeCab::Tagger->new('-F %M\s -U %M\s -E \n'); # PROFILE BLOCK STOP
+    $self->{nihongo_parser__}{obj_mecab} 
+        = MeCab::Tagger->new('-F %M\s -U %M\s -E \n');
 }
 
 # ----------------------------------------------------------------------------

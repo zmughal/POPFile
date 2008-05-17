@@ -6,7 +6,7 @@
 #                    the need to display the console window (when the console window was
 #                    used by earlier installers it caused confusion amongst some users).
 #
-# Copyright (c) 2004-2005  John Graham-Cumming
+# Copyright (c) 2004-2008  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -25,18 +25,20 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -44,6 +46,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
 #--------------------------------------------------------------------------
 # Support provided for this utility by the Windows installer
@@ -114,7 +117,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.63"
+  !define C_VERSION             "0.1.8"
 
   !define C_OUTFILE             "msgcapture.exe"
 
@@ -131,6 +134,12 @@
 
   Name    "POPFile Message Capture Utility"
   Caption "$(^Name) v${C_VERSION}"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"
@@ -157,14 +166,18 @@
 
   VIProductVersion                          "${C_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "PFI Message Capture Utility"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Message Capture Utility (0-99 sec timeout)"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -282,7 +295,9 @@
   !insertmacro PFI_MSGCAP_TEXT "PFI_LANG_MSGCAP_CLICKCLOSE"     "Please click 'Close' to continue with the installation"
   !insertmacro PFI_MSGCAP_TEXT "PFI_LANG_MSGCAP_CLICKCANCEL"    "Please click 'Cancel' to continue with the installation"
 
-  !insertmacro PFI_MSGCAP_TEXT "PFI_LANG_MSGCAP_MBOPTIONERROR"  "'$G_TIMEOUT' is not a valid option for this utility${MB_NL}${MB_NL}Usage: $R1 /TIMEOUT=x${MB_NL}where x is in the range 0 to 99 and specifies the timeout in seconds${MB_NL}${MB_NL}(use 0 to make the utility wait for POPFile to exit)"
+  ; This utility's executable file might have been renamed so we need to ensure we use the correct name in the 'usage' message.
+
+  !insertmacro PFI_MSGCAP_TEXT "PFI_LANG_MSGCAP_MBOPTIONERROR"  "'$G_TIMEOUT' is not a valid option for this utility${MB_NL}${MB_NL}Usage: $EXEFILE /TIMEOUT=x${MB_NL}where x is in the range 0 to 99 and specifies the timeout in seconds${MB_NL}${MB_NL}(use 0 to make the utility wait for POPFile to exit)"
 
 #--------------------------------------------------------------------------
 # General settings
@@ -331,16 +346,6 @@ Function .onInit
   IntCmp ${L_TEMP} 99 exit exit usage_error
 
 usage_error:
-
-  ; This utility is sometimes renamed as 'pfimsgcapture.exe' so we need
-  ; to ensure we use the correct name in the 'usage' message. The first
-  ; system call gets the full pathname (returned in $R0) and the second call
-  ; extracts the filename (and possibly the extension) part (returned in $R1)
-
-  ; No need to worry about corrupting $R0 and $R1 (we abort after displaying the message)
-
-  System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024)'
-  System::Call 'comdlg32::GetFileTitleA(t R0, t .R1, i 1024)'
   MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_MSGCAP_MBOPTIONERROR)"
   Abort
 

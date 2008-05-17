@@ -4,7 +4,7 @@
 #                 to assist in solving problems with POPFile installations created
 #                 by the Windows installer for POPFile v0.21.0 (or later).
 #
-# Copyright (c) 2004-2006  John Graham-Cumming
+# Copyright (c) 2004-2008  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -23,18 +23,20 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -42,7 +44,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
-
+  !undef  C_EXPECTED_VERSION
 
   ;------------------------------------------------
   ; This script requires the 'ShellLink' NSIS plugin
@@ -103,7 +105,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.60"
+  !define C_VERSION   "0.1.11"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -118,6 +120,12 @@
 
   !define C_PFI_PRODUCT                 "POPFile"
   !define C_PFI_PRODUCT_REGISTRY_ENTRY  "Software\POPFile Project\${C_PFI_PRODUCT}\MRI"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"
@@ -144,14 +152,18 @@
 
   VIProductVersion                          "${C_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "PFI Diagnostic Utility"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Diagnostic Utility"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -281,6 +293,34 @@
 
     continue_${PFI_UNIQUE_ID}:
   !macroend
+
+  ;---------------------------------------------------------------------------
+  ; Differentiate between a non-existent and an empty MeCab environment variable
+  ; (this variable is only defined if the MeCab software has been installed)
+  ;---------------------------------------------------------------------------
+
+  !macro CHECK_MECAB REGISTER ENV_VARIABLE MESSAGE
+
+      !insertmacro PFI_UNIQUE_ID
+
+      ClearErrors
+      ReadEnvStr "${REGISTER}" "${ENV_VARIABLE}"
+      StrCmp "${REGISTER}" "" 0 show_value_${PFI_UNIQUE_ID}
+      IfErrors 0 show_value_${PFI_UNIQUE_ID}
+      IfFileExists "$G_EXPECTED_ROOT\mecab\*.*" MeCab_${PFI_UNIQUE_ID}
+      DetailPrint "${MESSAGE}= ><   (this is OK)"
+      Goto continue_${PFI_UNIQUE_ID}
+
+    MeCab_${PFI_UNIQUE_ID}:
+      DetailPrint "${MESSAGE}= ><"
+      Goto continue_${PFI_UNIQUE_ID}
+
+    show_value_${PFI_UNIQUE_ID}:
+      DetailPrint "${MESSAGE}= < ${REGISTER} >"
+
+    continue_${PFI_UNIQUE_ID}:
+  !macroend
+
 
 #--------------------------------------------------------------------------
 # Configure the MUI pages
@@ -542,6 +582,28 @@ SectionEnd
 
 
 ;--------------------------------------------------------------------------
+; Section: Location of temporary files
+;--------------------------------------------------------------------------
+
+Section "Location of temporary files"
+
+  StrCmp $G_DIAG_MODE "full" enter_section next_section
+
+enter_section:
+
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "Location used to store temporary files"
+  DetailPrint "------------------------------------------------------------"
+
+  DetailPrint ""
+  DetailPrint "$$TEMP folder path = < $TEMP >"
+  DetailPrint ""
+
+next_section:
+SectionEnd
+
+
+;--------------------------------------------------------------------------
 ; Section: Start Menu Locations and Shortcuts
 ;--------------------------------------------------------------------------
 
@@ -713,8 +775,12 @@ enter_section:
   StrCpy ${L_REGDATA} ${L_REGDATA}${L_TEMP}
   DetailPrint "HKLM: MRI Version = < ${L_REGDATA} >"
 
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "InstallPath" "HKLM: InstallPath "
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "RootDir_LFN" "HKLM: RootDir_LFN "
+  DetailPrint ""
+  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "NihongoParser" "HKLM: NewParser   "
+  DetailPrint ""
+
+  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "InstallPath"   "HKLM: InstallPath "
+  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKLM" "RootDir_LFN"   "HKLM: RootDir_LFN "
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_ROOT ${L_REGDATA}
@@ -1048,11 +1114,13 @@ enter_section:
 
   !define L_ITAIJIDICTPATH  $R9   ; current Kakasi environment variable
   !define L_KANWADICTPATH   $R8   ; current Kakasi environment variable
-  !define L_POPFILE_ROOT    $R7   ; current value of POPFILE_ROOT environment variable
-  !define L_TEMP            $R6
+  !define L_MECABRC         $R7   ; current MeCab environment variable
+  !define L_POPFILE_ROOT    $R6   ; current value of POPFILE_ROOT environment variable
+  !define L_TEMP            $R5
 
   Push ${L_ITAIJIDICTPATH}
   Push ${L_KANWADICTPATH}
+  Push ${L_MECABRC}
   Push ${L_POPFILE_ROOT}
   Push ${L_TEMP}
 
@@ -1143,7 +1211,7 @@ check_kakasi:
   !insertmacro CHECK_KAKASI "${L_KANWADICTPATH}"  "KANWADICTPATH"  "'KANWADICTPATH'   "
   DetailPrint ""
 
-  StrCmp $G_DIAG_MODE "simple" section_end
+  StrCmp $G_DIAG_MODE "simple" check_mecab
 
   StrCmp ${L_ITAIJIDICTPATH} "" check_other_kakaksi
   StrCpy ${L_TEMP} ""
@@ -1155,7 +1223,7 @@ display_itaiji_result:
 
 check_other_kakaksi:
   StrCmp ${L_KANWADICTPATH} "" 0 check_kanwa
-  StrCmp ${L_ITAIJIDICTPATH} "" section_end exit_with_blank_line
+  StrCmp ${L_ITAIJIDICTPATH} "" check_mecab kakasi_blank_line
 
 check_kanwa:
   StrCpy ${L_TEMP} ""
@@ -1165,17 +1233,34 @@ check_kanwa:
 display_kanwa_result:
   DetailPrint "'kanwadict'  file = ${L_TEMP}found"
 
-exit_with_blank_line:
+kakasi_blank_line:
+  DetailPrint ""
+
+check_mecab:
+  !insertmacro CHECK_MECAB "${L_MECABRC}" "MECABRC" "'MECABRC'         "
+  DetailPrint ""
+
+  StrCmp $G_DIAG_MODE "simple" section_end
+
+  StrCmp ${L_MECABRC} "" section_end
+  StrCpy ${L_TEMP} ""
+  IfFileExists "${L_MECABRC}" display_mecab_result
+  StrCpy ${L_TEMP} "not "
+
+display_mecab_result:
+  DetailPrint "'mecabrc'    file = ${L_TEMP}found"
   DetailPrint ""
 
 section_end:
   Pop ${L_TEMP}
   Pop ${L_POPFILE_ROOT}
+  Pop ${L_MECABRC}
   Pop ${L_KANWADICTPATH}
   Pop ${L_ITAIJIDICTPATH}
 
   !undef L_ITAIJIDICTPATH
   !undef L_KANWADICTPATH
+  !undef L_MECABRC
   !undef L_POPFILE_ROOT
   !undef L_TEMP
 
@@ -1597,6 +1682,7 @@ FunctionEnd
 
   !define C_LVM_GETITEMCOUNT        0x1004
   !define C_LVM_ENSUREVISIBLE       0x1013
+  !define C_LVM_COUNTPERPAGE        0x1028
 
 #--------------------------------------------------------------------------
 # Installer Function: ScrollToShowPaths
@@ -1617,9 +1703,11 @@ FunctionEnd
 
 Function ScrollToShowPaths
 
-  !define L_TEMP      $R9
-  !define L_TOPROW    $R8   ; item index of the line we want to be at the top of the window
+  !define L_DLG_ITEM    $R9   ; the dialog item we are going to manipulate
+  !define L_TEMP        $R8
+  !define L_TOPROW      $R7   ; item index of the line we want to be at the top of the window
 
+  Push ${L_DLG_ITEM}
   Push ${L_TEMP}
   Push ${L_TOPROW}
 
@@ -1628,13 +1716,24 @@ Function ScrollToShowPaths
   ; the POPFile program and 'User Data' folder locations (on the assumption that
   ; this is the information most users will want to find first).
 
+  FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
+  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x3F8      ; This is the Control ID of the details view
+
+  ; Check how many lines can be shown in the details view
+
+  SendMessage ${L_DLG_ITEM} ${C_LVM_COUNTPERPAGE} 0 0 ${L_TEMP}
+
+  ; The important information for the simple report is held in rows 10 to 19 (starting from 0)
+
+  StrCpy ${L_TOPROW} 10   ; index of the "Current UserName" row in the simple report
+  IntCmp ${L_TEMP} 10 getrowcount getrowcount
   StrCpy ${L_TOPROW} 9    ; index of the blank line immediately before "Current UserName"
 
-  ; Check how many 'details' lines there are
+getrowcount:
 
-  FindWindow ${L_TEMP} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_TEMP} ${L_TEMP} 0x3F8          ; This is the Control ID of the details view
-  SendMessage ${L_TEMP} ${C_LVM_GETITEMCOUNT} 0 0 ${L_TEMP}
+  ; Check how many 'details' lines there are in the report
+
+  SendMessage ${L_DLG_ITEM} ${C_LVM_GETITEMCOUNT} 0 0 ${L_TEMP}
 
   ; No point in trying to display a non-existent line
 
@@ -1642,14 +1741,14 @@ Function ScrollToShowPaths
 
   ; Scroll up (in effect) to show Current UserName, Program folder & User Data folder entries
 
-  FindWindow ${L_TEMP} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_TEMP} ${L_TEMP} 0x3F8           ; This is the Control ID of the details view
-  SendMessage ${L_TEMP} ${C_LVM_ENSUREVISIBLE} ${L_TOPROW} 0
+  SendMessage ${L_DLG_ITEM} ${C_LVM_ENSUREVISIBLE} ${L_TOPROW} 0
 
 exit:
   Pop ${L_TOPROW}
   Pop ${L_TEMP}
+  Pop ${L_DLG_ITEM}
 
+  !undef L_DLG_ITEM
   !undef L_TEMP
   !undef L_TOPROW
 

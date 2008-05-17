@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2003-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -33,18 +33,19 @@
 #  (1) ADDSSL           defined in add-ons\addssl.nsi (POPFile 'SSL Setup' wizard)
 #  (2) ADDUSER          defined in adduser.nsi ('Add POPFile User' wizard)
 #  (3) BACKUP           defined in backup.nsi (POPFile 'User Data' Backup utility)
-#  (4) DBANALYSER       defined in test\pfidbanalyser.nsi ('POPFile SQLite Database Analyser')
-#  (5) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
-#  (6) IMAPUPDATER      defined in add-ons\updateimap.nsi (POPFile 'IMAP Updater' wizard)
-#  (7) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
+#  (4) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
+#  (5) IMAPUPDATER      defined in add-ons\updateimap.nsi (POPFile 'IMAP Updater' wizard)
+#  (6) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
+#  (7) MONITORCC        defined in MonitorCC.nsi (the corpus conversion monitor)
 #  (8) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
-#  (9) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-# (10) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-# (11) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-# (12) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (13) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (14) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (15) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+#  (9) ONDEMAND         defined in add-ons\OnDemand.nsi (starts POPFile & email client together)
+# (10) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
+# (11) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+# (12) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (13) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (14) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (15) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (16) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -58,7 +59,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.1.16"
+  !define C_PFI_LIBRARY_VERSION     "0.3.15"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -91,6 +92,12 @@
 
   !define C_UI_URL    "localhost"
 ##  !define C_UI_URL    "127.0.0.1"
+
+#--------------------------------------------------------------------------
+# Marker used by the 'PFI_CheckIfLocked' function to detect the end of the input data
+#--------------------------------------------------------------------------
+
+  !define C_EXE_END_MARKER  "/EndOfExeList"
 
 #--------------------------------------------------------------------------
 #
@@ -142,18 +149,23 @@
   ; Macro used to load the files required for each language:
   ; (1) The MUI_LANGUAGE macro loads the standard MUI text strings for a particular language
   ; (2) '*-pfi.nsh' contains the text strings used for pages, progress reports, logs etc
+  ; (3) Normally the MUI's language selection menu uses the name defined in the MUI language
+  ;     file, however it is possible to override this by supplying an alternative string
+  ;     (the MENUNAME parameter in this macro). At present the only alternative string used
+  ;     is "Nihongo" which replaces "Japanese" to make things easier for non-English-speaking
+  ;     users - see 'pfi-languages.nsh' for details.
 
-!ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
-        !macro PFI_LANG_LOAD LANG
-            !insertmacro MUI_LANGUAGE "${LANG}"
-            !include "..\languages\${LANG}-pfi.nsh"
-        !macroend
-!else
-        !macro PFI_LANG_LOAD LANG
-            !insertmacro MUI_LANGUAGE "${LANG}"
-            !include "languages\${LANG}-pfi.nsh"
-        !macroend
-!endif
+  !macro PFI_LANG_LOAD LANG MENUNAME
+      !if "${MENUNAME}" != "-"
+          !define LANGFILE_${LANG}_NAME "${MENUNAME}"
+      !endif
+      !insertmacro MUI_LANGUAGE "${LANG}"
+      !ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
+          !include "..\languages\${LANG}-pfi.nsh"
+      !else
+          !include "languages\${LANG}-pfi.nsh"
+      !endif
+  !macroend
 
 #--------------------------------------------------------------------------
 #
@@ -365,7 +377,9 @@
   !macroend
 
   ;--------------------------------------------------------------------------
-  ; 'adduser.nsi' macro used to ensure current skin selection uses lowercase
+  ; 'adduser.nsi' macro used to ensure current skin selection uses lowercase.
+  ; This macro is also used to handle the necessary conversion when an existing
+  ; installation uses an obsolete skin which is no longer shipped with POPFile.
   ;--------------------------------------------------------------------------
 
   !macro PFI_SkinCaseChange OLDNAME NEWNAME
@@ -399,7 +413,6 @@
 # Functions used only during 'installation' (i.e. not used by any 'uninstall' operations):
 #
 #    Installer Function: PFI_GetIEVersion
-#    Installer Function: PFI_GetParameters
 #    Installer Function: PFI_GetRoot
 #    Installer Function: PFI_GetSeparator
 #    Installer Function: PFI_GetSFNStatus
@@ -510,66 +523,6 @@
 
       !undef L_REGDATA
       !undef L_TEMP
-
-    FunctionEnd
-!endif
-
-
-!ifndef ADDSSL & BACKUP
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_GetParameters
-    #
-    # Returns the command-line parameters (if any) supplied when the installer was started
-    #
-    # Inputs:
-    #         none
-    # Outputs:
-    #         (top of stack)     - all of the parameters supplied on the command line (may be "")
-    #
-    # Usage:
-    #         Call PFI_GetParameters
-    #         Pop $R0
-    #
-    #         (if 'setup.exe /SSL' was used to start the installer, $R0 will hold '/SSL')
-    #
-    #--------------------------------------------------------------------------
-
-    Function PFI_GetParameters
-
-      Push $R0
-      Push $R1
-      Push $R2
-      Push $R3
-
-      StrCpy $R2 1
-      StrLen $R3 $CMDLINE
-
-      ; Check for quote or space
-
-      StrCpy $R0 $CMDLINE $R2
-      StrCmp $R0 '"' 0 +3
-      StrCpy $R1 '"'
-      Goto loop
-
-      StrCpy $R1 " "
-
-    loop:
-      IntOp $R2 $R2 + 1
-      StrCpy $R0 $CMDLINE 1 $R2
-      StrCmp $R0 $R1 get
-      StrCmp $R2 $R3 get
-      Goto loop
-
-    get:
-      IntOp $R2 $R2 + 1
-      StrCpy $R0 $CMDLINE 1 $R2
-      StrCmp $R0 " " get
-      StrCpy $R0 $CMDLINE "" $R2
-
-      Pop $R3
-      Pop $R2
-      Pop $R1
-      Exch $R0
 
     FunctionEnd
 !endif
@@ -892,7 +845,7 @@
 !endif
 
 
-!ifdef ADDUSER | TRANSLATOR_AUW
+!ifdef ADDUSER | BACKUP | RESTORE | TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStripLZS
     #
@@ -914,15 +867,18 @@
 
     Function PFI_StrStripLZS
 
-      !define L_CHAR      $R9
-      !define L_STRING    $R8
+      !define L_CHAR      $R9   ; current character
+      !define L_LIMIT     $R8   ; use string length (instead of a null) to detect end-of-string
+      !define L_STRING    $R7   ; the string to be processed
 
       Exch ${L_STRING}
       Push ${L_CHAR}
+      Push ${L_LIMIT}
 
     loop:
+      StrLen ${L_LIMIT} ${L_STRING}
+      StrCmp ${L_LIMIT} 0 done
       StrCpy ${L_CHAR} ${L_STRING} 1
-      StrCmp ${L_CHAR} "" done
       StrCmp ${L_CHAR} " " strip_char
       StrCmp ${L_CHAR} "0" strip_char
       Goto done
@@ -932,10 +888,12 @@
       Goto loop
 
     done:
+      Pop ${L_LIMIT}
       Pop ${L_CHAR}
       Exch ${L_STRING}
 
       !undef L_CHAR
+      !undef L_LIMIT
       !undef L_STRING
 
     FunctionEnd
@@ -945,6 +903,10 @@
 #==============================================================================================
 #
 # Macro-based Functions which may be used by the installer and uninstaller (in alphabetic order)
+#
+#    Macro:                PFI_AtLeastWinNT4
+#    Installer Function:   PFI_AtLeastWinNT4
+#    Uninstaller Function: un.PFI_AtLeastWinNT4
 #
 #    Macro:                PFI_CheckIfLocked
 #    Installer Function:   PFI_CheckIfLocked
@@ -997,6 +959,10 @@
 #    Macro:                PFI_GetMessagesPath
 #    Installer Function:   PFI_GetMessagesPath
 #    Uninstaller Function: un.PFI_GetMessagesPath
+#
+#    Macro:                PFI_GetParameters
+#    Installer Function:   PFI_GetParameters
+#    Uninstaller Function: un.PFI_GetParameters
 #
 #    Macro:                PFI_GetParent
 #    Installer Function:   PFI_GetParent
@@ -1068,70 +1034,312 @@
 #
 #==============================================================================================
 
-
 #--------------------------------------------------------------------------
-# Macro: CheckIfLocked
+# Macro: PFI_AtLeastWinNT4
 #
-# The installation process and the uninstall process may both use a function which checks if
-# a particular executable file (an EXE file) is being used. This macro makes maintenance easier
-# by ensuring that both processes use identical functions, with the only difference being their
-# names.
-#
-# The EXE file to be checked depends upon the version of POPFile in use and upon how it has
-# been configured. If the specified EXE file is no longer in use, this function returns an empty
-# string (otherwise it returns the input parameter unchanged).
+# The installation process and the uninstall process may both need a function which
+# detects if we are running on Windows NT4 or later. This macro makes maintenance easier
+# by ensuring that both processes use identical functions, with the only difference being
+# their names.
 #
 # NOTE:
-# The !insertmacro PFI_CheckIfLocked "" and !insertmacro PFI_CheckIfLocked "un." commands are included
-# in this file so the NSIS script can use 'Call PFI_CheckIfLocked' and 'Call un.PFI_CheckIfLocked'
-# without additional preparation.
+# The !insertmacro PFI_AtLeastWinNT4 "" and !insertmacro PFI_AtLeastWinNT4 "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_AtLeastWinNT4'
+# and 'Call un.PFI_AtLeastWinNT4' without additional preparation.
 #
 # Inputs:
-#         (top of stack)     - the full path of the EXE file to be checked
+#         (none)
 #
 # Outputs:
-#         (top of stack)     - if file is no longer in use, an empty string ("") is returned
-#                              otherwise the input string is returned
+#         (top of stack)   - 0 if Win9x or WinME, 1 if Win NT4 or higher
 #
 # Usage (after macro has been 'inserted'):
 #
+#         Call PFI_AtLeastWinNT4
+#         Pop $R0
+#
+#         ($R0 at this point is "0" if running on Win95, Win98, WinME or NT3.x)
+#--------------------------------------------------------------------------
+
+!macro PFI_AtLeastWinNT4 UN
+  Function ${UN}PFI_AtLeastWinNT4
+
+    !define L_RESULT  $R9
+    !define L_TEMP    $R8
+
+    Push ${L_RESULT}
+    Push ${L_TEMP}
+
+    ClearErrors
+    ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+    IfErrors preNT4system
+    StrCpy ${L_TEMP} ${L_RESULT} 1
+    StrCmp ${L_TEMP} '3' preNT4system
+    StrCpy ${L_RESULT} "1"
+    Goto exit
+
+  preNT4system:
+    StrCpy ${L_RESULT} "0"
+
+  exit:
+    Pop ${L_TEMP}
+    Exch ${L_RESULT}
+
+    !undef L_RESULT
+    !undef L_TEMP
+
+  FunctionEnd
+!macroend
+
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | MONITORCC | ONDEMAND | RESTORE
+      #--------------------------------------------------------------------------
+      # Installer Function: PFI_AtLeastWinNT4
+      #
+      # This function is used during the installation process
+      #--------------------------------------------------------------------------
+
+      !insertmacro PFI_AtLeastWinNT4 ""
+!endif
+
+!ifdef ADDUSER | INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_AtLeastWinNT4
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_AtLeastWinNT4 "un."
+!endif
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_CheckIfLocked
+#
+# The installation process and the uninstall process may both require a function
+# which checks if a particular executable file (usually an EXE file) is being used.
+# This macro makes maintenance easier by ensuring that both processes use identical
+# functions, with the only difference being their names.
+#
+# There are several different ways to run POPFile so this function accepts a list
+# of full pathnames to the executable files which are to be checked (to make it
+# easier to check the various ways in which POPFile can be run). This list is
+# passed via the stack, with a marker string being used to mark the list's end.
+#
+# Normally the LockedList plugin will be used to check if any of the specified
+# executable files is in use. This plugin returns its results on the stack,
+# sandwiched between "/start" and "/end" markers ("/start" appears at the top
+# of the stack). If no files are locked, the plugin simply returns both of these
+# markers on the stack, like this:
+#
+#         (top of stack)            /start
+#         (top of stack - 1)        /end
+#
+# Note that the format of the path supplied to the plugin is important. If a program
+# was started from a 'hybrid' path using a mixture of SFN and LFN names, such as
+# "C:\PROGRA~1\POPFILE\popfileib.exe", and the plugin is given the equivalent LFN
+# path ("C:\Program Files\POPFile\popfileib.exe") then the plugin will fail to detect
+# if this particular executable is locked.
+#
+# To avoid these LFN/SFN problems we use the plugin's special "filename only" mode by
+# supplying the file name without the path. In this mode the plugin returns a list of
+# paths to any running processes that match the filename so all we have to do is loop
+# through the results looking for a match.
+#
+# This function is normally used to check if a particular executable (.exe) file is
+# locked. However to make the function more general purpose it checks if a DLL has
+# been specified and treats that as an executable. All other filenames are assumed
+# to be ordinary files.
+#
+#------------------------------------------------------------------------------------
+#
+# The 'NSIS Wiki' page for the 'LockedList' plugin (description and download links) is
+# http://nsis.sourceforge.net/LockedList_plug-in
+#
+# To compile this script, copy the 'LockedList.dll' file to the standard NSIS plugins
+# folder (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be
+# unzipped to the appropriate ${NSISDIR} sub-folders if you wish, but this step is
+# entirely optional.
+#
+# Tested using LockedList plugin v0.4 (RC2) timestamped 27 September 2007 19:42
+# (this is the first version to support the new "filename only" mode which we use)
+# and LockedList plugin v0.7 (RC2) timestamped 26 February 2008 17:49:24.
+#
+# The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
+#------------------------------------------------------------------------------------
+#
+# Unfortunately the 'LockedList' plugin relies upon OS features only found in
+# Windows NT4 or later so older systems such as Win9x must be treated as special
+# cases.
+#
+# If none of the specified files is locked then an empty string is returned,
+# otherwise the function returns the path to the first locked file it detects.
+#
+# NOTE:
+# The !insertmacro PFI_CheckIfLocked "" & !insertmacro PFI_CheckIfLocked "un." commands
+# are included in this file so the NSIS script can use 'Call PFI_CheckIfLocked' and
+# 'Call un.PFI_CheckIfLocked' without additional preparation.
+#
+# Inputs:
+#         (top of stack)           - full path of an EXE file to be checked
+#         (top of stack - 1)       - full path of an EXE file to be checked
+#          ...
+#         (top of stack - n)       - full path of an EXE file to be checked
+#         (top of stack - (n + 1)) - end-of-data marker (see C_EXE_END_MARKER definition)
+#
+# Outputs:
+#         (top of stack)           - if none of the files is in use, an empty string ("")
+#                                    is returned, otherwise the path to the first locked
+#                                    file found is returned
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "${C_EXE_END_MARKER}"
 #         Push "$INSTDIR\wperl.exe"
 #         Call PFI_CheckIfLocked
 #         Pop $R0
 #
 #        (if the file is no longer in use, $R0 will be "")
-#        (if the file is still being used, $R0 will be "$INSTDIR\wperl.exe")
 #--------------------------------------------------------------------------
 
 !macro PFI_CheckIfLocked UN
   Function ${UN}PFI_CheckIfLocked
-    !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
-    !define L_FILE_HANDLE   $R8
 
-    Exch ${L_EXE}
-    Push ${L_FILE_HANDLE}
+    !ifndef PFI_CheckIfLocked
 
-    IfFileExists "${L_EXE}" 0 unlocked_exit
-    SetFileAttributes "${L_EXE}" NORMAL
+        !define PFI_CheckIfLocked
 
+        var /GLOBAL G_CIL_FILE
+        var /GLOBAL G_CIL_FLAG
+        var /GLOBAL G_CIL_PATH
+        var /GLOBAL G_CIL_TEMP
+
+    !endif
+
+    Call ${UN}PFI_AtLeastWinNT4
+    Pop $G_CIL_FLAG
+    StrCmp $G_CIL_FLAG "0" specialcase
+
+    ; The target system provides the features required by the LockedList plugin
+
+    StrCpy $G_CIL_FLAG ""
+
+  get_exe_path:
     ClearErrors
-    FileOpen ${L_FILE_HANDLE} "${L_EXE}" a
-    FileClose ${L_FILE_HANDLE}
-    IfErrors exit
+    Pop $G_CIL_PATH
+    IfErrors panic
+    StrCmp $G_CIL_PATH "${C_EXE_END_MARKER}" list_exhausted
+    StrCmp $G_CIL_FLAG "" 0 get_exe_path
+    IfFileExists "$G_CIL_PATH" 0 get_exe_path
 
-  unlocked_exit:
-    StrCpy ${L_EXE} ""
+    ; Normally the POPFile programs are started using a hybrid path, where the filename
+    ; is given in LFN rather than SFN form but the remainder of the path is in SFN form.
+    ;
+    ; For example instead of using the pathname "C:\Program Files\POPFile\popfileif.exe"
+    ; or the pathname "C:\PROGRA~1\POPFILE\POPFIL~2.EXE" to start the program, the hybrid
+    ; pathname "C:\PROGRA~1\POPFILE\popfileif.exe" is used.
+    ;
+    ; These hybrid pathnames cause problems because the LockedList plugin searches for
+    ; an exact match with the specified pathame. As a workaround we use the plugin's
+    ; special "filename only" mode to find, for example, "popfileif.exe" and then
+    ; analyse the results to see if any match the path in which we are interested.
 
-   exit:
-    Pop ${L_FILE_HANDLE}
-    Exch ${L_EXE}
+    Push $G_CIL_PATH
+    Call ${UN}PFI_GetCompleteFPN
+    Pop $G_CIL_FILE
+    Push $G_CIL_FILE
+    Call ${UN}PFI_GetParent
+    Pop $G_CIL_PATH
+    StrLen $G_CIL_TEMP $G_CIL_PATH
+    IntOp $G_CIL_TEMP $G_CIL_TEMP + 1
+    StrCpy $G_CIL_FILE $G_CIL_FILE "" $G_CIL_TEMP
+    StrCpy $G_CIL_TEMP $G_CIL_FILE "" -4
+    StrCmp $G_CIL_TEMP ".exe" check_module
+    StrCmp $G_CIL_TEMP ".dll" check_module
 
-    !undef L_EXE
-    !undef L_FILE_HANDLE
+    ; Assume the file is "our" POPFile database so there is no need to use
+    ; the LockedList plugin's "AddFile" mode to check if the file is locked
+
+    SetFileAttributes "$G_CIL_PATH\$G_CIL_FILE" NORMAL
+    ClearErrors
+    FileOpen $G_CIL_TEMP "$G_CIL_PATH\$G_CIL_FILE" a
+    FileClose $G_CIL_TEMP
+    IfErrors 0 get_exe_path
+    StrCpy $G_CIL_FLAG "$G_CIL_PATH\$G_CIL_FILE"
+    Goto get_exe_path
+
+  check_module:
+    LockedList::AddModule /NOUNLOAD "\$G_CIL_FILE"
+    LockedList::SilentSearch
+    Pop $G_CIL_TEMP
+    StrCmp $G_CIL_TEMP "/start" get_search_result
+    MessageBox MB_OK|MB_ICONSTOP "Unexpected result from LockedList plugin\
+        ${MB_NL}${MB_NL}\
+        ($G_CIL_TEMP)"
+    Abort "Unexpected result from LockedList plugin ($G_CIL_TEMP)"
+
+  get_search_result:
+    Pop $G_CIL_TEMP           ; get "process ID" (or "/end" marker, if no more data)
+    StrCmp $G_CIL_TEMP "/end" end_of_locked_list
+    StrCmp $G_CIL_FLAG "" 0 skip_result
+    Call ${UN}PFI_GetCompleteFPN
+    Pop $G_CIL_TEMP           ; get the full "path to executable"
+    StrCmp $G_CIL_TEMP "$G_CIL_PATH\$G_CIL_FILE" 0 skip_window_caption
+    StrCpy $G_CIL_FLAG $G_CIL_TEMP
+    Goto skip_window_caption
+
+  skip_result:
+    Pop $G_CIL_TEMP           ; ignore the "path to executable" result
+
+  skip_window_caption:
+    Pop $G_CIL_TEMP           ; ignore the "window caption" result
+    Goto get_search_result
+
+  end_of_locked_list:
+    Goto get_exe_path
+
+  list_exhausted:
+    Push $G_CIL_FLAG
+    Goto exit
+
+  panic:
+    MessageBox MB_OK|MB_ICONSTOP "Internal Error:\
+      ${MB_NL}${MB_NL}\
+      '${UN}PFI_CheckIfLocked' function did not find\
+      ${MB_NL}\
+      the '${C_EXE_END_MARKER}' marker on the stack!"
+    Abort "Internal Error: \
+        '${UN}PFI_CheckIfLocked' function did not find the \
+        '${C_EXE_END_MARKER}' marker on the stack!"
+
+    ; Windows 95, 98, ME and NT3.x are treated as special cases
+    ; (because they do not support the LockedList plugin)
+
+  specialcase:
+    StrCpy $G_CIL_FLAG ""
+
+  loop:
+    ClearErrors
+    Pop $G_CIL_PATH
+    IfErrors panic
+    StrCmp $G_CIL_PATH "${C_EXE_END_MARKER}" allread
+    StrCmp $G_CIL_FLAG "" 0 loop
+    IfFileExists "$G_CIL_PATH" 0 loop
+    SetFileAttributes "$G_CIL_PATH" NORMAL
+    ClearErrors
+    FileOpen $G_CIL_FILE "$G_CIL_PATH" a
+    FileClose $G_CIL_FILE
+    IfErrors 0 loop
+    StrCpy $G_CIL_FLAG "$G_CIL_PATH"
+    Goto loop
+
+  allread:
+    Push $G_CIL_FLAG
+
+  exit:
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | MONITORCC | ONDEMAND | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_CheckIfLocked
     #
@@ -1220,6 +1428,23 @@
 # The !insertmacro PFI_DumpLog "" and !insertmacro PFI_DumpLog "un." commands are included in this file
 # so NSIS scripts can use 'Call PFI_DumpLog' and 'Call un.PFI_DumpLog' without additional preparation.
 #
+#--------------------------------------------------------------------------
+# This macro uses a plugin which is not distributed with the NSIS compiler
+#--------------------------------------------------------------------------
+# This macro uses a special NSIS plugin (DumpLog) to dump the log contents into a text file.
+# Originally a script-based method was used but it could take several seconds to save the log
+# (the plugin saves the file almost instantly).
+#
+# The 'NSIS Wiki' page for the 'DumpLog' plugin (description, example and download links):
+# http://nsis.sourceforge.net/DumpLog_plugin
+#
+# To install this plugin, copy the 'DumpLog.dll' file to the standard NSIS plugins folder
+# (${NSISDIR}\Plugins\). The 'DumpLog' source and example files can be unzipped to the
+# appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
+#
+# Tested with version 1.0 of the 'DumpLog' plugin.
+#--------------------------------------------------------------------------
+#
 # Inputs:
 #         (top of stack)     - the full path of the file where the log will be dumped
 #
@@ -1237,61 +1462,27 @@
 !macro PFI_DumpLog UN
   Function ${UN}PFI_DumpLog
 
-      !ifndef LVM_GETITEMCOUNT
-          !define LVM_GETITEMCOUNT 0x1004
-      !endif
-      !ifndef LVM_GETITEMTEXT
-        !define LVM_GETITEMTEXT 0x102D
-      !endif
+    !define L_LOGFILE   $R9
+    !define L_RESULT    $R8
 
-      Exch $5
-      Push $0
-      Push $1
-      Push $2
-      Push $3
-      Push $4
-      Push $6
+    Exch ${L_LOGFILE}
+    Push ${L_RESULT}
 
-      FindWindow $0 "#32770" "" $HWNDPARENT
-      GetDlgItem $0 $0 1016
-      StrCmp $0 0 error
-      FileOpen $5 $5 "w"
-      StrCmp $5 "" error
-      SendMessage $0 ${LVM_GETITEMCOUNT} 0 0 $6
-      System::Alloc ${NSIS_MAX_STRLEN}
-      Pop $3
-      StrCpy $2 0
-      System::Call "*(i, i, i, i, i, i, i, i, i) i \
-                    (0, 0, 0, 0, 0, r3, ${NSIS_MAX_STRLEN}) .r1"
+    DumpLog::DumpLog "${L_LOGFILE}" .R8
+    StrCmp ${L_RESULT} 0 exit
 
-    loop:
-      StrCmp $2 $6 done
-      System::Call "User32::SendMessageA(i, i, i, i) i \
-                    ($0, ${LVM_GETITEMTEXT}, $2, r1)"
-      System::Call "*$3(&t${NSIS_MAX_STRLEN} .r4)"
-      FileWrite $5 "$4${MB_NL}"
-      IntOp $2 $2 + 1
-      Goto loop
+    MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_SAVELOG_ERROR)\
+        ${MB_NL}${MB_NL}\
+        (${L_LOGFILE})"
 
-    done:
-      FileClose $5
-      System::Free $1
-      System::Free $3
-      Goto exit
+  exit:
+    Pop ${L_RESULT}
+    Pop ${L_LOGFILE}
 
-    error:
-      MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_MB_SAVELOG_ERROR)"
+    !undef L_LOGFILE
+    !undef L_RESULT
 
-    exit:
-      Pop $6
-      Pop $4
-      Pop $3
-      Pop $2
-      Pop $1
-      Pop $0
-      Pop $5
-
-    FunctionEnd
+  FunctionEnd
 !macroend
 
 !ifdef ADDSSL | BACKUP | IMAPUPDATER | INSTALLER | RESTORE
@@ -1304,13 +1495,15 @@
     !insertmacro PFI_DumpLog ""
 !endif
 
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.PFI_DumpLog
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_DumpLog
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
 
-;!insertmacro PFI_DumpLog "un."
+    !insertmacro PFI_DumpLog "un."
+!endif
 
 
 #--------------------------------------------------------------------------
@@ -1356,48 +1549,30 @@
     Push ${L_RESULT}
     Exch
 
-    DetailPrint "Checking '${L_PATH}\popfileb.exe' ..."
+    Push "${C_EXE_END_MARKER}"
 
-    Push "${L_PATH}\popfileb.exe"  ; runs POPFile in the background
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    DetailPrint "Checking '${L_PATH}\popfileb.exe' ..."
+    Push "${L_PATH}\popfileb.exe"     ; runs POPFile in the background
 
     DetailPrint "Checking '${L_PATH}\popfileib.exe' ..."
-
-    Push "${L_PATH}\popfileib.exe" ; runs POPFile in the background with system tray icon
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    Push "${L_PATH}\popfileib.exe"    ; runs POPFile in the background with system tray icon
 
     DetailPrint "Checking '${L_PATH}\popfilef.exe' ..."
-
-    Push "${L_PATH}\popfilef.exe"  ; runs POPFile in the foreground/console window/DOS box
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    Push "${L_PATH}\popfilef.exe"     ; runs POPFile in the foreground/console window/DOS box
 
     DetailPrint "Checking '${L_PATH}\popfileif.exe' ..."
-
-    Push "${L_PATH}\popfileif.exe" ; runs POPFile in the foreground with system tray icon
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    Push "${L_PATH}\popfileif.exe"    ; runs POPFile in the foreground with system tray icon
 
     DetailPrint "Checking '${L_PATH}\wperl.exe' ..."
-
-    Push "${L_PATH}\wperl.exe"     ; runs POPFile in the background (using popfile.pl)
-    Call ${UN}PFI_CheckIfLocked
-    Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" 0 exit
+    Push "${L_PATH}\wperl.exe"        ; runs POPFile in the background (using popfile.pl)
 
     DetailPrint "Checking '${L_PATH}\perl.exe' ..."
+    Push "${L_PATH}\perl.exe"         ; runs POPFile in the foreground (using popfile.pl)
 
-    Push "${L_PATH}\perl.exe"      ; runs POPFile in the foreground (using popfile.pl)
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
+    DetailPrint "${UN}PFI_CheckIfLocked returned '${L_RESULT}'"
 
-   exit:
     Pop ${L_PATH}
     Exch ${L_RESULT}              ; return full path to a locked file or an empty string
 
@@ -1528,7 +1703,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDUSER | DBANALYSER | DBSTATUS | INSTALLER | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetCompleteFPN
     #
@@ -1538,14 +1713,15 @@
     !insertmacro PFI_GetCompleteFPN ""
 !endif
 
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.PFI_GetCompleteFPN
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
+!ifdef ADDUSER | INSTALLER
+  #--------------------------------------------------------------------------
+  # Uninstaller Function: un.PFI_GetCompleteFPN
+  #
+  # This function is used during the uninstall process
+  #--------------------------------------------------------------------------
 
-;!insertmacro PFI_GetCompleteFPN "un."
-
+  !insertmacro PFI_GetCompleteFPN "un."
+!endif
 
 #--------------------------------------------------------------------------
 # Macro: PFI_GetCorpusPath
@@ -1970,7 +2146,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | DBANALYSER | DBSTATUS | RESTORE | RUNPOPFILE
+!ifdef ADDUSER | BACKUP | DBSTATUS | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDataPath
     #
@@ -2259,7 +2435,7 @@
   FunctionEnd
 !macroend
 
-!ifndef RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef MONITORCC & ONDEMAND & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDateTimeStamp
     #
@@ -2269,7 +2445,7 @@
     !insertmacro PFI_GetDateTimeStamp ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_GetDateTimeStamp
     #
@@ -2347,7 +2523,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE | STOP_POPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | ONDEMAND | RESTORE | STOP_POPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetFileSize
     #
@@ -2456,7 +2632,7 @@
   FunctionEnd
 !macroend
 
-!ifndef RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef MONITORCC & ONDEMAND & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetLocalTime
     #
@@ -2466,7 +2642,7 @@
     !insertmacro PFI_GetLocalTime ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_GetLocalTime
     #
@@ -2630,6 +2806,95 @@
 
 
 #--------------------------------------------------------------------------
+# Macro: PFI_GetParameters
+#
+# The installation process and the uninstall process may need a function which extracts
+# the parameters (if any) supplied on the command-line. This macro makes maintenance
+# easier by ensuring that both processes use identical functions, with the only difference
+# being their names.
+#
+# NOTE:
+# The !insertmacro PFI_GetParameters "" and !insertmacro PFI_GetParameters "un." commands are
+# included in this file so the NSIS script can use 'Call PFI_GetParameters' and
+# 'Call un.PFI_GetParameters' without additional preparation.
+#
+# Inputs:
+#         none
+#
+# Outputs:
+#         top of stack)     - all of the parameters supplied on the command line (may be "")
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Call PFI_GetParameters
+#         Pop $R0
+#
+#         (if 'setup.exe /SSL' was used to start the installer, $R0 will hold '/SSL')
+#--------------------------------------------------------------------------
+
+!macro PFI_GetParameters UN
+  Function ${UN}PFI_GetParameters
+
+      Push $R0
+      Push $R1
+      Push $R2
+      Push $R3
+
+      StrCpy $R2 1
+      StrLen $R3 $CMDLINE
+
+      ; Check for quote or space
+
+      StrCpy $R0 $CMDLINE $R2
+      StrCmp $R0 '"' 0 +3
+      StrCpy $R1 '"'
+      Goto loop
+
+      StrCpy $R1 " "
+
+    loop:
+      IntOp $R2 $R2 + 1
+      StrCpy $R0 $CMDLINE 1 $R2
+      StrCmp $R0 $R1 get
+      StrCmp $R2 $R3 get
+      Goto loop
+
+    get:
+      IntOp $R2 $R2 + 1
+      StrCpy $R0 $CMDLINE 1 $R2
+      StrCmp $R0 " " get
+      StrCpy $R0 $CMDLINE "" $R2
+
+      Pop $R3
+      Pop $R2
+      Pop $R1
+      Exch $R0
+
+    FunctionEnd
+!macroend
+
+!ifndef ONDEMAND
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_GetParameters
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_GetParameters ""
+!endif
+
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_GetParameters
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_GetParameters "un."
+!endif
+
+
+#--------------------------------------------------------------------------
 # Macro: PFI_GetParent
 #
 # The installation process and the uninstall process may both use a function which extracts the
@@ -2686,7 +2951,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBANALYSER | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParent
     #
@@ -2696,7 +2961,7 @@
     !insertmacro PFI_GetParent ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_GetParent
     #
@@ -2988,7 +3253,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | DBANALYSER | DBSTATUS
+!ifdef ADDUSER | DBSTATUS
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetSQLdbPathName
     #
@@ -3110,7 +3375,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | DBANALYSER | DBSTATUS | RUNSQLITE | RESTORE
+!ifdef ADDUSER | BACKUP | DBSTATUS | RUNSQLITE | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetSQLiteFormat
     #
@@ -3331,6 +3596,7 @@
     Push ${L_RESULT}
 
     DetailPrint "Checking '${L_PATH}\pfimsgcapture.exe' ..."
+    Push "${C_EXE_END_MARKER}"
     Push "${L_PATH}\pfimsgcapture.exe"
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
@@ -3349,6 +3615,7 @@
 
   pfi_util_a:
     DetailPrint "Checking '${L_PATH}\msgcapture.exe' ..."
+    Push "${C_EXE_END_MARKER}"
     Push "${L_PATH}\msgcapture.exe"
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
@@ -3367,6 +3634,7 @@
 
   pfi_util_b:
     DetailPrint "Checking '${L_PATH}\stop_pf.exe' ..."
+    Push "${C_EXE_END_MARKER}"
     Push "${L_PATH}\stop_pf.exe"
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
@@ -3385,6 +3653,7 @@
 
   pfi_util_c:
     DetailPrint "Checking '${L_PATH}\pfidiag.exe' ..."
+    Push "${C_EXE_END_MARKER}"
     Push "${L_PATH}\pfidiag.exe"
     Call ${UN}PFI_CheckIfLocked
     Pop ${L_RESULT}
@@ -3968,7 +4237,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | ONDEMAND | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_ShutdownViaUI
     #
@@ -4047,7 +4316,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBANALYSER | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrBackSlash
     #
@@ -4057,7 +4326,7 @@
     !insertmacro PFI_StrBackSlash ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_StrBackSlash
     #
@@ -4101,52 +4370,71 @@
 !macro PFI_StrCheckDecimal UN
   Function ${UN}PFI_StrCheckDecimal
 
-    !define DECIMAL_DIGIT    "0123456789"   ; accept only these digits
-    !define BAD_OFFSET       10             ; length of DECIMAL_DIGIT string
+    !define DECIMAL_DIGIT   "0123456789"   ; accept only these digits
+    !define BAD_OFFSET      10             ; length of DECIMAL_DIGIT string
 
-    Exch $0   ; The input string
-    Push $1   ; Holds the result: either "" (if input is invalid) or the input string (if valid)
-    Push $2   ; A character from the input string
-    Push $3   ; The offset to a character in the "validity check" string
-    Push $4   ; A character from the "validity check" string
-    Push $5   ; Holds the current "validity check" string
+    !define L_STRING        $0   ; The input string
+    !define L_RESULT        $1   ; Holds the result: either "" (if input is invalid) or the input string (if valid)
+    !define L_CURRENT       $2   ; A character from the input string
+    !define L_OFFSET        $3   ; The offset to a character in the "validity check" string
+    !define L_VALIDCHAR     $4   ; A character from the "validity check" string
+    !define L_VALIDLIST     $5   ; Holds the current "validity check" string
+    !define L_CHARSLEFT     $6   ; To cater for MBCS input strings, terminate when end of string reached, not when a null byte reached
 
-    StrCpy $1 ""
+    Exch ${L_STRING}
+    Push ${L_RESULT}
+    Push ${L_CURRENT}
+    Push ${L_OFFSET}
+    Push ${L_VALIDCHAR}
+    Push ${L_VALIDLIST}
+    Push ${L_CHARSLEFT}
+
+    StrCpy ${L_RESULT} ""
 
   next_input_char:
-    StrCpy $2 $0 1                ; Get the next character from the input string
-    StrCmp $2 "" done
-    StrCpy $5 ${DECIMAL_DIGIT}$2  ; Add it to end of "validity check" to guarantee a match
-    StrCpy $0 $0 "" 1
-    StrCpy $3 -1
+    StrLen ${L_CHARSLEFT} ${L_STRING}
+    StrCmp ${L_CHARSLEFT} 0 done
+    StrCpy ${L_CURRENT} ${L_STRING} 1                   ; Get the next character from the input string
+    StrCpy ${L_VALIDLIST} ${DECIMAL_DIGIT}${L_CURRENT}  ; Add it to end of "validity check" to guarantee a match
+    StrCpy ${L_STRING} ${L_STRING} "" 1
+    StrCpy ${L_OFFSET} -1
 
   next_valid_char:
-    IntOp $3 $3 + 1
-    StrCpy $4 $5 1 $3             ; Extract next "valid" character (from "validity check" string)
-    StrCmp $2 $4 0 next_valid_char
-    IntCmp $3 ${BAD_OFFSET} invalid 0 invalid  ; If match is with the char we added, input is bad
-    StrCpy $1 $1$4                ; Add "valid" character to the result
+    IntOp ${L_OFFSET} ${L_OFFSET} + 1
+    StrCpy ${L_VALIDCHAR} ${L_VALIDLIST} 1 ${L_OFFSET}    ; Extract next "valid" char (from "validity check" string)
+    StrCmp ${L_CURRENT} ${L_VALIDCHAR} 0 next_valid_char
+    IntCmp ${L_OFFSET} ${BAD_OFFSET} invalid 0 invalid    ; If match is with the char we added, input is bad
+    StrCpy ${L_RESULT} ${L_RESULT}${L_VALIDCHAR}          ; Add "valid" character to the result
     goto next_input_char
 
   invalid:
-    StrCpy $1 ""
+    StrCpy ${L_RESULT} ""
 
   done:
-    StrCpy $0 $1      ; Result is either a string of decimal digits or ""
-    Pop $5
-    Pop $4
-    Pop $3
-    Pop $2
-    Pop $1
-    Exch $0           ; place result on top of the stack
+    StrCpy ${L_STRING} ${L_RESULT}  ; Result is either a string of decimal digits or ""
+    Pop ${L_CHARSLEFT}
+    Pop ${L_VALIDLIST}
+    Pop ${L_VALIDCHAR}
+    Pop ${L_OFFSET}
+    Pop ${L_CURRENT}
+    Pop ${L_RESULT}
+    Exch ${L_STRING}                ; Place result on top of the stack
 
     !undef DECIMAL_DIGIT
     !undef BAD_OFFSET
 
+    !undef L_STRING
+    !undef L_RESULT
+    !undef L_CURRENT
+    !undef L_OFFSET
+    !undef L_VALIDCHAR
+    !undef L_VALIDLIST
+    !undef L_CHARSLEFT
+
   FunctionEnd
 !macroend
 
-!ifndef DBANALYSER & IMAPUPDATER & PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
+!ifndef MONITORCC & PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckDecimal
     #
@@ -4199,37 +4487,70 @@
 !macro PFI_StrStr UN
   Function ${UN}PFI_StrStr
 
-    Exch $R1    ; Make $R1 the "needle", Top of stack = old$R1, haystack
-    Exch        ; Top of stack = haystack, old$R1
-    Exch $R2    ; Make $R2 the "haystack", Top of stack = old$R2, old$R1
+    !define L_NEEDLE            $R1   ; the string we are trying to match
+    !define L_HAYSTACK          $R2   ; the string in which we search for a match
+    !define L_NEEDLE_LENGTH     $R3
+    !define L_HAYSTACK_LIMIT    $R4
+    !define L_HAYSTACK_OFFSET   $R5   ; the first character has an offset of zero
+    !define L_SUBSTRING         $R6   ; a string that might match the 'needle' string
 
-    Push $R3    ; Length of the needle
-    Push $R4    ; Counter
-    Push $R5    ; Temp
+    Exch ${L_NEEDLE}
+    Exch
+    Exch ${L_HAYSTACK}
+    Push ${L_NEEDLE_LENGTH}
+    Push ${L_HAYSTACK_LIMIT}
+    Push ${L_HAYSTACK_OFFSET}
+    Push ${L_SUBSTRING}
 
-    StrLen $R3 $R1
-    StrCpy $R4 0
+    StrLen ${L_NEEDLE_LENGTH} ${L_NEEDLE}
+    StrLen ${L_HAYSTACK_LIMIT} ${L_HAYSTACK}
+
+    ; If 'needle' is longer than 'haystack' then return empty string
+    ; (to show 'needle' was not found in 'haystack')
+
+    IntCmp ${L_NEEDLE_LENGTH} ${L_HAYSTACK_LIMIT} 0 0 not_found
+
+    ; Adjust the search limit as there is no point in testing substrings
+    ; which are known to be shorter than the length of the 'needle' string
+
+    IntOp ${L_HAYSTACK_LIMIT} ${L_HAYSTACK_LIMIT} - ${L_NEEDLE_LENGTH}
+
+    ; The first character is at offset 0
+
+    StrCpy ${L_HAYSTACK_OFFSET} 0
 
   loop:
-    StrCpy $R5 $R2 $R3 $R4
-    StrCmp $R5 $R1 done
-    StrCmp $R5 "" done
-    IntOp $R4 $R4 + 1
-    Goto loop
+    StrCpy ${L_SUBSTRING} ${L_HAYSTACK} ${L_NEEDLE_LENGTH} ${L_HAYSTACK_OFFSET}
+    StrCmp ${L_SUBSTRING} ${L_NEEDLE} match_found
+    IntOp ${L_HAYSTACK_OFFSET} ${L_HAYSTACK_OFFSET} + 1
+    IntCmp ${L_HAYSTACK_OFFSET} ${L_HAYSTACK_LIMIT} loop loop 0
 
-  done:
-    StrCpy $R1 $R2 "" $R4
+  not_found:
+    StrCpy ${L_NEEDLE} ""
+    Goto exit
 
-    Pop $R5
-    Pop $R4
-    Pop $R3
+  match_found:
+    StrCpy ${L_NEEDLE} ${L_HAYSTACK} "" ${L_HAYSTACK_OFFSET}
 
-    Pop $R2
-    Exch $R1
-  FunctionEnd
+  exit:
+    Pop ${L_SUBSTRING}
+    Pop ${L_HAYSTACK_OFFSET}
+    Pop ${L_HAYSTACK_LIMIT}
+    Pop ${L_NEEDLE_LENGTH}
+    Pop ${L_HAYSTACK}
+    Exch ${L_NEEDLE}
+
+    !undef L_NEEDLE
+    !undef L_HAYSTACK
+    !undef L_NEEDLE_LENGTH
+    !undef L_HAYSTACK_LIMIT
+    !undef L_HAYSTACK_OFFSET
+    !undef L_SUBSTRING
+
+    FunctionEnd
 !macroend
 
-!ifndef ADDSSL & DBANALYSER & DBSTATUS & IMAPUPDATER & MSGCAPTURE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef DBSTATUS & IMAPUPDATER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #
@@ -4300,7 +4621,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MSGCAPTURE & PFIDIAG & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR_AUW
+!ifndef MONITORCC & MSGCAPTURE & PFIDIAG & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_TrimNewlines
     #
@@ -4354,7 +4675,7 @@
 !macro PFI_WaitUntilUnlocked UN
   Function ${UN}PFI_WaitUntilUnlocked
     !define L_EXE           $R9   ; full path to the EXE file which is to be monitored
-    !define L_FILE_HANDLE   $R8
+    !define L_RESULT        $R8
     !define L_TIMEOUT       $R7   ; used to avoid an infinite loop
 
     ;-----------------------------------------------------------
@@ -4372,34 +4693,34 @@
     ;-----------------------------------------------------------
 
     Exch ${L_EXE}
-    Push ${L_FILE_HANDLE}
+    Push ${L_RESULT}
     Push ${L_TIMEOUT}
 
     IfFileExists "${L_EXE}" 0 exit_now
-    SetFileAttributes "${L_EXE}" NORMAL
     StrCpy ${L_TIMEOUT} ${C_SHUTDOWN_LIMIT}
 
   check_if_unlocked:
     Sleep ${C_SHUTDOWN_DELAY}
-    ClearErrors
-    FileOpen ${L_FILE_HANDLE} "${L_EXE}" a
-    FileClose ${L_FILE_HANDLE}
-    IfErrors 0 exit_now
+    Push "${C_EXE_END_MARKER}"
+    Push "${L_EXE}"
+    Call ${UN}PFI_CheckIfLocked
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "" exit_now
     IntOp ${L_TIMEOUT} ${L_TIMEOUT} - 1
     IntCmp ${L_TIMEOUT} 0 exit_now exit_now check_if_unlocked
 
    exit_now:
     Pop ${L_TIMEOUT}
-    Pop ${L_FILE_HANDLE}
+    Pop ${L_RESULT}
     Pop ${L_EXE}
 
     !undef L_EXE
-    !undef L_FILE_HANDLE
+    !undef L_RESULT
     !undef L_TIMEOUT
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | INSTALLER
+!ifdef ADDSSL | ADDUSER | INSTALLER | ONDEMAND
     #--------------------------------------------------------------------------
     # Installer Function: PFI_WaitUntilUnlocked
     #
@@ -4409,7 +4730,7 @@
     !insertmacro PFI_WaitUntilUnlocked ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_WaitUntilUnlocked
     #

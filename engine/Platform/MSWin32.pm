@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Platform::MSWin32;
 
 use POPFile::Module;
@@ -8,7 +8,7 @@ use POPFile::Module;
 #
 # This module handles POPFile specifics on Windows
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -103,9 +103,9 @@ sub start
 
     foreach my $dir (@temp) {
         if ( $dir =~ /pdk\-.+\-(\d+)$/ ) {
-            if ( $$ != $1 ) {
+   	        if ( $$ != $1 ) {
                 rmdir $dir;
-            }
+	        }
         }
     }
 
@@ -149,28 +149,20 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ( $status_message );
-
     if ( $name eq 'windows_trayicon_and_console' ) {
 
-        if ( defined( $$form{update_windows_configuration} ) ) {
-            if ( $$form{windows_trayicon} ) {
-                $self->config_( 'trayicon', 1 );
-            } else {
-                $self->config_( 'trayicon', 0 );
-            }
+        if ( defined($$form{windows_trayicon}) ) {
+            $self->config_( 'trayicon', $$form{windows_trayicon} );
+            $templ->param( 'trayicon_feedback' => 1 );
+        }
 
-            if ( $$form{windows_console} ) {
-                $self->config_( 'console', 1 );
-            } else {
-                $self->config_( 'console', 0 );
-            }
-
-            $status_message = $$language{Windows_NextTime};
+        if ( defined($$form{windows_console}) ) {
+            $self->config_( 'console', $$form{windows_console} );
+            $templ->param( 'console_feedback' => 1 );
         }
     }
 
-   return ( $status_message, undef );
+   return '';
 }
 
 1;

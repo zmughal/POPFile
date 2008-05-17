@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 1
+# POPFILE LOADABLE MODULE
 package POPFile::Logger;
 
 use POPFile::Module;
@@ -9,7 +9,7 @@ use POPFile::Module;
 # This module handles POPFile's logger.  It is used to save debugging
 # information to disk or to send it to the screen.
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -31,8 +31,6 @@ use POPFile::Module;
 use strict;
 use warnings;
 use locale;
-
-use File::Path;
 
 # Constant used by the log rotation code
 my $seconds_per_day = 60 * 60 * 24;
@@ -138,14 +136,25 @@ sub start
 
     $self->calculate_today__();
 
-    # Verify that the logger directory actually exists
-
-    eval { mkpath( $self->config_( 'logdir' ) ) };
-    if ( $@ ) {
-        $self->log_( 0, "Failed to create directory " . $self->config_( 'logdir' ) );
-    }
+    $self->debug( 0, '-----------------------' );
+    $self->debug( 0, 'POPFile ' . $self->version() . ' starting' );
 
     return 1;
+}
+
+#----------------------------------------------------------------------------
+#
+# stop
+#
+# Called to stop the logger module
+#
+#----------------------------------------------------------------------------
+sub stop
+{
+    my ( $self ) = @_;
+
+    $self->debug( 0, 'POPFile stopped' );
+    $self->debug( 0, '---------------' );
 }
 
 # ---------------------------------------------------------------------------
@@ -188,9 +197,8 @@ sub calculate_today__
     # Note that 0 parameter than allows the logdir to be outside the user
     # sandbox
 
-    $self->{debug_filename__} = $self->get_user_path_(          # PROFILE BLOCK START
-        $self->path_join( $self->config_( 'logdir' ),
-                          "popfile$self->{today__}.log" ), 0 ); # PROFILE BLOCK STOP
+    $self->{debug_filename__} = $self->get_user_path_(
+        $self->config_( 'logdir' ) . "popfile$self->{today__}.log", 0 );
 }
 
 # ---------------------------------------------------------------------------
@@ -205,8 +213,7 @@ sub remove_debug_files
     my ( $self ) = @_;
 
     my @debug_files = glob( $self->get_user_path_(
-                          $self->path_join( $self->config_( 'logdir' ),
-                                            'popfile*.log' ), 0 ) );
+                          $self->config_( 'logdir' ) . 'popfile*.log', 0 ) );
 
     foreach my $debug_file (@debug_files) {
         # Extract the epoch information from the popfile log file name
@@ -236,8 +243,7 @@ sub debug
         return;
     }
 
-    if ( ( !defined( $self->config_( 'level' ) ) ) ||   # PROFILE BLOCK START
-         ( $level > $self->config_( 'level' ) ) ) {     # PROFILE BLOCK STOP
+    if ( $level > $self->config_( 'level' ) ) {
         return;
     }
 
@@ -256,8 +262,8 @@ sub debug
 
         $message =~ s/([\x00-\x1f])/sprintf("[%2.2x]", ord($1))/eg;
 
-        my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =   # PROFILE BLOCK START
-            localtime;                                                         # PROFILE BLOCK STOP
+        my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
+            localtime;
         $year += 1900;
         $mon  += 1;
 

@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for Logger.pm
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -19,25 +19,29 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
-unlink 'popfile.cfg';
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
 
-my $l = $POPFile->get_module( 'POPFile/Logger' );
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
 
 # Test basic setup, name of the module, debug file location
 # logging option
@@ -118,8 +122,6 @@ close DEBUG;
 $l->{last_tickd__} -= 86400;
 $l->service();
 
-my $mq = $POPFile->get_module( 'POPFile/MQ' );
-test_assert( $mq );
 test_assert( defined( $mq->{queue__}{TICKD}[0] ), "checking TICKD message" );
 
 # Move the date ahead three days and check that the debug
@@ -128,18 +130,18 @@ test_assert( defined( $mq->{queue__}{TICKD}[0] ), "checking TICKD message" );
 if ( getlogin() eq 'root' ) {
     my $file = $l->debug_filename();
     `date --set='2 days'`;  # todo: make tool independent
-    $POPFile->CORE_service( 1 );
+    $l->service();
+    $mq->service();
     my $exists = ( -e $file );
     test_assert( $exists, "checking that debug file was deleted" );
     `date --set='1 day'`;  # todo: make tool independent
-    $POPFile->CORE_service( 1 );
+    $l->service();
+    $mq->service();
     $exists = ( -e $file );
     test_assert( !$exists, "checking that debug file was deleted" );
     `date --set='3 days ago'`;  # todo: make tool independent
 } else {
     print "Warning: skipping clean up tests because you are not root\n";
 }
-
-$POPFile->CORE_stop();
 
 1;

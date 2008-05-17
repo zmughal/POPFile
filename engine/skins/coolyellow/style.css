@@ -3,7 +3,7 @@ body {
   border: 0;
   font-family: tahoma, arial, sans-serif;
   color: #000000;
-  margin: 10px 20px 20px 20px;
+  margin: 10px 20px 20px 20px; 
   font-size: 10pt;
 }
 
@@ -16,20 +16,9 @@ h2.history {
   margin-top: 0;
   margin-bottom: 0.3em;
 }
-
-.search {
-  display: inline;
-  float: left;
-}
-
-.filter {
-  display: inline;
-}
-
 .removeButtonsTop {
   padding-bottom: 1em;
 }
-
 .shell, .shellTop {
   border-right: #000000 2px solid;
   border-top: #000000 2px solid;
@@ -37,21 +26,7 @@ h2.history {
   border-left: #000000 2px solid;
   color: #000000;
   border-bottom: #000000 2px solid;
-  background-color: #FEFF8F;
-}
-
-.shellStatusMessage {
-  color: #000000;
-  background-color: #FDFF4F;
-  border: #000000 2px solid;
-  width: 100%;
-}
-
-.shellErrorMessage {
-  color: #FF0000;
-  background-color: #FDFF4F;
-  border: #000000 2px solid;
-  width: 100%;
+  background-color: #ffff99;
 }
 
 input, select, textarea {
@@ -68,11 +43,9 @@ input.checkbox {
   background-color: transparent;
   border: 0;
 }
-
 input.submit:hover {
   background-color: #FFFFFF;
 }
-
 .menu {
   font-size: 10pt;
   font-weight: bold;
@@ -85,7 +58,7 @@ input.submit:hover {
   border-left: #000000 2px solid;
   width: 16%;
   color: black;
-  background-color: #FDFF4F;
+  background-color: #fffacd;
   font-size: 10pt;
 }
 
@@ -95,7 +68,7 @@ input.submit:hover {
   border-left: #000000 2px solid;
   width: 16%;
   color: black;
-  background-color: #FEFF8F;
+  background-color: #ffff99;
   font-size: 10pt;
 }
 
@@ -103,14 +76,13 @@ input.submit:hover {
   display: block;
   width: 100%;
 }
-
 tr.rowEven {
   border-right: #000000 2px solid;
   border-top: #000000 2px solid;
   border-left: #000000 2px solid;
   color: black;
   border-bottom: #000000 2px solid;
-  background-color: #FEFF8F;
+  background-color: #ffff99;
 }
 
 tr.rowOdd {
@@ -119,7 +91,7 @@ tr.rowOdd {
   border-left: #000000 1px solid;
   color: black;
   border-bottom: #000000 1px solid;
-  background-color: #FDFF4F;
+  background-color: #fffacd;
 }
 
 a:link {
@@ -163,7 +135,7 @@ table.head {
   border-top: #000000 2px;
   font-weight: bold;
   font-size: 12pt;
-  background: #FEFF8F;
+  background: #ffff99;
   margin: 0px;
   border-left: #000000 2px;
   width: 100%;
@@ -181,6 +153,7 @@ td.footerBody {
   text-align: center;
   padding-left: 5%;
   padding-right: 5%;
+  width: 33%;
 }
 
 table.footer {
@@ -191,7 +164,7 @@ table.footer {
   width: 100%;
   color: #000000;
   border-bottom: #000000 2px solid;
-  background-color: #FEFF8F;
+  background-color: #ffff99;
 }
 
 table.settingsTable {
@@ -341,7 +314,7 @@ tr.rowBoundary {
 }
 
 div.helpMessage {
-  background-color: #FDFF4F;
+  background-color: #fffacd;
   border: #000000 2px solid;
   padding: 0.3em;
 }
@@ -359,71 +332,17 @@ td.top20 td.historyNavigatorTop a + a {
   padding-left: 0.5em;
 }
 
-/*********************************************************/
-/* Config Bars */
-
-.configBar, .configBarHidden {
-  padding-top: 1em;
-}
-
-.configBarTitle {
-  font-size: 1em;
-  display: inline;
-}
-
-.configBarTitle a {
-  border: #000000 2px solid;
-  padding: 0.3em;
-  padding-bottom: 0;
-  margin-left: 0.3em;
-  background-color: #FDFF4F;
-  font-weight: bold;
-  font-size: 1em;
-  color: black;
-}
-
-.configBarBody {
-  background-color: #FEFF8F;
-  border: #000000 1px solid;
-}
-
-.configBar td {
-  border: #000000 1px solid;
-}
-
-.configBarBody form {
-  margin: 0;
-}
-
-.configBarOption {
-  border: #000000 1px solid;
-  margin: 0.3em;
-  padding: 0.3em;
-  display: inline;
-  float: left;
-  min-height: 3em;
-  background-color: #FDFF4F;
-}
-
-.checkLabel {
+.historyMagnetUsed {
+  overflow: hidden;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
-.configBarBody label.configurationLabel {
-  display: block;
+.historyMagnetUsed img {
+  vertical-align: bottom;
 }
 
-/*********************************************************/
-/* History Column Controls */
-
-.columnControls {
-  white-space:nowrap;
-  vertical-align: top;
-  width: 10px;
-}
-
-.columnRemove, .columnMove {
-  display: block;
-  width:100%;
-  height: 1em;
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
 }

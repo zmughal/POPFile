@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for bayes.pl
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -19,14 +19,13 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/CVS' );
-unlink( 'popfile.db' );
-
+unlink 'popfile.db';
 unlink 'stopwords';
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
@@ -44,10 +43,6 @@ test_assert( $code != 0 );
 my $line = shift @stdout;
 test_assert_regexp( $line, 'output the classification of a message' );
 
-# Save STDERR
-
-open my $old_stderr, ">&STDERR";
-
 # Bad file name
 open STDERR, ">temp.tmp";
 `$bayes doesnotexist`;
@@ -58,10 +53,6 @@ open TEMP, "<temp.tmp";
 $line = <TEMP>;
 close TEMP;
 test_assert_regexp( $line, 'Error: File `doesnotexist\' does not exist, classification aborted' );
-
-# Restore STDERR
-
-open STDERR, ">&", $old_stderr;
 
 # Check the output
 

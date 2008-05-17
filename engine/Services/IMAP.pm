@@ -1,6 +1,5 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Services::IMAP;
-
 use POPFile::Module;
 use Services::IMAP::Client;
 @ISA = ("POPFile::Module");
@@ -11,7 +10,7 @@ use Fcntl;
 #
 # IMAP.pm --- a module to use POPFile for an IMAP connection.
 #
-# Copyright (c) 2001-2007 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   $Revision$
 #
@@ -59,6 +58,8 @@ sub new {
 
     $self->name( 'imap' );
 
+    $self->{classifier__} = 0;
+
     # Here are the variables used by this module:
 
     # A place to store the last response that the IMAP server sent us
@@ -95,6 +96,8 @@ sub new {
     # will be the folder where the original message was placed (or left) in.
     $self->{hash_values__} = ();
 
+    $self->{history__} = 0;
+
     $self->{imap_error} = '';
 
     return $self;
@@ -111,8 +114,32 @@ sub new {
 sub initialize {
     my $self = shift;
 
-    # This module is diabled by default
+    $self->config_( 'hostname', '' );
+    $self->config_( 'port', 143 );
+    $self->config_( 'login', '' );
+    $self->config_( 'password', '' );
+    $self->config_( 'update_interval', 20 );
+    $self->config_( 'expunge', 0 );
+    $self->config_( 'use_ssl', 0 );
+
+    # Those next variables have getter/setter functions and should
+    # not be used directly:
+
+    $self->config_( 'watched_folders', "INBOX" );     # function watched_folders
+    $self->config_( 'bucket_folder_mappings', '' );   # function folder_for_bucket
+    $self->config_( 'uidvalidities', '' );            # function uid_validity
+    $self->config_( 'uidnexts', '' );                 # function uid_next
+
+    # Diabled by default
     $self->config_( 'enabled', 0 );
+
+    # Training mode is disabled by default:
+    $self->config_( 'training_mode', 0 );
+
+    # Set the time stamp for the last update to the current time
+    # minus the update interval so that we will connect as soon
+    # as service() is called for the first time.
+    $self->{last_update__} = time - $self->config_( 'update_interval' );
 
     return $self->SUPER::initialize();
 }
@@ -135,8 +162,6 @@ sub start {
     if ( $self->config_( 'enabled' ) == 0 ) {
         return 2;
     }
-
-    # Register all our UI configuration items
 
     $self->register_configuration_item_( 'configuration',
                                          'imap_0_connection_details',
@@ -167,15 +192,6 @@ sub start {
                                          'imap_5_options',
                                          'imap-options.thtml',
                                          $self );
-    $self->register_configuration_item_( 'configuration',
-                                         'imap_6_training',
-                                         'imap-do-training.thtml',
-                                         $self );
-
-    # Set the time stamp for the last update to the current time
-    # minus the update interval so that we will connect as soon
-    # as service() is called for the first time.
-    $self->{last_update__} = time - $self->user_config_( 1, 'update_interval' );
 
     return $self->SUPER::start();
 }
@@ -185,8 +201,7 @@ sub start {
 # ----------------------------------------------------------------------------
 # stop
 #
-#   This gets called when POPFile shuts down. We do any kind of necessary
-#   cleaning up here.
+#   Clean up - release the session key
 #
 # ----------------------------------------------------------------------------
 
@@ -201,75 +216,68 @@ sub stop {
 #
 # service
 #
-#   This get's frequently called by the framework.  It checks whether
-#   our checking interval has elapsed and if it has, it goes to work.
+#   This get's frequently called by the framework.
+#   It checks whether our checking interval has elapsed and if it has,
+#   it goes to work.
 #
 # ----------------------------------------------------------------------------
 
 sub service {
     my $self = shift;
 
-    # We have to get a session key first, then loop over all users that
-    # wish to use our services.
+    if ( time - $self->{last_update__} >= $self->config_( 'update_interval' ) ) {
 
-    my $sessionKey = $self->classifier_()->get_administrator_session_key();
-    my $users = $self->classifier_()->get_user_list( $sessionKey );
+        # Since the IMAP-Client module can throw an exception, i.e. die if
+        # it detects a lost connection, we eval the following code to be able
+        # to catch the exception. We also tell Perl to ignore broken pipes.
 
-    foreach my $userId ( keys %{$users} ) {
-    	$self->log_( 1, "Checking user $users->{$userId} for IMAP settings." );
-    	$self->user_id( $userId );
+        eval {
+            local $SIG{'PIPE'} = 'IGNORE';
+            local $SIG{'__DIE__'};
 
-		if ( time - $self->{last_update__} >= $self->user_config_( $userId, 'update_interval' ) ) {
+            if ( $self->config_( 'training_mode' ) == 1 ) {
+                $self->train_on_archive__();
+            }
+            else {
 
-			# Since the IMAP-Client module can throw an exception, i.e. die if
-			# it detects a lost connection, we eval the following code to be able
-			# to catch the exception. We also tell Perl to ignore broken pipes.
+                # If we haven't yet set up a list of serviced folders,
+                # or if the list was changed by the user, build up a
+                # list of folder in $self->{folders__}
+                if ( ( keys %{$self->{folders__}} == 0 ) || ( $self->{folder_change_flag__} == 1 ) ) {
+                    $self->build_folder_list__();
+                }
 
-			eval {
-				local $SIG{'PIPE'} = 'IGNORE';
-				local $SIG{'__DIE__'};
+                $self->connect_server__();
 
-				if ( $self->user_config_( $userId, 'training_mode' ) == 1 ) {
-					$self->train_on_archive__();
-				}
-				else {
-					# If we haven't yet set up a list of serviced folders,
-					# or if the list was changed by the user, build up a
-					# list of folder in $self->{folders__}
-					if ( ( keys %{$self->{folders__}} == 0 ) || ( $self->{folder_change_flag__} == 1 ) ) {
-						$self->build_folder_list__();
-					}
+                # Reset the hash containing the hash values we have seen the
+                # last time through service.
+                $self->{hash_values__} = ();
 
-					$self->connect_server__();
+                # Now do the real job
+                foreach my $folder ( keys %{$self->{folders__}} ) {
+                    if ( exists $self->{folders__}{$folder}{imap} ) {
+                        $self->scan_folder( $folder );
+                    }
+                }
+            }
+        };
+        # if an exception occurred, we try to catch it here
+        if ( $@ ) {
+            $self->disconnect_folders__();
+            # If we caught an exception, we better reset training_mode
+            $self->config_( 'training_mode', 0 );
 
-					# Reset the hash containing the hash values we have seen the
-					# last time through service.
-					$self->{hash_values__} = ();
-
-					# Now do the real job
-					foreach my $folder ( keys %{$self->{folders__}} ) {
-						$self->scan_folder( $folder ) if exists $self->{folders__}{$folder}{imap};
-					}
-				}
-			};
-			# if an exception occurred, we try to catch it here
-			if ( $@ ) {
-				$self->disconnect_folders__();
-				# If we caught an exception, we better reset training_mode
-				$self->user_config_( $userId, 'training_mode', 0 );
-
-				# say__() and get_response__() will die with this message:
-				if ( $@ =~ /^POPFILE-IMAP-EXCEPTION: (.+\)\))/ ) {
-					$self->log_( 0, $1 );
-				}
-				# If we didn't die but somebody else did, we have empathy.
-				else {
-					die $@;
-				}
-			}
-			# Save the current time.
-			$self->{last_update__} = time;
-		}
+            # say__() and get_response__() will die with this message:
+            if ( $@ =~ /^POPFILE-IMAP-EXCEPTION: (.+\)\))/ ) {
+                $self->log_( 0, $1 );
+            }
+            # If we didn't die but somebody else did, we have empathy.
+            else {
+                die $@;
+            }
+        }
+        # Save the current time.
+        $self->{last_update__} = time;
     }
 
     return 1;
@@ -302,20 +310,20 @@ sub build_folder_list__ {
 
     $self->log_( 1, "Building list of serviced folders." );
 
-    # At this point, we simply reset the folders hash.  This isn't
-    # really elegant because it will leave dangling connections if we
-    # have already been connected. But I trust in Perl's garbage
-    # collection and keep my fingers crossed.
+    # At this point, we simply reset the folders hash.
+    # This isn't really elegant because it will leave dangling connections
+    # if we have already been connected. But I trust in Perl's garbage collection
+    # and keep my fingers crossed.
 
     %{$self->{folders__}} = ();
 
     # watched folders
-    foreach ( $self->watched_folders__() ) {
-        $self->{folders__}{$_}{watched} = 1;
+    foreach my $folder ( $self->watched_folders__() ) {
+        $self->{folders__}{$folder}{watched} = 1;
     }
 
     # output folders
-    foreach my $bucket ( $self->classifier_()->get_all_buckets( $self->api_session() ) ) {
+    foreach my $bucket ( $self->classifier()->get_all_buckets( $self->api_session() ) ) {
 
         my $folder = $self->folder_for_bucket__( $bucket );
 
@@ -324,10 +332,11 @@ sub build_folder_list__ {
         }
     }
 
-    # If this is a new POPFile installation that isn't yet configured,
-    # our hash will have exactly one key now which will point to the
-    # INBOX. Since this isn't enough to do anything meaningful, we
-    # simply reset the hash:
+    # If this is a new POPFile installation that isn't yet
+    # configured, our hash will have exactly one key now
+    # which will point to the INBOX. Since this isn't enough
+    # to do anything meaningful, we simply reset the hash:
+
     if ( ( keys %{$self->{folders__}} ) == 1 ) {
         %{$self->{folders__}} = ();
     }
@@ -367,7 +376,7 @@ sub connect_server__ {
                 &&
             ! exists $self->{folders__}{$folder}{watched}
                 &&
-            $self->classifier_()->is_pseudo_bucket( $self->api_session(),
+            $self->classifier()->is_pseudo_bucket( $self->api_session(),
                         $self->{folders__}{$folder}{output} ) ) {
                 next;
         }
@@ -452,12 +461,12 @@ sub disconnect_folders__ {
     $self->log_( 1, "Trying to disconnect all connections." );
 
     foreach my $folder ( keys %{$self->{folders__}} ) {
+
         my $imap = $self->{folders__}{$folder}{imap};
         if ( defined $imap  && $imap->connected() ) {
             $imap->logout( $folder );
         }
     }
-
     %{$self->{folders__}} = ();
 }
 
@@ -466,10 +475,10 @@ sub disconnect_folders__ {
 #
 # scan_folder
 #
-#   This function scans a folder on the IMAP server.  According to the
-#   attributes of a folder (watched, output), and the attributes of
-#   the message (new, classified, etc) it then decides what to do with
-#   the messages.
+#   This function scans a folder on the IMAP server.
+#   According to the attributes of a folder (watched, output), and the attributes
+#   of the message (new, classified, etc) it then decides what to do with the
+#   messages.
 #   There are currently three possible actions:
 #       1. Classify the message and move to output folder
 #       2. Reclassify message
@@ -482,12 +491,12 @@ sub disconnect_folders__ {
 # ----------------------------------------------------------------------------
 
 sub scan_folder {
-    my $self = shift;
+    my $self   = shift;
     my $folder = shift;
 
     # make the flags more accessible.
     my $is_watched = ( exists $self->{folders__}{$folder}{watched} ) ? 1 : 0;
-    my $is_output  = ( exists $self->{folders__}{$folder}{output} )  ? $self->{folders__}{$folder}{output} : '';
+    my $is_output  = ( exists $self->{folders__}{$folder}{output } ) ? $self->{folders__}{$folder}{output} : '';
 
     $self->log_( 1, "Looking for new messages in folder $folder." );
 
@@ -520,8 +529,8 @@ sub scan_folder {
         }
 
         # Watch our for those pesky duplicate and triplicate spam messages:
-        if ( exists $self->{hash_values__}{$hash} ) {
 
+        if ( exists $self->{hash_values__}{$hash} ) {
             my $destination = $self->{hash_values__}{$hash};
             if ( $destination ne $folder ) {
                 $self->log_( 0, "Found duplicate hash value: $hash. Moving the message to $destination." );
@@ -532,11 +541,11 @@ sub scan_folder {
                 $self->log_( 0, "Found duplicate hash value: $hash. Ignoring duplicate in folder $folder." );
             }
 
-            # Ignore messages we have already seen
             next;
         }
 
         # Find out what we are dealing with here:
+
         if ( $is_watched ) {
             if ( $self->can_classify__( $hash ) ) {
 
@@ -558,7 +567,6 @@ sub scan_folder {
         if ( my $bucket = $is_output ) {
             if ( my $old_bucket = $self->can_reclassify__( $hash, $bucket ) ) {
                 my $result = $self->reclassify_message( $folder, $msg, $old_bucket, $hash );
-
                 next;
             }
         }
@@ -569,7 +577,7 @@ sub scan_folder {
 
     # After we are done with the folder, we issue an EXPUNGE command
     # if we were told to do so.
-    if ( $moved_message && $self->user_config_( $self->user_id(), 'expunge' ) ) {
+    if ( $moved_message && $self->config_( 'expunge' ) ) {
         $imap->expunge();
     }
 }
@@ -580,11 +588,10 @@ sub scan_folder {
 #
 # classify_message
 #
-#   This function takes a message UID and then tries to classify the
-#   corresponding message to a POPFile bucket. It delegates all the
-#   house-keeping that keeps the POPFile statistics up to date to
-#   helper functions, but the house-keeping is done. The caller need
-#   not worry about this.
+#   This function takes a message UID and then tries to classify the corresponding
+#   message to a POPFile bucket. It delegates all the house-keeping that keeps
+#   the POPFile statistics up to date to helper functions, but the house-keeping
+#   is done. The caller need not worry about this.
 #
 # Arguments:
 #
@@ -651,7 +658,7 @@ sub classify_message {
 
         if ( $part eq 'HEADER' ) {
             sysseek $pseudo_mailer, 0, 0;
-            ( $class, $slot, $magnet_used ) = $self->classifier_()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 1, '', undef, 0, undef );
+            ( $class, $slot, $magnet_used ) = $self->classifier()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 1, '', undef, 0, undef );
 
             if ( $magnet_used ) {
                 $self->log_( 0, "Message with slot $slot was classified as $class using a magnet." );
@@ -667,7 +674,7 @@ sub classify_message {
         # a look and make it save the message to history:
         sysseek $pseudo_mailer, 0, 0;
 
-        ( $class, $slot, $magnet_used ) = $self->classifier_()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 0, '', undef, 0, undef );
+        ( $class, $slot, $magnet_used ) = $self->classifier()->classify_and_modify( $self->api_session(), $pseudo_mailer, undef, 0, '', undef, 0, undef );
 
         close $pseudo_mailer;
         unlink $file;
@@ -697,15 +704,14 @@ sub classify_message {
 }
 
 
-
 # ----------------------------------------------------------------------------
 #
 # reclassify_message
 #
-#   This function takes a message UID and then tries to reclassify the
-#   corresponding message from one POPFile bucket to another POPFile
-#   bucket. It delegates all the house-keeping that keeps the POPFile
-#   statistics up to date to helper functions, but the house-keeping
+#   This function takes a message UID and then tries to reclassify the corresponding
+#   message from one POPFile bucket to another POPFile bucket. It delegates all the
+#   house-keeping that keeps the POPFile statistics up to date to helper functions,
+#   but the house-keeping
 #   is done. The caller need not worry about this.
 #
 # Arguments:
@@ -742,24 +748,25 @@ sub reclassify_message {
     # I simply use "imap.tmp" as the file name here.
 
     my $file = $self->get_user_path_( 'imap.tmp' );
-    unless ( open TMP, ">$file" ) {
+    if ( open my $TMP, '>', $file ) {
+        foreach ( @lines ) {
+            print $TMP $_;
+        }
+        close $TMP;
+
+        my $slot = $self->history()->get_slot_from_hash( $hash );
+        $self->classifier()->add_message_to_bucket( $self->api_session(), $new_bucket, $file );
+        $self->classifier()->reclassified( $self->api_session(), $old_bucket, $new_bucket, 0 );
+        $self->history()->change_slot_classification( $slot, $new_bucket, $self->api_session(), 0);
+
+        $self->log_( 0, "Reclassified the message with UID $msg from bucket $old_bucket to bucket $new_bucket." );
+
+        unlink $file;
+    }
+    else {
         $self->log_( 0, "Cannot open temp file $file" );
         return;
-    };
-
-    foreach ( @lines ) {
-        print TMP $_;
     }
-    close TMP;
-
-    my $slot = $self->history_()->get_slot_from_hash( $hash );
-    $self->classifier_()->add_message_to_bucket( $self->api_session(), $new_bucket, $file );
-    $self->classifier_()->reclassified( $self->api_session(), $old_bucket, $new_bucket, 0 );
-    $self->history_()->change_slot_classification( $slot, $new_bucket, $self->api_session(), 0);
-
-    $self->log_( 0, "Reclassified the message with UID $msg from bucket $old_bucket to bucket $new_bucket." );
-
-    unlink $file;
 }
 
 
@@ -785,7 +792,7 @@ sub folder_for_bucket__ {
     my $bucket = shift;
     my $folder = shift;
 
-    my $all = $self->user_config_( $self->user_id(), 'bucket_folder_mappings' );
+    my $all = $self->config_( 'bucket_folder_mappings' );
     my %mapping = split /$cfg_separator/, $all;
 
     # set
@@ -796,7 +803,7 @@ sub folder_for_bucket__ {
         while ( my ( $k, $v ) = each %mapping ) {
             $all .= "$k$cfg_separator$v$cfg_separator";
         }
-        $self->user_config_( $self->user_id(), 'bucket_folder_mappings', $all );
+        $self->config_( 'bucket_folder_mappings', $all );
     }
     # get
     else {
@@ -823,7 +830,7 @@ sub watched_folders__ {
     my $self = shift;
     my @folders = @_;
 
-    my $all = $self->user_config_( $self->user_id(), 'watched_folders' );
+    my $all = $self->config_( 'watched_folders' );
 
     # set
     if ( @folders ) {
@@ -831,11 +838,52 @@ sub watched_folders__ {
         foreach ( @folders ) {
             $all .= "$_$cfg_separator";
         }
-        $self->user_config_( $self->user_id(), 'watched_folders', $all );
+        $self->config_( 'watched_folders', $all );
     }
     # get
     else {
         return split /$cfg_separator/, $all;
+    }
+}
+
+
+
+# ----------------------------------------------------------------------------
+#
+# classifier - Called by the framework to set our classifier
+#               - call it without any arguments and you'll get the classifier
+#
+# ----------------------------------------------------------------------------
+
+sub classifier {
+    my $self = shift;
+    my $classifier = shift;
+
+    if ( defined $classifier ) {
+        $self->{classifier__} = $classifier;
+    }
+    else {
+        return $self->{classifier__};
+    }
+}
+
+
+# ----------------------------------------------------------------------------
+#
+# history - Called by the framework to set our history module, called it
+#           without any arguments to get the history module
+#
+# ----------------------------------------------------------------------------
+
+sub history {
+    my $self = shift;
+    my $history = shift;
+
+    if ( defined $history ) {
+        $self->{history__} = $history;
+    }
+    else {
+        return $self->{history__};
     }
 }
 
@@ -851,30 +899,12 @@ sub api_session {
     my $self = shift;
 
     if ( ! $self->{api_session__} ) {
-    	# TODO: Where the hell should I get a session from??
-     #   my $user = $self->classifier_()->valid_session_key__( $session );
-        $self->{api_session__} = $self->classifier_()->get_session_key( 'admin', '' );
+        $self->{api_session__} = $self->classifier()->get_session_key( 'admin', '' );
     }
 
     return $self->{api_session__};
 }
 
-#----------------------------------------------------------------------------
-#
-# user_id
-#
-# Get or set the id of the user that we are currently working for.
-#----------------------------------------------------------------------------
-
-sub user_id {
-	my $self = shift;
-
-	if ( @_ ) {
-		$self->{ current_userid } = shift;
-	}
-
-	return $self->{ current_userid };
-}
 
 #----------------------------------------------------------------------------
 # get hash
@@ -927,7 +957,7 @@ sub get_hash {
         my $subject  = ${$header{'subject'}}[0];
         my $received = ${$header{'received'}}[0];
 
-        my $hash = $self->history_()->get_message_hash( $mid, $date, $subject, $received );
+        my $hash = $self->history()->get_message_hash( $mid, $date, $subject, $received );
 
         $self->log_( 1, "Hashed message: $subject." );
         $self->log_( 1, "Message $msg has hash value $hash" );
@@ -957,7 +987,7 @@ sub can_classify__ {
     my $self = shift;
     my $hash = shift;
 
-    my $slot = $self->history_()->get_slot_from_hash( $hash );
+    my $slot = $self->history()->get_slot_from_hash( $hash );
 
     if ( $slot  ne '' ) {
         $self->log_( 1, "Message was already classified (slot $slot)." );
@@ -991,11 +1021,11 @@ sub can_reclassify__ {
     my $new_bucket  = shift;
 
     # We must already know the message
-    my $slot = $self->history_()->get_slot_from_hash( $hash );
+    my $slot = $self->history()->get_slot_from_hash( $hash );
 
     if ( $slot ne '' ) {
         my ( $id, $from, $to, $cc, $subject, $date, $hash, $inserted, $bucket, $reclassified, undef, $magnetized ) =
-                    $self->history_()->get_slot_fields( $slot, $self->api_session() );
+                    $self->history()->get_slot_fields( $slot );
 
         $self->log_( 2, "get_slot_fields returned the following information:" );
         $self->log_( 2, "id:            $id" );
@@ -1018,7 +1048,14 @@ sub can_reclassify__ {
 
                 # new and old bucket must be different
                 if ( $new_bucket ne $bucket ) {
-                    return $bucket;
+
+                    # The new bucket must not be a pseudo-bucket
+                    if ( ! $self->classifier()->is_pseudo_bucket( $self->api_session(), $new_bucket ) ) {
+                        return $bucket;
+                    }
+                    else {
+                        $self->log_( 1, "Will not reclassify to pseudo-bucket ($new_bucket)" );
+                    }
                 }
                 else {
                     $self->log_( 1, "Will not reclassify to same bucket ($new_bucket)." );
@@ -1060,16 +1097,13 @@ sub configure_item {
     my $templ = shift;
     my $language = shift;
 
-    my $userId = $self->user_id();
-
     # conection details
     if ( $name eq 'imap_0_connection_details' ) {
-    	
-        $templ->param( 'IMAP_hostname',    $self->user_config_( $userId, 'hostname' ) );
-        $templ->param( 'IMAP_port',        $self->user_config_( $userId, 'port' ) );
-        $templ->param( 'IMAP_login',       $self->user_config_( $userId, 'login' ) );
-        $templ->param( 'IMAP_password',    $self->user_config_( $userId, 'password' ) );
-        $templ->param( 'IMAP_ssl_checked', $self->user_config_( $userId, 'use_ssl' ) ? 'checked="checked"' : '' );
+        $templ->param( 'IMAP_hostname', $self->config_( 'hostname' ) );
+        $templ->param( 'IMAP_port',     $self->config_( 'port' ) );
+        $templ->param( 'IMAP_login',    $self->config_( 'login' ) );
+        $templ->param( 'IMAP_password', $self->config_( 'password' ) );
+        $templ->param( 'IMAP_ssl_checked', $self->config_( 'use_ssl' ) ? 'checked="checked"' : '' );
     }
 
     # Which mailboxes/folders should we be watching?
@@ -1123,9 +1157,7 @@ sub configure_item {
 
                 $data_watched_folders{IMAP_loop_mailboxes} = \@loop_mailboxes;
                 $data_watched_folders{IMAP_loop_counter} = $i;
-                $data_watched_folders{IMAP_WatchedFolder_Msg} = $language->{Imap_WatchedFolder};
-                $data_watched_folders{Localize_Remove} = $language->{Remove};
-                $data_watched_folders{IMAP_ifnot_first_folder} = ( $i == 1 ) ? 0 : 1;
+                $data_watched_folders{IMAP_WatchedFolder_Msg} = $$language{Imap_WatchedFolder};
 
                 push @loop_watched_folders, \%data_watched_folders;
             }
@@ -1153,7 +1185,7 @@ sub configure_item {
         else {
             $templ->param( IMAP_if_mailboxes => 1 );
 
-            my @buckets = $self->classifier_()->get_all_buckets( $self->api_session() );
+            my @buckets = $self->classifier()->get_all_buckets( $self->api_session() );
 
             my @outer_loop = ();
 
@@ -1162,7 +1194,7 @@ sub configure_item {
                 my $output = $self->folder_for_bucket__( $bucket );
 
                 $outer_data{IMAP_mailbox_defined} = (defined $output) ? 1 : 0;
-                $outer_data{IMAP_Bucket_Header} = sprintf( $language->{Imap_Bucket2Folder}, $bucket );
+                $outer_data{IMAP_Bucket_Header} = sprintf( $$language{Imap_Bucket2Folder}, $bucket );
 
                 my @inner_loop = ();
                 foreach my $mailbox ( @{$self->{mailboxes__}} ) {
@@ -1189,7 +1221,7 @@ sub configure_item {
 
     # Read the list of mailboxes from the server. Now!
     if ( $name eq 'imap_4_update_mailbox_list' ) {
-        if ( $self->user_config_( $userId, 'hostname' ) eq '' ) {
+        if ( $self->config_( 'hostname' ) eq '' ) {
             $templ->param( IMAP_if_connection_configured => 0 );
         }
         else {
@@ -1201,16 +1233,11 @@ sub configure_item {
     if ( $name eq 'imap_5_options' ) {
 
         # Are we expunging after moving messages?
-        my $checked = $self->user_config_( $userId, 'expunge' ) ? 'checked="checked"' : '';
+        my $checked = $self->config_( 'expunge' ) ? 'checked="checked"' : '';
         $templ->param( IMAP_expunge_is_checked => $checked );
 
         # Update interval in seconds
-        $templ->param( IMAP_interval => $self->user_config_( $userId, 'update_interval' ) );
-    }
-
-    # Switch the module to training mode
-    if ( $name eq 'imap_6_training' ) {
-        $templ->param( imap_currently_training => $self->user_config_( $userId, 'training_mode' ) );
+        $templ->param( IMAP_interval => $self->config_( 'update_interval' ) );
     }
 }
 
@@ -1228,224 +1255,230 @@ sub configure_item {
 #
 # ----------------------------------------------------------------------------
 
-sub validate_item
-{
-    my ( $self, $name, $templ, $language, $form ) = @_;
+sub validate_item {
+    my $self     = shift;
+    my $name     = shift;
+    my $templ    = shift;
+    my $language = shift;
+    my $form     = shift;
 
-    my ( $status_message, $error_message );
-
+    # connection details
     if ( $name eq 'imap_0_connection_details' ) {
-        return $self->validate_connection_details( $name, $templ, $language, $form )
+        return $self->validate_connection_details( $name, $templ, $language, $form );
     }
+
+    # watched folders
     if ( $name eq 'imap_1_watch_folders' ) {
-        return $self->validate_watch_folders( $name, $templ, $language, $form );
+        if ( defined $form->{update_imap_1_watch_folders} ) {
+
+            my $i = 1;
+            my %folders;
+            foreach ( $self->watched_folders__() ) {
+                $folders{ $form->{"imap_folder_$i"} }++;
+                $i++;
+            }
+
+            $self->watched_folders__( sort keys %folders );
+            $self->{folder_change_flag__} = 1;
+        }
+        return;
     }
+
+    # Add a watched folder
     if ( $name eq 'imap_2_watch_more_folders' ) {
-        return $self->validate_watch_more_folders( $name, $templ, $language, $form );
+        if ( defined $form->{imap_2_watch_more_folders} ) {
+            my @current = $self->watched_folders__();
+            push @current, 'INBOX';
+            $self->watched_folders__( @current );
+        }
+        return;
     }
+
+    # map buckets to folders
     if ( $name eq 'imap_3_bucket_folders' ) {
-        return $self->validate_bucket_folders( $name, $templ, $language, $form );
+        if ( defined $form->{imap_3_bucket_folders} ) {
+
+            # We have to make sure that there is only one bucket per folder
+            # Multiple buckets cannot map to the same folder because how
+            # could we reliably reclassify on move then?
+
+            my %bucket2folder;
+            my %folders;
+
+            foreach my $key ( keys %$form ) {
+                # match bucket name:
+                if ( $key =~ /^imap_folder_for_(.+)$/ ) {
+                    my $bucket = $1;
+                    my $folder = $form->{ $key };
+
+                    $bucket2folder{ $bucket } = $folder;
+                    $folders{ $folder }++;
+                }
+            }
+
+            my $bad = 0;
+            while ( my ( $bucket, $folder ) = each %bucket2folder ) {
+
+                if ( exists $folders{$folder} && $folders{ $folder } > 1 ) {
+                    $bad = 1;
+                }
+                else {
+                    $self->folder_for_bucket__( $bucket, $folder );
+                    $self->{folder_change_flag__} = 1;
+                }
+            }
+            $templ->param( IMAP_buckets_to_folders_if_error => $bad );
+        }
+        return;
     }
+
+    # update the list of mailboxes
     if ( $name eq 'imap_4_update_mailbox_list' ) {
         return $self->validate_update_mailbox_list( $name, $templ, $language, $form );
     }
+
+    # various options
     if ( $name eq 'imap_5_options' ) {
-        return $self->validate_options( $name, $templ, $language, $form );
-    }
-    if ( $name eq 'imap_6_training' ) {
-        if ( defined $form->{do_imap_training} ) {
-            $self->user_config_( $self->user_id(), 'training_mode', 1 );
-            return ( $language->{Imap_DoingTraining}, undef );
+
+        if ( defined $form->{update_imap_5_options} ) {
+
+            # expunge or not?
+            if ( defined $form->{imap_options_expunge} ) {
+                $self->config_( 'expunge', 1 );
+            }
+            else {
+                $self->config_( 'expunge', 0 );
+            }
+
+            # update interval
+            my $form_interval = $form->{imap_options_update_interval};
+            if ( defined $form_interval ) {
+                if ( $form_interval >= 10 && $form_interval <= 60*60 ) {
+                    $self->config_( 'update_interval', $form_interval );
+                    $templ->param( IMAP_if_interval_error => 0 );
+                }
+                else {
+                    $templ->param( IMAP_if_interval_error => 1 );
+                }
+            }
+            else {
+                $templ->param( IMAP_if_interval_error => 1 );
+            }
         }
-        else {
-            return ( undef, undef );
-        }
+        return;
     }
 
-    # If we end up here, we forgot to validate some item.
-    $self->log_( 0, "A configuration item has been left unvalidated: $name" );
-    return ( undef, "The item $name is not implemented." );
+    $self->SUPER::validate_item( $name, $templ, $language, $form );
 }
 
-sub validate_connection_details {
-    my ( $self, $name, $templ, $language, $form ) = @_;
-    my ( $status_message, $error_message );
 
-    my $userId = $self->user_id();
+# ----------------------------------------------------------------------------
+#
+# validate_connection_details - Called by validate_item if we are validating
+#                               the connection details
+# ----------------------------------------------------------------------------
+
+sub validate_connection_details {
+    my $self     = shift;
+    my $name     = shift;
+    my $templ    = shift;
+    my $language = shift;
+    my $form     = shift;
 
     if ( defined $form->{update_imap_0_connection_details} ) {
-        my $something_happened = 0;
+        my $something_changed = undef;
 
         if ( $form->{imap_hostname} && $form->{imap_hostname} =~ /^\S+/ ) {
-            if ( $self->user_config_( $userId, 'hostname' ) ne $form->{imap_hostname} ) {
-                $self->user_config_( $userId, 'hostname', $form->{imap_hostname} );
-                $something_happened++;
+            $templ->param( IMAP_connection_if_hostname_error => 0 );
+            if ( $self->config_( 'hostname' ) ne $form->{imap_hostname} ) {
+                $self->config_( 'hostname', $form->{imap_hostname} );
+                $something_changed = 1;
             }
         }
         else {
-            $error_message = $language->{Imap_ServerNameError};
+            $templ->param( IMAP_connection_if_hostname_error => 1 );
         }
 
         if ( $form->{imap_port} && $form->{imap_port} =~ m/^\d+$/ && $form->{imap_port} >= 1 && $form->{imap_port} < 65536 ) {
-            if ( $self->user_config_( $userId, 'port' ) != $form->{imap_port} ) {
-                $self->user_config_( $userId, 'port', $form->{imap_port} );
-                $something_happened++;
+            if ( $self->config_( 'port' ) != $form->{imap_port} ) {
+                $self->config_( 'port', $form->{imap_port} );
+                $something_changed = 1;
             }
+            $templ->param( IMAP_connection_if_port_error => 0 );
         }
         else {
-            $error_message = $language->{Imap_PortError};
+            $templ->param( IMAP_connection_if_port_error => 1 );
         }
 
-        if ( defined $form->{imap_login} && $form->{imap_login} =~ /^\S/ ) {
-            if ( $self->user_config_( $userId, 'login' ) ne $form->{imap_login} ) {
-                $self->user_config_( $userId, 'login', $form->{imap_login} );
-                $something_happened++;
+        if ( $form->{imap_login} ) {
+            if ( $self->config_( 'login' ) ne $form->{imap_login} ) {
+                $self->config_( 'login', $form->{imap_login} );
+                $something_changed = 1;
             }
+            $templ->param( IMAP_connection_if_login_error => 0 );
         }
         else {
-            $error_message = $language->{Imap_LoginError};
+            $templ->param( IMAP_connection_if_login_error => 1 );
         }
 
-        if ( defined $form->{imap_password} && $form->{imap_password} =~ /^\S/ ) {
-            if ( $self->user_config_( $userId, 'password' ) ne $form->{imap_password} ) {
-                $self->user_config_( $userId, 'password', $form->{imap_password} );
-                $something_happened++;
+        if ( $form->{imap_password} ) {
+            if ( $self->config_( 'password' ) ne $form->{imap_password} ) {
+                $self->config_( 'password', $form->{imap_password} );
+                $something_changed = 1;
             }
+            $templ->param( IMAP_connection_if_password_error => 0 );
         }
         else {
-            $error_message = $language->{Imap_PasswordError};
+            $templ->param( IMAP_connection_if_password_error => 1 );
         }
 
-        my $use_ssl_now = $self->user_config_( $userId, 'use_ssl' );
+        my $use_ssl_now = $self->config_( 'use_ssl' );
+
         if ( $form->{imap_use_ssl} ) {
-            $self->user_config_( $userId, 'use_ssl', 1 );
+            $self->config_( 'use_ssl', 1 );
             if ( ! $use_ssl_now ) {
-                $something_happened = 1;
+                $something_changed = 1;
             }
         }
         else {
-            $self->user_config_( $userId, 'use_ssl', 0 );
+            $self->config_( 'use_ssl', 0 );
             if ( $use_ssl_now ) {
-                $something_happened = 1;
+                $something_changed = 1;
             }
         }
 
-        if ( $something_happened ) {
-            $status_message = $language->{Imap_ConnectionDetailsUpdated};
+        if ( $something_changed ) {
+            $self->log_( 1, 'Configuration has changed. Terminating any old connections.' );
             $self->disconnect_folders__();
         }
     }
 
-    return ( $status_message, $error_message );
+
+    return;
 }
 
 
-sub validate_watch_folders {
-    my ( $self, $name, $templ, $language, $form ) = @_;
-    my ( $status_message, $error_message );
-
-    # Update list of watched folders if the user clicked the Apply button
-    if ( defined $form->{update_imap_1_watch_folders} ) {
-
-        my $i = 1;
-        my %folders;
-        foreach ( $self->watched_folders__() ) {
-            $folders{ $form->{"imap_folder_$i"} }++;
-            $i++;
-        }
-
-        $self->watched_folders__( sort keys %folders );
-        $self->{folder_change_flag__} = 1;
-        $status_message = $language->{Imap_WatchedFoldersUpdated};
-    }
-
-    # Remove a watched folder from the list
-    my $count = $self->watched_folders__();
-    for my $i ( 1 .. $count ) {
-        if ( defined $form->{"remove_imap_watched_folder_$i"} ) {
-            my @watched = $self->watched_folders__();
-            my $removed = splice @watched, $i - 1, 1;
-            $self->watched_folders__( @watched );
-            $self->{folder_change_flag__} = 1;
-            $status_message = sprintf $language->{Imap_WatchedFolderRemoved}, $removed;
-            last;
-        }
-    }
-
-    return ( $status_message, $error_message );
-}
-
-
-sub validate_watch_more_folders {
-    my ( $self, $name, $templ, $language, $form ) = @_;
-    my ( $status_message, $error_message );
-
-    if ( defined $form->{imap_2_watch_more_folders} ) {
-        my @current = $self->watched_folders__();
-        push @current, 'INBOX';
-        $self->watched_folders__( @current );
-        $status_message = $language->{Imap_WatchedFolderAdded};
-    }
-    return ( $status_message, $error_message );
-}
-
-
-sub validate_bucket_folders {
-    my ( $self, $name, $templ, $language, $form ) = @_;
-    my ( $status_message, $error_message );
-
-    if ( defined $form->{imap_3_bucket_folders} ) {
-
-        # We have to make sure that there is only one bucket per folder
-        # Multiple buckets cannot map to the same folder because how
-        # could we reliably reclassify on move then?
-
-        my %bucket2folder;
-        my %folders;
-
-        foreach my $key ( keys %$form ) {
-            # match bucket name:
-            if ( $key =~ /^imap_folder_for_(.+)$/ ) {
-                my $bucket = $1;
-                my $folder = $form->{ $key };
-
-                $bucket2folder{ $bucket } = $folder;
-                $folders{ $folder }++;
-            }
-        }
-
-        $status_message = '';
-        while ( my ( $bucket, $folder ) = each %bucket2folder ) {
-
-            # If a folder is supposed to be mapped to more than one bucket
-            if ( exists $folders{$folder} && $folders{ $folder } > 1 ) {
-                $error_message = $language->{Imap_MapError}
-            }
-            else {
-                if ( ! defined $self->folder_for_bucket__( $bucket ) || $self->folder_for_bucket__( $bucket ) ne $folder ) {
-                    $self->folder_for_bucket__( $bucket, $folder );
-                    $self->{folder_change_flag__} = 1;
-                    $status_message .= sprintf $language->{Imap_MapUpdated}, $bucket, $folder;
-                }
-            }
-        }
-    }
-    return ( $status_message, $error_message );
-}
-
+# ----------------------------------------------------------------------------
+#
+# validate_update_mailbox_list - Called by validate_item if we are supposed
+#                                to update our list of mailboxes
+# ----------------------------------------------------------------------------
 
 sub validate_update_mailbox_list {
-    my ( $self, $name, $templ, $language, $form ) = @_;
-    my ( $status_message, $error_message );
-
-    my $userId = $self->user_id();
+    my $self     = shift;
+    my $name     = shift;
+    my $templ    = shift;
+    my $language = shift;
+    my $form     = shift;
 
     if ( defined $form->{do_imap_4_update_mailbox_list} ) {
-        if ( $self->user_config_( $userId, 'hostname' )
-            && $self->user_config_( $userId, 'login' )
-            && $self->user_config_( $userId, 'login' )
-            && $self->user_config_( $userId, 'port' )
-            && $self->user_config_( $userId, 'password' ) ) {
+        $self->log_( 2, 'Trying to update the list of mailboxes' );
+
+        if ( $self->config_( 'hostname' )
+            && $self->config_( 'login' )
+            && $self->config_( 'login' )
+            && $self->config_( 'port' )
+            && $self->config_( 'password' ) ) {
 
             my $imap = $self->new_imap_client();
             if ( defined $imap ) {
@@ -1456,55 +1489,23 @@ sub validate_update_mailbox_list {
                 my $error = $self->{imap_error};
 
                 if ( $error eq 'NO_CONNECT' ) {
-                    $error_message = $language->{Imap_UpdateError2};
+                    $templ->param( IMAP_update_list_failed => 'Failed to connect to server. Please check the host name and port and make sure you are online.' );
+                    $self->log_( 0, 'Could not connect to server.' );
+                    # TODO: should be language__{Imap_UpdateError2}
                 }
                 elsif ( $error eq 'NO_LOGIN' ) {
-                    $error_message = $language->{Imap_UpdateError1};
+                    $templ->param( IMAP_update_list_failed => 'Could not login. Verify your login name and password, please.' );
+                    $self->log_( 0, 'Could not login.' );
+                    # TODO: should be language__{Imap_UpdateError1}
                 }
             }
         }
         else {
-            $error_message = $language->{Imap_UpdateError3};
-        }
-
-        unless ( defined $error_message ) {
-            $status_message = $language->{Imap_UpdateOK};
+            $templ->param( IMAP_update_list_failed => 'Please configure the connection details first.' );
+            # TODO: should be language__{Imap_UpdateError3}
         }
     }
-    return ( $status_message, $error_message );
-}
-
-
-sub validate_options {
-    my ( $self, $name, $templ, $language, $form ) = @_;
-    my ( $status_message, $error_message );
-
-    if ( defined $form->{update_imap_5_options} ) {
-    	my $userId = $self->user_id();
-
-        # expunge or not?
-        if ( defined $form->{imap_options_expunge} ) {
-            $self->user_config_( $userId, 'expunge', 1 );
-        }
-        else {
-            $self->user_config_( $userId, 'expunge', 0 );
-        }
-
-        # update interval
-        my $form_interval = $form->{imap_options_update_interval};
-        if ( $form_interval =~ /^\d+$/ && $form_interval >= 10 && $form_interval <= 60*60 ) {
-            $self->user_config_( $userId, 'update_interval', $form_interval );
-        }
-        else {
-            $error_message = $language->{Imap_IntervalError};
-        }
-
-        unless ( defined $error_message ) {
-            $status_message = $language->{Imap_OptionsUpdated};
-        }
-
-    }
-    return ( $status_message, $error_message );
+    return;
 }
 
 
@@ -1539,7 +1540,7 @@ sub train_on_archive__ {
         my $bucket = $self->{folders__}{$folder}{output};
 
         # Skip pseudobuckets and the INBOX
-        next if $self->classifier_()->is_pseudo_bucket( $self->api_session(), $bucket );
+        next if $self->classifier()->is_pseudo_bucket( $self->api_session(), $bucket );
         next if $folder eq 'INBOX';
 
         my $imap = $self->{folders__}{$folder}{imap};
@@ -1566,7 +1567,7 @@ sub train_on_archive__ {
                 }
                 close $TMP;
 
-                $self->classifier_()->add_message_to_bucket( $self->api_session(), $bucket, $file );
+                $self->classifier()->add_message_to_bucket( $self->api_session(), $bucket, $file );
                 $self->log_( 0, "Training on the message with UID $msg to bucket $bucket." );
 
                 unlink $file;
@@ -1582,7 +1583,7 @@ sub train_on_archive__ {
     %{$self->{folders__}} = ();
 
     # And disable training mode so we won't do this again the next time service is called.
-    $self->user_config_( $self->user_id(), 'training_mode', 0 );
+    $self->config_( 'training_mode', 0 );
 }
 
 # ----------------------------------------------------------------------------
@@ -1604,8 +1605,8 @@ sub new_imap_client {
     my $self = shift;
 
     my $imap = Services::IMAP::Client->new(
-                sub { $self->user_config_( $self->user_id(), @_ ) },
-                $self->get_module__( 'logger', 'POPFile::Logger' ),
+                sub { $self->config_( @_ ) },
+                $self->{logger__},
                 sub { $self->global_config_( @_ ) },
     );
 

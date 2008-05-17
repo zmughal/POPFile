@@ -9,7 +9,7 @@
 #                   and sqlite3.exe for 3.x format files. This utility ensures the appropriate
 #                   utility is used to access the specified SQLite database file.
 #
-# Copyright (c) 2004-2005  John Graham-Cumming
+# Copyright (c) 2004-2008  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -38,18 +38,20 @@
 #
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -57,6 +59,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -74,7 +77,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.5"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.7"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -91,6 +94,12 @@
   ; Selecting 'silent' mode makes the installer behave like a command-line utility
 
   SilentInstall silent
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
 #--------------------------------------------------------------------------
 # Include private library functions and macro definitions
@@ -109,14 +118,18 @@
 
   VIProductVersion                          "${C_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "Run SQLite 2.x/3.x utility to examine a POPFile database"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Run SQLite Utility for POPFile"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"

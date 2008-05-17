@@ -49,8 +49,8 @@ buttons at the foot of the page have been increased in width.
 
 Details:
 
-'pfi_modern.exe' v1.4 was created by modifying 'modern.exe' from the NSIS 2.36
-release (dated 29-Mar-2008), as follows:
+'pfi_modern.exe' v1.3.6.2 was created by modifying 'modern.exe' from the
+NSIS 2.36 release (dated 29-Mar-2008), as follows:
 
 [1] Dialog 111, Control 103 (the icon image)
 
@@ -122,8 +122,8 @@ buttons at the foot of the page have been increased in width.
 'PFI_HEADERBMP.EXE' CHANGES (bitmap appears at the left of the header area)
 =============================================================================
 
-'pfi_headerbmp.exe' v1.4 was created by modifying 'modern_headerbmp.exe' from
-the NSIS 2.36 release (dated 29-Mar-2008), as follows:
+'pfi_headerbmp.exe' v1.3.6.2 was created by modifying 'modern_headerbmp.exe'
+from the NSIS 2.36 release (dated 29-Mar-2008), as follows:
 
 [1] Dialog 105, Control 1037 (the TITLE text area)
 
@@ -171,7 +171,7 @@ the NSIS 2.36 release (dated 29-Mar-2008), as follows:
 'PFI_HEADERBMPR.EXE' CHANGES (bitmap appears at the right of the header area)
 =============================================================================
 
-'pfi_headerbmpr.exe' v1.4 was created by modifying 'modern_headerbmpr.exe'
+'pfi_headerbmpr.exe' v1.3.6.2 was created by modifying 'modern_headerbmpr.exe'
 from the NSIS 2.36 release (dated 29-Mar-2008), as follows:
 
 [1] Dialog 105, Control 1037 (the TITLE text area)

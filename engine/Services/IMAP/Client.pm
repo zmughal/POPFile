@@ -2,7 +2,7 @@
 #
 # Services::IMAP::Client--- Helper module for the POPFile IMAP module
 #
-# Copyright (c) 2001-2007 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   $Revision$
 #
@@ -658,7 +658,7 @@ sub get_new_message_list {
     my $result = $self->get_response();
 
     if ( $result != 1 ) {
-        $self->log_( 0, "SEARCH command failed (return value: $result)!" );
+        $self->log_( 0, "SEARCH command failed (return value: $result, used UID was [$uid])!" );
     }
 
     # The server will respond with an untagged search reply.
@@ -886,7 +886,7 @@ sub uid_validity {
     }
     # get
     else {
-        if ( exists $hash{$folder} ) {
+        if ( exists $hash{$folder} && $hash{$folder} =~ /^\d+$/  ) {
             return $hash{$folder};
         }
         else {
@@ -931,7 +931,7 @@ sub uid_next {
     }
     # get
     else {
-        if ( exists $hash{$folder} ) {
+        if ( exists $hash{$folder} && $hash{$folder} =~ /^\d+$/  ) {
             return $hash{$folder};
         }
         return;
@@ -959,11 +959,11 @@ sub check_uidvalidity {
     my $old_val = $self->uid_validity( $folder );
 
     # Check whether the old value is still valid
-    if ( defined $old_val && $old_val ne '' && $new_val == $old_val ) {
-        return 1;
+    if ( $new_val != $old_val ) {
+        return;
     }
     else {
-        return;
+        return 1;
     }
 }
 

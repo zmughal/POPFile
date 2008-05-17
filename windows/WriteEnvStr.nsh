@@ -4,7 +4,7 @@
 #                     used by 'installer.nsi' when installing/uninstalling the
 #                     'Kakasi' package.
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -38,300 +38,6 @@
 
 !ifndef MB_NL
   !define MB_NL     "$\r$\n"
-!endif
-
-!ifndef ADDUSER & NO_KAKASI
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_WriteEnv
-    #
-    # Writes an environment variable which is available to the 'current user' on a modern OS.
-    # On Win9x systems, AUTOEXEC.BAT is updated and the Reboot flag is set to request a reboot
-    # to make the new variable available for use.
-    #
-    # Inputs:
-    #         (top of stack)       - value for the new environment variable
-    #         (top of stack - 1)   - name of the new environment variable
-    #
-    # Outputs:
-    #         none
-    #
-    # Usage:
-    #         Push "HOMEDIR"
-    #         Push "C:\New Home Dir"
-    #         Call PFI_WriteEnvStr
-    #
-    #--------------------------------------------------------------------------
-
-    Function PFI_WriteEnvStr
-
-      ; Registers common to Win9x and non-Win9x processing
-
-      !define ENV_NAME        $R9   ; name of the environment variable
-      !define ENV_VALUE       $R8   ; value of the environment variable
-      !define TEMP            $R7
-
-      ; Registers used only for Win9x processing
-
-      !define DESTN           $R6   ; used to access the revised AUTOEXEC.BAT file
-      !define ENV_FOUND       $R5   ; 0 = variable not found, 1 = variable found in AUTOEXEC.BAT
-      !define ENV_SETLEN      $R4   ; length of the string in ${ENV_SETNAME}
-      !define ENV_SETNAME     $R3   ; left-hand side of SET command for the variable, incl '='
-      !define LINE            $R2   ; a line from AUTOEXEC.BAT
-      !define SOURCE          $R1   ; used to access original AUTOEXEC.BAT file
-      !define TEMPFILE        $R0   ; name of file used to build the revised AUTOEXEC.BAT file
-
-      Exch ${ENV_VALUE}
-      Exch
-      Exch ${ENV_NAME}
-      Push ${TEMP}
-
-      Call PFI_IsNT
-      Pop ${TEMP}
-      StrCmp ${TEMP} 1 WriteEnvStr_NT
-
-      ; On Win9x system, so we add the new data to AUTOEXEC.BAT if it is not already there
-
-      Push ${DESTN}
-      Push ${ENV_FOUND}
-      Push ${ENV_SETLEN}
-      Push ${ENV_SETNAME}
-      Push ${LINE}
-      Push ${SOURCE}
-      Push ${TEMPFILE}
-
-      StrCpy ${ENV_SETNAME} "SET ${ENV_NAME}="
-      StrLen ${ENV_SETLEN} ${ENV_SETNAME}
-
-      StrCpy ${SOURCE} $WINDIR 2            ; Get the drive used for Windows (usually 'C:')
-      FileOpen ${SOURCE} "${SOURCE}\autoexec.bat" r
-      GetTempFileName ${TEMPFILE}
-      FileOpen ${DESTN} ${TEMPFILE} w
-
-      StrCpy ${ENV_FOUND} 0
-
-    loop:
-      FileRead ${SOURCE} ${LINE}            ; Read line from AUTOEXEC.BAT
-      StrCmp ${LINE} "" eof_found
-      Push ${LINE}
-      Call PFI_TrimNewlines
-      Pop ${LINE}
-      StrCmp ${LINE} "" copy_line           ; Blank lines are preserved in the copy we make
-      StrCpy ${TEMP} ${LINE} ${ENV_SETLEN}
-      StrCmp ${TEMP} ${ENV_SETNAME} 0 copy_line
-      StrCpy ${ENV_FOUND} 1                 ; Have found a match. Now check the value it defines.
-      StrCpy ${TEMP} ${LINE} "" ${ENV_SETLEN}
-      StrCmp ${TEMP} ${ENV_VALUE} 0 different_value
-      ReadEnvStr ${TEMP} ${ENV_NAME}        ; Identical value found. Now see if it currently exists.
-      StrCmp ${TEMP} ${ENV_VALUE} copy_line
-      SetRebootFlag true                    ; Value does not exist, so we need to reboot
-
-    copy_line:
-      FileWrite ${DESTN} "${LINE}${MB_NL}"
-      Goto loop
-
-    different_value:
-      FileWrite ${DESTN} "REM ${LINE}${MB_NL}"    ; 'Comment out' the incorrect value
-      FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"
-      SetRebootFlag true
-      Goto loop
-
-    eof_found:
-      StrCmp ${ENV_FOUND} 1 autoexec_done
-      FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"   ; Append line for the new variable
-      SetRebootFlag true
-
-    autoexec_done:
-      FileClose ${SOURCE}
-      FileClose ${DESTN}
-
-      IfRebootFlag 0 win9x_done
-      StrCpy ${SOURCE} $WINDIR 2
-      Delete "${SOURCE}\autoexec.bat"
-      CopyFiles /SILENT ${TEMPFILE} "${SOURCE}\autoexec.bat"
-      Delete ${TEMPFILE}
-
-    win9x_done:
-      Pop ${TEMPFILE}
-      Pop ${SOURCE}
-      Pop ${LINE}
-      Pop ${ENV_SETNAME}
-      Pop ${ENV_SETLEN}
-      Pop ${ENV_FOUND}
-      Pop ${DESTN}
-      Goto WriteEnvStr_done
-
-      ; More modern OS case (AUTOEXEC.BAT not relevant)
-
-    WriteEnvStr_NT:
-      WriteRegExpandStr HKCU "Environment" ${ENV_NAME} ${ENV_VALUE}
-      SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
-            0 "STR:Environment" /TIMEOUT=5000
-
-    WriteEnvStr_done:
-      Pop ${TEMP}
-      Pop ${ENV_NAME}
-      Pop ${ENV_VALUE}
-
-      !undef ENV_NAME
-      !undef ENV_VALUE
-      !undef TEMP
-
-      !undef DESTN
-      !undef ENV_FOUND
-      !undef ENV_SETLEN
-      !undef ENV_SETNAME
-      !undef LINE
-      !undef SOURCE
-      !undef TEMPFILE
-
-    FunctionEnd
-
-
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_WriteEnvNTAU
-    #
-    # Writes an environment variable which is available to all users on a modern OS.
-    # On Win9x systems, AUTOEXEC.BAT is updated and the Reboot flag is set to request a reboot
-    # to make the new variable available for use.
-    #
-    # Inputs:
-    #         (top of stack)       - value for the new environment variable
-    #         (top of stack - 1)   - name of the new environment variable
-    #
-    # Outputs:
-    #         none
-    #
-    # Usage:
-    #         Push "HOMEDIR"
-    #         Push "C:\New Home Dir"
-    #         Call PFI_WriteEnvStrNTAU
-    #
-    #--------------------------------------------------------------------------
-
-    Function PFI_WriteEnvStrNTAU
-
-      ; Registers common to Win9x and non-Win9x processing
-
-      !define ENV_NAME        $R9   ; name of the environment variable
-      !define ENV_VALUE       $R8   ; value of the environment variable
-      !define TEMP            $R7
-
-      ; Registers used only for Win9x processing
-
-      !define DESTN           $R6   ; used to access the revised AUTOEXEC.BAT file
-      !define ENV_FOUND       $R5   ; 0 = variable not found, 1 = variable found in AUTOEXEC.BAT
-      !define ENV_SETLEN      $R4   ; length of the string in ${ENV_SETNAME}
-      !define ENV_SETNAME     $R3   ; left-hand side of SET command for the variable, incl '='
-      !define LINE            $R2   ; a line from AUTOEXEC.BAT
-      !define SOURCE          $R1   ; used to access original AUTOEXEC.BAT file
-      !define TEMPFILE        $R0   ; name of file used to build the revised AUTOEXEC.BAT file
-
-      Exch ${ENV_VALUE}
-      Exch
-      Exch ${ENV_NAME}
-      Push ${TEMP}
-
-      Call PFI_IsNT
-      Pop ${TEMP}
-      StrCmp ${TEMP} 1 WriteEnvStr_NT
-
-      ; On Win9x system, so we add the new data to AUTOEXEC.BAT if it is not already there
-
-      Push ${DESTN}
-      Push ${ENV_FOUND}
-      Push ${ENV_SETLEN}
-      Push ${ENV_SETNAME}
-      Push ${LINE}
-      Push ${SOURCE}
-      Push ${TEMPFILE}
-
-      StrCpy ${ENV_SETNAME} "SET ${ENV_NAME}="
-      StrLen ${ENV_SETLEN} ${ENV_SETNAME}
-
-      StrCpy ${SOURCE} $WINDIR 2            ; Get the drive used for Windows (usually 'C:')
-      FileOpen ${SOURCE} "${SOURCE}\autoexec.bat" r
-      GetTempFileName ${TEMPFILE}
-      FileOpen ${DESTN} ${TEMPFILE} w
-
-      StrCpy ${ENV_FOUND} 0
-
-    loop:
-      FileRead ${SOURCE} ${LINE}            ; Read line from AUTOEXEC.BAT
-      StrCmp ${LINE} "" eof_found
-      Push ${LINE}
-      Call PFI_TrimNewlines
-      Pop ${LINE}
-      StrCmp ${LINE} "" copy_line           ; Blank lines are preserved in the copy we make
-      StrCpy ${TEMP} ${LINE} ${ENV_SETLEN}
-      StrCmp ${TEMP} ${ENV_SETNAME} 0 copy_line
-      StrCpy ${ENV_FOUND} 1                 ; Have found a match. Now check the value it defines.
-      StrCpy ${TEMP} ${LINE} "" ${ENV_SETLEN}
-      StrCmp ${TEMP} ${ENV_VALUE} 0 different_value
-      ReadEnvStr ${TEMP} ${ENV_NAME}        ; Identical value found. Now see if it currently exists.
-      StrCmp ${TEMP} ${ENV_VALUE} copy_line
-      SetRebootFlag true                    ; Value does not exist, so we need to reboot
-
-    copy_line:
-      FileWrite ${DESTN} "${LINE}${MB_NL}"
-      Goto loop
-
-    different_value:
-      FileWrite ${DESTN} "REM ${LINE}${MB_NL}"    ; 'Comment out' the incorrect value
-      FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"
-      SetRebootFlag true
-      Goto loop
-
-    eof_found:
-      StrCmp ${ENV_FOUND} 1 autoexec_done
-      FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"   ; Append line for the new variable
-      SetRebootFlag true
-
-    autoexec_done:
-      FileClose ${SOURCE}
-      FileClose ${DESTN}
-
-      IfRebootFlag 0 win9x_done
-      StrCpy ${SOURCE} $WINDIR 2
-      Delete "${SOURCE}\autoexec.bat"
-      CopyFiles /SILENT ${TEMPFILE} "${SOURCE}\autoexec.bat"
-      Delete ${TEMPFILE}
-
-    win9x_done:
-      Pop ${TEMPFILE}
-      Pop ${SOURCE}
-      Pop ${LINE}
-      Pop ${ENV_SETNAME}
-      Pop ${ENV_SETLEN}
-      Pop ${ENV_FOUND}
-      Pop ${DESTN}
-      Goto WriteEnvStr_done
-
-      ; More modern OS case (AUTOEXEC.BAT not relevant)
-
-    WriteEnvStr_NT:
-      WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" \
-            ${ENV_NAME} ${ENV_VALUE}
-      SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
-            0 "STR:Environment" /TIMEOUT=5000
-
-    WriteEnvStr_done:
-      Pop ${TEMP}
-      Pop ${ENV_NAME}
-      Pop ${ENV_VALUE}
-
-      !undef ENV_NAME
-      !undef ENV_VALUE
-      !undef TEMP
-
-      !undef DESTN
-      !undef ENV_FOUND
-      !undef ENV_SETLEN
-      !undef ENV_SETNAME
-      !undef LINE
-      !undef SOURCE
-      !undef TEMPFILE
-
-    FunctionEnd
 !endif
 
 !ifndef ADDUSER
@@ -516,8 +222,8 @@
 # Returns 0 if running on a Win9x system, otherwise returns 1
 #
 # NOTE:
-# The !insertmacro PFI_IsNT "" and !insertmacro PFI_IsNT "un." commands are included in this file so
-# 'installer.nsi' can use 'Call PFI_IsNT' and 'Call un.PFI_IsNT' without additional preparation.
+# The !insertmacro PFI_IsNT "" and !insertmacro PFI_IsNT "un." commands are included in this file
+# so 'installer.nsi' can use 'Call PFI_IsNT' and 'Call un.PFI_IsNT' without additional preparation.
 #
 # Inputs:
 #         None
@@ -567,6 +273,361 @@
 #--------------------------------------------------------------------------
 
 !insertmacro PFI_IsNT "un."
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_WriteEnvStr
+#
+# The installation process and the uninstall process both use a function which
+# writes an environment variable which is available to the 'current user' on a
+# modern OS. On Win9x systems, AUTOEXEC.BAT is updated and the Reboot flag is set
+# to request a reboot to make the new variable available for use. This macro makes
+# maintenance easier by ensuring that both processes use identical functions, with
+# the only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_WriteEnvStr "" and !insertmacro PFI_WriteEnvStr "un." commands
+# are included in this file so 'installer.nsi' can use 'Call PFI_WriteEnvStr' and
+# 'Call un.PFI_WriteEnvStr' without additional preparation.
+#
+# Inputs:
+#         (top of stack)       - value for the new environment variable
+#         (top of stack - 1)   - name of the new environment variable
+#
+# Outputs:
+#         none
+#
+#  Usage (after macro has been 'inserted'):
+#
+#         Push "HOMEDIR"
+#         Push "C:\New Home Dir"
+#         Call PFI_WriteEnvStr
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_WriteEnvStr UN
+  Function ${UN}PFI_WriteEnvStr
+
+    ; Registers common to Win9x and non-Win9x processing
+
+    !define ENV_NAME        $R9   ; name of the environment variable
+    !define ENV_VALUE       $R8   ; value of the environment variable
+    !define TEMP            $R7
+
+    ; Registers used only for Win9x processing
+
+    !define DESTN           $R6   ; used to access the revised AUTOEXEC.BAT file
+    !define ENV_FOUND       $R5   ; 0 = variable not found, 1 = variable found in AUTOEXEC.BAT
+    !define ENV_SETLEN      $R4   ; length of the string in ${ENV_SETNAME}
+    !define ENV_SETNAME     $R3   ; left-hand side of SET command for the variable, incl '='
+    !define LINE            $R2   ; a line from AUTOEXEC.BAT
+    !define SOURCE          $R1   ; used to access original AUTOEXEC.BAT file
+    !define TEMPFILE        $R0   ; name of file used to build the revised AUTOEXEC.BAT file
+
+    Exch ${ENV_VALUE}
+    Exch
+    Exch ${ENV_NAME}
+    Push ${TEMP}
+
+    Call ${UN}PFI_IsNT
+    Pop ${TEMP}
+    StrCmp ${TEMP} 1 WriteEnvStr_NT
+
+    ; On Win9x system, so we add the new data to AUTOEXEC.BAT if it is not already there
+
+    Push ${DESTN}
+    Push ${ENV_FOUND}
+    Push ${ENV_SETLEN}
+    Push ${ENV_SETNAME}
+    Push ${LINE}
+    Push ${SOURCE}
+    Push ${TEMPFILE}
+
+    StrCpy ${ENV_SETNAME} "SET ${ENV_NAME}="
+    StrLen ${ENV_SETLEN} ${ENV_SETNAME}
+
+    StrCpy ${SOURCE} $WINDIR 2            ; Get the drive used for Windows (usually 'C:')
+    FileOpen ${SOURCE} "${SOURCE}\autoexec.bat" r
+    GetTempFileName ${TEMPFILE}
+    FileOpen ${DESTN} ${TEMPFILE} w
+
+    StrCpy ${ENV_FOUND} 0
+
+  loop:
+    FileRead ${SOURCE} ${LINE}            ; Read line from AUTOEXEC.BAT
+    StrCmp ${LINE} "" eof_found
+    Push ${LINE}
+    Call ${UN}PFI_TrimNewlines
+    Pop ${LINE}
+    StrCmp ${LINE} "" copy_line           ; Blank lines are preserved in the copy we make
+    StrCpy ${TEMP} ${LINE} ${ENV_SETLEN}
+    StrCmp ${TEMP} ${ENV_SETNAME} 0 copy_line
+    StrCpy ${ENV_FOUND} 1                 ; Have found a match. Now check the value it defines.
+    StrCpy ${TEMP} ${LINE} "" ${ENV_SETLEN}
+    StrCmp ${TEMP} ${ENV_VALUE} 0 different_value
+    ReadEnvStr ${TEMP} ${ENV_NAME}        ; Identical value found. Now see if it currently exists.
+    StrCmp ${TEMP} ${ENV_VALUE} copy_line
+    SetRebootFlag true                    ; Value does not exist, so we need to reboot
+
+  copy_line:
+    FileWrite ${DESTN} "${LINE}${MB_NL}"
+    Goto loop
+
+  different_value:
+    FileWrite ${DESTN} "REM ${LINE}${MB_NL}"    ; 'Comment out' the incorrect value
+    FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"
+    SetRebootFlag true
+    Goto loop
+
+  eof_found:
+    StrCmp ${ENV_FOUND} 1 autoexec_done
+    FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"   ; Append line for the new variable
+    SetRebootFlag true
+
+  autoexec_done:
+    FileClose ${SOURCE}
+    FileClose ${DESTN}
+
+    IfRebootFlag 0 win9x_done
+    StrCpy ${SOURCE} $WINDIR 2
+    Delete "${SOURCE}\autoexec.bat"
+    CopyFiles /SILENT ${TEMPFILE} "${SOURCE}\autoexec.bat"
+    Delete ${TEMPFILE}
+
+  win9x_done:
+    Pop ${TEMPFILE}
+    Pop ${SOURCE}
+    Pop ${LINE}
+    Pop ${ENV_SETNAME}
+    Pop ${ENV_SETLEN}
+    Pop ${ENV_FOUND}
+    Pop ${DESTN}
+    Goto WriteEnvStr_done
+
+    ; More modern OS case (AUTOEXEC.BAT not relevant)
+
+  WriteEnvStr_NT:
+    WriteRegExpandStr HKCU "Environment" ${ENV_NAME} ${ENV_VALUE}
+    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
+          0 "STR:Environment" /TIMEOUT=5000
+
+  WriteEnvStr_done:
+    Pop ${TEMP}
+    Pop ${ENV_NAME}
+    Pop ${ENV_VALUE}
+
+    !undef ENV_NAME
+    !undef ENV_VALUE
+    !undef TEMP
+
+    !undef DESTN
+    !undef ENV_FOUND
+    !undef ENV_SETLEN
+    !undef ENV_SETNAME
+    !undef LINE
+    !undef SOURCE
+    !undef TEMPFILE
+
+  FunctionEnd
+!macroend
+
+!ifndef ADDUSER
+
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_WriteEnvStr
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_WriteEnvStr ""
+
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_WriteEnvStr
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_WriteEnvStr "un."
+
+!endif
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_WriteEnvStrNTAU
+#
+# The installation process and the uninstall process both use a function which
+# writes an environment variable which is available to all users on a modern OS.
+# On Win9x systems, AUTOEXEC.BAT is updated and the Reboot flag is set to request
+# a reboot to make the new variable available for use. This macro is used to make
+# maintenance easier by ensuring that both processes use identical functions, with
+# the only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_WriteEnvStrNTAU "" and !insertmacro PFI_WriteEnvStrNTAU "un."
+# commands are included in this file so 'installer.nsi' can use 'Call PFI_WriteEnvStrNTAU'
+# and 'Call un.PFI_WriteEnvStrNTAU' without additional preparation.
+#
+# Inputs:
+#         (top of stack)       - value for the new environment variable
+#         (top of stack - 1)   - name of the new environment variable
+#
+# Outputs:
+#         none
+#
+#  Usage (after macro has been 'inserted'):
+#
+#         Push "HOMEDIR"
+#         Push "C:\New Home Dir"
+#         Call PFI_WriteEnvStrNTAU
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_WriteEnvStrNTAU UN
+  Function ${UN}PFI_WriteEnvStrNTAU
+
+    ; Registers common to Win9x and non-Win9x processing
+
+    !define ENV_NAME        $R9   ; name of the environment variable
+    !define ENV_VALUE       $R8   ; value of the environment variable
+    !define TEMP            $R7
+
+    ; Registers used only for Win9x processing
+
+    !define DESTN           $R6   ; used to access the revised AUTOEXEC.BAT file
+    !define ENV_FOUND       $R5   ; 0 = variable not found, 1 = variable found in AUTOEXEC.BAT
+    !define ENV_SETLEN      $R4   ; length of the string in ${ENV_SETNAME}
+    !define ENV_SETNAME     $R3   ; left-hand side of SET command for the variable, incl '='
+    !define LINE            $R2   ; a line from AUTOEXEC.BAT
+    !define SOURCE          $R1   ; used to access original AUTOEXEC.BAT file
+    !define TEMPFILE        $R0   ; name of file used to build the revised AUTOEXEC.BAT file
+
+    Exch ${ENV_VALUE}
+    Exch
+    Exch ${ENV_NAME}
+    Push ${TEMP}
+
+    Call ${UN}PFI_IsNT
+    Pop ${TEMP}
+    StrCmp ${TEMP} 1 WriteEnvStr_NT
+
+    ; On Win9x system, so we add the new data to AUTOEXEC.BAT if it is not already there
+
+    Push ${DESTN}
+    Push ${ENV_FOUND}
+    Push ${ENV_SETLEN}
+    Push ${ENV_SETNAME}
+    Push ${LINE}
+    Push ${SOURCE}
+    Push ${TEMPFILE}
+
+    StrCpy ${ENV_SETNAME} "SET ${ENV_NAME}="
+    StrLen ${ENV_SETLEN} ${ENV_SETNAME}
+
+    StrCpy ${SOURCE} $WINDIR 2            ; Get the drive used for Windows (usually 'C:')
+    FileOpen ${SOURCE} "${SOURCE}\autoexec.bat" r
+    GetTempFileName ${TEMPFILE}
+    FileOpen ${DESTN} ${TEMPFILE} w
+
+    StrCpy ${ENV_FOUND} 0
+
+  loop:
+    FileRead ${SOURCE} ${LINE}            ; Read line from AUTOEXEC.BAT
+    StrCmp ${LINE} "" eof_found
+    Push ${LINE}
+    Call ${UN}PFI_TrimNewlines
+    Pop ${LINE}
+    StrCmp ${LINE} "" copy_line           ; Blank lines are preserved in the copy we make
+    StrCpy ${TEMP} ${LINE} ${ENV_SETLEN}
+    StrCmp ${TEMP} ${ENV_SETNAME} 0 copy_line
+    StrCpy ${ENV_FOUND} 1                 ; Have found a match. Now check the value it defines.
+    StrCpy ${TEMP} ${LINE} "" ${ENV_SETLEN}
+    StrCmp ${TEMP} ${ENV_VALUE} 0 different_value
+    ReadEnvStr ${TEMP} ${ENV_NAME}        ; Identical value found. Now see if it currently exists.
+    StrCmp ${TEMP} ${ENV_VALUE} copy_line
+    SetRebootFlag true                    ; Value does not exist, so we need to reboot
+
+  copy_line:
+    FileWrite ${DESTN} "${LINE}${MB_NL}"
+    Goto loop
+
+  different_value:
+    FileWrite ${DESTN} "REM ${LINE}${MB_NL}"    ; 'Comment out' the incorrect value
+    FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"
+    SetRebootFlag true
+    Goto loop
+
+  eof_found:
+    StrCmp ${ENV_FOUND} 1 autoexec_done
+    FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"   ; Append line for the new variable
+    SetRebootFlag true
+
+  autoexec_done:
+    FileClose ${SOURCE}
+    FileClose ${DESTN}
+
+    IfRebootFlag 0 win9x_done
+    StrCpy ${SOURCE} $WINDIR 2
+    Delete "${SOURCE}\autoexec.bat"
+    CopyFiles /SILENT ${TEMPFILE} "${SOURCE}\autoexec.bat"
+    Delete ${TEMPFILE}
+
+  win9x_done:
+    Pop ${TEMPFILE}
+    Pop ${SOURCE}
+    Pop ${LINE}
+    Pop ${ENV_SETNAME}
+    Pop ${ENV_SETLEN}
+    Pop ${ENV_FOUND}
+    Pop ${DESTN}
+    Goto WriteEnvStr_done
+
+    ; More modern OS case (AUTOEXEC.BAT not relevant)
+
+  WriteEnvStr_NT:
+    WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" \
+          ${ENV_NAME} ${ENV_VALUE}
+    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
+          0 "STR:Environment" /TIMEOUT=5000
+
+  WriteEnvStr_done:
+    Pop ${TEMP}
+    Pop ${ENV_NAME}
+    Pop ${ENV_VALUE}
+
+    !undef ENV_NAME
+    !undef ENV_VALUE
+    !undef TEMP
+
+    !undef DESTN
+    !undef ENV_FOUND
+    !undef ENV_SETLEN
+    !undef ENV_SETNAME
+    !undef LINE
+    !undef SOURCE
+    !undef TEMPFILE
+
+  FunctionEnd
+!macroend
+
+!ifndef ADDUSER
+
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_WriteEnvStrNTAU
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_WriteEnvStrNTAU ""
+
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_WriteEnvStrNTAU
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_WriteEnvStrNTAU "un."
+
+!endif
 
 #--------------------------------------------------------------------------
 # End of 'WriteEnvStr.nsh'

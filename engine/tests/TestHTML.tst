@@ -2,7 +2,7 @@
 #
 # Tests for HTML.pm
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -21,55 +21,24 @@
 #
 # ---------------------------------------------------------------------------------------------
 
-use POSIX qw(locale_h);
-
-if ( $^O eq 'MSWin32' && setlocale(LC_COLLATE) eq 'Japanese_Japan.932' ) {
-    setlocale(LC_COLLATE,'C');
-}
 # Set up the test corpus and use the Test msg and cls files
 # to create a current history set
 
 rmtree( 'corpus' );
-rec_cp( 'corpus.base', 'corpus' );
+test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/CVS' );
 rmtree( 'corpus/other/CVS' );
 rmtree( 'corpus/spam/CVS' );
 rmtree( 'corpus/personal/CVS' );
 rmtree( 'messages' );
-
-my @dbs = glob '__db.*';
-foreach my $db (@dbs) {
-	unlink $db;
-}
-
-my @err_html_list = glob 'testhtml_match*.html';
-foreach my $err_html (@err_html_list) {
-    unlink $err_html;
-}
-
+`rm -f __db.*`;  # todo: make tool independent
 unlink 'popfile.cfg';
 unlink 'popfile.db';
-unlink 'popfile.pid';
 
 unlink( 'stopwords' );
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
 mkdir 'messages';
-my @messages = glob 'TestMails/TestMailParse*.msg';
-
-my $count = 0;
-my $dl    = 0;
-foreach my $msg (@messages) {
-    my $name = "messages/popfile$dl" . "=" . "$count";
-    test_assert( copy ( $msg, "$name.msg") );
-    $msg =~ s/\.msg$/\.cls/;
-    test_assert( copy ( $msg, "$name.cls") );
-    $count += 1;
-    if ( rand(1) > 0.5 ) {
-        $dl += 1;
-    }
-}
-
 
 use POSIX ":sys_wait_h";
 
@@ -78,21 +47,249 @@ my @forms;
 
 my $hidden = 0;
 
+# Helper function that finds a form in @forms with the
+# named input element, returns the form object and input
+# element if found or undef
 
+sub find_form
+{
+    my ( $name, $nth ) = @_;
+
+    foreach my $form (@forms) {
+#        print "Checking form ", $form->dump, "\n";
+        my $input = $form->find_input( $name, undef, $nth );
+
+        if ( defined( $input ) &&
+           ( ( $input->type ne 'hidden' ) || $hidden ) ) {
+            return ( $form, $input );
+        }
+    }
+
+    test_assert( 0, "Unable to find form element '$name'" );
+
+    return ( undef, undef );
+}
+
+# Helper function that finds the form with a specific input
+# by name and returns an HTTP::Request to submit the form
+
+sub form_submit
+{
+    my ( $name ) = @_;
+
+    my ( $form ) = find_form( $name );
+
+    if ( defined( $form ) ) {
+        return $form->click;
+    } else {
+        return undef;
+    }
+}
+
+# Helper function that finds an input with a specific name
+# in the @forms collection and returns or sets its value
+
+sub form_input
+{
+    my ( $name, $value, $nth ) = @_;
+    my ( $form, $input ) = find_form( $name, $nth );
+
+    if ( defined( $form ) ) {
+        $input->value( $value ) if defined( $value );
+        return $input->value();
+    }
+
+    return undef;
+}
+
+sub pipeready
+{
+    my ( $pipe ) = @_;
+
+    if ( !defined( $pipe ) ) {
+        return 0;
+    }
+
+    if ( $^O eq 'MSWin32' ) {
+        return ( ( -s $pipe ) > 0 );
+    } else {
+        my $rin = '';
+        vec( $rin, fileno( $pipe ), 1 ) = 1;
+        my $ready = select( $rin, undef, undef, 0.01 );
+        return ( $ready > 0 );
+    }
+}
+
+use Classifier::Bayes;
+use Classifier::WordMangle;
 use UI::HTML;
-my $h = new UI::HTML;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use POPFile::History;
+use Proxy::POP3;
 
-test_assert_equal( $h->url_encode_( ']'     ), '%5d'       );
-test_assert_equal( $h->url_encode_( '['     ), '%5b'       );
-test_assert_equal( $h->url_encode_( '[]'    ), '%5b%5d'    );
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $b = new Classifier::Bayes;
+my $w = new Classifier::WordMangle;
+my $hi = new POPFile::History;
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$b->{parser__}->mangle( $w );
+
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+$l->config_( 'level', 2 );
+$l->start();
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+$mq->pipeready( \&pipeready );
+$w->initialize();
+$w->start();
+
+my $p = new Proxy::POP3;
+
+$p->configuration( $c );
+$p->mq( $mq );
+$p->classifier( $b );
+$p->logger( $l );
+$p->version( 'vtest.suite.ver' );
+$p->initialize();
+$p->config_( 'port', 9110 );
+$p->config_( 'force_fork', 0 );
+
+test_assert( $p->config_( 'secure_server' ) eq '' );
+
+$b->initialize();
+$hi->configuration( $c );
+$hi->mq( $mq );
+$hi->logger( $l );
+
+$b->history( $hi );
+$hi->classifier( $b );
+
+$hi->initialize();
+test_assert( $b->start() );
+test_assert( $hi->start() );
+$hi->service();
+
+our $h = new UI::HTML;
+
+test_assert(1);
+
+$h->classifier( $b );
+$h->configuration( $c );
+$h->history( $hi );
+$h->mq( $mq );
+$h->logger( $l );
+test_assert(1);
+$h->initialize();
+$h->version( 'vtest.suite.ver' );
+our $version = $h->version();
+
+test_assert(1);
+
+our $sk = $h->session_key();
+
+test_assert( defined( $sk ) );
+test_assert( $sk ne '' );
+
+my $session = $b->get_session_key( 'admin', '' );
+
+my @messages = glob 'TestMails/TestMailParse*.msg';
+foreach my $msg (@messages) {
+    next if ( $msg =~ /TestMailParse026/ );
+    my $cls = $msg;
+    $cls =~ s/\.msg$/\.cls/;
+    if ( open my $CLS, '<', $cls ) {
+        my $class = <$CLS>;
+        $class =~ s/[\r\n]//g;
+        close $CLS;
+        my ( $slot, $msg_file ) = $hi->reserve_slot();
+        `cp $msg $msg_file`;
+        $hi->commit_slot( $session, $slot, $class, 0 );
+    }
+#    my $name = "messages/00/00/01/popfile$count";
+#    test_assert( (`cp $msg $name.msg` || 0) == 0 );
+#
+#    if ( -e "$name.cls" ) {
+#        test_assert( (`cp $msg $name.cls` || 0) == 0 );
+#    }
+#    $count += 1;
+#    if ( rand(1) > 0.5 ) {
+#        $dl += 1;
+#    }
+}
+$mq->service();
+$hi->service();
+
+#    $mq->reaper();
+#    $mq->stop();
+#    $hi->stop();
+#    $b->release_session_key( $session );
+#    $b->stop();
+#exit 0;
+test_assert_equal( $h->url_encode_( ']' ), '%5d' );
+test_assert_equal( $h->url_encode_( '[' ), '%5b' );
+test_assert_equal( $h->url_encode_( '[]' ), '%5b%5d' );
 test_assert_equal( $h->url_encode_( '[foo]' ), '%5bfoo%5d' );
 
-$h->{language__}{global}{Locale_Thousands} = ',';
-test_assert_equal( $h->pretty_number( 1234 ), '1,234'      );
-$h->{language__}{global}{Locale_Thousands} = '&nbsp;';
+$h->{language__}{Locale_Thousands} = ',';
+test_assert_equal( $h->pretty_number( 1234 ), '1,234' );
+$h->{language__}{Locale_Thousands} = '&nbsp;';
 test_assert_equal( $h->pretty_number( 1234 ), '1&nbsp;234' );
-$h->{language__}{global}{Locale_Thousands} = '';
+$h->{language__}{Locale_Thousands} = '';
 
+sub forker
+{
+    pipe my $reader, my $writer;
+    $b->prefork();
+    $mq->prefork();
+    my $pid = fork();
+
+    if ( !defined( $pid ) ) {
+        close $reader;
+        close $writer;
+        return (undef, undef);
+    }
+
+    if ( $pid == 0 ) {
+        $b->forked( $writer );
+        $mq->forked( $writer );
+        $hi->forked( $writer );
+        close $reader;
+
+        use IO::Handle;
+        $writer->autoflush(1);
+
+        return (0, $writer);
+    }
+
+    $b->postfork( $pid, $reader );
+    $mq->postfork( $pid, $reader );
+    close $writer;
+    return ($pid, $reader);
+}
+
+my $session = $b->get_session_key( 'admin', '' );
 
 our $port = 9001 + int(rand(1000));
 pipe my $dreader, my $dwriter;
@@ -101,50 +298,6 @@ my $pid = fork();
 
 if ( $pid == 0 ) {
 
-    use POPFile::Loader;
-    my $POPFile = POPFile::Loader->new();
-#    $POPFile->{debug__} = 1;
-    $POPFile->CORE_loader_init();
-    $POPFile->CORE_signals();
-
-    my %valid = ( 'POPFile/Database'       => 1,
-                  'POPFile/Logger'         => 1,
-                  'POPFile/MQ'             => 1,
-                  'POPFile/History'        => 1,
-                  'Classifier/Bayes'       => 1,
-                  'Classifier/WordMangle'  => 1,
-                  'POPFile/Configuration'  => 1,
-                  'UI/HTML'                => 1,
-                  'Proxy/POP3'             => 1 );
-
-    $POPFile->CORE_load( 0, \%valid );
-
-    $h->loader( $POPFile );
-
-    $POPFile->CORE_initialize();
-    $POPFile->CORE_config( 1 );
-
-    my $c  = $POPFile->get_module( 'POPFile/Configuration' );
-    my $mq = $POPFile->get_module( 'POPFile/MQ'            );
-    my $l  = $POPFile->get_module( 'POPFile/Logger'        );
-    my $b  = $POPFile->get_module( 'Classifier/Bayes'      );
-    my $w  = $POPFile->get_module( 'Classifier/WordMangle' );
-    my $hi = $POPFile->get_module( 'POPFile/History'       );
-
-    $l->config_( 'level', 0 );
-    $mq->pipeready( \&pipeready );
-
-    $c->module_config_( 'pop3', 'enabled',       1 );
-    $c->module_config_( 'pop3', 'port',       9110 );
-    $c->module_config_( 'pop3', 'force_fork',    0 );
-
-    $c->module_config_( 'html', 'port', $port + 1 );
-    $POPFile->CORE_start();
-
-    $hi->service();
-
-    my $session = $b->get_administrator_session_key();
-
     # CHILD THAT WILL RUN THE HTML INTERFACE
 
     close $dwriter;
@@ -152,25 +305,19 @@ if ( $pid == 0 ) {
 
     $uwriter->autoflush(1);
 
-    $h->initialize();
-
-    $h->config_( 'port',  $port );
-    $h->config_( 'local',     1 );
-    $h->version( '?.?.?' );
-
+    $h->config_( 'port', $port );
     $h->start();
 
     $mq->{pid__} = $$;
 
+    $p->start();
     $mq->service();
 
-    my $lang = $h->language();
-    test_assert_equal( $lang->{LanguageCode}, 'en' );
+    my %lang = $h->language();
+    test_assert_equal( $lang{LanguageCode}, 'en' );
 
     while ( 1 ) {
         $h->service();
-        $b->service();
-        $mq->service();
 
         if ( pipeready( $dreader ) ) {
             my $command = <$dreader>;
@@ -193,34 +340,9 @@ if ( $pid == 0 ) {
                 next;
             }
 
-            if ( $command =~ /^__GETUSERCONFIG ([^ ]+) ([^_]+)_(.+)/ ) {
-                my $userid = $b->get_user_id( $session, $1 );
-                my $value = $h->user_module_config_( $userid, $2, $3 );
-                print $uwriter "OK $value\n";
-                next;
-            }
-
-            if ( $command =~ /^__SETUSERCONFIG ([^ ]+) ([^_]+)_(.+) (.+)?/ ) {
-                my $userid = $b->get_user_id( $session, $1 );
-                my $value = $h->user_module_config_( $userid, $2, $3, $4 );
-                print $uwriter "OK\n";
-                next;
-            }
-
             if ( $command =~ /^__GETPARAMETER ([^ ]+) (.+)/ ) {
                 my $value = $b->get_bucket_parameter( $session, $1, $2 );
                 print $uwriter "OK $value\n";
-                next;
-            }
-
-            if ( $command =~ /^__ISVALIDPASSWORD (.*)/ ) {
-                my $password = $1 || '';
-                my $result = $b->validate_password( $session, $password );
-                if ( $result eq 1 ) {
-                    print $uwriter "OK\n";
-                } else {
-                    print $uwriter "ERR\n";
-                }
                 next;
             }
 
@@ -231,7 +353,7 @@ if ( $pid == 0 ) {
             }
 
             if ( $command =~ /^__NEWMESSAGE (\d+)/ ) {
-                my ( $slot, $file ) = $hi->reserve_slot( $session, 1 );
+                my ( $slot, $file ) = $hi->reserve_slot();
                 open FILE, ">$file";
                 my ( $bucket, $magnet );
                 if ( $1 == 1 ) {
@@ -283,13 +405,12 @@ EOM
                 next;
             }
         }
-        select( undef, undef, undef, 0.05 );
     }
 
     close $dreader;
     close $uwriter;
 
-    $POPFile->CORE_stop();
+    $h->stop();
 
     exit(0);
 } else {
@@ -300,27 +421,21 @@ EOM
     close $uwriter;
     $dwriter->autoflush(1);
 
+    use LWP::Simple;
     use LWP::UserAgent;
-    use HTTP::Cookies;
     use URI::URL;
     use String::Interpolate;
 
     my $ua = new LWP::UserAgent;
     my $line_number = 0;
-    my %h = ( port => \$port );
-
-    # Cookies
-
-    my $cookie_jar = HTTP::Cookies->new(file => 'TestHTML_cookie', autosave => 1);
-    $cookie_jar->clear;
-    $ua->cookie_jar($cookie_jar);
+    my %h = ( sk => \$sk , port => \$port, version => \$version);
 
     my $in = new String::Interpolate %h;
 
     # Wait for the UI to become available
 
     my $now = time;
-    while ( time < ( $now + 500 ) ) {
+    while ( time < ( $now + 5 ) ) {
         my $request = HTTP::Request->new('GET', "http://127.0.0.1:$port/" );
         my $response = $ua->request($request);
         if ( $response->code == 200 ) {
@@ -336,7 +451,6 @@ EOM
 
     while ( my $line = <SCRIPT> ) {
         $line_number += 1;
-#        print "line $line_number\n";
         $line =~ s/^[\t ]+//g;
         $line =~ s/[\r\n\t ]+$//g;
 
@@ -348,7 +462,6 @@ EOM
         $line = "$in";
 
         if ( $line =~ /^GET +(.+)$/ ) {
-#            print "  GET $1\n";
             my $request = HTTP::Request->new('GET', "http://127.0.0.1:$port$1" );
             my $response = $ua->request($request);
             @forms   = HTML::Form->parse( $response );
@@ -367,17 +480,13 @@ EOM
             $request = $form->click( $name ) if ( defined( $form ) );
             if ( defined( $request ) ) {
                 my $response = $ua->request( $request );
+                @forms = HTML::Form->parse( $response );
                 if ( $response->code == 302 ) {
-#                    print "  REDIRECTED to ", $response->headers->header('Location'), " at line $line_number\n";
-                    $request = HTTP::Request->new( 'GET', "http://127.0.0.1:$port" . $response->headers->header('Location') );
-                    $response = $ua->request( $request );
-                    $content = $response->content;
-                    @forms = HTML::Form->parse( $response );
-#                    print $content;
+                    $content = get(url("http://127.0.0.1:$port" . $response->headers->header('Location')));
+                    @forms = HTML::Form->parse( $content, "http://127.0.0.1:$port" );
                 } else {
                     test_assert_equal( $response->code, 200, "From script line $line_number" );
                     $content = $response->content;
-                    @forms = HTML::Form->parse( $response );
                 }
                 $content =~ s/^[\t ]+//gm;
                 $content =~ s/[\t ]+$//gm;
@@ -413,36 +522,10 @@ EOM
             next;
         }
 
-        if ( $line =~ /^USERCONFIGIS +([^ ]+) +([^ ]+) ?(.+)?$/ ) {
-            my ( $user, $option, $expected ) = ( $1, $2, $3 );
-            $expected = '' if ( !defined( $expected ) );
-            print $dwriter "__GETUSERCONFIG $user $option\n";
-            my $reply = <$ureader>;
-            if ( $reply =~ /^OK ([^\r\n]+)/ ) {
-                $reply = $1;
-            } else {
-                $reply = '';
-            }
-            test_assert_equal( $reply, $expected, "From script line $line_number asking for $option and got reply $reply" );
-            next;
-        }
-
         if ( $line =~ /^SETCONFIG +([^ ]+) ?(.+)?$/ ) {
             my ( $option, $value ) = ( $1, $2 );
             $value = '' if ( !defined( $value ) );
             print $dwriter "__SETCONFIG $option $value\n";
-            my $reply = <$ureader>;
-
-            if ( !( $reply =~ /^OK/ ) ) {
-                test_assert( 0, "From script line $line_number" );
-            }
-            next;
-        }
-
-        if ( $line =~ /^SETUSERCONFIG +([^ ]+) ([^ ]+) ?(.+)?$/ ) {
-            my ( $user, $option, $value ) = ( $1, $2, $3 );
-            $value = '' if ( !defined( $value ) );
-            print $dwriter "__SETUSERCONFIG $user $option $value\n";
             my $reply = <$ureader>;
 
             if ( !( $reply =~ /^OK/ ) ) {
@@ -459,6 +542,7 @@ EOM
             if ( !( $reply =~ /^OK/ ) ) {
                 test_assert( 0, "From script line $line_number" );
             }
+            $mq->service();
             next;
         }
 
@@ -500,32 +584,20 @@ EOM
             my $request = form_submit( $2 );
             if ( defined( $request ) ) {
                 my $response = $ua->request( $request );
-                if ( $response->code == 302 ) {
-#                    print "  REDIRECTED to ", $response->headers->header('Location'), " at line $line_number\n";
-                    $request = HTTP::Request->new( 'GET', "http://127.0.0.1:$port" . $response->headers->header('Location') );
-                    $response = $ua->request( $request );
-                    $content = $response->content;
-                    @forms = HTML::Form->parse( $response );
-#                    print $content;
-                } else {
-                    test_assert_equal( $response->code, 200, "From script line $line_number" );
-                    $content = $response->content;
-                    @forms = HTML::Form->parse( $response );
-                }
+                $content = $response->content;
                 $content =~ s/^[\t ]+//gm;
                 $content =~ s/[\t ]+$//gm;
                 while ( ( $content =~ s/\n\n/\n/gs ) > 0 ) {
                 }
+                @forms   = HTML::Form->parse( $response );
             }
             next;
         }
 
         if ( $line =~ /^MATCH +(.+)$/ ) {
-            my $string = $1;
-            $content =~ s/([0-9]\.[0-9]+e[-\+])0([0-9]{2})/$1$2/ if ( $^O eq 'MSWin32' );
-            my $result = test_assert_regexp( $content, "\Q$string\E", "From script line $line_number" );
+            my $result = test_assert_regexp( $content, "\Q$1\E", "From script line $line_number" );
             if ( !$result ) {
-                open HTML, ">testhtml_match$line_number.html";
+                open HTML, ">$line_number.html";
                 print HTML $content;
                 close HTML;
             }
@@ -535,7 +607,7 @@ EOM
         if ( $line =~ /^NOTMATCH +(.+)$/ ) {
             my $result = test_assert_not_regexp( $content, "\Q$1\E", "From script line $line_number" );
             if ( !$result ) {
-                open HTML, ">testhtml_match$line_number.html";
+                open HTML, ">$line_number.html";
                 print HTML $content;
                 close HTML;
             }
@@ -543,7 +615,7 @@ EOM
         }
 
         if ( $line =~ /^MATCH$/ ) {
-            my $block = '';
+            my $block;
 
             while ( $line = <SCRIPT> ) {
                 $line_number += 1;
@@ -563,7 +635,7 @@ EOM
 
             my $result = test_assert_regexp( $content, "\Q$block\E", "From script line $line_number" );
             if ( !$result ) {
-                open HTML, ">testhtml_match$line_number.html";
+                open HTML, ">$line_number.html";
                 print HTML $content;
                 close HTML;
             }
@@ -599,19 +671,12 @@ EOM
             next;
         }
 
-        if ( $line =~ /^ISVALIDPASSWORD ?(.*)?$/ ) {
-            my $password = $1 || '';
-            print $dwriter "__ISVALIDPASSWORD $password\n";
-            my $reply = <$ureader>;
-
-            test_assert( ( $reply =~ /^OK/ ), "From script line $line_number" );
-            next;
-        }
-
         if ( $line =~ /^NEWMSG (\d+)$/ ) {
+            $h->log_( 2, $line );
             my ( $msg ) = ( $1 );
             print $dwriter "__NEWMESSAGE $msg\n";
             my $reply = <$ureader>;
+            $h->log_( 2, $reply );
 
             if ( !( $reply =~ /^OK/ ) ) {
                 test_assert( 0, "From script line $line_number" );
@@ -619,16 +684,10 @@ EOM
             my $cd = 10;
             while ( $cd-- ) {
                 select( undef, undef, undef, 0.1 );
+                $mq->service();
+                $hi->service();
             }
 
-            next;
-        }
-
-        if ( $line =~ /^SETCOOKIE +(.*)$/ ) {
-#            print "    Current cookie : ", $ua->cookie_jar->as_string, "\n";
-            $cookie_jar->set_cookie( 0, 'popfile', $1, '/', '127.0.0.1', undef, undef, undef, undef, 1 );
-#            $ua->cookie_jar->set_cookie( 1, 'popfile', $1, '/', 'http://127.0.0.1' );
-#            print "    Changed cookie : ", $ua->cookie_jar->as_string, "\n";
             next;
         }
 
@@ -648,84 +707,16 @@ skip:
     close $dwriter;
     close $ureader;
 
+    $p->stop();
+
     while ( waitpid( $pid, &WNOHANG ) != $pid ) {
     }
-}
 
-
-# Helper function that finds a form in @forms with the
-# named input element, returns the form object and input
-# element if found or undef
-
-sub find_form
-{
-    my ( $name, $nth ) = @_;
-
-    foreach my $form (@forms) {
-#        print "Checking form ", $form->dump, "\n";
-        my $input = $form->find_input( $name, undef, $nth );
-
-        if ( defined( $input ) &&
-           ( ( $input->type ne 'hidden' ) || $hidden ) ) {
-            return ( $form, $input );
-        }
-    }
-
-    test_assert( 0, "Unable to find form element '$name'" );
-
-    return ( undef, undef );
-}
-
-# Helper function that finds the form with a specific input
-# by name and returns an HTTP::Request to submit the form
-
-sub form_submit
-{
-    my ( $name ) = @_;
-
-    my ( $form ) = find_form( $name );
-
-    if ( defined( $form ) ) {
-        return $form->click;
-    } else {
-        return undef;
-    }
-}
-
-# Helper function that finds an input with a specific name
-# in the @forms collection and returns or sets its value
-
-sub form_input
-{
-    my ( $name, $value, $nth ) = @_;
-    my ( $form, $input ) = find_form( $name, $nth );
-
-    if ( defined( $form ) ) {
-        $input->disabled( 0 ) if defined( $value ); # force enable
-        $input->readonly( 0 ) if defined( $value ); # force writable
-        $input->value( $value ) if defined( $value );
-        return $input->value();
-    }
-
-    return undef;
-}
-
-sub pipeready
-{
-    my ( $pipe ) = @_;
-
-    if ( !defined( $pipe ) ) {
-        return 0;
-    }
-
-    if ( $^O eq 'MSWin32' ) {
-        return ( ( -s $pipe ) > 0 );
-    } else {
-        my $rin = '';
-        vec( $rin, fileno( $pipe ), 1 ) = 1;
-        my $ready = select( $rin, undef, undef, 0.01 );
-        return ( $ready > 0 );
-    }
+    $mq->reaper();
+    $mq->stop();
+    $hi->stop();
+    $b->release_session_key( $session );
+    $b->stop();
 }
 
 1;

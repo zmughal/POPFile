@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2007 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -357,8 +357,58 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MINPERL_MBREMOLD     "Delete everything in old minimal Perl folder before installing the new version ?${MB_NL}${MB_NL}($G_PLS_FIELD_1)"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; POPFile Installer: Custom Page - Select uninstaller mode [installer.nsi]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; Page Title and Sub-title displayed in the page header of the uninstaller's first page
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_TITLE        "Select POPFile uninstaller mode"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_MODE_SUBTITLE     "Modify or uninstall the installation in the $INSTDIR folder"
+
+; Text for the MODIFY mode radio-button and the label underneath it
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "Modify the existing POPFile installation"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(e.g. add SSL Support)"
+
+; Text for the UNINSTALL mode radio-button and the label underneath it
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_RADIO   "Uninstall the POPFile program"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_UNINST_LABEL   "(remove all of the POPFile program files from the computer)"
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; POPFile Installer: Standard MUI Page - UNPAGE_DIRECTORY [installer.nsi]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; Page Title/Sub-Title shown in the page header
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TITLE         "Location of existing POPFile installation"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_SUBTITLE      "This is where the selected POPFile components will be installed"
+
+; Text explaining what this page shows
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_EXPLANATION   "Setup will modify the POPFile installation in this folder by adding extra components to it. To change the component selection, click the Back button. $_CLICK"
+
+; Text shown above the box showing the folder where the extra components will be installed
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_DIR_TEXT_DESTN    "Destination folder for the new POPFile components"
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - UNPAGE_INSTFILES [installer.nsi]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+; Page Sub-title displayed when MODIFYING the installation (one of the standard MUI strings is used for the Title)
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_SUBTITLE     "Please wait while $(^NameDA) is being updated"
+
+; Page Title and Sub-Title shown instead of the default "Uninstallation complete..." page header
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_TITLE     "Add/Remove operation complete"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_OK_SUBTITLE  "Add/Remove operation was completed successfully."
+
+; Page Title and Sub-Title shown instead of the default "Uninstallation Aborted..." page header
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_TITLE    "Add/Remove operation aborted"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_INST_BAD_SUBTITLE "Add/Remove operation was not completed successfully."
 
 ; Uninstall Progress Reports displayed above the progress bar
 
@@ -375,6 +425,13 @@
 ; Message Box text strings
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_MBREMDIR_1        "Â·  —Ìœ Õ–› ﬂ· «·„·›«  ›Ì „Ã·œ POPFileø${MB_NL}${MB_NL}$G_ROOTDIR${MB_NL}${MB_NL}(≈–« ﬂ«‰ Â‰«ﬂ √‘Ì«¡  Õ «ÃÂ«° ≈÷€ÿ ·«)"
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; POPFile Installer: Standard MUI Page - UNPAGE_FINISH [installer.nsi]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TITLE      "Completing the $(^NameDA) Component Add/Remove Wizard"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_FINISH_TEXT       "Click Finish to close this wizard."
 
 ###########################################################################
 ###########################################################################
@@ -463,7 +520,6 @@
 
 ; Progress reports
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PROG_CHECKINTERNET   "Checking Internet connection..."
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_STARTDOWNLOAD   "Downloading $G_PLS_FIELD_1 file from $G_PLS_FIELD_2"
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILECOPY        "Copying $G_PLS_FIELD_2 files..."
 !insertmacro PFI_LANG_STRING PFI_LANG_PROG_FILEEXTRACT     "Extracting files from $G_PLS_FIELD_2 archive..."
@@ -474,20 +530,30 @@
 ; Get SSL: Message Box strings used when installing SSL Support [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_INTERNETCONNECT   "The SSL Support files will be downloaded from the Internet${MB_NL}${MB_NL}Please connect to the Internet and the click 'OK'${MB_NL}${MB_NL}or click 'Cancel' to cancel this part of the installation"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_CHECKINTERNET     "The SSL Support files will be downloaded from the Internet.${MB_NL}${MB_NL}Your Internet connection seems to be down or disabled.${MB_NL}${MB_NL}Please reconnect and click Retry to resume installation"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_1      "Download of $G_PLS_FIELD_1 file failed"
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_NSISDLFAIL_2      "(error: $G_PLS_FIELD_2)"
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MB_UNPACKFAIL        "Error detected while installing files in $G_PLS_FIELD_1 folder"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "Unable to install the optional SSL files!${MB_NL}${MB_NL}To try again later, run the command${MB_NL}${MB_NL}$G_PLS_FIELD_1 /SSL"
+!insertmacro PFI_LANG_STRING PFI_LANG_MB_REPEATSSL         "Unable to install the optional SSL files!${MB_NL}${MB_NL}To try again later use the 'Add/Remove Programs' entry${MB_NL}${MB_NL}for POPFile ${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}${C_POPFILE_RC}"
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+; Get SSL: Strings used when patching SSL.pm from IO::Socket::SSL [getssl.nsh]
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPREPAREPATCH      "Downgrading SSL.pm to v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHSTATUS       "SSL.pm patch status: $G_PLS_FIELD_2"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHCOMPLETED    "SSL.pm file has been downgraded to v0.97"
+!insertmacro PFI_LANG_STRING PFI_LANG_SSLPATCHFAILED       "SSL.pm file has not been downgraded to v0.97"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Get SSL: NSISdl strings (displayed by the plugin which downloads the SSL files) [getssl.nsh]
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ;
-; The NSISdl plugin shows two progress bars, for example:
+; The NSISdl plugin (or the Inetc plugin operating in NSISdl-compatible mode)
+; shows two progress bars, for example:
 ;
 ;     Downloading libeay32.dll
 ;
@@ -734,6 +800,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_TEXT_2    "„Â„: «·—Ã«¡ ≈€·«ﬁ »—«„Ã «·»—Ìœ «·„—«œ ≈⁄œ«œÂ« »‘ﬂ·  ·ﬁ«∆Ì «·¬‰${IO_NL}${IO_NL}Â–Â «·„Ì“… ·«  “«· ﬁÌœ «· ÿÊÌ— („À«·: »⁄÷ Õ”«»«  Outlook ·« Ì „ ≈ﬂ ‘«›Â« √ÕÌ«‰«).${IO_NL}${IO_NL}«·—Ã«¡ ›Õ’ √‰ «·≈⁄œ«œ«   „¯  »‘ﬂ· ’ÕÌÕ (ﬁ»· ≈” ⁄„«· »—‰«„Ã «·»—Ìœ)."
 
 !insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_CANCEL    " „ ≈·€«¡ ⁄„·Ì… ≈⁄œ«œ »—‰«„Ã «·»—Ìœ „‰ ﬁ»· «·„” Œœ„"
+!insertmacro PFI_LANG_STRING PFI_LANG_MAILCFG_IO_NOMATCHES "No suitable email clients found"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Text used on buttons to skip configuration of email clients [adduser.nsi]
@@ -796,6 +863,7 @@
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSERVER      "Œ«œ„ POP3 :"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBUSERNAME    "≈”„ „” Œœ„POP3 :"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOEPORT      "„‰›– POP3 :"
+!insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBSMTPLOGIN   "SMTP username will be set to ' $G_PLS_FIELD_2'"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBOLDVALUE    "Õ«·Ì«"
 !insertmacro PFI_LANG_STRING PFI_LANG_OOECFG_MBQUESTION    "ﬁ„ ≈⁄œ«œ Â–« «·Õ”«» ·Ì⁄„· „⁄ POPFile ø"
 

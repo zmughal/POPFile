@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -15,9 +15,9 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-#   POPFile 0.22.0 Traditional Chinese Translation
+#   POPFile 1.0.0 Traditional Chinese Translation
 #   Created By Jedi Lin, 2004/09/19
-#   Modified By Jedi Lin, 2004/09/23
+#   Modified By Jedi Lin, 2007/12/25
 
 # Identify the language and character set used for the interface
 LanguageCode                            tw
@@ -28,10 +28,11 @@ LanguageDirection                       ltr
 ManualLanguage                          zh-tw
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 faq
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   套用
+ApplyChanges                            套用變更
 On                                      開
 Off                                     關
 TurnOn                                  打開
@@ -157,14 +158,14 @@ Configuration_XTCInsertion              在標頭插入<br>X-Text-Classification
 Configuration_XPLInsertion              在標頭插入<br>X-POPFile-Link
 Configuration_Logging                   日誌
 Configuration_None                      無
-Configuration_ToScreen                  輸出至螢幕
+Configuration_ToScreen                  輸出至螢幕 (Console)
 Configuration_ToFile                    輸出至檔案
 Configuration_ToScreenFile              輸出至螢幕及檔案
 Configuration_LoggerOutput              日誌輸出方式
 Configuration_GeneralSkins              外觀樣式
 Configuration_SmallSkins                小型外觀樣式
 Configuration_TinySkins                 微型外觀樣式
-Configuration_CurrentLogFile            &lt;下載目前的日誌檔&gt;
+Configuration_CurrentLogFile            &lt;檢視目前的日誌檔&gt;
 Configuration_SOCKSServer               SOCKS V 代理伺服器主機
 Configuration_SOCKSPort                 SOCKS V 代理伺服器連接埠
 Configuration_SOCKSPortUpdate           SOCKS V 代理伺服器連接埠已更新為 %s
@@ -183,7 +184,7 @@ Advanced_RemoveWord                     移除字詞
 Advanced_AllParameters                  所有的 POPFile 參數
 Advanced_Parameter                      參數
 Advanced_Value                          值
-Advanced_Warning                        這是完整的 POPFile 參數清單.  祇適合進階使用者: 妳可以變更任何參數值並按下 更新; 不過沒有任何機制會檢查這些參數值的有效性.  以粗體顯示的項目表示已經從預設值被加以變更了.
+Advanced_Warning                        這是完整的 POPFile 參數清單.  祇適合進階使用者: 妳可以變更任何參數值並按下 更新; 不過沒有任何機制會檢查這些參數值的有效性.  以粗體顯示的項目表示已經從預設值被加以變更了.  更詳盡的選項資訊請見 <a href="http://getpopfile.org/docs/OptionReference">OptionReference</a>.
 Advanced_ConfigFile                     組態檔:
 
 History_Filter                          &nbsp;(祇顯示 <font color="%s">%s</font> 郵筒)
@@ -212,7 +213,7 @@ History_Magnet                          &nbsp;(祇顯示由吸鐵所分類的郵
 History_NoMagnet                        &nbsp;(祇顯示不是由吸鐵所分類的郵件訊息)
 History_ResetSearch                     重設
 History_ChangedClass                    現在被分類為
-History_Purge                           馬上刪除
+History_Purge                           即刻到期
 History_Increase                        增加
 History_Decrease                        減少
 History_Column_Characters               變更寄件者, 收件者, 副本和主旨欄位的寬度
@@ -231,8 +232,8 @@ Security_Error1                         連接埠一定要介於 1 和 65535 之
 Security_Stealth                        鬼鬼祟祟模式/伺服器作業
 Security_NoStealthMode                  否 (鬼鬼祟祟模式)
 Security_StealthMode                    (鬼鬼祟祟模式)
-Security_ExplainStats                   (這個選項開啟後, POPFile 每天都會傳送一次下列三個數值到 www.usethesource.com 的一個腳本: bc (妳的郵筒數量), mc (被 POPFile 分類過的郵件訊息總數) 和 ec (分類錯誤的總數).  這些數值會被儲存到一個檔案裏, 然後會被我用來發佈一些關於人們使用 POPFile 的情況跟其成效的統計資料.  我的網頁伺服器會保留其本身的日誌檔約 5 天, 然後就會加以刪除; 我不會儲存任何統計與單獨 IP 地址間的關聯性起來.)
-Security_ExplainUpdate                  (這個選項開啟後, POPFile 每天都會傳送一次下列三個數值到 www.usethesource.com 的一個腳本: ma (妳的 POPFile 的主要版本編號), mi (妳的 POPFile 的次要版本編號) 和 bn (妳的 POPFile 的建號).  新版推出時, POPFile 會收到一份圖形回應, 並且顯示在畫面頂端.  我的網頁伺服器會保留其本身的日誌檔約 5 天, 然後就會加以刪除; 我不會儲存任何更新檢查與單獨 IP 地址間的關聯性起來.)
+Security_ExplainStats                   (這個選項開啟後, POPFile 每天都會傳送一次下列三個數值到 getpopfile.org 的一個腳本: bc (妳的郵筒數量), mc (被 POPFile 分類過的郵件訊息總數) 和 ec (分類錯誤的總數).  這些數值會被儲存到一個檔案裏, 然後會被我用來發佈一些關於人們使用 POPFile 的情況跟其成效的統計資料.  我的網頁伺服器會保留其本身的日誌檔約 5 天, 然後就會加以刪除; 我不會儲存任何統計與單獨 IP 地址間的關聯性起來.)
+Security_ExplainUpdate                  (這個選項開啟後, POPFile 每天都會傳送一次下列三個數值到 getpopfile.org 的一個腳本: ma (妳的 POPFile 的主要版本編號), mi (妳的 POPFile 的次要版本編號) 和 bn (妳的 POPFile 的建號).  新版推出時, POPFile 會收到一份圖形回應, 並且顯示在畫面頂端.  我的網頁伺服器會保留其本身的日誌檔約 5 天, 然後就會加以刪除; 我不會儲存任何更新檢查與單獨 IP 地址間的關聯性起來.)
 Security_PasswordTitle                  使用者介面密碼
 Security_Password                       密碼
 Security_PasswordUpdate                 密碼已更新
@@ -261,7 +262,7 @@ Magnet_Error3                           建立新的吸鐵 '%s' 於 '%s' 郵筒�
 Magnet_CurrentMagnets                   現用的吸鐵
 Magnet_Message1                         下列的吸鐵會讓信件總是被分類到特定的郵筒裏.
 Magnet_CreateNew                        建立新的吸鐵
-Magnet_Explanation                      <b>有這些類別的吸鐵可以用:</b> <ul><li><b>寄件者地址或名字:</b> 舉例來說: john@company.com 就祇會吻合特定的地址, <br />company.com 會吻合到任何從 company.com 寄出來的人, <br />John Doe 會吻合特定的人, John 會吻合所有的 Johns</li><li><b>收件者/副本地址或名稱:</b> 就跟寄件者一樣: 但是吸鐵祇會針對郵件訊息裏的 To:/Cc: 地址生效</li> <li><b>主旨字詞:</b> 例如: hello 會吻合所有主旨裏有 hello 的郵件訊息</li></ul>
+Magnet_Explanation                      有這些類別的吸鐵可以用:</b> <ul><li><b>寄件者地址或名字:</b> 舉例來說: john@company.com 就祇會吻合特定的地址, <br />company.com 會吻合到任何從 company.com 寄出來的人, <br />John Doe 會吻合特定的人, John 會吻合所有的 Johns</li><li><b>收件者/副本地址或名稱:</b> 就跟寄件者一樣: 但是吸鐵祇會針對郵件訊息裏的 To:/Cc: 地址生效</li> <li><b>主旨字詞:</b> 例如: hello 會吻合所有主旨裏有 hello 的郵件訊息</li></ul>
 Magnet_MagnetType                       吸鐵類別
 Magnet_Value                            值
 Magnet_Always                           總是分到郵筒
@@ -327,6 +328,7 @@ View_WordProbabilities                  正在顯示字詞可能性
 View_WordFrequencies                    正在顯示字詞頻率
 View_WordScores                         正在顯示字詞得分
 View_Chart                              判定圖表
+View_DownloadMessage                    下載郵件訊息
 
 Windows_TrayIcon                        是否要在 Windows 的系統常駐列顯示 POPFile 圖示?
 Windows_Console                         是否要在命令列視窗裏執行 POPFile?
@@ -348,7 +350,7 @@ Configuration_InsertionTableSummary     這個表格含有一些按鈕, 判斷�
 Security_MainTableSummary               這個表格提供了幾組控制, 能影響 POPFile 整體組態的安全, 是否要自動檢查程式更新, 以及是否要把 POPFile 效能統計資料的一般資訊傳回程式作者的中央資料庫.
 Advanced_MainTableSummary               這個表格提供了一份 POPFile 分類郵件訊息時所會忽略的字詞清單, 因為他們在一般郵件訊息裏的關聯過於頻繁.  她們會被按照字詞開頭的字畝被逐列整理.
 
-Imap_Bucket2Folder                      <b>%s</b> 郵筒的信件至郵件匣
+Imap_Bucket2Folder                      '<b>%s</b>' 郵筒的信件至郵件匣
 Imap_MapError                           妳不能把超過一個的郵筒對應到單一的郵件匣裏!
 Imap_Server                             IMAP 伺服器主機名稱:
 Imap_ServerNameError                    請輸入伺服器的主機名稱!
@@ -371,9 +373,10 @@ Imap_UpdateError3                       請先組態連線細節.
 Imap_NoConnectionMessage                請先組態連線細節. 當妳完成後, 這一頁裏就會出現更多可用的選項.
 Imap_WatchMore                          被監視郵件匣清單的郵件匣
 Imap_WatchedFolder                      被監視的郵件匣編號
+Imap_Use_SSL                            使用 SSL
 
 Shutdown_Message                        POPFile 已經被停掉了
 
-Help_Training                           當妳初次使用 POPFile 時, 她啥也不懂而需要被加以調教. POPFile 的每一個郵筒都需要用郵件訊息來加以調教, 祇有當妳重新把某個被 POPFile 錯誤分類的郵件訊息重新分類到正確的郵筒時, 纔真的是在調教她. 同時妳也得設定妳的郵件用戶端程式, 來按照 POPFile 的分類結果加以過濾郵件訊息. 關於設定用戶端過濾器的資訊可以在 <a href="http://getpopfile.org/docs/faq/EmailSorting">POPFile 文件計畫</a>裏被找到.
-Help_Bucket_Setup                       POPFile 除了未分類 (unclassified) 的假郵筒外, 還需要至少兩個郵筒. 而 POPFile 的獨特之處正在於她對電子郵件的區分更勝於此, 妳甚至可以有任意數量的郵筒. 簡單的設定會是像 "垃圾 (spam)", "個人 (personal)", 和 "工作 (work)" 郵筒.
+Help_Training                           當妳初次使用 POPFile 時, 她啥也不懂而需要被加以調教. POPFile 的每一個郵筒都需要用郵件訊息來加以調教, 祇有當妳重新把某個被 POPFile 錯誤分類的郵件訊息重新分類到正確的郵筒時, 纔真的是在調教她. 同時妳也得設定妳的郵件用戶端程式, 來按照 POPFile 的分類結果加以過濾郵件訊息. 關於設定用戶端過濾器的資訊可以在 <a href="http://getpopfile.org/docs/FAQ:EmailSorting">POPFile 文件計畫</a>裏被找到.
+Help_Bucket_Setup                       POPFile 除了 "未分類 (unclassified)" 的假郵筒外, 還需要至少兩個郵筒. 而 POPFile 的獨特之處正在於她對電子郵件的區分更勝於此, 妳甚至可以有任意數量的郵筒. 簡單的設定會是像 "垃圾 (spam)", "個人 (personal)", 和 "工作 (work)" 郵筒.
 Help_No_More                            別再顯示這個說明了
