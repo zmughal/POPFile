@@ -1,0 +1,20 @@
+; POPFILE PATCH CONTROL FILE
+
+[PCF]
+Format=1
+
+[Settings]
+POPFileVersion=0.22.x
+PatchIssue=2
+NumberOfPatches=1
+Comment=Updated to cope with current SSL files (14 February 2008 @ 15:20 GMT)
+
+[Patch-1]
+Category=ESSENTIAL
+PatchData=SSL_pm.pat
+TargetFolder=lib\IO\Socket
+TargetFile=SSL.pm
+LogMsg-1=Downgrading SSL.pm to v0.97
+LogMsg-2=SSL.pm patch status:
+LogMsg-3=SSL.pm file has been downgraded to v0.97
+LogMsg-4=ERROR: SSL.pm file has *not* been downgraded to v0.97
