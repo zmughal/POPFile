@@ -1,131 +1,65 @@
-#!/usr/bin/perl
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
-# insert.pl --- Inserts a mail message into a specific bucket
+# insert.pl --- Inserts a mail message into a specific class
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2002 John Graham-Cumming
 #
-#   This file is part of POPFile
-#
-#   POPFile is free software; you can redistribute it and/or modify it
-#   under the terms of version 2 of the GNU General Public License as
-#   published by the Free Software Foundation.
-#
-#   POPFile is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-#
-#   You should have received a copy of the GNU General Public License
-#   along with POPFile; if not, write to the Free Software
-#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 use strict;
-use lib defined($ENV{POPFILE_ROOT})?$ENV{POPFILE_ROOT}:'./';
-use POPFile::Loader;
 
-my $code = 0;
+if ( $#ARGV >= 1 )
+{
+    my $class    = $ARGV[0];
+    
+    # Make sure that the extract directory exists
+    print "1. Creating extraction directory\n";
+    mkdir( 'corpus' );
+    
+    # Create the appropriate class directory
+    print "2. Creating $class directory\n";
+    mkdir( "corpus/$class" );
+    
+    my $pattern = $ARGV[1];
+    my @files   = glob $pattern;
 
-if ( $#ARGV > 0 ) {
+    foreach my $file (@files)
+    {
+        # Parse the mailfile and remove junk that isn't useful
+        print "3. Parsing $file\n";
 
-    # POPFile is actually loaded by the POPFile::Loader object which does all
-    # the work
+        open MAILFILE, "<$file";
+        open EXTRACTED, ">>corpus/$class/sample";
 
-    my $POPFile = POPFile::Loader->new();
+        while ( <MAILFILE> )
+        {
+            if ( /[^ ]+: / ) 
+            {
+                if ( ( /From: (.*)/ ) || ( /Subject: (.*)/ ) || ( /Cc: (.*)/i ) || ( /To: (.*)/ ) ) 
+                {
+                    print EXTRACTED "$1\r\n";
+                }
 
-    # Indicate that we should create not output on STDOUT (the POPFile
-    # load sequence)
+                next;
+            }
 
-    $POPFile->CORE_loader_init();
-    $POPFile->CORE_signals();
-    $POPFile->CORE_load( 1 );
-    $POPFile->CORE_initialize();
+            if ( ( ! /^[^ ]+: / ) && ( ! /^[^ ]{50}/ ) && ( ! /^\t/ ) )
+            {
+                print EXTRACTED $_;
 
-    my @argv_backup = @ARGV;
-    @ARGV = ();
-
-    if ( $POPFile->CORE_config() ) {
-
-        # Prevent the tool from finding another copy of POPFile running
-
-        my $c = $POPFile->get_module('POPFile::Config');
-        my $current_piddir = $c->config_( 'piddir' );
-        $c->config_( 'piddir', $c->config_( 'piddir' ) . 'insert.pl.' );
-
-        my $multiuser_mode = ( $c->global_config_( 'single_user' ) != 1 );
-
-        my $user   = shift @argv_backup if ( $multiuser_mode );
-        my $bucket = shift @argv_backup;
-
-        my @files;
-
-        if ($^O =~ /linux/) {
-            @files = @argv_backup[0 .. $#argv_backup];
-        } else {
-            @files = map { glob } @argv_backup[0 .. $#argv_backup];
-        }
-
-        $POPFile->CORE_start();
-
-        # TODO: interface violation
-        $c->{save_needed__} = 0;
-
-        my $b = $POPFile->get_module( 'Classifier::Bayes' );
-        my $session = $b->get_administrator_session_key();
-
-        # Check for the existence of each file first because the API
-        # call we use does not care if a file is missing
-
-        foreach my $file (@files) {
-            if ( !(-e $file) ) {
-                print STDERR "Error: File `$file' does not exist, insert aborted.\n";
-                $code = 1;
-                last;
+                next;
             }
         }
 
-        # Multiuser support
-
-        my $user_session;
-
-        if ( $multiuser_mode ) {
-
-            # Get user's session id
-
-            $user_session = $b->get_session_key_from_token( $session, 'insert', $user );
-            if ( !defined($user_session) ) {
-                print STDERR "Error: User `$user' does not exist, insert aborted.\n";
-                $code = 1;
-            }
-        } else {
-            $user_session = $session;
-        }
-
-        if ( $code == 0 ) {
-            if ( !$b->is_bucket( $user_session, $bucket ) ) {
-                print STDERR "Error: Bucket `$bucket' does not exist, insert aborted.\n";
-                $code = 1;
-            } else {
-                $b->add_messages_to_bucket( $user_session, $bucket, @files );
-                print "Added ", $#files+1, " files to `$bucket'\n";
-            }
-        }
-
-        $c->config_( 'piddir', $current_piddir );
-        $b->release_session_key( $user_session ) if ( $multiuser_mode && defined($user_session) );
-        $b->release_session_key( $session );
-        $POPFile->CORE_stop();
+        close EXTRACTED;
+        close MAILFILE;
     }
-} else {
-    print "insert.pl - insert mail messages into a specific bucket of the specific user\n\n";
-    print "Usage: insert.pl [<user>] <bucket> <messages>\n";
-    print "       <user>             The name of the user (multiuser mode only)\n";
-    print "       <bucket>           The name of the bucket\n";
-    print "       <messages>         Filename of message(s) to insert\n";
-    $code = 1;
+    
+    # Done
+    print "4. Done\n";
 }
-
-exit $code;
-
+else
+{
+    print "Error: wrong number of command line arguments\n\n";
+    print "insert class mailfile - parses mailfile and classifies it as 'class'\n\n";
+}
