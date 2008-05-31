@@ -187,7 +187,7 @@ sub child__
     my $s = $self->config_( 'separator' );
     $s =~ s/(\$|\@|\[|\]|\(|\)|\||\?|\*|\.|\^|\+)/\\$1/;
 
-    my $transparent  = "^USER ([^$s])+\$";
+    my $transparent  = "^USER ([^$s]+)\$";
     my $user_command = "USER ([^$s]+)($s(\\d+))?$s([^$s]+)($s([^$s]+))?";
     my $apop_command = "APOP ([^$s]+)($s(\\d+))?$s([^$s]+) (.*?)";
 
@@ -227,7 +227,7 @@ sub child__
         # that the user can say host:username:ssl,apop if both are
         # needed
 
-        if ( $command =~ /$transparent/ ) {
+        if ( $command =~ /$transparent/i ) {
             if ( $self->config_( 'secure_server' ) ne '' )  {
                 if ( $mail = $self->verify_connected_( $mail, $client,  $self->config_( 'secure_server' ), $self->config_( 'secure_port' ) ) )  {
                     last if ($self->echo_response_($mail, $client, $command) == 2 );
@@ -235,7 +235,7 @@ sub child__
                     next;
                 }
             } else {
-                $self->tee_(  $client, "-ERR Transparent proxying not configured: set secure server/port$eol" );
+                $self->tee_(  $client, "-ERR Transparent proxying not configured: set secure server/port ( command you sent: '$command' )$eol" );
             }
 
             next;
@@ -359,7 +359,7 @@ sub child__
 
         # Secure authentication
 
-        if ( $command =~ /AUTH ([^ ]+)/ ) {
+        if ( $command =~ /AUTH ([^ ]+)/i ) {
             if ( $self->config_( 'secure_server' ) ne '' )  {
                 if ( $mail = $self->verify_connected_( $mail, $client,  $self->config_( 'secure_server' ), $self->config_( 'secure_port' ) ) )  {
 
@@ -383,7 +383,7 @@ sub child__
             next;
         }
 
-        if ( $command =~ /AUTH/ ) {
+        if ( $command =~ /AUTH/i ) {
             if ( $self->config_( 'secure_server' ) ne '' )  {
                 if ( $mail = $self->verify_connected_( $mail, $client,  $self->config_( 'secure_server' ), $self->config_( 'secure_port' ) ) )  {
                     my $response = $self->echo_response_($mail, $client, "AUTH" );
