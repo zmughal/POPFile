@@ -47,6 +47,21 @@
   !undef  C_EXPECTED_VERSION
 
   ;------------------------------------------------
+  ; This script requires the 'GetVersion' NSIS plugin
+  ;------------------------------------------------
+  ;
+  ; This script uses a special NSIS plugin (GetVersion) to identify the Windows version
+  ;
+  ; The 'NSIS Wiki' page for the 'GetVersion' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/GetVersion_(Windows)_plug-in
+  ;
+  ; To compile this script, copy the 'GetVersion.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'GetVersion' source and example files can be unzipped to the
+  ; appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
+  ;
+  ; This script requires v0.9 (or later) of the GetVersion plugin
+
+  ;------------------------------------------------
   ; This script requires the 'ShellLink' NSIS plugin
   ;------------------------------------------------
   ;
@@ -61,7 +76,6 @@
   ; ${NSISDIR}\Contrib\ShellLink\ folder if you wish, but this step is entirely optional.
   ;
   ; This script requires v1.1 (or later) of the ShellLink plugin
-
 
 #--------------------------------------------------------------------------
 # Run-time command-line switch (used by 'pfidiag.exe')
@@ -105,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.11"
+  !define C_VERSION   "0.1.12"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -562,20 +576,30 @@ Section "OS Type and IE Version"
 
 enter_section:
 
-  !define L_TEMP    $R9
+  !define L_OSNAME    $R9
+  !define L_VERSION   $R8
 
-  Push ${L_TEMP}
+  Push ${L_OSNAME}
+  Push ${L_VERSION}
+
+  GetVersion::WindowsName
+  Pop ${L_OSNAME}
+  GetVersion::WindowsType
+  Pop ${L_VERSION}
+  DetailPrint "Windows version   = ${L_OSNAME} ${L_VERSION}"
 
   DetailPrint "IsNT return code  = $G_WIN_OS_TYPE"
 
   Call PFI_GetIEVersion
-  Pop ${L_TEMP}
-  DetailPrint "Internet Explorer = ${L_TEMP}"
+  Pop ${L_VERSION}
+  DetailPrint "Internet Explorer = ${L_VERSION}"
   DetailPrint ""
 
-  Pop ${L_TEMP}
+  Pop ${L_VERSION}
+  Pop ${L_OSNAME}
 
-  !undef L_TEMP
+  !undef L_OSNAME
+  !undef L_VERSION
 
 next_section:
 SectionEnd
@@ -784,6 +808,7 @@ enter_section:
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_ROOT ${L_REGDATA}
+  StrCpy $INSTDIR ${L_REGDATA}          ; the search path for the EXE files (trailing slash stripped)
   ClearErrors
   ReadRegStr ${L_REGDATA} HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "RootDir_SFN"
   IfErrors 0 check_HKLM_root_data
@@ -810,6 +835,8 @@ short_HKLM_root:
 
 end_HKLM_root:
   DetailPrint ""
+  Push "HKLM"
+  Call CheckExeFilesExist
 
   ; Check HKCU data
 
@@ -828,6 +855,7 @@ end_HKLM_root:
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_ROOT ${L_REGDATA}
+  StrCpy $INSTDIR ${L_REGDATA}          ; the search path for the EXE files (trailing slash stripped)
   StrCpy ${L_STATUS_ROOT} ""
   IfFileExists "${L_REGDATA}\popfile.pl" root_sfn
   StrCpy ${L_STATUS_ROOT} "not "
@@ -899,6 +927,8 @@ end_HKCU_user:
   DetailPrint "HKCU: popfile.pl  = ${L_STATUS_ROOT}found"
   DetailPrint "HKCU: popfile.cfg = ${L_STATUS_USER}found"
   DetailPrint ""
+  Push "HKCU"
+  Call CheckExeFilesExist
 
   Pop ${L_TEMP}
   Pop ${L_STATUS_USER}
@@ -1016,6 +1046,7 @@ enter_section:
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_ROOT ${L_REGDATA}
+  StrCpy $INSTDIR ${L_REGDATA}
   StrCpy ${L_STATUS_ROOT} ""
   IfFileExists "${L_REGDATA}\popfile.pl" simple_root_sfn
   StrCpy ${L_STATUS_ROOT} "not "
@@ -1085,8 +1116,12 @@ end_simple_user:
   DetailPrint ""
   DetailPrint "popfile.pl  file  = ${L_STATUS_ROOT}found"
   DetailPrint "popfile.cfg file  = ${L_STATUS_USER}found"
-  DetailPrint ""
 
+  StrCmp ${L_STATUS_ROOT} "" 0 exit_section
+  Push "HKCU"
+  Call CheckExeFilesExist
+
+exit_section:
   Pop ${L_TEMP}
   Pop ${L_STATUS_USER}
   Pop ${L_STATUS_ROOT}
@@ -1187,7 +1222,7 @@ simple_root_status:
 
 check_user_var:
   StrCmp $G_POPFILE_USER "" 0 user_result
-  StrCmp ${L_POPFILE_ROOT} "" check_kakasi blank_line
+  StrCmp ${L_POPFILE_ROOT} "" check_kakasi file_check
 
 user_result:
   StrCpy ${L_TEMP} ""
@@ -1198,13 +1233,16 @@ user_var_status:
   StrCmp $G_DIAG_MODE "simple" simple_user_status
 
   DetailPrint "Env: popfile.cfg  = ${L_TEMP}found"
-  Goto blank_line
+  DetailPrint ""
+  Goto file_check
 
 simple_user_status:
   DetailPrint "popfile.cfg file  = ${L_TEMP}found"
 
-blank_line:
-  DetailPrint ""
+file_check:
+  StrCpy $INSTDIR ${L_POPFILE_ROOT}
+  Push "ROOT"
+  Call CheckExeFilesExist
 
 check_kakasi:
   !insertmacro CHECK_KAKASI "${L_ITAIJIDICTPATH}" "ITAIJIDICTPATH" "'ITAIJIDICTPATH'  "
@@ -1668,6 +1706,82 @@ exit:
 
   !undef L_STRING
   !undef L_TEMP
+
+FunctionEnd
+
+
+#--------------------------------------------------------------------------
+# Installer Function: CheckExeFilesExist
+#
+# This function checks that some important POPFile programs exist in the $INSTDIR folder
+#
+# Inputs:
+#         (top of stack)   - source of the search path ("HKLM", HKCU" or "ROOT")
+#
+# Outputs:
+#         (none)
+#
+# Usage:
+#
+#         Push "HKLM"
+#         Call CheckExeFilesExist
+#
+#         (messages will be added to the log)
+#
+#--------------------------------------------------------------------------
+
+Function CheckExeFilesExist
+
+  !define C_EXPECTED_COUNT  6     ; at present we only check the existence of the six popfile*.exe files
+
+  !define L_COUNT    $R9          ; keeps track of the number of files found
+  !define L_SOURCE   $R8          ; a four-character string: HKLM, HKCU or ROOT
+
+  Exch ${L_SOURCE}
+  Push ${L_COUNT}
+
+  StrCpy ${L_COUNT} ${C_EXPECTED_COUNT}
+
+  !macro CHECK_EXE_EXISTS FILENAME
+        !insertmacro PFI_UNIQUE_ID
+        IfFileExists "$INSTDIR\${FILENAME}" lbl_b_${PFI_UNIQUE_ID}
+        StrCmp $G_DIAG_MODE "simple" lbl_a_${PFI_UNIQUE_ID}
+        DetailPrint "${L_SOURCE}: missing EXE = *** ${FILENAME} ***"
+
+      lbl_a_${PFI_UNIQUE_ID}:
+        IntOp ${L_COUNT} ${L_COUNT} - 1
+
+      lbl_b_${PFI_UNIQUE_ID}:
+  !macroend
+
+  !insertmacro CHECK_EXE_EXISTS "popfile.exe"
+  !insertmacro CHECK_EXE_EXISTS "popfileb.exe"
+  !insertmacro CHECK_EXE_EXISTS "popfilef.exe"
+  !insertmacro CHECK_EXE_EXISTS "popfileib.exe"
+  !insertmacro CHECK_EXE_EXISTS "popfileif.exe"
+  !insertmacro CHECK_EXE_EXISTS "popfile-service.exe"
+
+  IntCmp ${L_COUNT} ${C_EXPECTED_COUNT} 0 errors_found
+  StrCmp $G_DIAG_MODE "simple" 0 continue
+  DetailPrint ""
+
+continue:
+  DetailPrint "${L_SOURCE}: *.exe count = ${L_COUNT} (this is OK)"
+  Goto done
+
+errors_found:
+  DetailPrint ""
+  DetailPrint "${L_SOURCE}: *.exe count = ${L_COUNT}"
+  DetailPrint "^^^^^ Error ^^^^^   The *.exe count should be ${C_EXPECTED_COUNT}"
+
+done:
+  DetailPrint ""
+
+  Pop ${L_COUNT}
+  Pop ${L_SOURCE}
+
+  !undef L_COUNT
+  !undef L_SOURCE
 
 FunctionEnd
 
