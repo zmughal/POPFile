@@ -442,6 +442,8 @@ test_assert_equal( $#{$h->{queries__}{$q}{cache}}, 2 );
 $h->set_query( $q, '', 't', '', 0 );
 test_assert_equal( $#{$h->{queries__}{$q}{cache}}, -1 );
 
+$h->stop_query( $q );
+
 # Make sure that we can upgrade an existing file with a specific
 # classification
 
@@ -474,6 +476,8 @@ test_assert( !(-e $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1
 $mq->service();
 $h->service();
 
+$q = $h->start_query();
+
 $h->set_query( $q, '', '', '', 0 );
 test_assert_equal( $h->get_query_size( $q ), 4 );
 
@@ -492,6 +496,7 @@ test_assert_equal( $rows[0][12], $size );
 
 $h->set_query( $q, '', '', '', 0 );
 test_assert_equal( $h->get_query_size( $q ), 4 );
+$h->stop_query( $q );
 
 $file = $h->get_slot_file( 2 );
 test_assert( ( -e $file ) );
