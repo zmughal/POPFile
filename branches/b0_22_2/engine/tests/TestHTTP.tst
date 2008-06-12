@@ -271,7 +271,7 @@ if ( $pid == 0 ) {
     test_assert( $client->connected );
 
     print $client "GET / HTTP/1.0$eol" . "Header: Mine$eol" . "~~~~~~: ~~~~~~~$eol$eol";
-    select( undef, undef, undef, 0 );
+    select( undef, undef, undef, 0.1 );
     $line = <$client>;
     test_assert_equal( $line, "HTTP/1.0 / GET  Error$eol" );
     close $client;
@@ -289,7 +289,7 @@ if ( $pid == 0 ) {
     test_assert( $client->connected );
 
     print $client "GET / HTTP/2.0$eol$eol";
-    select( undef, undef, undef, 0 );
+    select( undef, undef, undef, 0.1 );
     $line = <$client>;
     test_assert_equal( $line, "HTTP/1.0 500 Error$eol" );
     close $client;
@@ -307,7 +307,7 @@ if ( $pid == 0 ) {
     test_assert( $client->connected );
 
     print $client "POST /body HTTP/1.0$eol" . "Content-Length: 12$eol$eol" . "1234567890$eol$eol";
-    select( undef, undef, undef, 0 );
+    select( undef, undef, undef, 0.1 );
     $line = <$client>;
     test_assert_equal( $line, "HTTP/1.0 /body POST 1234567890$eol" );
     close $client;
