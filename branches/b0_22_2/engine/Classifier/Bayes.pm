@@ -223,7 +223,7 @@ sub initialize
     # SQLite 1.05+ have some problems we are resolving.  This lets us
     # give a nice message and then disable the version checking later
 
-    $self->config_( 'bad_sqlite_version', '3.0.0' );
+    $self->config_( 'bad_sqlite_version', '4.0.0' );
 
     # No default unclassified weight is the number of times more sure
     # POPFile must be of the top class vs the second class, default is
@@ -678,7 +678,7 @@ sub update_constants__
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    if ( $wc > 0 )  {
+    if ( defined( $wc ) && $wc > 0 )  {
         $self->{not_likely__}{$userid} = -log( 10 * $wc );
 
         foreach my $bucket ($self->get_buckets( $session )) {
@@ -750,24 +750,30 @@ sub db_connect__
                                   $self->config_( 'dbuser' ),
                                   $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
 
-    $self->log_( 0, "Using SQLite library version " . $self->{db__}{sqlite_version});
+    if ( $sqlite ) {
+        $self->log_( 0, "Using SQLite library version " . $self->{db__}{sqlite_version});
 
-    # We check to make sure we're not using DBD::SQLite 1.05 or greater
-    # which uses SQLite V 3 If so, we'll use DBD::SQLite2 and SQLite 2.8,
-    # which is still compatible with old databases
+        # We check to make sure we're not using DBD::SQLite 1.05 or greater
+        # which uses SQLite V 3 If so, we'll use DBD::SQLite2 and SQLite 2.8,
+        # which is still compatible with old databases
 
-    if ( $self->{db__}{sqlite_version} gt $self->config_('bad_sqlite_version' ) )  {
-        $self->log_( 0, "Substituting DBD::SQLite2 for DBD::SQLite 1.05" );
-        $self->log_( 0, "Please install DBD::SQLite2 and set dbconnect to use DBD::SQLite2" );
+        if ( $self->{db__}{sqlite_version} gt $self->config_('bad_sqlite_version' ) )  {
+            $self->log_( 0, "Substituting DBD::SQLite2 for DBD::SQLite 1.05" );
+            $self->log_( 0, "Please install DBD::SQLite2 and set dbconnect to use DBD::SQLite2" );
 
-        $dbconnect =~ s/SQLite:/SQLite2:/;
+            $dbconnect =~ s/SQLite:/SQLite2:/;
 
-        undef $self->{db__};
-#         $self->db_disconnect__();
+            undef $self->{db__};
+    #         $self->db_disconnect__();
 
-        $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
-                                      $self->config_( 'dbuser' ),
-                                      $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
+            $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
+                                          $self->config_( 'dbuser' ),
+                                          $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
+        }
+
+        # For Japanese compatibility
+
+        $self->{db__}->do( 'pragma case_sensitive_like=1;' );
     }
 
     if ( !defined( $self->{db__} ) ) {
@@ -803,7 +809,7 @@ sub db_connect__
     my @tables = map { s/$sqlquotechar//g; $_ } ($self->{db__}->tables());
 
     foreach my $table (@tables) {
-        if ( $table eq 'popfile' ) {
+        if ( $table =~ /\.?popfile$/ ) {
             my @row = $self->{db__}->selectrow_array(
                'select version from popfile;' );
 
@@ -827,7 +833,7 @@ sub db_connect__
         open INSERT, '>' . $ins_file;
 
         foreach my $table (@tables) {
-            next if ( $table eq 'popfile' );
+            next if ( $table =~ /\.?popfile$/ );
             if ( $sqlite && ( $table =~ /^sqlite_/ ) ) {
                 next;
             }
@@ -851,7 +857,11 @@ sub db_connect__
 
                 last if ( $#rows == -1 );
 
-                print INSERT "INSERT OR IGNORE INTO $table (";
+                if ( $sqlite ) {
+                    print INSERT "INSERT OR IGNORE INTO $table (";
+                } else {
+                    print INSERT "INSERT INTO $table (";
+                }
                 for my $i (0..$t->{NUM_OF_FIELDS}-1) {
                     if ( $i != 0 ) {
                         print INSERT ',';
@@ -874,6 +884,7 @@ sub db_connect__
                 }
                 print INSERT ");\n";
             }
+            $t->finish;
         }
 
         close INSERT;
@@ -1074,6 +1085,23 @@ sub db_disconnect__
     $self->{db_get_bucket_parameter_default__}->finish;
     $self->{db_get_buckets_with_magnets__}->finish;
     $self->{db_delete_zero_words__}->finish;
+
+    # Avoid DBD::SQLite 'closing dbh with active statement handles' bug
+
+    undef $self->{db_get_buckets__};
+    undef $self->{db_get_wordid__};
+    undef $self->{db_get_userid__};
+    undef $self->{db_get_word_count__};
+    undef $self->{db_put_word_count__};
+    undef $self->{db_get_bucket_unique_counts__};
+    undef $self->{db_get_bucket_word_counts__};
+    undef $self->{db_get_unique_word_count__};
+    undef $self->{db_get_full_total__};
+    undef $self->{db_get_bucket_parameter__};
+    undef $self->{db_set_bucket_parameter__};
+    undef $self->{db_get_bucket_parameter_default__};
+    undef $self->{db_get_buckets_with_magnets__};
+    undef $self->{db_delete_zero_words__};
 
     if ( defined( $self->{db__} ) ) {
         $self->{db__}->disconnect;
@@ -1598,6 +1626,7 @@ sub add_words_to_bucket__
     }
 
     $self->{get_wordids__}->finish;
+    undef $self->{get_wordids__};
 
     my $ids = join( ',', @id_list );
 
@@ -1614,6 +1643,7 @@ sub add_words_to_bucket__
     }
 
     $self->{db_getwords__}->finish;
+    undef $self->{db_getwords__};
 
     $self->{db__}->begin_work;
     foreach my $word (keys %{$self->{parser__}->{words__}}) {
@@ -2111,6 +2141,7 @@ sub classify
     }
 
     $self->{get_wordids__}->finish;
+    undef $self->{get_wordids__};
 
     my $ids = join( ',', @id_list );
 
@@ -2135,6 +2166,7 @@ sub classify
     }
 
     $self->{db_classify__}->finish;
+    undef $self->{db_classify__};
 
     foreach my $id (@id_list) {
         $word_count += 2;
@@ -3300,6 +3332,12 @@ sub get_bucket_parameter
     # Make sure that the bucket passed in actually exists
 
     if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
+        return undef;
+    }
+
+    # Make sure that the parameter is valid
+
+    if ( !defined( $self->{db_parameterid__}{$parameter} ) ) {
         return undef;
     }
 

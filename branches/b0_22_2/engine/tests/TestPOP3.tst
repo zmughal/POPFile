@@ -610,7 +610,7 @@ if ( $pid == 0 ) {
         print $client "USER gooduser$eol";
         $result = <$client>;
         test_assert_equal( $result,
-            "-ERR Transparent proxying not configured: set secure server/port$eol" );
+            "-ERR Transparent proxying not configured: set secure server/port ( command you sent: 'USER gooduser' )$eol" );
 
         # Check that we can connect to the remote POP3 server
         # (should still be waiting for us)
@@ -1188,6 +1188,8 @@ if ( $pid == 0 ) {
             $result = <$client>;
             $result =~ s/view=6/view=popfile0=0.msg/;
             test_assert( $result =~ /\015/ );
+            $result =~ s/\015//;
+            $line =~ s/\015//;
             test_assert_equal( $result, $line );
             if ( $headers == 0 ) {
                 $countdown -= 1;

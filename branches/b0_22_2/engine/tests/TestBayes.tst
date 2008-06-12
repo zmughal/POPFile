@@ -192,12 +192,16 @@ my $sql = "SELECT * FROM words WHERE word IN ( 'f\x00oo', 'baz' )";
 my $sth = $b->validate_sql_prepare_and_execute( $sql );
 test_assert_equal( ref $sth, 'DBI::st' );
 test_assert_equal( scalar @{$sth->fetchall_arrayref}, 2 );
+$sth->finish;
+undef $sth;
 
 # same thing with bind-params
 $sql = "SELECT * FROM words WHERE word IN ( ?, ? )";
 $sth = $b->validate_sql_prepare_and_execute( $sql, "f\x00oo", 'baz' );
 test_assert_equal( ref $sth, 'DBI::st' );
 test_assert_equal( scalar @{$sth->fetchall_arrayref}, 2 );
+$sth->finish;
+undef $sth;
 
 test_assert_equal( $b->db_quote("foo\x00bar" ), "'foobar'" );
 
