@@ -24,6 +24,7 @@ package Classifier::MailParse;
 # ----------------------------------------------------------------------------
 
 use strict;
+use warnings;
 use locale;
 
 use MIME::Base64;
@@ -558,6 +559,8 @@ sub add_line
     my ($self, $bigline, $encoded, $prefix) = @_;
     my $p = 0;
 
+    return if ( !defined( $bigline ) );
+
     print "add_line: [$bigline]\n" if $self->{debug__};
 
     # If the line is really long then split at every 1k and feed it to the parser below
@@ -807,7 +810,7 @@ sub update_tag
     while ( $arg =~ s/[ \t]*((\w+)[ \t]*=[ \t]*(([\"\'])(.*?)\4|([^ \t>]+)($|([ \t>]))))// ) {
         $original  = $1;
         $attribute = $2;
-        $value     = $5 || $6;
+        $value     = $5 || $6 || '';
         $quote     = '';
         $end_quote = '[\> \t\&\n]';
         if (defined $4) {
@@ -1151,6 +1154,8 @@ sub add_url
     my $path;
     my $query;
     my $hash;
+
+    return undef if ( !defined( $url ) );
 
     # Strip the protocol part of a URL (e.g. http://)
 
@@ -2324,10 +2329,10 @@ sub parse_css_color
 
     $found = 0 if ($error);
 
-    if ( defined($r) && ( 0 <= $r) && ($r <= 255) && # PROFILE BLOCK START
-         defined($g) && ( 0 <= $g) && ($g <= 255) &&
-         defined($b) && ( 0 <= $b) && ($b <= 255) &&
-         $found ) {                                 # PROFILE BLOCK STOP
+    if ( defined($r) && ( $r =~ /^\d+$/ ) && ( 0 <= $r ) && ( $r <= 255 ) && # PROFILE BLOCK START
+         defined($g) && ( $g =~ /^\d+$/ ) && ( 0 <= $g ) && ( $g <= 255 ) &&
+         defined($b) && ( $b =~ /^\d+$/ ) && ( 0 <= $b ) && ( $b <= 255 ) &&
+         $found ) {                                                       # PROFILE BLOCK STOP
         if (wantarray) {
             return ( $r, $g, $b );
         } else {
@@ -2527,6 +2532,7 @@ sub convert_encoding
 
         # Workaround for Encode::Unicode error bug.
         eval {
+            no warnings 'utf8';
             if (ref $enc) {
                 $string = Encode::encode($to, $enc->decode($string));
             } else {
