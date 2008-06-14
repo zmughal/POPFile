@@ -1019,7 +1019,6 @@ sub set_query
     my $select = $self->{queries__}{$id}{base};
     $select =~ s/XXX/$fields_slot/;
     $self->{queries__}{$id}{query} = $self->db__()->prepare( $select );
-    $self->{queries__}{$id}{query}->execute;
     $self->{queries__}{$id}{cache} = ();
 }
 
@@ -1103,9 +1102,11 @@ sub get_query_rows
     if ( ( $size < ( $start + $count - 1 ) ) ) {
         my $rows = $start + $count - $size;
         $self->log_( 2, "Getting $rows rows from database" );
-        push ( @{$self->{queries__}{$id}{cache}},
-            @{$self->{queries__}{$id}{query}->fetchall_arrayref(
-                undef, $start + $count - $size )} );
+        $self->{queries__}{$id}{query}->execute;
+        $self->{queries__}{$id}{cache} =
+            $self->{queries__}{$id}{query}->fetchall_arrayref(
+                undef, $start + $count - 1 );
+        $self->{queries__}{$id}{query}->finish;
     }
 
     my ( $from, $to ) = ( $start-1, $start+$count-2 );

@@ -130,6 +130,7 @@ test_assert_equal( $cl->{words__}{'trick:flexhex:f&f*'}, 1 );
 $cl->{htmlbackcolor__} = $cl->map_color( 'white' );
 $cl->{htmlfontcolor__} = $cl->map_color( 'black' );
 $cl->{words__}       = {};
+$cl->{first20count__} = 0;
 $cl->add_line( 'this is a test of,adding words: from a line of text!', 0, '' );
 test_assert_equal( $cl->{words__}{test},   1 );
 test_assert_equal( $cl->{words__}{adding}, 1 );
@@ -186,14 +187,14 @@ test_assert_equal( $cl->parse_html( '<!DOCTYPE >' ), 0 );
 # test_assert_equal( $cl->{words__}{'html:comment'}, 3 );
 
 # Check invisible ink detection
-$cl->{htmlfontcolor__} = '';
+$cl->{htmlfontcolor__} = '000000';
 $cl->{words__}         = {};
 $cl->{in_html_tag}   = 0;
 test_assert_equal( $cl->parse_html( '<body bgcolor="#ffffff">hello <font color=white>invisible</font>visible</body>  ' ), 0 );
 test_assert_equal( $cl->{words__}{hello},     1 );
 test_assert_equal( $cl->{words__}{visible},   1 );
 test_assert_equal( defined( $cl->{words__}{invisible} ), '' );
-$cl->{htmlfontcolor__} = '';
+$cl->{htmlfontcolor__} = '000000';
 $cl->{words__}         = {};
 $cl->{in_html_tag}   = 0;
 test_assert_equal( $cl->parse_html( '   <body bgcolor="#ffffff">  hello<font color=white>' ), 0 );
@@ -202,7 +203,7 @@ test_assert_equal( $cl->parse_html( 'visible</body>'                            
 test_assert_equal( $cl->{words__}{hello},     1 );
 test_assert_equal( $cl->{words__}{visible},   1 );
 test_assert_equal( defined( $cl->{words__}{invisible} ), '' );
-$cl->{htmlfontcolor__} = '';
+$cl->{htmlfontcolor__} = '000000';
 $cl->{words__}         = {};
 $cl->{in_html_tag}   = 0;
 test_assert_equal( $cl->parse_html( '<body bgcolor="#ffffff">hello  <font' ), 1 );
@@ -213,7 +214,7 @@ test_assert_equal( $cl->{words__}{visible},   1 );
 test_assert_equal( defined( $cl->{words__}{invisible} ), '' );
 
 # CSS tests
-$cl->{htmlfontcolor__} = '';
+$cl->{htmlfontcolor__} = '000000';
 $cl->{words__}         = {};
 $cl->{in_html_tag}   = 0;
 
