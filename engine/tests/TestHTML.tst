@@ -213,6 +213,7 @@ test_assert( defined( $sk ) );
 test_assert( $sk ne '' );
 
 my $session = $b->get_session_key( 'admin', '' );
+my $inserted_time = time - 100;
 
 my @messages = glob 'TestMails/TestMailParse*.msg';
 foreach my $msg (@messages) {
@@ -223,7 +224,7 @@ foreach my $msg (@messages) {
         my $class = <$CLS>;
         $class =~ s/[\r\n]//g;
         close $CLS;
-        my ( $slot, $msg_file ) = $hi->reserve_slot();
+        my ( $slot, $msg_file ) = $hi->reserve_slot( $inserted_time++ );
         `cp $msg $msg_file`;
         $hi->commit_slot( $session, $slot, $class, 0 );
     }
