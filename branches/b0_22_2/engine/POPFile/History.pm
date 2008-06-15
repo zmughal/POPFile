@@ -271,10 +271,13 @@ sub forked
 # going to be used) or commit_slot (if the file has been written and the
 # entry should be added to the history).
 #
+# The only parameter is optional and exists for the sake of the test-
+# suite: you can pass in the time at which the message was inserted,
+# ie. the time at which the message arrived.
 #----------------------------------------------------------------------------
 sub reserve_slot
 {
-    my ( $self ) = @_;
+    my ( $self,, $inserted_time ) = @_;
 
     my $r;
     my $test_sth;
@@ -294,7 +297,7 @@ sub reserve_slot
         # so that we can sort on the Date: header in the message and
         # when we received it
 
-        my $result = $insert_sth->execute( 1, $r, time );
+        my $result = $insert_sth->execute( 1, $r, ( defined $inserted_time ) ? $inserted_time : time );
         next if ( !defined( $result ) );
 
         if ( $is_sqlite2 ) {
