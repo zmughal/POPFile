@@ -192,7 +192,7 @@ sub calculate_today__
     my ( $self ) = @_;
 
     # Create the name of the debug file for the debug() function
-    $self->{today__} = int( time / $seconds_per_day ) * $seconds_per_day;
+    $self->{today__} = int( time / $seconds_per_day ) * $seconds_per_day;  # just to make this work in Eclipse: /
 
     # Note that 0 parameter than allows the logdir to be outside the user
     # sandbox
@@ -229,7 +229,7 @@ sub remove_debug_files
 # debug
 #
 # $level      The level of this message
-# $message    A string containing a debug message that may or may not be 
+# $message    A string containing a debug message that may or may not be
 #             printed
 #
 # Prints the passed string if the global $debug is true
