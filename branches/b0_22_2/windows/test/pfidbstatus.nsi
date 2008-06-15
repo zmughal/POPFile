@@ -159,7 +159,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.8"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.9"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -177,6 +177,12 @@
   OutFile "${C_OUTFILE}"
 
   Icon "..\POPFileIcon\popfile.ico"
+
+  ; The 2.x and 3.x versions of the SQLite command-line utility make the nsExec
+  ; plugin return different result codes so we place a marker on the stack to
+  ; help detect problems with the execution of the SQLite command-line utility
+
+  !define C_BOOKMARK    "__${C_OUTFILE}__"
 
   ;--------------------------------------------------------------------------
   ; Windows Vista expects to find a manifest specifying the execution level
@@ -703,11 +709,25 @@ no_util:
 
 run_it:
   StrCpy $G_PLS_FIELD_1 ${L_TEMP}
+  Push "${C_BOOKMARK}"
   nsExec::ExecToStack '"$G_PLS_FIELD_1\$G_SQLITEUTIL" -version'
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "error" start_error
   StrCmp ${L_TEMP} "timeout" start_error
-  IntCmp ${L_TEMP} 1 0 version_error version_error
+
+  ; As of 14 June 2008:
+  ;
+  ; v2.8.17 is the most recent version of the SQLite 2.x command-line utility
+  ; and the most recent Perl SQLite module is based upon the SQLite 3.3.7 library
+  ;
+  ; sqlite.exe v2.8.17 returns "1" in ${L_TEMP} after a successful version check
+  ; sqlite3.exe v3.3.7 returns "0" in ${L_TEMP} after a successful version check
+
+  IntCmp ${L_TEMP} 2 version_error 0 version_error
+  IntCmp ${L_TEMP} 0 0 version_error
+  Exch
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "${C_BOOKMARK}" 0 unexpected_version_error
   Call PFI_TrimNewlines
   Pop $G_PLS_FIELD_2
   StrCpy $G_PLS_FIELD_2 "v$G_PLS_FIELD_2"
@@ -776,13 +796,20 @@ dir_not_file:
   MessageBox MB_OK|MB_ICONEXCLAMATION "$(DBS_LANG_DIRNOTFILE)"
   Goto error_exit
 
+unexpected_version_error:
+  StrCpy ${L_TEMP} "${MB_NL}${MB_NL}(stack corruption detected)"
+  Goto error_msg
+
 version_error:
+  StrCpy ${L_TEMP} "${MB_NL}${MB_NL}(return code: ${L_TEMP})"
+
+error_msg:
   StrCpy $G_PLS_FIELD_2 ""
   DetailPrint ""
   DetailPrint "$(DBS_LANG_SQLITEUTIL)"
   DetailPrint ""
   DetailPrint "$(DBS_LANG_VERSIONERROR)"
-  MessageBox MB_OK|MB_ICONEXCLAMATION "$(DBS_LANG_VERSIONERROR)"
+  MessageBox MB_OK|MB_ICONEXCLAMATION "$(DBS_LANG_VERSIONERROR)${L_TEMP}"
   Goto error_exit
 
 start_error:
