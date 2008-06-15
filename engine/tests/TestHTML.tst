@@ -26,10 +26,10 @@
 
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/CVS' );
-rmtree( 'corpus/other/CVS' );
-rmtree( 'corpus/spam/CVS' );
-rmtree( 'corpus/personal/CVS' );
+rmtree( 'corpus/.svn' );
+rmtree( 'corpus/other/.svn' );
+rmtree( 'corpus/spam/.svn' );
+rmtree( 'corpus/personal/.svn' );
 rmtree( 'messages' );
 `rm -f __db.*`;  # todo: make tool independent
 unlink 'popfile.cfg';
