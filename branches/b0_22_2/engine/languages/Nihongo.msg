@@ -119,7 +119,7 @@ Configuration_Error2                    ユーザーインターフェース用ポート番号は 1
 Configuration_Error3                    POP3 ポート番号は 1 から 65535 までにしてください。
 Configuration_Error4                    ページサイズは 1 から 1000 までにしてください。
 Configuration_Error5                    履歴を残す日数は 1 から 366 までにしてください。
-Configuration_Error6                    TCP タイムアウトは 10 から 300 にしてください。
+Configuration_Error6                    TCP タイムアウトは 10 から 1800 にしてください。
 Configuration_Error7                    XML RPC ポート番号は1から 65535 までにしてください。
 Configuration_Error8                    SOCKS V プロキシのポート番号は 1 から 65535 までにしてください。
 Configuration_POP3Port                  POP3 ポート番号
