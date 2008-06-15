@@ -775,6 +775,7 @@ sub db_connect__
                 rename $dbname, $old_dbname;
                 my $old_dbconnect = $self->config_( 'dbconnect' );
                 $old_dbconnect =~ s/\$dbname/$old_dbname/g;
+                $old_dbconnect =~ s/SQLite:/SQLite2:/;
 
                 $old_dbh = DBI->connect( $old_dbconnect,               # PROFILE BLOCK START
                                          $self->config_( 'dbuser' ),
