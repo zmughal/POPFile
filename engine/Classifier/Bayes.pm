@@ -217,7 +217,7 @@ sub initialize
     # $dbname can be used within it and it resolves to the full path
     # to the database named in the database parameter above.
 
-    $self->config_( 'dbconnect', 'dbi:SQLite2:dbname=$dbname' );
+    $self->config_( 'dbconnect', 'dbi:SQLite:dbname=$dbname' );
     $self->config_( 'dbuser', '' ); $self->config_( 'dbauth', '' );
 
     # SQLite 1.05+ have some problems we are resolving.  This lets us
@@ -746,39 +746,73 @@ sub db_connect__
 
     $self->log_( 0, "Attempting to connect to $dbconnect ($dbpresent)" );
 
+    my $need_convert = 0;
+    my $old_dbh;
+
+    if ( $sqlite && $dbpresent ) {
+
+        # Check if the database is SQLite2 format
+
+        open DBFILE, $dbname;
+        my $buffer;
+        my $readed = sysread( DBFILE, $buffer, 47 );
+        close DBFILE;
+
+        if ( $buffer eq '** This file contains an SQLite 2.1 database **' ) {
+            $self->log_( 0, 'SQLite 2 database found. Try to upgrade' );
+
+            my $ver = -1;
+            eval {
+                require DBD::SQLite;
+                $ver = $DBD::SQLite::VERSION;
+            };
+
+            if ( $ver >= 1.00 ) {
+                $self->log_( 0, "DBD::SQLite $ver found" );
+
+                my $old_dbname = $dbname . '-sqlite2';
+                unlink $old_dbname;
+                rename $dbname, $old_dbname;
+                my $old_dbconnect = $self->config_( 'dbconnect' );
+                $old_dbconnect =~ s/\$dbname/$old_dbname/g;
+
+                $old_dbh = DBI->connect( $old_dbconnect,               # PROFILE BLOCK START
+                                         $self->config_( 'dbuser' ),
+                                         $self->config_( 'dbauth' ) ); # PROFILE BLOCK STOP
+
+                $dbconnect =~ s/SQLite2:/SQLite:/;
+
+                $need_convert = 1;
+            }
+        } else {
+            $dbconnect =~ s/SQLite2:/SQLite:/;
+        }
+    }
+
     $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
                                   $self->config_( 'dbuser' ),
                                   $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
 
+    if ( !defined( $self->{db__} ) ) {
+        $self->log_( 0, "Failed to connect to database and got error $DBI::errstr" );
+        return 0;
+    }
+
     if ( $sqlite ) {
-        $self->log_( 0, "Using SQLite library version " . $self->{db__}{sqlite_version});
+        $self->log_( 0, "Using SQLite library version " . $self->{db__}{sqlite_version} );
 
-        # We check to make sure we're not using DBD::SQLite 1.05 or greater
-        # which uses SQLite V 3 If so, we'll use DBD::SQLite2 and SQLite 2.8,
-        # which is still compatible with old databases
+        if ( $need_convert ) {
+            $self->log_( 0, 'Convert SQLite2 database to SQLite3 database' );
 
-        if ( $self->{db__}{sqlite_version} gt $self->config_('bad_sqlite_version' ) )  {
-            $self->log_( 0, "Substituting DBD::SQLite2 for DBD::SQLite 1.05" );
-            $self->log_( 0, "Please install DBD::SQLite2 and set dbconnect to use DBD::SQLite2" );
+            $self->db_upgrade__( $old_dbh );
+            $old_dbh->disconnect;
 
-            $dbconnect =~ s/SQLite:/SQLite2:/;
-
-            undef $self->{db__};
-    #         $self->db_disconnect__();
-
-            $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
-                                          $self->config_( 'dbuser' ),
-                                          $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
+            $self->log_( 0, 'Database convert completed' );
         }
 
         # For Japanese compatibility
 
         $self->{db__}->do( 'pragma case_sensitive_like=1;' );
-    }
-
-    if ( !defined( $self->{db__} ) ) {
-        $self->log_( 0, "Failed to connect to database and got error $DBI::errstr" );
-        return 0;
     }
 
     if ( !$dbpresent ) {
@@ -822,111 +856,11 @@ sub db_connect__
     if ( $need_upgrade ) {
 
         print "\n\nDatabase schema is outdated, performing automatic upgrade\n";
-        # The database needs upgrading, so we are going to dump out
-        # all the data in the database as INSERT OR IGNORE statements
-        # in a temporary file, then DROP all the tables in the
-        # database, then recreate the schema from the new schema and
-        # finally rerun the inserts.
 
-        my $i = 0;
-        my $ins_file = $self->get_user_path_( 'insert.sql' );
-        open INSERT, '>' . $ins_file;
+        # The database needs upgrading
 
-        foreach my $table (@tables) {
-            next if ( $table =~ /\.?popfile$/ );
-            if ( $sqlite && ( $table =~ /^sqlite_/ ) ) {
-                next;
-            }
-            if ( $i > 99 ) {
-                print "\n";
-            }
-            print "    Saving table $table\n    ";
+        $self->db_upgrade__();
 
-            my $t = $self->validate_sql_prepare_and_execute( "select * from $table;" );
-            $i = 0;
-            while ( 1 ) {
-                if ( ( ++$i % 100 ) == 0 ) {
-                    print "[$i]";
-                    flush STDOUT;
-                }
-                if ( ( $i % 1000 ) == 0 ) {
-                    print "\n";
-                    flush STDOUT;
-                }
-                my @rows = $t->fetchrow_array;
-
-                last if ( $#rows == -1 );
-
-                if ( $sqlite ) {
-                    print INSERT "INSERT OR IGNORE INTO $table (";
-                } else {
-                    print INSERT "INSERT INTO $table (";
-                }
-                for my $i (0..$t->{NUM_OF_FIELDS}-1) {
-                    if ( $i != 0 ) {
-                        print INSERT ',';
-                    }
-                    print INSERT $t->{NAME}->[$i];
-                }
-                print INSERT ') VALUES (';
-                for my $i (0..$t->{NUM_OF_FIELDS}-1) {
-                    if ( $i != 0 ) {
-                        print INSERT ',';
-                    }
-                    my $val = $rows[$i];
-                    if ( $t->{TYPE}->[$i] !~ /^int/i ) {
-                        $val = '' if ( !defined( $val ) );
-                        $val = $self->db_quote( $val );
-                    } else {
-                        $val = 'NULL' if ( !defined( $val ) );
-                    }
-                    print INSERT $val;
-                }
-                print INSERT ");\n";
-            }
-            $t->finish;
-        }
-
-        close INSERT;
-
-        if ( $i > 99 ) {
-            print "\n";
-        }
-
-        foreach my $table (@tables) {
-            if ( $sqlite && ( $table =~ /^sqlite_/ ) ) {
-                next;
-            }
-            print "    Dropping old table $table\n";
-            $self->{db__}->do( "DROP TABLE $table;" );
-        }
-
-        print "    Inserting new database schema\n";
-        if ( !$self->insert_schema__( $sqlite ) ) {
-            return 0;
-        }
-
-        print "    Restoring old data\n    ";
-
-        $self->{db__}->begin_work;
-        open INSERT, '<' . $ins_file;
-        $i = 0;
-        while ( <INSERT> ) {
-            if ( ( ++$i % 100 ) == 0 ) {
-               print "[$i]";
-               flush STDOUT;
-            }
-            if ( ( $i % 1000 ) == 0 ) {
-                print "\n";
-                flush STDOUT;
-            }
-            s/[\r\n]//g;
-            $self->{db__}->do( $_ );
-        }
-        close INSERT;
-        $self->{db__}->commit;
-
-        unlink $ins_file;
         print "\nDatabase upgrade complete\n\n";
     }
 
@@ -1058,6 +992,144 @@ sub insert_schema__
         $self->log_( 0, "Can't find the database schema" );
         return 0;
     }
+}
+
+#----------------------------------------------------------------------------
+#
+# db_upgrade__
+#
+# Upgrade the POPFile schema / Convert the database
+#
+# $db_from         Database handle convert from
+#                  undef if upgrade POPFile schema
+#
+#----------------------------------------------------------------------------
+sub db_upgrade__
+{
+    my ( $self, $db_from ) = @_;
+
+    my $drop_table;
+
+    if ( !defined( $db_from ) ) {
+        # Upgrade
+
+        $drop_table = 1;
+        $db_from = $self->{db__};
+    }
+
+    my $from_sqlite = ( $db_from->{Driver}->{Name} =~ /SQLite/ );
+    my $to_sqlite = ( $self->{db__}->{Driver}->{Name} =~ /SQLite/ );
+
+    my $sqlquotechar = $db_from->get_info(29) || '';
+    my @tables = map { s/$sqlquotechar//g; $_ } ($db_from->tables());
+
+    # We are going to dump out all the data in the database as
+    # INSERT OR IGNORE statements in a temporary file, then DROP all
+    # the tables in the database, then recreate the schema from the
+    # new schema and finally rerun the inserts.
+
+    my $i = 0;
+    my $ins_file = $self->get_user_path_( 'insert.sql' );
+    open INSERT, '>' . $ins_file;
+
+    foreach my $table (@tables) {
+        next if ( $table =~ /\.?popfile$/ );
+        if ( $from_sqlite && ( $table =~ /^sqlite_/ ) ) {
+            next;
+        }
+        if ( $i > 99 ) {
+            print "\n";
+        }
+        print "    Saving table $table\n    ";
+
+        my $t = $db_from->prepare( "select * from $table;" );
+        $t->execute;
+        $i = 0;
+        while ( 1 ) {
+            if ( ( ++$i % 100 ) == 0 ) {
+                print "[$i]";
+                flush STDOUT;
+            }
+            if ( ( $i % 1000 ) == 0 ) {
+                print "\n";
+                flush STDOUT;
+            }
+            my $rows = $t->fetchrow_arrayref;
+
+            last if ( !defined( $rows ) );
+
+            if ( $to_sqlite ) {
+                print INSERT "INSERT OR IGNORE INTO $table (";
+            } else {
+                print INSERT "INSERT INTO $table (";
+            }
+            for my $i (0..$t->{NUM_OF_FIELDS}-1) {
+                if ( $i != 0 ) {
+                    print INSERT ',';
+                }
+                print INSERT $t->{NAME}->[$i];
+            }
+            print INSERT ') VALUES (';
+            for my $i (0..$t->{NUM_OF_FIELDS}-1) {
+                if ( $i != 0 ) {
+                    print INSERT ',';
+                }
+                my $val = $rows->[$i];
+                if ( $t->{TYPE}->[$i] !~ /^int/i ) {
+                    $val = '' if ( !defined( $val ) );
+                    $val = $self->db_quote( $val );
+                } else {
+                    $val = 'NULL' if ( !defined( $val ) );
+                }
+                print INSERT $val;
+            }
+            print INSERT ");\n";
+        }
+        $t->finish;
+    }
+
+    close INSERT;
+
+    if ( $i > 99 ) {
+        print "\n";
+    }
+
+    if ( $drop_table ) {
+        foreach my $table (@tables) {
+            if ( $from_sqlite && ( $table =~ /^sqlite_/ ) ) {
+                next;
+            }
+            print "    Dropping old table $table\n";
+            $self->{db__}->do( "DROP TABLE $table;" );
+        }
+    }
+
+    print "    Inserting new database schema\n";
+    if ( !$self->insert_schema__( $to_sqlite ) ) {
+        return 0;
+    }
+
+    print "    Restoring old data\n    ";
+
+    $self->{db__}->begin_work;
+    open INSERT, '<' . $ins_file;
+    $i = 0;
+    while ( <INSERT> ) {
+        if ( ( ++$i % 100 ) == 0 ) {
+           print "[$i]";
+           flush STDOUT;
+        }
+        if ( ( $i % 1000 ) == 0 ) {
+            print "\n";
+            flush STDOUT;
+        }
+        s/[\r\n]//g;
+        $self->{db__}->do( $_ );
+    }
+    close INSERT;
+    $self->{db__}->commit;
+
+    unlink $ins_file;
 }
 
 #----------------------------------------------------------------------------
