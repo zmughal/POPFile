@@ -277,7 +277,7 @@ sub forked
 #----------------------------------------------------------------------------
 sub reserve_slot
 {
-    my ( $self,, $inserted_time ) = @_;
+    my ( $self, $inserted_time ) = @_;
 
     my $r;
     my $test_sth;
