@@ -851,7 +851,7 @@ sub configuration_page
     $templ->param( 'Configuration_History_Days' => $self->module_config_( 'history', 'history_days' ) );
 
     if ( defined($self->{form_}{timeout}) ) {
-        if ( ( $self->{form_}{timeout} >= 10 ) && ( $self->{form_}{timeout} <= 300 ) ) {
+        if ( ( $self->{form_}{timeout} >= 10 ) && ( $self->{form_}{timeout} <= 1800 ) ) {
             $self->global_config_( 'timeout', $self->{form_}{timeout} );
         } else {
             $templ->param( 'Configuration_If_TCP_Timeout_Error' => 1 );
