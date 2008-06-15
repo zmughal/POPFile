@@ -306,7 +306,7 @@ sub server
 
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/CVS' );
+rmtree( 'corpus/.svn' );
 test_assert( scalar(`rm -rf messages/*`) == 0 );
 
 my $c = new POPFile::Configuration;

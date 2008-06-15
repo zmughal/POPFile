@@ -289,7 +289,7 @@ sub forker
     return ($pid, $reader);
 }
 
-my $session = $b->get_session_key( 'admin', '' );
+$session = $b->get_session_key( 'admin', '' );
 
 our $port = 9001 + int(rand(1000));
 pipe my $dreader, my $dwriter;
