@@ -1514,7 +1514,7 @@ sub bucket_page
     my $bucket_count = $self->{c__}->get_bucket_word_count( $self->{api_session__}, $bucket );
     $templ->param( 'Bucket_Word_Count'   => $self->pretty_number( $bucket_count ) );
     $templ->param( 'Bucket_Unique_Count' => sprintf( $self->{language__}{SingleBucket_Unique}, $self->pretty_number( $self->{c__}->get_bucket_unique_count( $self->{api_session__}, $bucket ) ) ) );
-    $templ->param( 'Bucket_Total_Word_Count' => $self->pretty_number( $self->{c__}->get_word_count( $self->{api_session__} ) ) );
+    $templ->param( 'Bucket_Total_Word_Count' => $self->pretty_number( $self->{c__}->get_word_count( $self->{api_session__} ) || 0 ) );
     $templ->param( 'Bucket_Bucket' => $bucket );
 
     my $percent = '0%';
