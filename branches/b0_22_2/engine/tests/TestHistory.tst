@@ -505,7 +505,7 @@ $h->delete_slot( 2, 0 );
 $h->stop_deleting();
 test_assert( !( -e $file ) );
 
-$h->set_query( $q, '', '', '', 0 );
+$h->set_query( $q, '', '', 'from', 0 );
 test_assert_equal( $h->get_query_size( $q ), 3 );
 
 @rows = $h->get_query_rows( $q, 1, 3 );
