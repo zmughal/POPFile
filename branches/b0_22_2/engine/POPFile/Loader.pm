@@ -32,6 +32,8 @@ package POPFile::Loader;
 #
 #----------------------------------------------------------------------------
 
+use Getopt::Long qw(:config pass_through);
+
 #----------------------------------------------------------------------------
 # new
 #
@@ -60,6 +62,12 @@ sub new
     # This must be 1 for POPFile::Loader to create any output on STDOUT
 
     $self->{debug__} = 1;
+
+    # If this is set to 1 then POPFile will shutdown straight after it
+    # has started up.  This is used by the installer and set by the
+    # --shutdown command-line option
+
+    $self->{shutdown__} = 0;
 
     # This stuff lets us do some things in a way that tolerates some
     # window-isms
@@ -133,6 +141,10 @@ sub CORE_loader_init
         close VER;
         $self->CORE_version( $major, $minor, $rev );
     }
+
+    # Parse the command-line options (only --shutdown is supported at present) 
+
+    GetOptions( "shutdown" => \$self->{shutdown__} );
 
     print "\nPOPFile Engine loading\n" if $self->{debug__};
 }
@@ -708,6 +720,13 @@ sub CORE_service
         }
 
         last if $nowait;
+        
+        # If we are asked to shutdown then we allow a single run
+        # through the service routines and then exit
+
+        if ( $self->{shutdown__} == 1 ) {
+            $self->{alive__} = 0;
+        }
     }
 
     return $self->{alive__};
