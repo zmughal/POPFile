@@ -3834,7 +3834,7 @@ sub clear_magnets
 
     for my $bucket (keys %{$self->{db_bucketid__}{$userid}}) {
         my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-        $self->{db__}->do( "delete from magnets where magnets.bucketid = $bucketid" );
+        $self->{db__}->do( "delete from magnets where magnets.bucketid = $bucketid;" );
     }
 }
 
