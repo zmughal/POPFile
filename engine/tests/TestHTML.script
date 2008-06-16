@@ -141,13 +141,53 @@ GET /history
 # sort options are present
 
 MATCH &quot;Dr. Robert Ezenshtein&quot; &lt;phrekiesomeone\@
-MATCH asdfsomebody\@mbnet.fi
-MATCH &lt;subject header missing&gt;
-MATCH &lt;to header missing&gt;
-MATCH blank
+MATCH &quot;Sheck-Buy&quot; &lt;ADV\@Sheck-Buy.com&gt;
+MATCH &lt;from header missing&gt;
+MATCH &quot;Becky&quot;  &lt;81355329526\@mail2.great-babes-online.com&gt;
+MATCH &quot;Willie Eason&quot; &lt;5x8njuc1ydwu\@mail2Honey.com&gt;
+MATCH test\@test.com
+MATCH &quot;MARGIT&quot; &lt;cxcse231\@yahoo.com&gt;
+MATCH Sascha Schwabbauer &lt;cybersystem\@gentoo.o...
+MATCH &lt;bugs\@drnn.net&gt;
 MATCH &lt;elia\@tpkm.ru&gt;
-MATCH Enlarge your package Doctor ApprovedNHOB
+MATCH hottest_site_on_net22840\@yahoo.com
+MATCH wendyoufp\@msn.com
 MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
+MATCH RN &lt;rrr\@nnnnnnnnn.com&gt;
+MATCH Brianna121 &lt;Brianna121\@aol.com&gt;
+MATCH &quot;Acaynya&quot;&lt;hornydarla3553qqoe1\@free.fr&gt;
+
+MATCH asdfsomebody\@mbnet.fi
+MATCH &lt;to header missing&gt;
+MATCH xxx\@xxx.net
+MATCH &quot;Willie Eason&quot; &lt;5x8njuc1ydwu\@mail2Honey....
+MATCH someone\@somewhere.com
+MATCH dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@dirtur.com, dsmith\@dialpoint.net, dsmith\@crosscountybank.com,	&lt;dsmith\@cybersurf.net&gt;, &lt;dsmith\@dotnet.com&gt;, &lt;dsmith\@db.com&gt;, &lt;dsmith\@cs.com&gt;	, &lt;dsmith\@crossville.com&gt;,	&lt;dsmith\@dreamscape.com&gt;, &lt;dsmith\@cvnc.net&gt;, &lt;dsmith\@dmrtc.net&gt;, &lt;dsmith\@datarecall.net&gt;,	&lt;dsmith\@dasia.net&gt;
+MATCH gentoo-announce\@gentoo.org
+MATCH elia\@tpkm.ru, rescuebre\@tpkm.ru, kcruz\@rltvty.com, bugtracker\@rltvty.com
+MATCH rescuebre\@tpkm.ru, bugs\@drnn.net, kcruz\@rltvty.com, bugtracker\@rltvty.com
+MATCH &lt;Undisclosed Recipients&gt;
+MATCH cfzvcvhr\@worldnet.att.net
+MATCH &quot;Armlet Forum&quot; &lt;armlet-forum\@news.palmos.com&gt;
+MATCH &lt;webmaster\@jgc.org&gt;
+MATCH spamaddy\@domain
+
+MATCH Re[69537]: Information for YOU
+MATCH ADV: Turn Back the Hands of Time - Compl...
+MATCH Luscious Black Nymphos!
+MATCH test for various HTML parts
+MATCH Enlarge your package Doctor ApprovedNHOB...
+MATCH Fix for kde 3.1+3.0.x installs (x86) (bu..
+MATCH VI ID: 24149  Status: Dev Confirmed Fix ..
+MATCH VI ID: 24052  Status: Open  Sev: 2
+MATCH Mooo
+MATCH 5uj9s
+MATCH (Archive Copy) RE: CW v9 and armlets..
+MATCH [spam] Want to see a huge horse c*ck in ...
+MATCH spamaddy,what ?
+MATCH &lt;subject header missing&gt;
+MATCH blank
+
 MATCH <a href="/buckets?session=$sk&amp;showbucket=spam">
 MATCH
 <span style="color:blue">
@@ -160,6 +200,88 @@ MATCH
 From
 </a>
 ENDMATCH
+
+MATCH reclassify_11
+MATCH remove_11
+MATCH rowid_11
+MATCH /view\?view=11
+MATCH reclassify_12
+MATCH remove_12
+MATCH rowid_12
+MATCH /view\?view=12
+MATCH reclassify_13
+MATCH remove_13
+MATCH rowid_13
+MATCH /view\?view=13
+MATCH reclassify_14
+MATCH remove_14
+MATCH rowid_14
+MATCH /view\?view=14
+MATCH reclassify_15
+MATCH remove_15
+MATCH rowid_15
+MATCH /view\?view=15
+MATCH reclassify_16
+MATCH remove_16
+MATCH rowid_16
+MATCH /view\?view=16
+MATCH reclassify_17
+MATCH remove_17
+MATCH rowid_17
+MATCH /view\?view=17
+MATCH reclassify_18
+MATCH remove_18
+MATCH rowid_18
+MATCH /view\?view=18
+MATCH reclassify_19
+MATCH remove_19
+MATCH rowid_19
+MATCH /view\?view=19
+MATCH reclassify_20
+MATCH remove_20
+MATCH rowid_20
+MATCH /view\?view=20
+MATCH reclassify_21
+MATCH remove_21
+MATCH rowid_21
+MATCH /view\?view=21
+MATCH reclassify_22
+MATCH remove_22
+MATCH rowid_22
+MATCH /view\?view=22
+MATCH reclassify_23
+MATCH remove_23
+MATCH rowid_23
+MATCH /view\?view=23
+MATCH reclassify_24
+MATCH remove_24
+MATCH rowid_24
+MATCH /view\?view=24
+MATCH reclassify_25
+MATCH remove_25
+MATCH rowid_25
+MATCH /view\?view=25
+MATCH reclassify_26
+MATCH remove_26
+MATCH rowid_26
+MATCH /view\?view=26
+MATCH reclassify_27
+MATCH remove_27
+MATCH rowid_27
+MATCH /view\?view=27
+MATCH reclassify_28
+MATCH remove_28
+MATCH rowid_28
+MATCH /view\?view=28
+MATCH reclassify_29
+MATCH remove_29
+MATCH rowid_29
+MATCH /view\?view=29
+MATCH reclassify_30
+MATCH remove_30
+MATCH rowid_30
+MATCH /view\?view=30
+
 
 # Check the page navigator
 
@@ -267,6 +389,8 @@ Jump to page:
 [<a href="/history?start_message=20&amp;session=$sk&amp;filter=spam&amp;sort=-inserted">2</a>]
 [<a href="/history?start_message=20&amp;session=$sk&amp;filter=spam&amp;sort=-inserted">Next &gt;</a>]
 ENDMATCH
+
+
 GET /history?start_message=20&amp;session=$sk&amp;filter=spam
 NOTMATCH Testing Refresh
 SETINPUT filter other
