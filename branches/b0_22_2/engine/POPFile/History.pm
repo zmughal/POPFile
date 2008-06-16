@@ -277,7 +277,8 @@ sub forked
 #----------------------------------------------------------------------------
 sub reserve_slot
 {
-    my ( $self, $inserted_time ) = @_;
+    my $self = shift;
+    my $inserted_time = shift || time;
 
     my $r;
     my $test_sth;
@@ -297,7 +298,7 @@ sub reserve_slot
         # so that we can sort on the Date: header in the message and
         # when we received it
 
-        my $result = $insert_sth->execute( 1, $r, ( defined $inserted_time ) ? $inserted_time : time );
+        my $result = $insert_sth->execute( 1, $r, $inserted_time );
         next if ( !defined( $result ) );
 
         if ( $is_sqlite2 ) {
