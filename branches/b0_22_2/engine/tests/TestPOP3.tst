@@ -364,6 +364,7 @@ $l->logger( $l );
 
 $l->initialize();
 $l->config_( 'level', 2 );
+$l->version( 'svn-b0_22_2' );
 
 $w->configuration( $c );
 $w->mq( $mq );
