@@ -554,7 +554,8 @@ if ( $have_text_kakasi ) {
     $b->initialize();
     test_assert( $b->start() );
     $cl->{lang__} = 'Nihongo';
-    $cl->setup_nihongo_parser( 'kakasi' );
+    my $nihongo_parser = $cl->setup_nihongo_parser( 'kakasi' );
+    test_assert_equal( $nihongo_parser, 'kakasi' );
 
     # Test decode_string
     my $original_string = 'POPFile' . pack( "H*", "a4cfbcabc6b0a5e1a1bca5ebbfb6a4eacaaca4b1a5c4a1bca5eba4c7a4b9" );
@@ -629,6 +630,49 @@ if ( $have_text_kakasi ) {
             }
             delete $cl->{words__}{$missed};
         }
+    }
+
+    # Test for the internal parser
+
+    $nihongo_parser = $cl->setup_nihongo_parser( 'internal' );
+    test_assert_equal( $nihongo_parser, 'internal' );
+
+    $cl->{nihongo_parser__}{init}($cl);
+
+    $original_string = pack( "H*", "504f5046696c65a4cfbcabc6b0a5e1a1bca5ebbfb6a4eacaaca4b1a5c4a1bca5eba4c7a4b9" );
+    $wakati_string = pack( "H*", "504f5046696c6520a4cf20bcabc6b020a5e1a1bca5eb20bfb620a4ea20caac20a4b120a5c4a1bca5eb20a4c7a4b920" );
+    test_assert_equal( $cl->{nihongo_parser__}{parse}($cl, $original_string), $wakati_string );
+
+    $cl->{nihongo_parser__}{close}($cl);
+
+    # Test for MeCab
+
+    my $have_mecab = 0;
+
+    foreach my $prefix (@INC) {
+        my $realfilename = "$prefix/MeCab.pm";
+        if (-f $realfilename) {
+            $have_mecab = 1;
+            last;
+        }
+    }
+
+    $nihongo_parser = $cl->setup_nihongo_parser( 'mecab' );
+    if ( $have_mecab ) {
+        test_assert_equal( $nihongo_parser, 'mecab' );
+
+        $cl->{nihongo_parser__}{init}($cl);
+
+        $original_string = pack( "H*", "504f5046696c65a4cfbcabc6b0a5e1a1bca5ebbfb6a4eacaaca4b1a5c4a1bca5eba4c7a4b9" );
+        $wakati_string = pack( "H*", "504f5046696c6520a4cf20bcabc6b020a5e1a1bca5eb20bfb6a4eacaaca4b120a5c4a1bca5eb20a4c7a4b9200a" );
+        test_assert_equal( $cl->{nihongo_parser__}{parse}($cl, $original_string), $wakati_string );
+
+        $cl->{nihongo_parser__}{close}($cl);
+
+    } else {
+        print "\nWarning: MeCab tests skipped because MeCab was not found\n";
+
+        test_assert_equal( $nihongo_parser, 'kakasi' );
     }
 
 } else {
