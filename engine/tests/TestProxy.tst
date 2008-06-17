@@ -100,6 +100,7 @@ $l->mq( $mq );
 $l->logger( $l );
 
 $l->initialize();
+$l->version( 'svn-b0_22_2' );
 $l->start();
 
 $mq->configuration( $c );
