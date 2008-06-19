@@ -719,12 +719,16 @@ sub validate_item
 
     if ( $name eq 'pop3_configuration' ) {
         if ( defined($$form{pop3_port}) ) {
-            if ( ( $$form{pop3_port} >= 1 ) && ( $$form{pop3_port} < 65536 ) ) {
+            if ( ( $$form{pop3_port} >= 1 ) && ( $$form{pop3_port} < 65536 ) && ( $self->module_config_( 'html', 'port' ) ne $$form{pop3_port} ) ) {
                 $self->config_( 'port', $$form{pop3_port} );
                 $templ->param( 'POP3_Configuration_If_Port_Updated' => 1 );
                 $templ->param( 'POP3_Configuration_Port_Updated' => sprintf( $$language{Configuration_POP3Update}, $self->config_( 'port' ) ) );
             } else {
-                $templ->param( 'POP3_Configuration_If_Port_Error' => 1 );
+                if ( ( $self->module_config_( 'html', 'port' ) ne $$form{pop3_port} ) ) {
+                  $templ->param( 'POP3_Configuration_If_Port_Error' => 1 );
+                } else {
+                  $templ->param( 'POP3_Configuration_If_UI_Port_Error' => 1 );
+                }
             }
         }
 

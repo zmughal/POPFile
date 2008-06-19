@@ -799,10 +799,16 @@ sub configuration_page
 
     if ( defined($self->{form_}{ui_port}) ) {
         if ( ( $self->{form_}{ui_port} >= 1 ) &&
-             ( $self->{form_}{ui_port} < 65536 ) ) {
+             ( $self->{form_}{ui_port} < 65536 ) &&
+             ( $self->module_config_( 'pop3', 'port' ) ne $self->{form_}{ui_port} )
+            ) {
             $self->config_( 'port', $self->{form_}{ui_port} );
         } else {
-            $templ->param( 'Configuration_If_UI_Port_Error' => 1 );
+            if ( ( $self->module_config_( 'pop3', 'port' ) ne $self->{form_}{ui_port} ) ) {
+              $templ->param( 'Configuration_If_UI_Port_Error' => 1 );
+            } else {
+              $templ->param( 'Configuration_If_UI_POP3_Port_Error' => 1 );
+            }
             delete $self->{form_}{ui_port};
         }
     }

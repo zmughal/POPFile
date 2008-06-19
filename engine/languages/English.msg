@@ -121,6 +121,8 @@ Configuration_Error5                    The number of days in the history must b
 Configuration_Error6                    The TCP timeout must be a number between 10 and 1800
 Configuration_Error7                    The XML RPC listen port must be a number between 1 and 65535
 Configuration_Error8                    The SOCKS V proxy port must be a number between 1 and 65535
+Configuration_Error9                    The user interface port cannot be the same value as the POP3 listen port
+Configuration_Error10                   The POP3 listen port cannot be the same value as the user interface port
 Configuration_POP3Port                  POP3 listen port
 Configuration_POP3Update                Updated POP3 port to %s; this change will not take affect until you restart POPFile
 Configuration_XMLRPCUpdate              Updated XML-RPC port to %s; this change will not take affect until you restart POPFile
