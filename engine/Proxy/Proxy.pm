@@ -83,6 +83,8 @@ sub new
     #
     # $self->{good_response_}            = '';
 
+    $self->{ssl_not_supported_error_}  = '-ERR SSL connection is not supported since required modules are not installed';
+
     # Connect Banner returned by the real server
     $self->{connect_banner__} = '';
 
@@ -496,7 +498,15 @@ sub verify_connected_
                     . ProxyPort => $self->config_( 'socks_port' ) );
     } else {
         if ( $ssl ) {
-            require IO::Socket::SSL;
+            eval {
+                require IO::Socket::SSL;
+            };
+            if ( $@ ) {
+                # Cannot load IO::Socket::SSL
+
+                $self->tee_( $client, "$self->{ssl_not_supported_error_}$eol" );
+                return undef;
+            }
             $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
                         Proto    => "tcp",
                         PeerAddr => $hostname,
