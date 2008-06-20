@@ -2803,7 +2803,7 @@ sub classify_and_modify
     if ( ( $subject_modification ) && ( !$quarantine ) ) {
         if ( !defined( $msg_subject ) ) {   # PROFILE BLOCK START
             $msg_subject = " $modification";
-        } elsif ( defined( $msg_subject ) && ( $msg_subject !~ /\Q$modification\E/ ) ) {
+        } elsif ( $msg_subject !~ /\Q$modification\E/ ) {
             $msg_subject = " $modification$msg_subject";
         }                                   # PROFILE BLOCK STOP
     }
