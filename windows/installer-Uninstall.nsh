@@ -3,7 +3,7 @@
 # installer-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the main
 #                             NSIS 'installer.nsi' script used to create the POPFile installer.
 #
-# Copyright (c) 2005-2007 John Graham-Cumming
+# Copyright (c) 2005-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -819,6 +819,7 @@ Section "-un.POPFile Core" UnSecCore
   Delete "$G_ROOTDIR\adduser.exe"
   Delete "$G_ROOTDIR\runsqlite.exe"
   Delete "$G_ROOTDIR\sqlite.exe"
+  Delete "$G_ROOTDIR\sqlite3.exe"
 
   Delete "$G_ROOTDIR\msgcapture.exe"
   Delete "$G_ROOTDIR\pfidbstatus.exe"
