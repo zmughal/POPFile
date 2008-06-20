@@ -921,6 +921,9 @@ MATCH Updated POP3 port to 111; this change will not take affect until you resta
 SETSUBMIT pop3_port 0
 MATCH The POP3 listen port must be a number between 1 and 65535
 INPUTIS   pop3_port 111
+SETSUBMIT pop3_port $port
+MATCH The POP3 listen port cannot be the same value as the user interface port
+INPUTIS   pop3_port 111
 
 # Check change separator
 
@@ -956,6 +959,9 @@ CONFIGIS  html_port 8082
 MATCH Updated user interface web port to 8082; this change will not take affect until you restart POPFile
 SETSUBMIT ui_port 0
 MATCH The user interface port must be a number between 1 and 65535
+INPUTIS   ui_port 8082
+SETSUBMIT ui_port 111
+MATCH The user interface port cannot be the same value as the POP3 listen port
 INPUTIS   ui_port 8082
 
 # Security Page

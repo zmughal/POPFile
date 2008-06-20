@@ -122,6 +122,8 @@ Configuration_Error5                    履歴を残す日数は 1 から 366 までにしてく
 Configuration_Error6                    TCP タイムアウトは 10 から 1800 にしてください。
 Configuration_Error7                    XML RPC ポート番号は1から 65535 までにしてください。
 Configuration_Error8                    SOCKS V プロキシのポート番号は 1 から 65535 までにしてください。
+Configuration_Error9                    ユーザーインターフェース用ポート番号を POP3 ポート番号と同一にすることはできません。
+Configuration_Error10                   POP3 ポート番号をユーザーインターフェース用ポート番号と同一にすることはできません。
 Configuration_POP3Port                  POP3 ポート番号
 Configuration_POP3Update                POP3 ポート番号を %s に変更しました。この変更は POPFile を再起動するまで有効になりません。
 Configuration_XMLRPCUpdate              XML-RPC ポート番号を %s に変更しました。この変更は POPFile を再起動するまで有効になりません。
