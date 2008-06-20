@@ -225,6 +225,7 @@ copy_txt_version:
   File "runpopfile.exe"
   File "stop_pf.exe"
   File "sqlite.exe"
+  File "sqlite3.exe"
   File "runsqlite.exe"
   File "adduser.exe"
   File /nonfatal "test\pfidbstatus.exe"

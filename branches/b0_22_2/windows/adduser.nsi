@@ -2285,6 +2285,12 @@ FunctionEnd
 # into words. Previous releases only supported the 'Kakasi' parser but 1.0.0 offers a choice
 # of 'Kakasi', 'MeCab' or 'Internal', controlled by the new 'bayes_nihongo_parser' parameter.
 # Valid values for this new popfile.cfg parameter are kakasi, mecab or internal.
+#
+# The 1.1.0 release introduced support for databases built using SQLite 3.x libraries for the
+# first time. This means existing Sqlite 2.x format databases need to be converted to the new
+# format (because SQLite 2.x databases are not compatible with the new SQLite 3.x libraries)
+# If upgrading an installation that currently uses DBD::SQLite2 then change the configuration
+# in popfile.cfg to use DBD::SQLite instead.
 #--------------------------------------------------------------------------
 
 Function CheckExistingConfigData
@@ -2404,12 +2410,12 @@ got_console:
 
 got_dbconnect:
   Push ${L_LNE}
-  Push "dbi:SQLite:"
+  Push "dbi:SQLite2:"
   Call PFI_StrStr
   Pop ${L_CMPRE}
   StrCmp ${L_CMPRE} "" copy_lne
-  StrCpy ${L_CMPRE} ${L_CMPRE} "" 11
-  StrCpy ${L_LNE} "bayes_dbconnect dbi:SQLite2:${L_CMPRE}"
+  StrCpy ${L_CMPRE} ${L_CMPRE} "" 12
+  StrCpy ${L_LNE} "bayes_dbconnect dbi:SQLite:${L_CMPRE}"
   Goto copy_lne
 
 got_parser:
