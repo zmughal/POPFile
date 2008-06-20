@@ -121,6 +121,8 @@ Configuration_Error5                    Die Anzahl der Tage im Verlauf muß zwisc
 Configuration_Error6                    Der TCP Timeout muß zwischen 10 und 1800 liegen.
 Configuration_Error7                    Der XML-RPC Port muß zwischen 1 und 65535 liegen.
 Configuration_Error8                    Der SOCKS V Proxy Port muß zwischen 1 und 65535 liegen.
+Configuration_Error9                    Der HTML-Port darf nicht den gleichen Wert haben wie der POP3-Port.
+Configuration_Error10                   Der POP3-Port darf nicht den gleichen Wert haben wie der HTML-Port.
 Configuration_POP3Port                  POP3 Port
 Configuration_POP3Update                Neuer POP3 Port: %s - Diese Änderung wird erst nach einem Neustart von POPFile wirksam.
 Configuration_XMLRPCUpdate              Neuer XML-RPC Port: %s - Diese Änderung wird erst nach einem Neustart von POPFile wirksam.
