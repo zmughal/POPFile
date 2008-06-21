@@ -32,6 +32,8 @@ unlink 'popfile.db';
 unlink 'stopwords';
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
+use POSIX ":sys_wait_h";
+
 use Classifier::MailParse;
 use Classifier::Bayes;
 use POPFile::Configuration;
@@ -100,8 +102,10 @@ if ($pid == 0) {
     if ($x->start() == 1) {
         test_assert(1, "start passed\n");
 
+        my $count = 50;
         while ( $mq->service() && $x->service() && $b->alive()) {
             select(undef,undef,undef, 0.1);
+            last if ( $count-- <= 0 );
         }
         $x->stop();
         $b->stop();
@@ -160,6 +164,10 @@ if ($pid == 0) {
     XMLRPC::Lite 
     -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
     -> call('POPFile/API.release_session_key', $session );
+
+    while ( waitpid( -1, WNOHANG ) > 0 ) {
+        sleep 1;
+    }
 }
 
 

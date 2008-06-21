@@ -21,6 +21,10 @@
 #
 # ---------------------------------------------------------------------------------------------
 
+use locale;
+use POSIX qw( locale_h );
+setlocale( LC_COLLATE, 'C' );
+
 unlink 'popfile.cfg';
 
 use POPFile::Configuration;
@@ -63,6 +67,10 @@ test_assert_equal( $c->initialize(), 1 );
 test_assert_equal( $c->config_( 'piddir' ), './' );
 test_assert_equal( $c->global_config_( 'timeout' ), 60 );
 test_assert_equal( $c->global_config_( 'msgdir' ), 'messages/' );
+
+# Save STDERR
+
+open my $old_stderr, ">&STDERR";
 
 # Check that the PID file gets created and then deleted and
 # contains the correct process ID
@@ -119,8 +127,6 @@ $c->stop();
 
 open FILE, "<popfile.cfg";
 my $line = <FILE>;
-test_assert_regexp( $line, 'config_piddir ../tests/' );
-$line = <FILE>;
 test_assert_regexp( $line, 'GLOBAL_debug 0' );
 $line = <FILE>;
 test_assert_regexp( $line, 'GLOBAL_message_cutoff 100000' );
@@ -128,6 +134,8 @@ $line = <FILE>;
 test_assert_regexp( $line, 'GLOBAL_msgdir messages/' );
 $line = <FILE>;
 test_assert_regexp( $line, 'GLOBAL_timeout 60' );
+$line = <FILE>;
+test_assert_regexp( $line, 'config_piddir ../tests/' );
 $line = <FILE>;
 test_assert_regexp( $line, 'logger_format default' );
 $line = <FILE>;
@@ -245,6 +253,10 @@ open OUTPUT, "<stdout.tmp";
 my $line = <OUTPUT>;
 close OUTPUT;
 test_assert_regexp( $line, 'Expected a command line option and got baz' );
+
+# Restore STDERR
+
+open STDERR, ">&", $old_stderr;
 
 # path_join__
 
