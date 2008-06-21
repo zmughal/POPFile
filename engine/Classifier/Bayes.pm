@@ -2814,7 +2814,7 @@ sub classify_and_modify
 
     # Add LF if $msg_head_after ends with CR to avoid header concatination
 
-    $msg_head_after =~ s/\015$/\015\012/;
+    $msg_head_after =~ s/\015\z/$eol/;
 
     # Add the XTC header
 
