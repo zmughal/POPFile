@@ -1009,7 +1009,7 @@ if ( $pid == 0 ) {
             $result =~ s/view=4/view=popfile0=0.msg/;
             test_assert( $result =~ /\015/ );
             $result =~ s/\015//;
-            test_assert_equal( $result, $line, "[$result][$line]" );
+            test_assert_equal( $result, $line, "[$result][$cam][$line]" );
             if ( $headers == 0 ) {
                 $countdown -= 1;
             }
