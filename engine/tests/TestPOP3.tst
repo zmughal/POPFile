@@ -869,12 +869,13 @@ if ( $pid == 0 ) {
         while ( ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
             $result = <$client>;
             test_assert( $result =~ /$cr/ );
-            $result =~ s/$cr//;
+            $result =~ s/[$cr$lf]//g;
+            $line   =~ s/[$cr$lf]//g;
             test_assert_equal( $result, $line );
             if ( $headers == 0 ) {
                 $countdown -= 1;
             }
-            if ( $line =~ /^[\r\n]+$/ ) {
+            if ( $line eq '' ) {
                 $headers = 0;
             }
         }
