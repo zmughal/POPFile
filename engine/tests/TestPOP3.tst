@@ -80,7 +80,7 @@ sub server
         my $command;
 
         $command = $_;
-        $command =~ s/(\015|\012)//g;
+        $command =~ s/($cr|$lf)//g;
 
         if ( $command =~ /^USER (.*)/i ) {
             if ( $1 =~ /(gooduser|goslow|hang|slowlf)/ ) {
@@ -868,8 +868,8 @@ if ( $pid == 0 ) {
         my $headers   = 1;
         while ( ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
             $result = <$client>;
-            test_assert( $result =~ /\015/ );
-            $result =~ s/\015//;
+            test_assert( $result =~ /$cr/ );
+            $result =~ s/$cr//;
             test_assert_equal( $result, $line );
             if ( $headers == 0 ) {
                 $countdown -= 1;
@@ -905,8 +905,8 @@ if ( $pid == 0 ) {
             my $line = $_;
             $result = <$client>;
             $result =~ s/view=3/view=popfile0=0.msg/;
-            test_assert( $result =~ /\015/ );
-            $result =~ s/\015//;
+            test_assert( $result =~ /$cr/ );
+            $result =~ s/$cr//;
             test_assert_equal( $result, $line );
         }
         close FILE;
@@ -1007,8 +1007,8 @@ if ( $pid == 0 ) {
         while ( ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
             $result = <$client>;
             $result =~ s/view=4/view=popfile0=0.msg/;
-            test_assert( $result =~ /\015/ );
-            $result =~ s/\015//;
+            test_assert( $result =~ /$cr/ );
+            $result =~ s/$cr//;
             test_assert_equal( $result, $line, "[$result][$cam][$line]" );
             if ( $headers == 0 ) {
                 $countdown -= 1;
@@ -1089,8 +1089,9 @@ if ( $pid == 0 ) {
             my $line = $_;
             $result = <$client>;
             $result =~ s/view=5/view=popfile0=0.msg/;
-            test_assert( $result =~ /\015/ );
-            $result =~ s/\015//;
+            test_assert( $result =~ /$cr/ );
+            $result =~ s/[$cr$lf]//g;
+            $line   =~ s/[$cr$lf]//g;
             test_assert_equal( $result, $line );
         }
         close FILE;
@@ -1188,9 +1189,9 @@ if ( $pid == 0 ) {
         while ( ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
             $result = <$client>;
             $result =~ s/view=6/view=popfile0=0.msg/;
-            test_assert( $result =~ /\015/ );
-            $result =~ s/\015//;
-            $line =~ s/\015//;
+            test_assert( $result =~ /$cr/ );
+            $result =~ s/$cr//;
+            $line =~ s/$cr//;
             test_assert_equal( $result, $line );
             if ( $headers == 0 ) {
                 $countdown -= 1;
