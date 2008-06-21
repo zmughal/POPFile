@@ -711,7 +711,11 @@ skip:
 
     $p->stop();
 
-    while ( waitpid( $pid, &WNOHANG ) != $pid ) {
+    my $alive = 1;
+    while ( $alive ) {
+        my $result = waitpid( $pid, &WNOHANG );
+        $alive = 0 if $result == $pid;
+        $alive = 0 if $result == -1;
     }
 
     $mq->reaper();
