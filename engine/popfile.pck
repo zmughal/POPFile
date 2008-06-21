@@ -1,5 +1,6 @@
 OPTIONAL-Upgrades from v0.20.x	0.0.0	BerkeleyDB
 REQUIRED	0.0.0	Carp
+OPTIONAL-SQLite3 backend	0.0.0	DBD::SQLite
 REQUIRED	0.0.0	DBI
 REQUIRED	0.0.0	Date::Format
 REQUIRED	0.0.0	Date::Parse
@@ -21,7 +22,6 @@ REQUIRED	0.0.0	MIME::Base64
 REQUIRED	0.0.0	MIME::QuotedPrint
 OPTIONAL-Japanese Language Support	0.0.0	MeCab
 REQUIRED	0.0.0	POSIX
-OPTIONAL-IMAP Support	0.0.0	Services::IMAP::Client
 REQUIRED	0.0.0	Sys::Hostname
 OPTIONAL-Japanese Language Support	0.0.0	Text::Kakasi
 OPTIONAL-XML-RPC Server Support	0.0.0	XMLRPC::Transport::HTTP
