@@ -63,7 +63,7 @@ $l->mq( $mq );
 $l->logger( $l );
 
 $l->initialize();
-
+$l->config_( 'level', 2 );
 $mq->configuration( $c );
 $mq->mq( $mq );
 $mq->logger( $l );
@@ -332,7 +332,12 @@ if ( $pid == 0 ) {
     test_assert_equal( $line, "HTTP/1.0 /stop GET  Error$eol" );
     close $client;
 
-    while ( waitpid( $pid, &WNOHANG ) != $pid ) {
+    my $alive = 1;
+    while ( $alive ) {
+        my $result = waitpid( $pid, &WNOHANG );
+        $alive = 0 if $result == $pid;
+        $alive = 0 if $result == -1;
+        print "\nwaitpid waiting\n";
     }
 
     $h->stop();
