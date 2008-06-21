@@ -570,9 +570,11 @@ $sp2->config_( 'port', -1 );
 
 $sp2->classifier( $b );
 
+open my $old_stderr, ">&STDERR";
 open (STDERR, ">stdout.tmp");
 test_assert( !$sp2->start() );
 close STDERR;
+open STDERR, ">&", $old_stderr;
 open TEMP, "<stdout.tmp";
 $line = <TEMP>;
 $line = <TEMP>;

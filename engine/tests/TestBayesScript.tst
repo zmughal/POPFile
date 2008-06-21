@@ -26,6 +26,7 @@ rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/.svn' );
 unlink 'popfile.db';
+unlink 'popfile.cfg';
 unlink 'stopwords';
 test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
@@ -42,6 +43,10 @@ $code = ($? >> 8);
 test_assert( $code != 0 );
 my $line = shift @stdout;
 test_assert_regexp( $line, 'output the classification of a message' );
+
+# Save STDERR
+
+open my $old_stderr, ">&STDERR";
 
 # Bad file name
 open STDERR, ">temp.tmp";
@@ -69,7 +74,7 @@ close WORDS;
 @stdout = `$bayes TestMails/TestMailParse021.msg`;# 2> temp.tmp 1> temp2.tmp" );
 
 $code = ($? >> 8);
-test_assert( $code == 0 );
+test_assert_equal( $code, 0 );
 $line = shift @stdout;
 test_assert_regexp( $line, '`TestMails/TestMailParse021.msg\' is `spam\'' );
 
@@ -87,5 +92,10 @@ foreach my $word (keys %words) {
 foreach my $word (keys %output) {
     test_assert_equal( $words{$word}, $output{$word}, $word );
 }
+
+# Restore STDERR
+
+open STDERR, ">&", $old_stderr;
+
 
 1;

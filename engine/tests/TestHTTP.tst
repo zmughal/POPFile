@@ -25,6 +25,8 @@ rmtree( 'messages' );
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/.svn' );
+unlink( 'popfile.db' );
+unlink( 'popfile.cfg' );
 
 sub my_handler
 {
@@ -63,7 +65,7 @@ $l->mq( $mq );
 $l->logger( $l );
 
 $l->initialize();
-$l->config_( 'level', 2 );
+
 $mq->configuration( $c );
 $mq->mq( $mq );
 $mq->logger( $l );
@@ -221,9 +223,11 @@ $h2->initialize();
 $h2->name( 'simple' );
 $h2->config_( 'port', -1 );
 
+open my $old_stderr, ">&STDERR";
 open (STDERR, ">stdout.tmp");
 test_assert( !$h2->start() );
 close STDERR;
+open STDERR, ">&", $old_stderr;
 open TEMP, "<stdout.tmp";
 $line = <TEMP>;
 $line = <TEMP>;
@@ -332,12 +336,8 @@ if ( $pid == 0 ) {
     test_assert_equal( $line, "HTTP/1.0 /stop GET  Error$eol" );
     close $client;
 
-    my $alive = 1;
-    while ( $alive ) {
-        my $result = waitpid( $pid, &WNOHANG );
-        $alive = 0 if $result == $pid;
-        $alive = 0 if $result == -1;
-        print "\nwaitpid waiting\n";
+    while ( waitpid( -1, &WNOHANG ) > 0 ) {
+        sleep 1;
     }
 
     $h->stop();
