@@ -761,6 +761,8 @@ sub db_connect__
         if ( $buffer eq '** This file contains an SQLite 2.1 database **' ) {
             $self->log_( 0, 'SQLite 2 database found. Try to upgrade' );
 
+            # Test DBD::SQLite version
+
             my $ver = -1;
             eval {
                 require DBD::SQLite;
@@ -770,23 +772,39 @@ sub db_connect__
             if ( $ver >= 1.00 ) {
                 $self->log_( 0, "DBD::SQLite $ver found" );
 
+                # Backup SQLite2 database
+
                 my $old_dbname = $dbname . '-sqlite2';
                 unlink $old_dbname;
                 rename $dbname, $old_dbname;
+
+                # Connect to SQLite2 database
+
                 my $old_dbconnect = $self->config_( 'dbconnect' );
-                $old_dbconnect =~ s/\$dbname/$old_dbname/g;
                 $old_dbconnect =~ s/SQLite:/SQLite2:/;
+                $old_dbconnect =~ s/\$dbname/$old_dbname/g;
 
                 $old_dbh = DBI->connect( $old_dbconnect,               # PROFILE BLOCK START
                                          $self->config_( 'dbuser' ),
                                          $self->config_( 'dbauth' ) ); # PROFILE BLOCK STOP
 
+                # Update the config file
+
+                $dbconnect = $self->config_( 'dbconnect' );
                 $dbconnect =~ s/SQLite2:/SQLite:/;
+                $self->config_( 'dbconnect', $dbconnect );
+                $dbconnect =~ s/\$dbname/$dbname/g;
 
                 $need_convert = 1;
             }
         } else {
+
+            # Update the config file
+
+            $dbconnect = $self->config_( 'dbconnect' );
             $dbconnect =~ s/SQLite2:/SQLite:/;
+            $self->config_( 'dbconnect', $dbconnect );
+            $dbconnect =~ s/\$dbname/$dbname/g;
         }
     }
 
