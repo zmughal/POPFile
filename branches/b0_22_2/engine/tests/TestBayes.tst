@@ -710,7 +710,6 @@ close TEMP2;
 
 # to a file with before string
 
-unlink( 'temp.tmp' );
 open MAIL, "<messages/one.msg";
 test_assert( $b->echo_to_dot_( \*MAIL, undef, '>temp.tmp', "before\n" ) );
 test_assert( eof( MAIL ) );
@@ -1026,4 +1025,8 @@ if ( $have_text_kakasi ) {
 
 $b->stop();
 
+unlink( 'temp.tmp' );
+unlink( 'temp2.tmp' );
+
 1;
+

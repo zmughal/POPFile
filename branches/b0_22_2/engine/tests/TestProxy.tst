@@ -586,4 +586,6 @@ $sp2->stop();
 
 $b->stop();
 
+unlink 'stdout.tmp';
+
 1;
