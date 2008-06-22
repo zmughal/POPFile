@@ -92,9 +92,10 @@
 # If /TIMEOUT=0 is specified then the utility will wait until POPFile terminates
 # (this is the default behaviour).
 #
-# When the main POPFile installer (or the 'Add POPFile User' wizard) calls this utility,
-# different header text is required so the installer (and wizard) use /TIMEOUT=PFI to
-# inform the utility.
+# When the main POPFile installer (or the 'Add POPFile User' wizard) calls this utility
+# some different header text is required and the POPFile program has to be started with
+# a special command-line option used only by the installer therefore the installer
+# (and the 'Add POPFile User' wizard) use /TIMEOUT=PFI to inform the utility.
 #
 # Uppercase or lowercase can be used for the command-line switch.
 #
@@ -117,16 +118,9 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.1.8"
+  !define C_VERSION             "0.1.9"
 
   !define C_OUTFILE             "msgcapture.exe"
-
-  ; The timeout (in seconds) used when a pre-0.23.0 version of the installer calls
-  ; this utility to monitor the SQL database upgrade. Note: 30 seconds may not be
-  ; long enough to cope with the upgrade of very large databases (over 100 MB) on
-  ; some systems.
-
-  !define C_INSTALLER_TIMEOUT   30
 
   ;--------------------------------------------------------------------------
   ; The default NSIS caption is "$(^Name) Setup" so we override it here
@@ -172,7 +166,7 @@
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
   VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Message Capture Utility (0-99 sec timeout)"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -351,8 +345,6 @@ usage_error:
 
 installer_mode:
   StrCpy $G_MODE_FLAG "PFI"
-  StrCpy ${L_TEMP} ${C_INSTALLER_TIMEOUT}
-  Goto exit
 
 default:
   StrCpy ${L_TEMP} "0"
@@ -401,7 +393,7 @@ Section default
   !define L_RESULT        $R7
   !define L_TEMP          $R6
   !define L_TRAYICON      $R5   ; system tray icon enabled ("i" ) or disabled ("") flag
-  !define L_OPTIONS       $R4   ; POPFile 0.23.0 no longer displays startup messages by default
+  !define L_OPTIONS       $R4   ; POPFile 2.x no longer displays startup messages by default
                                 ; so we use the --verbose option to turn them back on
 
   SetDetailsPrint textonly
@@ -459,28 +451,27 @@ found_cfg:
   DetailPrint "POPFILE_ROOT = ${L_PFI_ROOT}"
   DetailPrint "POPFILE_USER = ${L_PFI_USER}"
 
-  ; Starting with the 0.23.0 release, POPFile no longer displays startup messages
-  ; so we use the 'verbose' option to turn them on. Earlier POPFile releases do not
-  ; recognize this option and will not run if it is used, so we use the Database.pm
-  ; file as a simple POPFile version test (this file was first used in 0.23.0)
-
   ; This utility is called by the "Add POPFile User" wizard (adduser.exe) with the option
   ; '/TIMEOUT=PFI' when the installer detects that an existing SQL database is to be upgraded.
   ; Database upgrades can take a very long time if the database is huge (over 30 minutes in
   ; some cases). During the upgrade this utility is used to display the progress reports as
   ; these are the only indication that POPFile is still working.
   ;
-  ; Since POPFile cannot be used during the upgrade and the installer cannot easily monitor
-  ; the progress of the upgrade, a new POPFile command-line option was added for the 0.23.0
-  ; release.
+  ; Starting with the 1.1.0 release, a new command-line option (--shutdown) causes POPFile
+  ; to shutdown after performing the upgrade so when monitoring a SQL database upgrade we
+  ; simply wait for POPFile to terminate (prior to the 1.1.0 release a less than satisfactory
+  ; 'one-size-fits-all' timeout was used instead).
   ;
-  ; This new option (--shutdown) causes POPFile to shutdown after performing the upgrade so
-  ; when monitoring a SQL database upgrade we simply wait for POPFile to terminate (instead
-  ; of using a less than satisfactory 'one-size-fits-all' timeout).
+  ; Starting with the 2.x release, POPFile no longer displays startup messages
+  ; so we use the 'verbose' option to turn them on. Earlier POPFile releases do not
+  ; recognize this option and will not run if it is used, so we use the Database.pm
+  ; file as a simple POPFile version test (this file was first used in 2.x)
 
   StrCpy ${L_OPTIONS} ""
-  IfFileExists "${L_PFI_ROOT}\POPFile\Database.pm" 0 look_for_exe
+  IfFileExists "${L_PFI_ROOT}\POPFile\Database.pm" 0 check_mode
   StrCpy ${L_OPTIONS} "--verbose"
+
+check_mode:
   StrCmp $G_MODE_FLAG "" look_for_exe
 
   ; The upgrading of an existing SQL database is to be monitored, so we tell POPFile to
