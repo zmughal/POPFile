@@ -849,7 +849,6 @@ sub start_popfile {
     $l->initialize();
     $l->config_( 'level', 1 );
 
-    $l->config_( logdir => '/tmp/' );
     $l->global_config_( msgdir => 'msgs' );
     $l->service();
 
