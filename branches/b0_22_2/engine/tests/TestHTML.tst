@@ -24,22 +24,7 @@
 # Set up the test corpus and use the Test msg and cls files
 # to create a current history set
 
-rmtree( 'corpus' );
-test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/.svn' );
-rmtree( 'corpus/other/.svn' );
-rmtree( 'corpus/spam/.svn' );
-rmtree( 'corpus/personal/.svn' );
-rmtree( 'messages' );
-`rm -f __db.*`;  # todo: make tool independent
-unlink 'popfile.cfg';
-unlink 'popfile.db';
-
-unlink( 'stopwords' );
-test_assert( copy ( 'stopwords.base', 'stopwords' ) );
-
-mkdir 'messages';
-
+#`rm -f __db.*`;  # todo: make tool independent
 use POSIX ":sys_wait_h";
 
 use HTML::Form;

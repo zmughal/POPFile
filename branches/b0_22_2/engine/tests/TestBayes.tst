@@ -21,17 +21,6 @@
 #
 # ---------------------------------------------------------------------------------------------
 
-rmtree( 'messages' );
-rmtree( 'corpus' );
-test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/.svn' );
-
-unlink 'popfile.db';
-unlink 'stopwords';
-test_assert( copy ( 'stopwords.base', 'stopwords' ) );
-
-mkdir 'messages';
-
 use Classifier::Bayes;
 use POPFile::Configuration;
 use POPFile::MQ;
@@ -548,7 +537,6 @@ for my $class_test (@class_tests) {
 # glob the tests directory for files called TestMails/TestMailParse\d+.msg which consist of messages
 # to be sent through classify_and_modify
 
-$b->global_config_( 'msgdir', '../tests/' );
 $b->module_config_( 'html', 'port', 8080 );
 $b->module_config_( 'html', 'local', 1 );
 $b->global_config_( 'xtc',  1 );

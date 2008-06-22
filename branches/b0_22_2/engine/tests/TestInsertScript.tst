@@ -25,15 +25,6 @@
 
 my @stdout;
 
-rmtree( 'messages' );
-rmtree( 'corpus' );
-test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/.svn' );
-test_assert( `rm popfile.db` == 0);
-
-unlink 'stopwords';
-test_assert( copy ( 'stopwords.base', 'stopwords' ) );
-
 my $insert = 'perl -I ../ ../insert.pl';
 
 # One or no command line arguments

@@ -23,14 +23,6 @@
 #
 # ---------------------------------------------------------------------------------------------
 
-rmtree( 'messages' );
-rmtree( 'corpus' );
-test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/.svn' );
-
-unlink 'popfile.db';
-unlink 'stopwords';
-test_assert( copy ( 'stopwords.base', 'stopwords' ) );
 
 use POSIX ":sys_wait_h";
 
@@ -125,11 +117,11 @@ if ($pid == 0) {
     select(undef,undef,undef,1);
     use XMLRPC::Lite;
 
-    my $session = XMLRPC::Lite 
+    my $session = XMLRPC::Lite
     -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
     -> call('POPFile/API.get_session_key','admin', '')
     -> result;
- 
+
     test_assert( $session ne '' );
 
     my $set_bucket_color = XMLRPC::Lite
@@ -161,7 +153,7 @@ if ($pid == 0) {
 
     select(undef,undef,undef,.2);
 
-    XMLRPC::Lite 
+    XMLRPC::Lite
     -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
     -> call('POPFile/API.release_session_key', $session );
 
