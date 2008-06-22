@@ -164,7 +164,8 @@
   ; environment variables are initialized before running POPFile. It also offers to reconfigure
   ; any suitable Outlook Express, Outlook or Eudora accounts for the user and can monitor the
   ; conversion of an existing flat file or BerkeleyDB corpus to a new SQL database, or the
-  ; upgrading of an existing SQL database to use a new database schema .
+  ; upgrading of an existing SQL database to use a new database schema or the upgrading of a
+  ; SQLite 2.x format database to the new SQLite 3.x format first used by POPFile 1.1.0.
   ;
   ; Other uses for this wizard include allowing a user to switch between different sets of
   ; configuration data and repairing 'damaged' HKCU entries.
@@ -1391,13 +1392,19 @@ SectionEnd
 # If we are performing an upgrade of a POPFile 0.21.x (or later) installation, the SQL database
 # may need to be upgraded (e.g. 0.22.0 uses a different database schema from 0.21.x). If the
 # existing installation uses SQLite we try to make a backup copy of the database before starting
-# POPFile to perform the upgrade.
+# POPFile to perform the upgrade (except for the case where a SQLite 2.x to 3.x upgrade is needed
+# because POPFile will make a backup of the old 2.x database before upgrading it).
 #
 # (If upgrading from 0.21.x to 0.22.0 (or later) then the message history will also be converted
 # but we do not attempt to make a backup of the message history).
 #
 # The backup is created in the '$G_USERDIR\backup' folder. Information on the backup is stored
 # in the 'backup.ini' file to assist in restoring the old corpus.
+#
+# POPFile versions 0.21.0 to 1.0.1 inclusive defaulted to using SQLite 2.x format databases.
+# The 1.1.0 release was the first to default to using the SQLite 3.x format. These 2.x and 3.x
+# format databases are not compatible therefore POPFile 1.1.0 (or later) will automatically
+# backup and convert an existing SQlite 2.x format database into the new 3.x format.
 #
 # If SQL database conversion is required, we will use the 'Message Capture' utility to show
 # the conversion progress reports (instead of running POPFile in a console window).
@@ -1431,6 +1438,15 @@ Section "-SQLCorpusBackup" SecSQLBackup
   Pop ${L_SQL_DB}
   StrCmp ${L_SQL_DB} "" exit
   StrCmp ${L_SQL_DB} "Not SQLite" exit
+
+  ; If the current SQLite database is in the old 2.x format there is no need to make a
+  ; backup copy because POPFile will make one before it upgrades the database to the
+  ; new SQLite 3.x format.
+
+  Push ${L_SQL_DB}
+  Call PFI_GetSQLiteFormat
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "2.x" exit
 
   ; If the newly installed POPFile database schema differs from the version used by the
   ; SQLite database, we make a backup copy of the database (because POPFile will perform
@@ -2276,21 +2292,16 @@ FunctionEnd
 # skin will not be shown in the Configuration page of the UI (the UI will show the first entry
 # in the list ("blue") instead of the skin currently in use).
 #
-# For the 0.22.5 release POPFile switched from using an old version of the DBD::SQLite package
-# to the newer DBD::SQLite2 package. This change lets POPFile use the most recent SQLite 2.x
-# libraries (POPFile cannot use SQLite3.x libraries yet). If upgrading an installation that
-# currently uses DBD::SQLite then change the configuration in popfile.cfg to use DBD::SQLite2.
-#
 # The 1.0.0 release introduced the ability to select the parser used to split Japanese text
 # into words. Previous releases only supported the 'Kakasi' parser but 1.0.0 offers a choice
 # of 'Kakasi', 'MeCab' or 'Internal', controlled by the new 'bayes_nihongo_parser' parameter.
 # Valid values for this new popfile.cfg parameter are kakasi, mecab or internal.
 #
-# The 1.1.0 release introduced support for databases built using SQLite 3.x libraries for the
-# first time. This means existing Sqlite 2.x format databases need to be converted to the new
-# format (because SQLite 2.x databases are not compatible with the new SQLite 3.x libraries)
-# If upgrading an installation that currently uses DBD::SQLite2 then change the configuration
-# in popfile.cfg to use DBD::SQLite instead.
+# The 1.1.0 release introduced support for databases built using SQLite 3.x libraries (earlier
+# versions of POPFile only worked with SQLite 2.x format databases). POPFile will automatically
+# convert an existing SQLite 2.x format database into the new 3.x format and it will also adjust
+# the configuration file to use DBD::SQLite instead of DBD::SQLite2 so there's no need for this
+# wizard to make any changes to the configuration data.
 #--------------------------------------------------------------------------
 
 Function CheckExistingConfigData
@@ -2370,9 +2381,9 @@ loop:
 
   StrCpy ${L_CMPRE} ${L_LNE} 17
   StrCmp ${L_CMPRE} "windows_trayicon " got_trayicon
+
   StrCpy ${L_CMPRE} ${L_LNE} 16
   StrCmp ${L_CMPRE} "windows_console " got_console
-  StrCmp ${L_CMPRE} "bayes_dbconnect " got_dbconnect
 
   StrCpy ${L_CMPRE} ${L_LNE} 21
   StrCmp ${L_CMPRE} "bayes_nihongo_parser " got_parser
@@ -2407,16 +2418,6 @@ got_trayicon:
 got_console:
   StrCpy ${L_CONSOLE} ${L_LNE} 1 16
   Goto loop
-
-got_dbconnect:
-  Push ${L_LNE}
-  Push "dbi:SQLite2:"
-  Call PFI_StrStr
-  Pop ${L_CMPRE}
-  StrCmp ${L_CMPRE} "" copy_lne
-  StrCpy ${L_CMPRE} ${L_CMPRE} "" 12
-  StrCpy ${L_LNE} "bayes_dbconnect dbi:SQLite:${L_CMPRE}"
-  Goto copy_lne
 
 got_parser:
   StrCpy ${L_PARSER} ${L_LNE} "" 21
@@ -3099,20 +3100,24 @@ FunctionEnd
 #
 # There are some special cases where the installer starts POPFile to update the existing data:
 #
-# POPFile automatically convert an existing  flat-file or BerkeleyDB format corpus to the new
+# POPFile automatically converts an existing  flat-file or BerkeleyDB format corpus to the new
 # SQL database format. This corpus conversion may take several minutes, during which time the
 # POPFile UI will appear to have "locked up" so we use the "Corpus Conversion Monitor" to show
 # some progress messages.
 #
 # Automatic SQL database upgrades occur when POPFile detects that the current database uses an
-# out-of-date schema. These upgrades can take several minutes and during this time POPFile will
-# appear to be locked up. If the installer has detected that an automatic upgrade is required,
-# it will always start POPFile using the "Message Capture" utility to display the upgrade
-# progress messages output by POPFile.
+# out-of-date schema or uses the old SQLite 2.x format (POPFile now uses the new 3.x format for
+# its SQLite database). These upgrades can take several minutes and during this time POPFile will
+# appear to be locked up.
 #
-# When corpus conversion or a database upgrade is to be performed, the user is not allowed to
-# prevent the installer from starting POPFile (this is achieved by disabling the "No, do not
-# start POPFile" radiobutton on the "start POPFile" page)
+# If the installer has detected that an automatic SQL database upgrade is required, it will
+# always start POPFile using the "Message Capture" utility to display the upgrade progress
+# messages output by POPFile.
+#
+# When we start POPFile to do any kind of database upgrade we use the "--shutdown" option
+# to make POPFile terminate after completing the upgrade as this makes it easy to detect
+# when the database upgrade has been completed.
+#
 #--------------------------------------------------------------------------
 
 Function CheckCorpusUpgradeStatus
@@ -3148,24 +3153,37 @@ Function CheckCorpusUpgradeStatus
   ; some progress reports.
 
   ReadINIStr ${L_TEMP} "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "Status"
-  StrCmp ${L_TEMP} "new" disable_the_NO_button
+  StrCmp ${L_TEMP} "new" 0 check_old_sql_upgrade
+  WriteINIStr "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "Status" "old"
+  Call ConvertCorpus
+  Goto exit
+
+check_old_sql_upgrade:
 
   ; If we have made a backup copy of the SQLite database, we will start POPFile from the
   ; installer so we can use the "Message Capture" utility to display the progress reports.
 
   ReadINIStr ${L_TEMP} "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "Status"
-  StrCmp ${L_TEMP} "new" disable_the_NO_button
+  StrCmp ${L_TEMP} "new" 0 check_if_old_sqlite
+  WriteINIStr "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "Status" "old"
+  Goto sql_upgrade
 
-  ; If the POPFile database schema has changed then POPFile will perform an automatic upgrade
-  ; of the database which could take several minutes, so we use the 'Message Capture' utility
-  ; to display the conversion progress reports. For SQLite databases we can query the database
-  ; directly, for non-SQLite databases we simply detect a change in the schema file version.
-
+check_if_old_sqlite:
   Push $G_USERDIR
   Call PFI_GetSQLdbPathName
   Pop ${L_SQL_DB}
   StrCmp ${L_SQL_DB} "" exit
+  StrCmp ${L_SQL_DB} "Not SQLite" check_schema
 
+  ; If the existing SQLite database uses the old 2.x format then POPFile will
+  ; automatically backup this database and convert it to the SQLIte 3.x format
+
+  Push ${L_SQL_DB}
+  Call PFI_GetSQLiteFormat
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "2.x" sql_upgrade
+
+check_schema:
   Push "$G_ROOTDIR\Classifier\popfile.sql"
   Call PFI_GetPOPFileSchemaVersion
   Pop ${L_POPFILE_SCHEMA}
@@ -3191,27 +3209,22 @@ get_sqlite_schema:
 got_schemas:
   IntCmp ${L_POPFILE_SCHEMA} ${L_SQLITE_SCHEMA} exit
 
-disable_the_NO_button:
+sql_upgrade:
 
-  ; The installer will start POPFile so we can display corpus conversion or database upgrade
-  ; messages which are normally hidden. Therefore we disable the radio button option which
-  ; allows the user to stop the installer from starting POPFile
+  ; When a SQL database upgrade is required we run the 'Message Capture' utility to display
+  ; the progress reports because this upgrade may take several minutes during which time
+  ; POPFile will appear to have 'locked up'
 
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "Flags" "DISABLED"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "State" "0"   ; 'do not start'
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "State" "0"   ; 'disable tray icon'
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 4" "State" "0"   ; 'enable tray icon'
+  Call UpgradeSQLdatabase
+  Push "$G_ROOTDIR\Classifier\popfile.sql"
+  Call PFI_GetPOPFileSchemaVersion
+  Pop ${L_POPFILE_SCHEMA}
+  StrCpy ${L_TEMP} ${L_POPFILE_SCHEMA} 1
+  StrCmp ${L_TEMP} "(" 0 store_schema
+  StrCpy ${L_POPFILE_SCHEMA} "0"
 
-  ; If we are upgrading use the same system tray icon setting as the old installation,
-  ; otherwise use the default setting (system tray icon enabled)
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "pfi-cfg.ini" "Inherited" "TrayIcon"
-  StrCmp ${L_TEMP} "0" disable_tray_icon
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 4" "State" "1"
-  Goto exit
-
-disable_tray_icon:
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "State" "1"
+store_schema:
+  WriteINIStr "$G_USERDIR\install.ini" "Settings" "SQLSV" "${L_POPFILE_SCHEMA}"
 
 exit:
   Pop ${L_TEMP}
