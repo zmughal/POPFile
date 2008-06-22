@@ -51,8 +51,8 @@ sub cleanup {
     unlink 'popfile.db';
     unlink 'popfile.pid';
     unlink 'popfile.cfg';
+    unlink 'stopwords';
     rmtree 'messages';
-
 }
 
 
@@ -326,5 +326,7 @@ foreach my $test (@tests) {
 
 print "\n\n$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
 
-
+if ( $test_failures == 0 ) {
+    unlink <popfile*.log>;
+}
 exit $code;

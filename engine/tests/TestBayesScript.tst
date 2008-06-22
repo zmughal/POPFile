@@ -21,17 +21,7 @@
 #
 # ---------------------------------------------------------------------------------------------
 
-rmtree( 'messages' );
-rmtree( 'corpus' );
-test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/.svn' );
-unlink 'popfile.db';
-unlink 'popfile.cfg';
-unlink 'stopwords';
-test_assert( copy ( 'stopwords.base', 'stopwords' ) );
-
 my $bayes = 'perl -I ../ ../bayes.pl';
-
 my @stdout;
 
 # One or no command line arguments
@@ -57,6 +47,8 @@ test_assert( $code != 0 );
 open TEMP, "<temp.tmp";
 $line = <TEMP>;
 close TEMP;
+unlink 'temp.tmp';
+
 test_assert_regexp( $line, 'Error: File `doesnotexist\' does not exist, classification aborted' );
 
 # Check the output
@@ -72,6 +64,8 @@ while ( <WORDS> ) {
 close WORDS;
 
 @stdout = `$bayes TestMails/TestMailParse021.msg`;# 2> temp.tmp 1> temp2.tmp" );
+unlink 'temp.tmp';
+unlink 'temp2.tmp';
 
 $code = ($? >> 8);
 test_assert_equal( $code, 0 );

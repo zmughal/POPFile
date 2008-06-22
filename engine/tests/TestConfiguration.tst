@@ -311,4 +311,6 @@ test_assert( !defined( $c->get_root_path( '/foo' ) ) );
 test_assert_equal( $c->get_root_path( 'foo/' ), './foo/' );
 $c->{popfile_root__} = '../';
 
+unlink 'stdout.tmp';
+
 1;

@@ -362,6 +362,9 @@ open TEMP2, "<slurp2.tmp";
 test_assert( !defined(<TEMP2>) );
 close TEMP2;
 
+unlink 'slurp.tmp';
+unlink 'slurp2.tmp';
+
 # get_user_path_ (note Makefile sets POPFILE_USER to ../tests/)
 
 test_assert_equal( $m->get_user_path_( 'foo' ), '../tests/foo' );

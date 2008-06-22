@@ -49,7 +49,7 @@ $SIG{CHLD} = 'IGNORE';
 my $cr = "\015";
 my $lf = "\012";
 my $eol = "$cr$lf";
-my $debug = 1;
+my $debug = 0;
 my $spool = "imap.spool";
 
 # if nothing happens with in $idle_timeout seconds
@@ -204,6 +204,7 @@ while ( 1 ) {
 }
 
 close $main_sock;
+unlink 'imap.uids';
 print "\nThe IMAP_test_server is exiting.\n";
 
 # handle_command

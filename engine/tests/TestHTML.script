@@ -1362,6 +1362,10 @@ GET /temp.png
 MATCH 10 GOTO 10
 
 CODE
+unlink 'temp.png';
+ENDCODE
+
+CODE
 mkdir '../manual';
 open TEMP, ">../manual/temp.html";
 print TEMP "10 GOTO 10\n";
@@ -1370,6 +1374,10 @@ ENDCODE
 
 GET /manual/temp.html
 MATCH 10 GOTO 10
+
+CODE
+rmtree( 'manual' );
+ENDCODE
 
 GET /skins/default/style.css
 MATCH .menuSelected

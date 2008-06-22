@@ -196,6 +196,7 @@ $line = <FILE>;
 test_assert_equal( $line, "Expires: $expires$eol" );
 $line = <FILE>;
 test_assert_equal( $line, "Content-Length: " . ( -s 'send.tmp' ) . "$eol" );
+unlink 'send.tmp';
 $line = <FILE>;
 test_assert( defined( $line ) );
 test_assert( $line =~ /^$eol$/ );
@@ -231,6 +232,8 @@ test_assert_regexp( $line, "Couldn't start the simple HTTP interface" );
 close TEMP;
 
 $h2->stop();
+
+unlink 'stdout.tmp';
 
 # Fork into a subprocess that keeps calling service() on the HTTP
 # module to handle requests and a top level process that sends down
