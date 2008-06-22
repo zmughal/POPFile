@@ -21,15 +21,6 @@
 #
 # ---------------------------------------------------------------------------------------------
 
-rmtree( 'messages' );
-rmtree( 'corpus' );
-test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/.svn' );
-unlink 'stopwords';
-test_assert( copy ( 'stopwords.base', 'stopwords' ) );
-unlink 'popfile.db';
-unlink 'popfile.cfg';
-
 use Classifier::MailParse;
 use Classifier::Bayes;
 use Classifier::WordMangle;

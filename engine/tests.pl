@@ -29,6 +29,33 @@ use File::Copy;
 use File::Find;
 use File::Path;
 
+
+
+sub use_base_environment {
+    rmtree( 'messages' );
+    rmtree( 'corpus' );
+
+    rmtree( 'corpus/.svn' );
+    rec_cp( 'corpus.base', 'corpus' );
+    unlink 'popfile.db';
+    unlink 'stopwords';
+    unlink 'popfile.pid';
+    unlink 'popfile.cfg';
+
+    copy ( 'stopwords.base', 'stopwords' );
+
+    mkdir 'messages';
+}
+
+sub cleanup {
+    unlink 'popfile.db';
+    unlink 'popfile.pid';
+    unlink 'popfile.cfg';
+    rmtree 'messages';
+
+}
+
+
 sub rec_cp
 {
     my ( $from, $to ) = @_;
@@ -258,6 +285,7 @@ foreach my $test (@tests) {
 
         my $current_test_count  = $test_count;
         my $current_error_count = $test_failures;
+        use_base_environment();
 
         print "\nRunning $test... at line: ";
         flush STDOUT;
@@ -292,8 +320,11 @@ foreach my $test (@tests) {
         } else {
                 print "ok (" . ( $test_count - $current_test_count ) . " ok)";
         }
+        cleanup();
     }
 }
 
 print "\n\n$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
+
+
 exit $code;

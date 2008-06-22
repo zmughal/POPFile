@@ -809,17 +809,6 @@ sub configure_imap_module {
 ##
 
 sub start_popfile {
-    rmtree( 'messages' );
-    rmtree( 'corpus' );
-    test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-    test_assert( rmtree( 'corpus/.svn' ) > 0 ) if -e 'corpus/.svn';
-
-    unlink 'popfile.db';
-    unlink 'stopwords';
-    test_assert( copy ( 'stopwords.base', 'stopwords' ) );
-
-    mkdir 'messages';
-
     my $c = new POPFile::Configuration;
     my $mq = new POPFile::MQ;
     my $l = new POPFile::Logger;
@@ -832,6 +821,8 @@ sub start_popfile {
         $_->mq( $mq );
         $_->logger( $l ) unless $_ == $l;
     }
+
+    $c->initialize();
 
     $b->history( $h );
     $h->classifier( $b );
@@ -849,7 +840,6 @@ sub start_popfile {
     $l->initialize();
     $l->config_( 'level', 1 );
 
-    $l->global_config_( msgdir => 'msgs' );
     $l->service();
 
     return ( $c, $mq, $l, $b, $w, $h );

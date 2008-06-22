@@ -34,7 +34,6 @@ use IO::Handle;
 use IO::Socket;
 use Digest::MD5;
 
-unlink 'popfile.db';
 
 use POSIX ":sys_wait_h";
 

@@ -25,8 +25,6 @@ use locale;
 use POSIX qw( locale_h );
 setlocale( LC_COLLATE, 'C' );
 
-unlink 'popfile.cfg';
-
 use POPFile::Configuration;
 use POPFile::MQ;
 use POPFile::Logger;

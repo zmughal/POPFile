@@ -21,16 +21,6 @@
 #
 # ---------------------------------------------------------------------------
 
-rmtree( 'messages' );
-rmtree( 'corpus' );
-test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/.svn' );
-
-unlink 'popfile.db';
-unlink 'stopwords';
-test_assert( copy ( 'stopwords.base', 'stopwords' ) );
-
-mkdir 'messages';
 
 use Classifier::Bayes;
 use POPFile::Configuration;

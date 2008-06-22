@@ -21,12 +21,6 @@
 #
 # ---------------------------------------------------------------------------------------------
 
-rmtree( 'messages' );
-rmtree( 'corpus' );
-test_assert( rec_cp( 'corpus.base', 'corpus' ) );
-rmtree( 'corpus/.svn' );
-unlink( 'popfile.db' );
-unlink( 'popfile.cfg' );
 
 sub my_handler
 {
