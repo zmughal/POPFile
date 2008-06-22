@@ -36,7 +36,8 @@
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} \
+          compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -55,8 +56,8 @@
 # The full filename (including the path) of the INI file containing details of the POPFile
 # installation and the corpus files which are to be converted. If no parameter is found or
 # if the file cannot be found, an error message is displayed. The INI file is used to supply
-# all of the required data thus isolating this utility from any changes in the folder structure
-# used by the POPFile installer.
+# all of the required data thus isolating this utility from future changes in the folder
+# structure used by the POPFile installer.
 #
 #--------------------------------------------------------------------------
 # INI File Structure
@@ -64,10 +65,10 @@
 #  [Settings]
 #    CONVERT=full path to program used to perform the conversion (created by installer)
 #    ROOTDIR=full path to the folder where POPFile has been installed (created by installer)
-#    USERDIR=full path to the folder with the POPFile configuration data (created by installer)
+#    USERDIR=full path to the folder holding POPFile configuration data (created by installer)
 #
 #  [FolderList]
-#    MaxNum=number of bucket folders found by installer (each has a Path-n entry in the section)
+#    MaxNum=number of bucket folders found by installer (each has a Path-n entry listed below)
 #    Path-n=full path to a bucket folder (created and used by installer)
 #
 #  [BucketList]
@@ -113,7 +114,7 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.2.9"
+  !define C_PFI_VERSION  "0.3.0"
 
   !define C_OUTFILE      "monitorcc.exe"
 
@@ -163,8 +164,9 @@
   VIAddVersionKey "ProductName"             "${C_PFI_PRODUCT}"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of \
+                                            John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Corpus Conversion Monitor"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -300,9 +302,9 @@
   ; Local registers referred to by 'defines' use names starting with 'L_' (eg L_LNE, L_OLDUI)
   ; and the scope of these 'defines' is limited to the "routine" where they are used.
 
-  ; In earlier versions of the NSIS compiler, 'User Variables' did not exist, and the convention
-  ; was to use $R0 to $R9 as 'local' registers and $0 to $9 as 'global' ones. This is why this
-  ; script uses registers $R0 to $R9 in preference to registers $0 to $9.
+  ; In earlier versions of the NSIS compiler, 'User Variables' did not exist, and the
+  ; convention was to use $R0 to $R9 as 'local' registers and $0 to $9 as 'global' ones.
+  ; This is why this script uses registers $R0 to $R9 in preference to registers $0 to $9.
 
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
 
@@ -555,7 +557,7 @@ Function GetLocalTimeAsMin100
   ; $1 contains the low  order Int32
   ; $2 contains the high order Int32
 
-  ; High order Int32 adjustment required if low order Int32 is negative (i.e. if top bit is set)
+  ; High order Int32 adjustment required if low order Int32 is negative (i.e. if top bit set)
 
   StrCpy $3 $1 1
   StrCmp $3 "-" 0 convert_to_int64
@@ -599,7 +601,7 @@ Section ConvertCorpus
   !define L_NEXT_EXECHECK $R2     ; used to decide when to check POPFile is still running
   !define L_POPFILE_ROOT  $R1     ; environment variable holding path to popfile.pl
   !define L_POPFILE_USER  $R0     ; environment variable holding path to popfile.cfg
-  !define L_START_TIME    $9     ; time in Min100 units when we started the corpus conversion
+  !define L_START_TIME    $9      ; time in Min100 units when we started the corpus conversion
   !define L_TEMP          $8
   !define L_TIME_LEFT     $7      ; estimated time remaining (updated when a file is deleted)
 
@@ -626,10 +628,10 @@ Section ConvertCorpus
   ; equivalent to a fully expanded version of '$G_ROOTDIR\popfileb.exe'.
 
   ; We run POPFile in the background without the system tray icon because corpus conversion
-  ; can take several minutes (or even tens of minutes) and we do not want to encourage use of
-  ; the UI during this period. Earlier versions of this utility used 'wperl.exe' but there were
-  ; problems with it not shutting down when the user logs off, so we use 'popfileb.exe' as it
-  ; seems to be better behaved.
+  ; can take several minutes (or even tens of minutes) and we do not want to encourage use
+  ; of the UI during this period. Earlier versions of this utility used 'wperl.exe' but there
+  ; were problems with it not shutting down when the user logs off, so we use 'popfileb.exe'
+  ; as it seems to be better behaved.
 
   ReadINIStr ${L_CONVERTEXE} "$G_INIFILE_PATH" "Settings" "CONVERT"
   StrCmp  ${L_CONVERTEXE} "" no_conv_path
@@ -712,7 +714,10 @@ check_env_vars:
   IfErrors root_not_set
   ReadEnvStr ${L_TEMP} "POPFILE_USER"
   IfErrors user_not_set
-  Exec '"${L_CONVERTEXE}"'
+
+  ; The "--shutdown" option makes POPFile terminate after completing the database conversion.
+
+  Exec '"${L_CONVERTEXE}" --shutdown'
   IfErrors start_error
 
   ReadINIStr $G_BUCKET_COUNT "$G_INIFILE_PATH" "BucketList" "FileCount"
@@ -735,7 +740,8 @@ check_env_vars:
 
   ; If it takes more than one pass to process a particular bucket, we check once a minute that
   ; POPFile is still running (to avoid an infinite loop if popfileb.exe has crashed or been
-  ; shutdown). The first check is due at 0 minutes elapsed time.
+  ; shutdown before all of the buckets have been converted). The first of these checks is due
+  ; at 0 minutes elapsed time.
 
   StrCpy ${L_NEXT_EXECHECK} -1
 
@@ -779,7 +785,8 @@ next_bucket:
 
 update_timeleft:
   SetDetailsPrint textonly
-  DetailPrint "$(PFI_LANG_CONVERT_ESTIMATE)${L_TIME_LEFT}.${L_TEMP} $(PFI_LANG_CONVERT_MINUTES)"
+  DetailPrint "$(PFI_LANG_CONVERT_ESTIMATE)${L_TIME_LEFT}.${L_TEMP} \
+              $(PFI_LANG_CONVERT_MINUTES)"
   SetDetailsPrint listonly
   Goto update_ptr
 
@@ -840,7 +847,27 @@ all_converted:
   DetailPrint ""
   FlushINI "$G_INIFILE_PATH"
 
-#exit:
+  ; Wait for POPFile to terminate after the database conversion
+
+  !define C_TERMINATION_LOOP    12       ; used to avoid an infinite loop
+  !define C_TERMINATION_DELAY   5000     ; wait 5 seconds before checking again
+
+  StrCpy ${L_NEXT_EXECHECK} ${C_TERMINATION_LOOP}
+
+wait_for_termination:
+  Push "${C_EXE_END_MARKER}"
+  Push "${L_CONVERTEXE}"
+  Call PFI_CheckIfLocked
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "" exit
+  Sleep ${C_TERMINATION_DELAY}
+  IntOp ${L_NEXT_EXECHECK} ${L_NEXT_EXECHECK} - 1
+  IntCmp ${L_NEXT_EXECHECK} 0 0 0 wait_for_termination
+  MessageBox MB_OK|MB_ICONSTOP "Error: POPFile has not shutdown yet\
+      ${MB_NL}${MB_NL}\
+      (waited ${C_TERMINATION_LOOP} x ${C_TERMINATION_DELAY}ms)"
+
+exit:
 
   ; We must now unload the system.dll (this allows NSIS to delete the DLL from $PLUGINSDIR)
 
