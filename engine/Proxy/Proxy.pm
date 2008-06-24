@@ -541,7 +541,7 @@ sub verify_connected_
             # there isn't one then give up trying to connect
 
             my $selector = new IO::Select( $mail );
-            last unless () = $selector->can_read($self->global_config_( 'timeout' ));
+            last unless $selector->can_read($self->global_config_( 'timeout' ));
 
             # Read the response from the real server and say OK
 
@@ -553,6 +553,10 @@ sub verify_connected_
                 my $hit_newline = 0;
                 my $temp_buf;
 
+                # If we are on Windows, we will have to wait ourselves as
+                # we are not going to call IO::Select::can_read.
+                my $wait = ( ($^O eq 'MSWin32') && !($mail =~ /socket/i) ) ? 1 : 0;
+
                 # Read until timeout or a newline (newline _should_ be immediate)
 
                 for my $i ( 0..($self->global_config_( 'timeout' ) * 100) ) {
@@ -560,7 +564,11 @@ sub verify_connected_
                         $temp_buf = $self->flush_extra_( $mail, $client, 1 );
                         $hit_newline = ( $temp_buf =~ /[\r\n]/ );
                         $buf .= $temp_buf;
-                    } else {
+                        if ( $wait && ! length $temp_buf ) {
+                            select undef, undef, undef, 0.01;
+                        }
+                    }
+                    else {
                         last;
                     }
                 }
