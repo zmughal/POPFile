@@ -831,7 +831,9 @@ sub db_connect__
 
         # For Japanese compatibility
 
-        $self->{db__}->do( 'pragma case_sensitive_like=1;' );
+        if ( $self->{parser__}->{lang__} eq 'Nihongo' ) {
+            $self->{db__}->do( 'pragma case_sensitive_like=1;' );
+        }
     }
 
     if ( !$dbpresent ) {
