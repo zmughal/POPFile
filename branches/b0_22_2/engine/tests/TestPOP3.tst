@@ -559,9 +559,6 @@ if ( $pid == 0 ) {
         close $dreader;
         close $uwriter;
 
-        $mq->reaper();
-        $p->stop();
-
         exit(0);
     } else {
 
@@ -2042,11 +2039,12 @@ if ( $pid == 0 ) {
         close $dwriter;
         close $ureader;
 
-        while ( waitpid( $pid, &WNOHANG ) != $pid ) {
-        }
-        while ( waitpid( $pid2, &WNOHANG ) != $pid2 ) {
+        while ( waitpid( -1, &WNOHANG ) > 0 ) {
+            sleep 1;
         }
 
+        $mq->reaper();
+        $p->stop();
         $b->stop();
     }
 }
