@@ -3215,7 +3215,10 @@ sql_upgrade:
   ; the progress reports because this upgrade may take several minutes during which time
   ; POPFile will appear to have 'locked up'
 
-  Call UpgradeSQLdatabase
+  HideWindow
+  ExecWait '"$G_ROOTDIR\msgcapture.exe" /TIMEOUT=PFI'
+  BringToFront
+
   Push "$G_ROOTDIR\Classifier\popfile.sql"
   Call PFI_GetPOPFileSchemaVersion
   Pop ${L_POPFILE_SCHEMA}
@@ -3243,9 +3246,6 @@ FunctionEnd
 # Installer Function: StartPOPFilePage (generates a custom page)
 #
 # This function offers to start the newly installed POPFile.
-#
-# A pseudo "pre" function (CheckCorpusUpgradeStatus) is used to determine whether or not the
-# user will be allowed to select the "No, do not start POPFile" option.
 #
 # A "leave" function (CheckLaunchOptions) is used to act upon the selection made by the user.
 #
@@ -3286,42 +3286,14 @@ check_trayicon:
 close_file:
   FileClose ${L_CFG}
 
-  IfRebootFlag 0 page_enabled
+  ; If we are running on a Win9x system which must be rebooted before the Nihongo parser
+  ; can be used then we do not offer the user the chance to start POPFile and move on to
+  ; the FINISH page to show the REBOOT options (any necessary corpus conversions should
+  ; already have been performed by the 'CheckCorpusUpgradeStatus' function)
 
-  ; We are running on a Win9x system which must be rebooted before Kakasi can be used
+  IfRebootFlag exit
 
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 1" "Flags"
-  StrCmp ${L_TEMP} "DISABLED" display_the_page
-
-  ; If this is a "clean" install (i.e. we have just created some buckets for this user)
-  ; then we do not need to start POPFile before we reboot
-
-  ReadINIStr ${L_TEMP} "$PLUGINSDIR\${CBP_C_INIFILE}" "FolderList" "MaxNum"
-  StrCmp  ${L_TEMP} "" 0 do_not_start_popfile
-
-  ; If, however, corpus conversion or a SQL database upgrade is required, we treat this as
-  ; a special case and start POPFile now so we can monitor the conversion/upgrade because
-  ; this process may take several minutes (and it is simpler to monitor it now instead of
-  ; waiting until after the reboot).
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 2" "Flags"
-  StrCmp ${L_TEMP} "DISABLED" display_the_page
-
-do_not_start_popfile:
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "State" "1"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "State" "0"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 4" "State" "0"
-
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 1" "Flags" "DISABLED"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "Flags" "DISABLED"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "Flags" "DISABLED"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 4" "Flags" "DISABLED"
-
-  Goto display_the_page
-
-page_enabled:
-
-  ; clear all three radio buttons ('do not start', 'disable icon', 'enable icon')
+  ; Clear all three radio buttons ('do not start', 'disable icon', 'enable icon')
 
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "State" "0"
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "State" "0"
@@ -3353,6 +3325,7 @@ display_the_page:
 
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "ioC.ini"
 
+exit:
   Pop ${L_TEMP}
   Pop ${L_CFG}
 
@@ -3366,23 +3339,8 @@ FunctionEnd
 # (the "leave" function for the custom page created by "StartPOPFilePage")
 #
 # This function is used to action the "start POPFile" option selected by the user.
-# The user is allowed to return to this page and change their selection (if corpus
-# conversion is not required), so the previous state is stored in the INI file used
-# for this custom page.
-#
-# There are also some special cases where the installer will start POPFile automatically:
-#
-# (a) the existing flat-file format corpus is to be converted to SQL database format
-#     (and a backup copy of the corpus has been saved in the backup folder)
-#
-# (b) the existing BerkeleyDB format corpus is to be converted to SQL database format
-#     (and a backup copy of the corpus has been saved in the backup folder)
-#
-# (c) the existing SQL database is to be upgraded to use a new POPFile database schema
-#     (and a backup copy of the SQLite database has been saved in the backup folder)
-#
-# (d) the existing SQL database is to be upgraded to use a new POPFile database schema
-#     (and a backup already exists or the existing installation does not use SQLite)
+# The user is allowed to return to this page and change their selection so the
+# previous state is stored in the INI file used for this custom page.
 #--------------------------------------------------------------------------
 
 Function CheckLaunchOptions
@@ -3480,7 +3438,7 @@ start_popfile:
 lastaction_disableicon:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Run Status" "LastAction" "disableicon"
   StrCpy ${L_TRAY} "0"
-  Goto corpus_conv_check
+  Goto check_if_banner_needed
 
 run_with_icon:
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "pfi-cfg.ini" "Run Status" "LastAction"
@@ -3493,14 +3451,7 @@ lastaction_enableicon:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Run Status" "LastAction" "enableicon"
   StrCpy ${L_TRAY} "1"
 
-corpus_conv_check:
-
-  ; To indicate the special cases where the installer is to start POPFile to perform corpus or
-  ; database conversion, 'CheckCorpusUpgradeStatus' clears the "No" radio button and disables it
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 2" "Flags"
-  StrCmp ${L_TEMP} "DISABLED" launch_conversion_monitor
-
+check_if_banner_needed:
   StrCmp ${L_CONSOLE} "f" do_not_show_banner
 
   !ifndef ENGLISH_MODE
@@ -3566,49 +3517,6 @@ error_msg:
       Please use 'Start -> Programs -> POPFile -> Run POPFile' now.\
       ${MB_NL}${MB_NL}\
       Click 'OK' once POPFile has been started."
-  Goto exit_without_banner
-
-launch_conversion_monitor:
-
-  ; Update the system tray icon setting in 'popfile.cfg' (even though it may be ignored for
-  ; some special cases, we need to honour the user's selection for subsequent activations)
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 4" "State"
-  Push ${L_TEMP}
-  Call PFI_SetTrayIconMode
-
-  ; If corpus conversion (from flat file or BerkeleyDB format) is required, we run the
-  ; 'Corpus Conversion Monitor' which displays progress messages because the conversion
-  ; may take several minutes during which time POPFile will appear to have 'locked up'
-
-  ReadINIStr ${L_TEMP} "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "Status"
-  StrCmp ${L_TEMP} "new" 0 check_database
-
-  WriteINIStr "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "Status" "old"
-  Call ConvertCorpus
-  Goto exit_without_banner
-
-check_database:
-  ReadINIStr ${L_TEMP} "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "Status"
-  StrCmp ${L_TEMP} "new" 0 sqlupgrade
-  WriteINIStr "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "Status" "old"
-
-sqlupgrade:
-
-  ; When a SQL database upgrade is required we run the 'Message Capture' utility to display
-  ; the progress reports because this upgrade may take several minutes during which time
-  ; POPFile will appear to have 'locked up'
-
-  Call UpgradeSQLdatabase
-  Push "$G_ROOTDIR\Classifier\popfile.sql"
-  Call PFI_GetPOPFileSchemaVersion
-  Pop ${L_POPFILE_SCHEMA}
-  StrCpy ${L_TEMP} ${L_POPFILE_SCHEMA} 1
-  StrCmp ${L_TEMP} "(" 0 store_schema
-  StrCpy ${L_POPFILE_SCHEMA} "0"
-
-store_schema:
-  WriteINIStr "$G_USERDIR\install.ini" "Settings" "SQLSV" "${L_POPFILE_SCHEMA}"
   Goto exit_without_banner
 
 startup_ok:
@@ -3693,18 +3601,6 @@ exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: UpgradeSQLdatabase
-#--------------------------------------------------------------------------
-
-Function UpgradeSQLdatabase
-
-  HideWindow
-  ExecWait '"$G_ROOTDIR\msgcapture.exe" /TIMEOUT=PFI'
-  BringToFront
-
-FunctionEnd
-
-#--------------------------------------------------------------------------
 # Installer Function: CheckRunStatus
 # (the "pre" function for the 'FINISH' page)
 #
@@ -3723,10 +3619,15 @@ Function CheckRunStatus
 
   Push ${L_TEMP}
 
-  ; If we have installed Kakasi on a Win9x system we may need to reboot before allowing the
-  ; user to start POPFile (corpus conversion and SQL database upgrades are special cases)
+  ; If we have installed Kakasi or MeCab on a Win9x system we may need to reboot before allowing
+  ; the user to start POPFile (corpus conversion and SQL database upgrades are handled by the
+  ; 'CheckCorpusUpgradeStatus' function earlier)
 
-  IfRebootFlag disable_BACK_button
+  IfRebootFlag 0 enable_run_box
+ !insertmacro MUI_INSTALLOPTIONS_WRITE "ioSpecial.ini" "Settings" "BackEnabled" "0"
+  Goto exit
+
+enable_run_box:
 
   ; Enable the 'Run' CheckBox on the 'FINISH' page (it may have been disabled on our last visit)
 
@@ -3736,19 +3637,7 @@ Function CheckRunStatus
   ; If user has not started POPFile, we cannot offer to display the POPFile User Interface
 
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 2" "State"
-  StrCmp ${L_TEMP} "1" disable_RUN_option
-
-  ; If the installer has started POPFile (because the existing flat-file corpus or BerkeleyDB
-  ; corpus needs to be converted to a SQL database or because the existing SQL database needs
-  ; to be upgraded) then the 'Do not run POPFile' radio button on the 'Start POPFile' page will
-  ; have been disabled. For these special cases we disable the "Back" button.
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 2" "Flags"
-  StrCmp ${L_TEMP} "DISABLED" 0 exit
-
-disable_BACK_button:
- !insertmacro MUI_INSTALLOPTIONS_WRITE "ioSpecial.ini" "Settings" "BackEnabled" "0"
-  Goto exit
+  StrCmp ${L_TEMP} "1" disable_RUN_option exit
 
 disable_RUN_option:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioSpecial.ini" "Field 4" "State" "0"
@@ -3796,6 +3685,7 @@ FunctionEnd
 
 #--------------------------------------------------------------------------
 # Installer Function: RemoveEmptyCBPCorpus
+# (the 'Leave' function for the 'FINISH' page)
 #
 # If the wizard used the CBP package to create some buckets, there may be
 # some empty corpus folders left behind (after POPFile has converted the
