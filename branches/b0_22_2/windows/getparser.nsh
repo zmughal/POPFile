@@ -761,6 +761,11 @@
 
     SetPluginUnload manual
 
+    ; Now unload the MD5 DLL to allow the $PLUGINSDIR to be removed automatically
+
+    md5dll::GetMD5String "dummy"
+    Pop ${L_TEMP}
+
     StrCpy ${L_MECABROOT} ${L_RESULT}
 
     Pop ${L_TEMP}
