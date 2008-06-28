@@ -99,8 +99,6 @@ if ($pid == 0) {
             select(undef,undef,undef, 0.1);
             last if ( $count-- <= 0 );
         }
-        $x->stop();
-        $b->stop();
     } else {
         test_assert(0,"start failed\n");
     }
@@ -157,7 +155,11 @@ if ($pid == 0) {
     -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
     -> call('POPFile/API.release_session_key', $session );
 
-    while ( waitpid( -1, WNOHANG ) > 0 ) {
+    $b->stop();
+    $x->stop();
+
+    sleep 4 if ( $^O eq 'MSWin32' );
+    while ( waitpid( -1, &WNOHANG ) > 0 ) {
         sleep 1;
     }
 }

@@ -22,7 +22,6 @@
 # ---------------------------------------------------------------------------------------------
 
 use POSIX qw(locale_h);
-use POSIX ":sys_wait_h";
 
 # Set up the test corpus and use the Test msg and cls files
 # to create a current history set
