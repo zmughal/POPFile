@@ -55,7 +55,8 @@ if ( $pid == 0 ) {
     test_assert( $m2->acquire() );
     select( undef,undef,undef,1);
     $m2->release();
-    while ( waitpid( $pid, &WNOHANG ) != $pid ) {
+    while ( waitpid( -1, &WNOHANG ) > 0 ) {
+        sleep 1;
     }
 }
 
