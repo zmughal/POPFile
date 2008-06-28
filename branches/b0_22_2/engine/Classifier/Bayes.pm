@@ -3297,7 +3297,7 @@ sub get_word_count
     return undef if ( !defined( $userid ) );
 
     $self->validate_sql_prepare_and_execute( $self->{db_get_full_total__}, $userid );
-    return $self->{db_get_full_total__}->fetchrow_arrayref->[0];
+    return $self->{db_get_full_total__}->fetchrow_arrayref->[0] || 0;
 }
 
 #----------------------------------------------------------------------------

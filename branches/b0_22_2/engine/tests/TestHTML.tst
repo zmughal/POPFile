@@ -21,11 +21,23 @@
 #
 # ---------------------------------------------------------------------------------------------
 
+use POSIX qw(locale_h);
+use POSIX ":sys_wait_h";
+
 # Set up the test corpus and use the Test msg and cls files
 # to create a current history set
 
 #`rm -f __db.*`;  # todo: make tool independent
 use POSIX ":sys_wait_h";
+
+if ( $^O eq 'MSWin32' && setlocale(LC_COLLATE) eq 'Japanese_Japan.932' ) {
+    setlocale(LC_COLLATE,'C');
+}
+
+my @err_html_list = glob 'testhtml_match*.html';
+foreach my $err_html (@err_html_list) {
+    unlink $err_html;
+}
 
 use HTML::Form;
 my @forms;
@@ -211,7 +223,7 @@ foreach my $msg (@messages) {
         $class =~ s/[\r\n]//g;
         close $CLS;
         my ( $slot, $msg_file ) = $hi->reserve_slot( $inserted_time++ );
-        `cp $msg $msg_file`;
+        copy $msg, $msg_file;
         $hi->commit_slot( $session, $slot, $class, 0 );
     }
 #    my $name = "messages/00/00/01/popfile$count";
@@ -281,7 +293,7 @@ $session = $b->get_session_key( 'admin', '' );
 our $port = 9001 + int(rand(1000));
 pipe my $dreader, my $dwriter;
 pipe my $ureader, my $uwriter;
-my $pid = fork();
+my ( $pid, $pipe ) = forker();
 
 if ( $pid == 0 ) {
 
@@ -582,9 +594,11 @@ EOM
         }
 
         if ( $line =~ /^MATCH +(.+)$/ ) {
-            my $result = test_assert_regexp( $content, "\Q$1\E", "From script line $line_number" );
+            my $string = $1;
+            $content =~ s/([0-9]\.[0-9]+e[-\+])0([0-9]{2})/$1$2/ if ( $^O eq 'MSWin32' );
+            my $result = test_assert_regexp( $content, "\Q$string\E", "From script line $line_number" );
             if ( !$result ) {
-                open HTML, ">$line_number.html";
+                open HTML, ">testhtml_match$line_number.html";
                 print HTML $content;
                 close HTML;
             }
@@ -594,7 +608,7 @@ EOM
         if ( $line =~ /^NOTMATCH +(.+)$/ ) {
             my $result = test_assert_not_regexp( $content, "\Q$1\E", "From script line $line_number" );
             if ( !$result ) {
-                open HTML, ">$line_number.html";
+                open HTML, ">testhtml_match$line_number.html";
                 print HTML $content;
                 close HTML;
             }
@@ -622,7 +636,7 @@ EOM
 
             my $result = test_assert_regexp( $content, "\Q$block\E", "From script line $line_number" );
             if ( !$result ) {
-                open HTML, ">$line_number.html";
+                open HTML, ">testhtml_match$line_number.html";
                 print HTML $content;
                 close HTML;
             }

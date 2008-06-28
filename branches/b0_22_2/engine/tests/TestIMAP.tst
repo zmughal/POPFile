@@ -77,6 +77,7 @@ else {
     $h->stop();
     $im->stop();
     $b->stop();
+    $c->stop();
     rmtree( 'imap.spool' );
 }
 

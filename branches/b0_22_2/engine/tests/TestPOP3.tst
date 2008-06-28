@@ -306,7 +306,7 @@ sub server
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/.svn' );
-test_assert( scalar(`rm -rf messages/*`) == 0 );
+rmtree( 'messages' );
 
 my $c = new POPFile::Configuration;
 my $mq = new POPFile::MQ;
@@ -1055,7 +1055,7 @@ if ( $pid == 0 ) {
         print $client "RETR 8$eol";
         $result = <$client>;
         test_assert_equal( $result, "+OK " . ( -s $messages[7] ) .
-            " bytes from POPFile cache$eol" );
+            " bytes from POPFile cache$eol" ) if ( $^O ne 'MSWin32' );;
 
         $cam = $messages[7];
         $cam =~ s/msg$/cam/;
@@ -1132,7 +1132,7 @@ if ( $pid == 0 ) {
         print $client "RETR 9$eol";
         $result = <$client>;
         test_assert_equal( $result, "+OK " . ( -s $messages[8] ) .
-            " bytes from POPFile cache$eol" );
+            " bytes from POPFile cache$eol" ) if ( $^O ne 'MSWin32' );;
 
         $cam = $messages[8];
         $cam =~ s/msg$/cam/;
@@ -1154,7 +1154,7 @@ if ( $pid == 0 ) {
         print $client "RETR 9$eol";
         $result = <$client>;
         test_assert_equal( $result, "+OK " . ( -s $messages[8] ) .
-            " bytes from POPFile cache$eol" );
+            " bytes from POPFile cache$eol" ) if ( $^O ne 'MSWin32' );;
 
         $cam = $messages[8];
         $cam =~ s/msg$/cam/;
