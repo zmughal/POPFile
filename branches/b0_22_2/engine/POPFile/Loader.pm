@@ -829,6 +829,7 @@ sub get_module
         $name = lc($2);
 
         $type =~ s/^POPFile$/core/i;
+        $type =~ s/^UI$/interface/i;
     }
 
     return $self->{components__}{$type}{$name};
