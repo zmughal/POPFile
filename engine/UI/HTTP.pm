@@ -118,6 +118,8 @@ sub service
 
     my $code = 1;
 
+    return $code if ( !defined( $self->{selector_} ) );
+
     # See if there's a connection waiting for us, if there is we
     # accept it handle a single request and then exit
 
