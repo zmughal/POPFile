@@ -57,10 +57,6 @@ sub new
 
     $self->{pid_file__} = '';
 
-    # The time to delay checking of the PID file
-
-    $self->{pid_delay__} = 5;
-
     # The last time the PID was checked
 
     $self->{pid_check__} = time;
@@ -102,6 +98,11 @@ sub initialize
     # called popfile.pid
 
     $self->config_( 'piddir', './' );
+
+    # The default interval of checking pid file in seconds
+    # To turn off checking, set this option to 0
+
+    $self->config_( 'pidcheck_interval', 5 );
 
     # The default timeout in seconds for POP3 commands
 
@@ -176,13 +177,15 @@ sub service
 
     my $time = time;
 
-    if ( $self->{pid_check__} <= ( $time - $self->{pid_delay__})) {
+    if ( $self->config_( 'pidcheck_interval' ) > 0 ) {
+        if ( $self->{pid_check__} <= ( $time - $self->config_( 'pidcheck_interval' ))) {
 
-        $self->{pid_check__} = $time;
+            $self->{pid_check__} = $time;
 
-        if ( !$self->check_pid_() ) {
-            $self->write_pid_();
-            $self->log_( 0, "New POPFile instance detected and signalled" );
+            if ( !$self->check_pid_() ) {
+                $self->write_pid_();
+                $self->log_( 0, "New POPFile instance detected and signalled" );
+            }
         }
     }
 
@@ -237,13 +240,13 @@ sub live_check_
 
         my $oldpid = $self->get_pid_();
 
-        my $error = "\n\nA copy of POPFile appears to be running.\n Attempting to signal the previous copy.\n Waiting " . ($self->{pid_delay__} * 2) . " seconds for a reply.\n";
+        my $error = "\n\nA copy of POPFile appears to be running.\n Attempting to signal the previous copy.\n Waiting " . ($self->config_( 'pidcheck_interval' ) * 2) . " seconds for a reply.\n";
 
         $self->delete_pid_();
 
         print STDERR $error;
 
-        select(undef, undef, undef, ($self->{pid_delay__} * 2));
+        select(undef, undef, undef, ($self->config_( 'pidcheck_interval' ) * 2));
 
         my $pid = $self->get_pid_();
 
@@ -561,7 +564,7 @@ sub save_configuration
         return;
     }
 
-    if ( open CONFIG, '>' . $self->get_user_path( 'popfile.cfg' ) ) {
+    if ( open CONFIG, '>' . $self->get_user_path( 'popfile.cfg.tmp' ) ) {
         $self->{save_needed__} = 0;
 
         foreach my $key (sort keys %{$self->{configuration_parameters__}}) {
@@ -569,6 +572,9 @@ sub save_configuration
         }
 
         close CONFIG;
+
+        rename $self->get_user_path( 'popfile.cfg.tmp' ),
+               $self->get_user_path( 'popfile.cfg' );
     }
 }
 
