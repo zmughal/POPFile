@@ -114,6 +114,76 @@ sub start
 
 # ----------------------------------------------------------------------------
 #
+# postfork
+#
+# This is called when some module has just forked POPFile.  It is
+# called in the parent process.
+#
+# $pid The process ID of the new child process $reader The reading end
+#      of a pipe that can be used to read messages from the child
+#
+# There is no return value from this method
+#
+# ----------------------------------------------------------------------------
+sub postfork
+{
+    my ( $self, $pid, $reader ) = @_;
+
+    # If the trayicon is on, recreate the trayicon to avoid crash
+
+    # When the forked (pseudo-)child process exits, the Win32::GUI objects
+    # (Windows, Menus, etc.) seem to be purged and then POPFile crashes.
+    # To avoid this, recreate the trayicon.
+
+    if ( $self->config_( 'trayicon' ) ) {
+        $self->prepare_trayicon();
+    }
+}
+
+# ----------------------------------------------------------------------------
+#
+# prepare_trayicon
+#
+# Create a dummy window, a trayicon and a menu, and then set a timer to the
+# window.
+#
+# ----------------------------------------------------------------------------
+sub prepare_trayicon
+{
+    my $self = shift;
+
+    undef $self->{trayicon_window};
+    undef $self->{trayicon_menu};
+
+    # Create dummy window
+
+    $self->{trayicon_window} = Win32::GUI::Window->new();
+
+    # Create tray icon
+
+    my $icon = new Win32::GUI::Icon( $self->get_root_path_( 'trayicon.ico' ) );
+    my $ni = $self->{trayicon_window}->AddNotifyIcon(
+        -name => 'NI',
+        -icon => $icon,
+        -tip  => 'POPFile'
+    );
+
+    # Create popup menu
+
+    $self->{trayicon_menu} = Win32::GUI::Menu->new(
+        '&POPFile'       => 'POPFile',
+        '>&POPFile UI'   => { -name => 'Menu_Open_UI' },
+        '> -'            => 0,
+        '> Quit POPFile' => { -name => 'Menu_Quit' },
+    );
+
+    # Set Timer
+
+    $self->{trayicon_window}->AddTimer( 'Poll', 250 );
+}
+
+# ----------------------------------------------------------------------------
+#
 # configure_item
 #
 #    $name            Name of this item

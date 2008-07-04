@@ -1,11 +1,13 @@
 #!/usr/bin/perl
 # ----------------------------------------------------------------------------
 #
-# popfile-tray2.pl --- Message analyzer and sorter (Windows loader used with Win32::GUI)
+# popfile-tray2.pl --- Message analyzer and sorter (Windows loader used with
+#                                                   Win32::GUI)
 #
-# Acts as a server and client designed to sit between a real mail/news client and a real mail/
-# news server using POP3.  Inserts an extra header X-Text-Classification: into the header to
-# tell the client which category the message belongs in and much more...
+# Acts as a server and client designed to sit between a real mail/news client
+# and a real mail/news server using POP3.  Inserts an extra header
+# X-Text-Classification: into the header to tell the client which category the
+# message belongs in and much more...
 #
 # Copyright (c) 2001-2008 John Graham-Cumming
 #
@@ -27,13 +29,12 @@
 # ----------------------------------------------------------------------------
 
 use strict;
+use warnings;
 use locale;
 use lib defined( $ENV{POPFILE_ROOT} ) ? $ENV{POPFILE_ROOT} : '.';
 use POPFile::Loader;
 
-# Used to determine whether we've already called POPFile::Loader::CORE_stop 
-
-our $already_stopped = 0;
+use Win32::GUI();
 
 # POPFile is actually loaded by the POPFile::Loader object which does all
 # the work
@@ -50,10 +51,11 @@ $POPFile->CORE_loader_init();
 
 $POPFile->CORE_signals();
 
-# Create the main objects that form the core of POPFile.  Consists of the configuration
-# modules, the classifier, the UI (currently HTML based), platform specific code,
-# and the POP3 proxy.  The link the components together, intialize them all, load
-# the configuration from disk, start the modules running
+# Create the main objects that form the core of POPFile.  Consists of the
+# configuration modules, the classifier, the UI (currently HTML based),
+# platform specific code, and the POP3 proxy.  The link the components
+# together, intialize them all, load the configuration from disk, start the
+# modules running
 
 $POPFile->CORE_load();
 $POPFile->CORE_link_components();
@@ -64,6 +66,7 @@ $POPFile->CORE_config();
 
 my $h = $POPFile->get_module( 'UI::HTML' );
 my $b = $POPFile->get_module( 'Classifier::Bayes' );
+my $w = $POPFile->get_module( 'core::windows' );
 my $port = $h->config_( 'port' );
 my $host = $b->config_( 'localhostname' ) || 'localhost';
 
@@ -75,29 +78,7 @@ $POPFile->CORE_start();
 
 # Prepare tray icon
 
-use Win32::GUI();
-
-my $main = Win32::GUI::Window->new();
-
-my $icon = new Win32::GUI::Icon( 'trayicon.ico' );
-my $ni = $main->AddNotifyIcon(
-    -name => "NI",
-    -icon => $icon,
-    -tip  => "POPFile"
-);
-
-# Prepare popup menu
-
-my $menu = Win32::GUI::Menu->new(
-    "&POPFile"       => "POPFile",
-    ">&POPFile UI"   => { -name => "POPFile_UI", -onClick => \&open_ui },
-    "> -"            => 0,
-    "> Quit POPFile" => { -name => "Exit",       -onClick => \&popfile_shutdown },
-);
-
-# Timer
-
-$main->AddTimer( 'Poll', 250 );
+$w->prepare_trayicon();
 
 # Main Loop
 
@@ -119,6 +100,8 @@ exit 0;
 # ----------------------------------------------------------------------------
 
 sub NI_Click {
+    # Do nothing
+
     return 1;
 }
 
@@ -131,8 +114,9 @@ sub NI_Click {
 # ----------------------------------------------------------------------------
 
 sub NI_DblClick {
-    open_ui();
-    return 1;
+    # Open POPFile UI
+
+    return Menu_Open_UI_Click();
 }
 
 # ----------------------------------------------------------------------------
@@ -144,7 +128,11 @@ sub NI_DblClick {
 # ----------------------------------------------------------------------------
 
 sub NI_RightClick {
-    $main->TrackPopupMenu( $menu->{POPFile}, Win32::GUI::GetCursorPos() );
+    # Track popup menu
+
+    $w->{trayicon_window}->TrackPopupMenu(
+            $w->{trayicon_menu}->{POPFile},
+            Win32::GUI::GetCursorPos() );
     return 1;
 }
 
@@ -157,40 +145,36 @@ sub NI_RightClick {
 # ----------------------------------------------------------------------------
 
 sub Poll_Timer {
-    my $result = 1;
+    # If CORE_service returns 0, exit Win32::GUI::Dialog() loop
 
-    if ( !$POPFile->CORE_service(1) ) {
-        $result = popfile_shutdown();
-    }
-
-    return $result;
+    return $POPFile->CORE_service(1) ? 1 : -1;
 }
 
 # ----------------------------------------------------------------------------
 #
-# open_ui
+# Menu_Open_UI_Click
 #
-# Called by Win32::GUI when the user click 'POPFile UI' on the pop up menu
+# Called by Win32::GUI when the user click 'POPFile UI' on the popup menu
 #
 # ----------------------------------------------------------------------------
 
-sub open_ui {
-    Win32::GUI::ShellExecute( '', '', $ui_url, '', '', 'SW_SHOWNORMAL' );
+sub Menu_Open_UI_Click {
+    # Open POPFile UI url using Win32::GUI::ShellExecute
+
+    Win32::GUI::ShellExecute( 0, '', $ui_url, '', '', 1 );
+    return 1;
 }
 
 # ----------------------------------------------------------------------------
 #
-# popfile_shutdown
+# Menu_Quit_Click
 #
-# Called by Win32::GUI when the user click Shutdown on the pop up menu
+# Called by Win32::GUI when the user click 'Quit POPFile' on the popup menu
 #
 # ----------------------------------------------------------------------------
 
-sub popfile_shutdown
-{
-    if ( !$already_stopped ) {
-        $already_stopped = 1;
-    }
+sub Menu_Quit_Click {
+    # Exit from Win32::GUI::Dialog() loop
 
     return -1;
 }
