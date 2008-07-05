@@ -855,6 +855,7 @@ continue:
   Delete "$G_ROOTDIR\insert.pl"
   Delete "$G_ROOTDIR\pipe.pl"
   Delete "$G_ROOTDIR\favicon.ico"
+  Delete "$G_ROOTDIR\trayicon.ico"
   Delete "$G_ROOTDIR\popfile.exe"
   Delete "$G_ROOTDIR\popfilef.exe"
   Delete "$G_ROOTDIR\popfileb.exe"
