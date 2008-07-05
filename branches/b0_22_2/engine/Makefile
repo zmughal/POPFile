@@ -66,32 +66,31 @@ eachtest:
 
 macosx: ; @$(MAKE) -C ../macosx
 
-# Builds the tray application using PerlTray
+# Builds the 6 popfile*.exe Windows applications
 
 winexe: popfile.exe popfileb.exe popfilef.exe popfileib.exe popfileif.exe trayicon.ico ../windows/POPFileIcon/popfile.ico popfile-service.exe
 
-COMMON_EXE_OPTIONS = --exe $@ --force --clean --dependent --xclude --icon ../windows/POPFileIcon/popfile.ico --icon trayicon.ico --script $< --info CompanyName="The POPFile Project" --info LegalCopyright="Copyright (c) $(POPFILE_BUILD_YEAR) John Graham-Cumming" --info LegalTrademarks="POPFile is a registered trademark of John Graham-Cumming" --info ProductName=POPFile --info ProductVersion=$(POPFILE_VERSION).0 --info FileDescription=POPFile --info FileVersion=$(POPFILE_VERSION).0
+COMMON_EXE_OPTIONS = --exe $@ --force --clean --dependent --xclude --icon ../windows/POPFileIcon/popfile.ico --script $< --info CompanyName="The POPFile Project" --info LegalCopyright="Copyright (c) $(POPFILE_BUILD_YEAR) John Graham-Cumming" --info LegalTrademarks="POPFile is a registered trademark of John Graham-Cumming" --info ProductName=POPFile --info ProductVersion=$(POPFILE_VERSION).0 --info FileDescription=POPFile --info FileVersion=$(POPFILE_VERSION).0
 ifeq ($(EXE_DEBUG),1)
 COMMON_EXE_OPTIONS += --debug
 endif
 
-TRAY_OPTIONS = $(COMMON_EXE_OPTIONS)
+# Builds the 5 basic Windows applications using PerlApp
 
 popfile.exe: popfile-windows.pl $(POPFILE_VERSION_FILE)
-	perlapp --gui $(TRAY_OPTIONS)
+	perlapp --gui $(COMMON_EXE_OPTIONS)
 
-popfileif.exe: popfile-tray.pl POPFile/Loader.pm $(POPFILE_VERSION_FILE)
-	perltray --nogui $(TRAY_OPTIONS)
+popfileif.exe: popfile-tray2.pl POPFile/Loader.pm $(POPFILE_VERSION_FILE)
+	perlapp $(COMMON_EXE_OPTIONS)
 
-popfileib.exe: popfile-tray.pl POPFile/Loader.pm $(POPFILE_VERSION_FILE)
-	perltray $(TRAY_OPTIONS)
+popfileib.exe: popfile-tray2.pl POPFile/Loader.pm $(POPFILE_VERSION_FILE)
+	perlapp --gui $(COMMON_EXE_OPTIONS)
 
 popfilef.exe: popfile.pl POPFile/Loader.pm $(POPFILE_VERSION_FILE)
-	perlapp $(TRAY_OPTIONS)
+	perlapp $(COMMON_EXE_OPTIONS)
 
 popfileb.exe: popfile.pl POPFile/Loader.pm $(POPFILE_VERSION_FILE)
-	perlapp --gui $(TRAY_OPTIONS)
-
+	perlapp --gui $(COMMON_EXE_OPTIONS)
 
 # Builds a Windows service version of POPFile using PerlSvc
 
