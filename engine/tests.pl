@@ -362,7 +362,10 @@ if ( open PACKING, "<$packing_list" ) {
                 \$ver = \$${module}::VERSION;
             ";
 
-            if ( $ver ne -1 ) {
+            if ( $ver == -1 ) {
+                printf "   %-25s    <not installed>\n", $module;
+            }
+            else {
                 printf "   %-25s    %2.3f\n", $module, $ver;
             }
         }
