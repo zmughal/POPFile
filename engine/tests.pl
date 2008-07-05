@@ -28,7 +28,7 @@ require IO::Handle;
 use File::Copy;
 use File::Find;
 use File::Path;
-use English;
+use English qw(-no_match_vars);
 
 
 sub use_base_environment {
@@ -327,32 +327,34 @@ foreach my $test (@tests) {
 }
 
 print "\n\n";
-print "$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
+
+# Test report
+my $test_report = './test-report.txt';
+open REPORT, ">$test_report";
+
+print REPORT "$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
 
 # Display a summary of the results if more than 1 test was run:
 if ( scalar keys %test_results > 1 ) {
     foreach ( sort keys %test_results ) {
         if ( $test_results{$_}->{FAIL} == 0 ) {
-            printf "   %-25s    PASS\n", $_;
+            printf REPORT "   %-25s    PASS\n", $_;
         }
         else {
-            printf "   %-25s %4d failed %4d OK\n", $_, $test_results{$_}->{FAIL}, $test_results{$_}->{OK};
+            printf REPORT "   %-25s %4d failed %4d OK\n", $_, $test_results{$_}->{FAIL}, $test_results{$_}->{OK};
         }
     }
-    print "\n";
+    print REPORT "\n";
 }
 
 # Perl version report
-printf "System : %s\n", $English::OSNAME;
-printf "Perl : %f\n", $English::PERL_VERSION;
-print "\n";
+printf REPORT "System : %s\n", $English::OSNAME;
+printf REPORT "Perl : %f\n", $English::PERL_VERSION;
+print REPORT "\n";
 
 my $packing_list .= '../popfile.pck';
 
-my $fatal = 0;
-my @log;
-
-print "Installed Perl modules\n\n";
+print REPORT "Installed Perl modules\n\n";
 if ( open PACKING, "<$packing_list" ) {
     while (<PACKING>) {
         if ( /^(REQUIRED|OPTIONAL-([^\t]+))\t([^\t]+)\t([^\r\n]+)/ ) {
@@ -367,16 +369,25 @@ if ( open PACKING, "<$packing_list" ) {
             ";
 
             if ( $ver == -1 ) {
-                printf "   %-25s    <not installed>\n", $module;
+                printf REPORT "   %-25s    <not installed>\n", $module;
             }
             else {
-                printf "   %-25s    %2.3f\n", $module, $ver;
+                printf REPORT "   %-25s    %2.3f\n", $module, $ver;
             }
         }
     }
     close PACKING;
 }
-print "\n";
+print REPORT "\n";
+
+close REPORT;
+
+# Output report to STDOUT
+open REPORT, "<$test_report";
+while ( <REPORT> ) {
+    print STDOUT;
+}
+close REPORT;
 
 if ( $test_failures == 0 ) {
     unlink <popfile*.log>;
