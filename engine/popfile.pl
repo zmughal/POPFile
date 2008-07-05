@@ -105,9 +105,9 @@ if ( $POPFile->CORE_config() ) {
     # log them now
 
     if ( $#log != -1 ) {
-      foreach my $m (@log) {
-	$POPFile->get_module( 'POPFile::Logger' )->debug( 0, $m );
-      }
+        foreach my $m (@log) {
+            $POPFile->get_module( 'POPFile::Logger' )->debug( 0, $m );
+        }
     }
 
     $POPFile->get_module( 'POPFile::Logger' )->debug( 0, "POPFile successfully started" );
