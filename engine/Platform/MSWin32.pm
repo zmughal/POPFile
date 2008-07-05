@@ -152,8 +152,13 @@ sub prepare_trayicon
 {
     my $self = shift;
 
-    undef $self->{trayicon_window};
-    undef $self->{trayicon_menu};
+    if ( defined( $self->{trayicon_window} ) ) {
+        $self->{trayicon_window}->DESTROY();
+        $self->{trayicon_menu}->DESTROY();
+
+        undef $self->{trayicon_window};
+        undef $self->{trayicon_menu};
+    }
 
     # Create dummy window
 
