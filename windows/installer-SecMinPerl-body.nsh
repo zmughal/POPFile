@@ -141,6 +141,12 @@
   File "${C_PERL_DIR}\site\lib\Time\Local.pm"
   File "${C_PERL_DIR}\site\lib\Time\Zone.pm"
 
+  SetOutPath "$G_MPLIBDIR\Win32"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI.pm"
+
+  SetOutPath "$G_MPLIBDIR\Win32\GUI"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\*.pm"
+
   SetOutPath "$G_MPLIBDIR\warnings"
   File "${C_PERL_DIR}\lib\warnings\register.pm"
 
@@ -178,6 +184,9 @@
 
   SetOutPath "$G_MPLIBDIR\auto\Win32"
   File "${C_PERL_DIR}\lib\auto\Win32\*"
+  
+  SetOutPath "$G_MPLIBDIR\auto\Win32\GUI"
+  File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\GUI*"
 
   ; Install Perl modules and library files for BerkeleyDB support. Although POPFile now uses
   ; SQLite (or another SQL database) to store the corpus and other essential data, it retains

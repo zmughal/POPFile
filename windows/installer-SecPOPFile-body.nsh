@@ -252,6 +252,7 @@ app_paths:
   File "..\engine\pipe.pl"
 
   File "..\engine\favicon.ico"
+  File "..\engine\trayicon.ico"
 
   File "..\engine\pix.gif"
   File "..\engine\otto.png"
