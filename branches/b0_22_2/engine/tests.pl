@@ -28,7 +28,7 @@ require IO::Handle;
 use File::Copy;
 use File::Find;
 use File::Path;
-
+use English;
 
 
 sub use_base_environment {
@@ -343,6 +343,10 @@ if ( scalar keys %test_results > 1 ) {
 }
 
 # Perl version report
+printf "System : %s\n", $English::OSNAME;
+printf "Perl : %f\n", $English::PERL_VERSION;
+print "\n";
+
 my $packing_list .= '../popfile.pck';
 
 my $fatal = 0;
