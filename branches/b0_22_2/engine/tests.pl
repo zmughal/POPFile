@@ -264,6 +264,7 @@ my @patterns= ( '.*' );
 @patterns = split( /,/, $ARGV[0] ) if ( $#ARGV == 0 );
 
 my $code = 0;
+my %test_results = ();
 
 foreach my $test (@tests) {
 
@@ -273,10 +274,10 @@ foreach my $test (@tests) {
         if ( $test =~ /$pattern/ ) {
             $runit = 1;
             last;
-	  }
-     }
+        }
+    }
 
-     if ( $runit ) {
+    if ( $runit ) {
 
         # This works by reading the entire suite into the $suite variable
         # and then changing calls to test_assert_equal so that they include
@@ -294,13 +295,13 @@ foreach my $test (@tests) {
         my $ln   = 0;
         open SUITE, "<$test";
         while (<SUITE>) {
-                my $line = $_;
-                $ln += 1;
-                $line =~ s/(test_assert_not_regexp\()/$1 '$test', $ln,/g;
-                $line =~ s/(test_assert_regexp\()/$1 '$test', $ln,/g;
-                $line =~ s/(test_assert_equal\()/$1 '$test', $ln,/g;
-                $line =~ s/(test_assert\()/$1 '$test', $ln,/g;
-                $suite .= $line;
+            my $line = $_;
+            $ln += 1;
+            $line =~ s/(test_assert_not_regexp\()/$1 '$test', $ln,/g;
+            $line =~ s/(test_assert_regexp\()/$1 '$test', $ln,/g;
+            $line =~ s/(test_assert_equal\()/$1 '$test', $ln,/g;
+            $line =~ s/(test_assert\()/$1 '$test', $ln,/g;
+            $suite .= $line;
         }
         close SUITE;
 
@@ -314,17 +315,61 @@ foreach my $test (@tests) {
         }
 
         if ( $test_failures > $current_error_count ) {
-                print "failed (" . ( $test_count - $current_test_count ) . " ok, " . ( $test_failures - $current_error_count ) . " failed)\n";
-                print $fail_messages . "\n";
-                $code = 1;
+            print "failed (" . ( $test_count - $current_test_count ) . " ok, " . ( $test_failures - $current_error_count ) . " failed)\n";
+            print $fail_messages . "\n";
+            $code = 1;
         } else {
-                print "ok (" . ( $test_count - $current_test_count ) . " ok)";
+            print "ok (" . ( $test_count - $current_test_count ) . " ok)";
         }
+        $test_results{$test} = { FAIL => ( $test_failures - $current_error_count ), OK => ( $test_count - $current_test_count ) };
         cleanup();
     }
 }
 
-print "\n\n$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
+print "\n\n";
+print "$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
+
+# Display a summary of the results if more than 1 test was run:
+if ( scalar keys %test_results > 1 ) {
+    foreach ( sort keys %test_results ) {
+        if ( $test_results{$_}->{FAIL} == 0 ) {
+            printf "   %-25s    PASS\n", $_;
+        }
+        else {
+            printf "   %-25s %4d failed %4d OK\n", $_, $test_results{$_}->{FAIL}, $test_results{$_}->{OK};
+        }
+    }
+    print "\n";
+}
+
+# Perl version report
+my $packing_list .= '../popfile.pck';
+
+my $fatal = 0;
+my @log;
+
+print "Installed Perl modules\n\n";
+if ( open PACKING, "<$packing_list" ) {
+    while (<PACKING>) {
+        if ( /^(REQUIRED|OPTIONAL-([^\t]+))\t([^\t]+)\t([^\r\n]+)/ ) {
+            my ( $required, $why, $version, $module ) = ( $1, $2, $3, $4 );
+
+            # Find the module and set $ver to the loaded version, or -1 if
+            # the module was not found
+
+            my $ver = -1;
+            eval "require $module;
+                \$ver = \$${module}::VERSION;
+            ";
+
+            if ( $ver ne -1 ) {
+                printf "   %-25s    %2.3f\n", $module, $ver;
+            }
+        }
+    }
+    close PACKING;
+}
+print "\n";
 
 if ( $test_failures == 0 ) {
     unlink <popfile*.log>;
