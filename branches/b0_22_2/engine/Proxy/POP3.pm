@@ -474,10 +474,11 @@ sub child__
                         # file for later RETR's
 
                         my ( $class, $slot ) =
-                             $self->{classifier__}->classify_and_modify(
-                                 $session, $mail, $client, 0, '', 0, 0 );
+                            $self->{classifier__}->classify_and_modify(
+                                $session, $mail, $client, 0, '', 0, 0 );
 
-                        $downloaded{$count} = $slot;
+                        $downloaded{$count}{slot}  = $slot;
+                        $downloaded{$count}{class} = $class;
 
                         # Note that the 1 here indicates that
                         # echo_response_ does not send the response to
@@ -503,7 +504,7 @@ sub child__
                     last if ( $response == 2 );
                     if ( $response == 0 ) {
                         $self->echo_to_dot_( $mail, $client );
-		    }
+                    }
                 }
 
                 next;
@@ -522,7 +523,7 @@ sub child__
                     last if ( $response == 2 );
                     if ( $response == 0 ) {
                         $self->echo_to_dot_( $mail, $client );
-		    }
+                    }
                 } else {
                     next;
                 }
@@ -565,7 +566,7 @@ sub child__
             my $file;
 
             if ( defined($downloaded{$count}) &&
-                 ( $file = $self->{history__}->get_slot_file( $downloaded{$count} ) ) &&
+                 ( $file = $self->{history__}->get_slot_file( $downloaded{$count}{slot} ) ) &&
                  (open RETRFILE, "<$file") ) {
 
                 # act like a network stream
@@ -580,28 +581,14 @@ sub child__
 
                 $self->tee_( $client, "+OK " . ( -s $file ) . " bytes from POPFile cache$eol" );
 
-                # Load the last classification
+                # echo file, inserting known classification,
+                # without saving
 
-                my ( $id, $from, $to, $cc, $subject,
-                    $date, $hash, $inserted, $bucket, $reclassified ) =
-                    $self->{history__}->get_slot_fields( $downloaded{$count} );
-
-                if ( $bucket ne 'unknown class' ) {
-
-                    # echo file, inserting known classification,
-                    # without saving
-
-                    ($class, undef) = $self->{classifier__}->classify_and_modify( $session, \*RETRFILE, $client, 1, $bucket, $downloaded{$count} );
-                    print $client ".$eol";
-
-                } else {
-
-                    # If the class wasn't saved properly, classify
-                    # from disk normally
-
-                    ($class, undef) = $self->{classifier__}->classify_and_modify( $session, \*RETRFILE, $client, 1, '', 0 );
-                    print $client ".$eol";
-                }
+                ( $class, undef ) = $self->{classifier__}->classify_and_modify(
+                        $session, \*RETRFILE, $client, 1, 
+                        $downloaded{$count}{class},
+                        $downloaded{$count}{slot} );
+                print $client ".$eol";
 
                 close RETRFILE;
             } else {
@@ -623,7 +610,8 @@ sub child__
                     # Note locally that file has been retrieved if the
                     # full thing has been saved to disk
 
-                    $downloaded{$count} = $slot;
+                    $downloaded{$count}{slot}  = $slot;
+                    $downloaded{$count}{class} = $class;
                 }
             }
 
@@ -652,7 +640,7 @@ sub child__
             last if ( $self->echo_response_($mail, $client, $command ) == 2 );
             next;
         } else {
-            $self->tee_(  $client, "-ERR unknown command or bad syntax$eol" );
+            $self->tee_( $client, "-ERR unknown command or bad syntax$eol" );
             next;
         }
 
@@ -690,13 +678,13 @@ sub configure_item
     } else {
         if ( $name eq 'pop3_security' ) {
             $templ->param( 'POP3_Security_Local' => ( $self->config_( 'local' ) == 1 ) );
-	} else {
+        } else {
             if ( $name eq 'pop3_chain' ) {
                 $templ->param( 'POP3_Chain_Secure_Server' => $self->config_( 'secure_server' ) );
                 $templ->param( 'POP3_Chain_Secure_Port' => $self->config_( 'secure_port' ) );
-	    } else {
+            } else {
                 $self->SUPER::configure_item( $name, $templ, $language );
-	    }
+            }
         }
     }
 }
@@ -760,7 +748,7 @@ sub validate_item
             $self->config_( 'secure_server', $$form{server} );
             $templ->param( 'POP3_Chain_If_Server_Updated' => 1 );
             $templ->param( 'POP3_Chain_Server_Updated' => sprintf( $$language{Security_SecureServerUpdate}, $self->config_( 'secure_server' ) ) );
-	}
+        }
 
         if ( defined($$form{sport}) ) {
             if ( ( $$form{sport} >= 1 ) && ( $$form{sport} < 65536 ) ) {

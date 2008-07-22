@@ -398,31 +398,31 @@ $b->start();
 $h->start();
 $l->start();
 
-        my $p = new Proxy::POP3;
+my $p = new Proxy::POP3;
 
-        $p->configuration( $c );
-        $p->mq( $mq );
-        $p->logger( $l );
-        $p->classifier( $b );
+$p->configuration( $c );
+$p->mq( $mq );
+$p->logger( $l );
+$p->classifier( $b );
 
-        $p->forker( \&forker );
-        $p->pipeready( \&pipeready );
+$p->forker( \&forker );
+$p->pipeready( \&pipeready );
 
-        $p->{version_} = 'test suite';
-        $p->initialize();
+$p->{version_} = 'test suite';
+$p->initialize();
 
-        my $port = 9000 + int(rand(1000));
+my $port = 9000 + int(rand(1000));
 
-        $p->config_( 'port', $port );
-        $p->config_( 'force_fork', 0 );
-        $p->global_config_( 'timeout', 1 );
+$p->config_( 'port', $port );
+$p->config_( 'force_fork', 0 );
+$p->global_config_( 'timeout', 1 );
 
-        $p->config_( 'enabled', 0 );
-        test_assert_equal( $p->start(), 2 );
-        $p->config_( 'enabled', 1 );
-        test_assert_equal( $p->start(), 1 );
-        $p->{api_session__} = $b->get_session_key( 'admin', '' );
-        $p->history( $h );
+$p->config_( 'enabled', 0 );
+test_assert_equal( $p->start(), 2 );
+$p->config_( 'enabled', 1 );
+test_assert_equal( $p->start(), 1 );
+$p->{api_session__} = $b->get_session_key( 'admin', '' );
+$p->history( $h );
 
 # some tests require this directory to be present
 mkdir( 'messages' );
@@ -484,6 +484,7 @@ if ( $pid == 0 ) {
     }
 
     close $server;
+    $b->stop();
     exit(0);
 } else {
 
@@ -558,7 +559,7 @@ if ( $pid == 0 ) {
 
         close $dreader;
         close $uwriter;
-
+        $b->stop();
         exit(0);
     } else {
 

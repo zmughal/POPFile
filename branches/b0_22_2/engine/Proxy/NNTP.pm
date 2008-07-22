@@ -74,7 +74,7 @@ sub initialize
 
     # Disabled by default
 
-    $self->config_( 'enabled', 0);
+    $self->config_( 'enabled', 0 );
 
     # By default we don't fork on Windows
 
@@ -88,14 +88,18 @@ sub initialize
 
     $self->config_( 'local', 1 );
 
+    # Whether to do classification on HEAD as well
+
+    $self->config_( 'headtoo', 0 );
+
     # The separator within the NNTP user name is :
 
     $self->config_( 'separator', ':');
 
     # The welcome string from the proxy is configurable
 
-    $self->config_( 'welcome_string',
-        "NNTP POPFile ($self->{version_}) server ready" );
+    $self->config_( 'welcome_string',                      # PROFILE BLOCK START
+        "NNTP POPFile ($self->{version_}) server ready" ); # PROFILE BLOCK STOP
 
     if ( !$self->SUPER::initialize() ) {
         return 0;
@@ -126,28 +130,30 @@ sub start
     # Tell the user interface module that we having a configuration
     # item that needs a UI component
 
-    $self->register_configuration_item_( 'configuration',
+    $self->register_configuration_item_( 'configuration',  # PROFILE BLOCK START
                                          'nntp_port',
                                          'nntp-port.thtml',
-                                         $self );
+                                         $self );          # PROFILE BLOCK STOP
 
-    $self->register_configuration_item_( 'configuration',
+    $self->register_configuration_item_( 'configuration',  # PROFILE BLOCK START
                                          'nntp_force_fork',
                                          'nntp-force-fork.thtml',
-                                         $self );
+                                         $self );          # PROFILE BLOCK STOP
 
-    $self->register_configuration_item_( 'configuration',
+    $self->register_configuration_item_( 'configuration',  # PROFILE BLOCK START
                                          'nntp_separator',
                                          'nntp-separator.thtml',
-                                         $self );
+                                         $self );          # PROFILE BLOCK STOP
 
-    $self->register_configuration_item_( 'security',
+    $self->register_configuration_item_( 'security',       # PROFILE BLOCK START
                                          'nntp_local',
                                          'nntp-security-local.thtml',
-                                         $self );
+                                         $self );          # PROFILE BLOCK STOP
 
-    if ( $self->config_( 'welcome_string' ) =~ /^NNTP POPFile \(v\d+\.\d+\.\d+\) server ready$/ ) { # PROFILE BLOCK START
-        $self->config_( 'welcome_string', "NNTP POPFile ($self->{version_}) server ready" );        # PROFILE BLOCK STOP
+    if ( $self->config_( 'welcome_string' ) =~                # PROFILE BLOCK START
+         /^NNTP POPFile \(v\d+\.\d+\.\d+\) server ready$/ ) { # PROFILE BLOCK STOP
+        $self->config_( 'welcome_string',                                  # PROFILE BLOCK START
+                        "NNTP POPFile ($self->{version_}) server ready" ); # PROFILE BLOCK STOP
     }
 
     return $self->SUPER::start();; }
@@ -166,9 +172,10 @@ sub child__
 {
     my ( $self, $client, $session ) = @_;
 
-    # Number of messages downloaded in this session
+    # Hash of indexes of downloaded messages mapped to their
+    # slot IDs
 
-    my $count = 0;
+    my %downloaded;
 
     # The handle to the real news server gets stored here
 
@@ -182,8 +189,8 @@ sub child__
     # Tell the client that we are ready for commands and identify our
     # version number
 
-    $self->tee_( $client, "201 " . $self->config_( 'welcome_string' ) .
-        "$eol" );
+    $self->tee_( $client, "201 " . $self->config_( 'welcome_string' ) .  # PROFILE BLOCK START
+                          "$eol" );                                      # PROFILE BLOCK STOP
 
     # Retrieve commands from the client and process them until the
     # client disconnects or we get a specific QUIT command
@@ -206,8 +213,8 @@ sub child__
 
         if ( $command =~ /^ *QUIT/i ) {
             if ( $news )  {
-                last if ( $self->echo_response_( $news, $client, $command ) ==
-                         2 );
+                last if ( $self->echo_response_( $news, $client, $command ) ==  # PROFILE BLOCK START
+                          2 );                                                  # PROFILE BLOCK STOP
                 close $news;
             } else {
                 $self->tee_( $client, "205 goodbye$eol" );
@@ -215,7 +222,7 @@ sub child__
             last;
         }
 
-        if ($connection_state eq 'username needed') {
+        if ( $connection_state eq 'username needed' ) {
 
             # NOTE: This syntax is ambiguous if the NNTP username is a
             # short (under 5 digit) string (eg, 32123).  If this is
@@ -223,8 +230,8 @@ sub child__
             # change your kludged username appropriately (syntax would
             # then be server[:port][/username])
 
-            my $user_command = '^ *AUTHINFO USER ([^:]+)(:([\d]{1,5}))?(\\' .
-                $self->config_( 'separator' ) . '(.+))?';
+            my $separator = $self->config_( 'separator' );
+            my $user_command = "^ *AUTHINFO USER ([^:]+)(:([\\d]{1,5}))?(\Q$separator\E(.+))?";
 
             if ( $command =~ /$user_command/i ) {
                 my $server = $1;
@@ -235,17 +242,19 @@ sub child__
                 my $username = $5;
 
                 if ( $server ne '' )  {
-                    if ( $news = $self->verify_connected_( $news, $client,
-                        $server, $port || 119 ) )  {
-                        if (defined $username) {
+                    if ( $news = $self->verify_connected_( $news, $client,    # PROFILE BLOCK START
+                                                           $server,
+                                                           $port || 119 ) ) { # PROFILE BLOCK STOP
+                        if ( defined $username ) {
 
                             # Pass through the AUTHINFO command with
                             # the actual user name for this server, if
                             # one is defined, and send the reply
                             # straight to the client
 
-                            $self->get_response_( $news, $client,
-                                'AUTHINFO USER ' . $username );
+                            $self->get_response_( $news, $client,  # PROFILE BLOCK START
+                                                  'AUTHINFO USER ' .
+                                                  $username );     # PROFILE BLOCK STOP
                             $connection_state = "password needed";
                         } else {
 
@@ -264,69 +273,237 @@ sub child__
                 }
 
                 $self->flush_extra_( $news, $client, 0 );
-                next;
             } else {
 
                 # Issue a 480 authentication required response
 
                 $self->tee_( $client, "480 Authorization required for this command$eol" );
-                next;
             }
-        } elsif ( $connection_state eq "password needed" ) {
-            if ($command =~ /^ *AUTHINFO PASS (.*)/i) {
-                my ( $response, $ok ) = $self->get_response_( $news, $client,
-                                            $command);
+            next;
+        }
+
+        if ( $connection_state eq "password needed" ) {
+            if ( $command =~ /^ *AUTHINFO PASS (.*)/i ) {
+                my ( $response, $ok ) =                              # PROFILE BLOCK START
+                    $self->get_response_( $news, $client, $command); # PROFILE BLOCK STOP
 
                 if ($response =~ /^281 .*/) {
                     $connection_state = "connected";
                 }
-                next;
             } else {
 
                 # Issue a 381 more authentication required response
 
                 $self->tee_( $client, "381 more authentication required for this command$eol" );
-                next;
             }
-        } elsif ($connection_state eq "ignore password") {
-            if ($command =~ /^ *AUTHINFO PASS (.*)/i) {
+            next;
+        }
+
+        if ( $connection_state eq "ignore password" ) {
+            if ( $command =~ /^ *AUTHINFO PASS (.*)/i ) {
                 $self->tee_($client, "281 authentication accepted$eol");
                 $connection_state = "connected";
-                next;
             } else {
 
                 # Issue a 480 authentication required response
 
                 $self->tee_( $client, "381 more authentication required for this command$eol" );
-                next;
             }
-        } elsif ( $connection_state eq "connected" ) {
+            next;
+        }
+
+        if ( $connection_state eq "connected" ) {
 
             # COMMANDS USED DIRECTLY WITH THE REMOTE NNTP SERVER GO HERE
 
             # The client wants to retrieve an article. We oblige, and
             # insert classification headers.
 
-            if ( $command =~ /^ *ARTICLE (.*)/i ) {
-                my ( $response, $ok ) = $self->get_response_( $news, $client,
-                                            $command);
-                if ( $response =~ /^220 (.*) (.*)$/i) {
-                    $count += 1;
+            if ( $command =~ /^ *ARTICLE ?(.*)?/i ) {
+                my $option = $1;
+                my $file;
 
-                    my ( $class, $history_file ) =
-                        $self->{classifier__}->classify_and_modify( $session,
-                            $news, $client, 0, '', 0 );
+                if ( ( $option !~ /^\d+$/ ) && defined($downloaded{$option}) &&  # PROFILE BLOCK START
+                     ( $file = $self->{history__}->get_slot_file(
+                            $downloaded{$option}{slot} ) ) &&
+                     ( open RETRFILE, "<$file" ) ) {                             # PROFILE BLOCK STOP
+
+                    # Act like a network stream
+
+                    binmode RETRFILE;
+
+                    # File has been fetched and classified already
+
+                    $self->log_( 1, "Printing message from cache" );
+
+                    # Give the client 220 (ok)
+
+                    $self->tee_( $client, "220 0 $option$eol" );
+
+                    # Echo file, inserting known classification,
+                    # without saving
+
+                    ( my $class, undef ) =                          # PROFILE BLOCK START
+                        $self->{classifier__}->classify_and_modify(
+                            $session, \*RETRFILE, $client, 1,
+                            $downloaded{$option}{class},
+                            $downloaded{$option}{slot} );           # PROFILE BLOCK STOP
+                    print $client ".$eol";
+
+                    close RETRFILE;
+                } else {
+
+                    my ( $response, $ok ) =                               # PROFILE BLOCK START
+                        $self->get_response_( $news, $client, $command ); # PROFILE BLOCK STOP
+                    if ( $response =~ /^220 +(\d+) +([^ \015]+)/i ) {
+                        my $message_id = $2;
+
+                        my ( $class, $history_file ) =                  # PROFILE BLOCK START
+                            $self->{classifier__}->classify_and_modify(
+                                $session, $news, $client, 0, '', 0 );   # PROFILE BLOCK STOP
+
+                        $downloaded{$message_id}{slot}  = $history_file;
+                        $downloaded{$message_id}{class} = $class;
+                    }
                 }
 
                 next;
             }
 
+            if ( $command =~ /^ *HEAD ?(.*)?/i ) {
+                my $option = $1;
+
+                if ( $self->config_( 'headtoo' ) ) {
+                    my ( $class, $history_file );
+                    my ( $response, $ok );
+                    my $cached = 0;
+
+                    if ( ( $option !~ /^\d+$/ ) && defined($downloaded{$option}) ) {
+                        # Already cached
+
+                        $cached = 1;
+                        ( $class, $history_file ) =          # PROFILE BLOCK START
+                            ( $downloaded{$option}{class},
+                              $downloaded{$option}{slot}  ); # PROFILE BLOCK STOP
+                    } else {
+
+                        # Send ARTICLE command to server
+
+                        my $article_command = $command;
+                        $article_command =~ s/^ *HEAD/ARTICLE/i;
+                        ( $response, $ok ) =                             # PROFILE BLOCK START
+                            $self->get_response_( $news, $client,
+                                                  $article_command, 0, 1 ); # PROFILE BLOCK STOP
+                        if ( $response =~ /^220 +(\d+) +([^ \015]+)/i ) {
+                            my $message_id = $2;
+                            $response =~ s/^220/221/;
+                            $self->tee_( $client, "$response" );
+
+                            # Classify without sending to client
+
+                            ( $class, $history_file ) =                     # PROFILE BLOCK START
+                                $self->{classifier__}->classify_and_modify(
+                                    $session, $news, undef, 0, '', 0, 0 );  # PROFILE BLOCK STOP
+
+                            $downloaded{$message_id}{slot}  = $history_file;
+                            $downloaded{$message_id}{class} = $class;
+                        } else {
+                            $self->tee_( $client, "$response" );
+                            next;
+                        }
+                    }
+
+                    # Send header to client from server
+
+                    ( $response, $ok ) =                                # PROFILE BLOCK START
+                        $self->get_response_( $news, $client, $command,
+                                              0, ( $cached ? 0 : 1 ) ); # PROFILE BLOCK STOP
+                    if ( $response =~ /^221 +(\d+) +([^ ]+)/i ) {
+                        $self->{classifier__}->classify_and_modify(  # PROFILE BLOCK START
+                            $session, $news, $client, 1, $class,
+                            $history_file, 1 );                      # PROFILE BLOCK STOP
+                    }
+                    next;
+                }
+            }
+
+            if ( $command =~ /^ *BODY ?(.*)?/i ) {
+                my $option = $1;
+                my $file;
+
+                if ( ( $option !~ /^\d+$/ ) && defined($downloaded{$option}) &&  # PROFILE BLOCK START
+                     ( $file = $self->{history__}->get_slot_file(
+                            $downloaded{$option}{slot} ) ) &&
+                     ( open RETRFILE, "<$file" ) ) {                             # PROFILE BLOCK STOP
+                    
+                    # Act like a network stream
+
+                    binmode RETRFILE;
+
+                    # File has been fetched and classified already
+
+                    $self->log_( 1, "Printing message from cache" );
+
+                    # Give the client 222 (ok)
+
+                    $self->tee_( $client, "222 0 $option$eol" );
+
+                    # Skip header
+
+                    while ( my $line = $self->slurp_( \*RETRFILE ) ) {
+                        last if ( $line =~ /^[\015\012]+$/ );
+                    }
+
+                    # Echo file to client
+
+                    $self->echo_to_dot_( \*RETRFILE, $client );
+                    print $client ".$eol";
+
+                    close RETRFILE;
+                } else {
+                    # Send ARTICLE command to server
+
+                    my $article_command = $command;
+                    $article_command =~ s/^ *BODY/ARTICLE/i;
+                    my ( $response, $ok ) =                                     # PROFILE BLOCK START
+                        $self->get_response_( $news, $client, $article_command,
+                                              0, 1 );                           # PROFILE BLOCK STOP
+                    if ( $response =~ /^220 +(\d+) +([^ \015]+)/i ) {
+                        my $message_id = $2;
+                        $response =~ s/^220/222/;
+                        $self->tee_( $client, "$response" );
+
+                        # Classify without sending to client
+
+                        my ( $class, $history_file ) =                  # PROFILE BLOCK START
+                            $self->{classifier__}->classify_and_modify(
+                                $session, $news, undef, 0, '', 0, 0 );  # PROFILE BLOCK STOP
+
+                        $downloaded{$message_id}{slot}  = $history_file;
+                        $downloaded{$message_id}{class} = $class;
+
+                        # Send body to client from server
+
+                        ( $response, $ok ) =                                # PROFILE BLOCK START
+                            $self->get_response_( $news, $client, $command,
+                                                  0, 1 );                   # PROFILE BLOCK STOP
+                        if ( $response =~ /^222 +(\d+) +([^ ]+)/i ) {
+                            $self->echo_to_dot_( $news, $client, 0 );
+                        }
+                    } else {
+                        $self->tee_( $client, "$response" );
+                    }
+                }
+                next;
+            }
+
             # Commands expecting a code + text response
 
-            if ( $command =~ 
-                /^ *(LIST|HEAD|BODY|NEWGROUPS|NEWNEWS|LISTGROUP|XGTITLE|XINDEX|XHDR|XOVER|XPAT|XROVER|XTHREAD)/i ) {
-                my ( $response, $ok ) = $self->get_response_( $news,
-                                            $client, $command);
+            if ( $command =~                                 # PROFILE BLOCK START
+                /^[ ]*(LIST|HEAD|NEWGROUPS|NEWNEWS|LISTGROUP|XGTITLE|XINDEX|XHDR|
+                     XOVER|XPAT|XROVER|XTHREAD)/ix ) {       # PROFILE BLOCK STOP
+                my ( $response, $ok ) =                              # PROFILE BLOCK START
+                    $self->get_response_( $news, $client, $command); # PROFILE BLOCK STOP
 
                 # 2xx (200) series response indicates multi-line text
                 # follows to .crlf
@@ -340,8 +517,8 @@ sub child__
             # Exceptions to 200 code above
 
             if ( $ command =~ /^ *(HELP)/i ) {
-                my ( $response, $ok ) = $self->get_response_( $news, $client,
-                                            $command);
+                my ( $response, $ok ) =                              # PROFILE BLOCK START
+                    $self->get_response_( $news, $client, $command); # PROFILE BLOCK STOP
                 if ( $response =~ /^1\d\d/ ) {
                     $self->echo_to_dot_( $news, $client, 0 );
                 }
@@ -350,8 +527,8 @@ sub child__
 
             # Commands expecting a single-line response
 
-            if ( $command =~ 
-                /^ *(GROUP|STAT|IHAVE|LAST|NEXT|SLAVE|MODE|XPATH)/i ) {
+            if ( $command =~                                            # PROFILE BLOCK START
+                /^ *(GROUP|STAT|IHAVE|LAST|NEXT|SLAVE|MODE|XPATH)/i ) { # PROFILE BLOCK STOP
                 $self->get_response_( $news, $client, $command );
                 next;
             }
@@ -359,8 +536,8 @@ sub child__
             # Commands followed by multi-line client response
 
             if ( $command =~ /^ *(IHAVE|POST|XRELPIC)/i ) {
-                my ( $response, $ok ) = $self->get_response_( $news, $client,
-                                            $command);
+                my ( $response, $ok ) =                               # PROFILE BLOCK START
+                    $self->get_response_( $news, $client, $command ); # PROFILE BLOCK STOP
 
                 # 3xx (300) series response indicates multi-line text
                 # should be sent, up to .crlf
@@ -375,6 +552,8 @@ sub child__
                     # somehow, we add another CRLF
 
                     $self->get_response_( $news, $client, "$eol" );
+                } else {
+                    $self->tee_( $client, $response );
                 }
                 next;
             }
@@ -392,7 +571,7 @@ sub child__
         # Don't know what this is so let's just pass it through and
         # hope for the best
 
-        if ( $news && $news->connected)  {
+        if ( $news && $news->connected )  {
             $self->echo_response_($news, $client, $command );
             next;
         } else {
@@ -427,22 +606,26 @@ sub configure_item
 
     if ( $name eq 'nntp_port' ) {
         $templ->param( 'nntp_port' => $self->config_( 'port' ) );
+        return;
     }
 
     # Separator Character widget
     if ( $name eq 'nntp_separator' ) {
         $templ->param( 'nntp_separator' => $self->config_( 'separator' ) );
+        return;
     }
 
     if ( $name eq 'nntp_local' ) {
         $templ->param( 'nntp_if_local' => $self->config_( 'local' ) );
+        return;
      }
 
     if ( $name eq 'nntp_force_fork' ) {
         $templ->param( 'nntp_force_fork_on' => $self->config_( 'force_fork' ) );
+        return;
     }
 
-    #$self->SUPER::configure_item( $name, $language, $session_key );
+    $self->SUPER::configure_item( $name, $templ, $language );
 }
 
 # ----------------------------------------------------------------------------
@@ -463,14 +646,17 @@ sub validate_item
 
     if ( $name eq 'nntp_port' ) {
         if ( defined $$form{nntp_port} ) {
-            if ( ( $$form{nntp_port} >= 1 ) && ( $$form{nntp_port} < 65536 ) ) {
+            if ( ( $$form{nntp_port} =~ /^\d+$/ ) &&
+                 ( $$form{nntp_port} >= 1 ) &&
+                 ( $$form{nntp_port} <= 65535 ) ) {
                 $self->config_( 'port', $$form{nntp_port} );
                 $templ->param( 'nntp_port_feedback' => sprintf $$language{Configuration_NNTPUpdate}, $self->config_( 'port' ) );
-             } 
-             else {
-                 $templ->param( 'nntp_port_feedback' => "<div class=\"error01\">$$language{Configuration_Error3}</div>" );
-             }
+            } 
+            else {
+                $templ->param( 'nntp_port_feedback' => "<div class=\"error01\">$$language{Configuration_Error3}</div>" );
+            }
         }
+        return;
     }
 
     if ( $name eq 'nntp_separator' ) {
@@ -483,12 +669,14 @@ sub validate_item
                 $templ->param( 'nntp_separator_feedback' => "<div class=\"error01\">\n$$language{Configuration_Error1}</div>\n" );
             }
         }
+        return;
     }
 
     if ( $name eq 'nntp_local' ) {
         if ( defined $$form{nntp_local} ) {
             $self->config_( 'local', $$form{nntp_local} );
         }
+        return;
     }
 
 
@@ -496,9 +684,10 @@ sub validate_item
         if ( defined $$form{nntp_force_fork} ) {
             $self->config_( 'force_fork', $$form{nntp_force_fork} );
         }
+        return;
     }
 
-    # $self->SUPER::validate_item( $name, $language, $form );
+    $self->SUPER::validate_item( $name, $templ, $language, $form );
 }
 
 1;

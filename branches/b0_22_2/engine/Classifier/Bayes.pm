@@ -2862,7 +2862,8 @@ sub classify_and_modify
         }
     }
 
-    $msg_head_after .= $msg_head_q . "$crlf";
+    $msg_head_after .= $msg_head_q;
+    $msg_head_after .= $crlf if ( !$getting_headers );
 
     # Echo the text of the message to the client
 
