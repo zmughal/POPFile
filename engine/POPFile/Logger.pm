@@ -293,7 +293,7 @@ sub debug
             "$year/$mon/$mday$delim$hour:$min:$sec$delim$$:$delim$message\n";
 
         if ( $self->global_config_( 'debug' ) & 1 )  {
-              if ( open DEBUG, ">>$self->{debug_filename__}" ) {
+            if ( open DEBUG, ">>$self->{debug_filename__}" ) {
                 print DEBUG $msg;
                 close DEBUG;
             }
