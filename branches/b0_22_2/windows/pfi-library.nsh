@@ -59,7 +59,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.15"
+  !define C_PFI_LIBRARY_VERSION     "0.3.17"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -995,6 +995,10 @@
 #    Macro:                PFI_RunSQLiteCommand
 #    Installer Function:   PFI_RunSQLiteCommand
 #    Uninstaller Function: un.PFI_RunSQLiteCommand
+#
+#    Macro:                PFI_ServiceActive
+#    Installer Function:   PFI_ServiceActive
+#    Uninstaller Function: un.PFI_ServiceActive
 #
 #    Macro:                PFI_ServiceCall
 #    Installer Function:   PFI_ServiceCall
@@ -3813,6 +3817,139 @@
 
 
 #--------------------------------------------------------------------------
+# Macro: PFI_ServiceActive
+#
+# The installation process and the uninstall process may both need a function which checks
+# if a particular Windows service is "active". At present this function only checks if the
+# specified service is "paused" or "running" since the function is only used to detect if
+# it is safe to overwrite/delete the popfile-service.exe file during installation/uninstalling.
+# This macro makes maintenance easier by ensuring that both processes use identical functions,
+# with the only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_ServiceActive "" and !insertmacro PFI_ServiceActive "un." commands are included
+# in this file so the NSIS script can use 'Call PFI_ServiceActive' and 'Call un.PFI_ServiceActive'
+# without additional preparation.
+#
+# Inputs:
+#         (top of stack)       - name of the Windows Service to be checked (normally "POPFile")
+#
+# Outputs:
+#         (top of stack)       - string containing one of the following result codes:
+#                                   true           - service is pause or running
+#                                   false          - service is neither paused nor running
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "POPFile"
+#         Call PFI_ServiceActive
+#         Pop $R0
+#
+#         (if $R0 at this point is "true" then POPFile is paused or running as a Windows service)
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_ServiceActive UN
+
+  Function ${UN}PFI_ServiceActive
+  
+    !define L_PLUGINSTATUS    $R9   ; success (0) or failure (<> 0) of the plugin
+    !define L_RESULT          $R8   ; returned by plugin after a successful call
+    !define L_SERVICENAME     $R7   ; name of the service
+  
+    Push ${L_RESULT}                ; used to return the result from this function
+    Push ${L_PLUGINSTATUS}
+    Push ${L_SERVICENAME}
+    Exch 3
+    Pop ${L_SERVICENAME}
+    
+    ; The SimpleSC plugin (and popfile-service.exe) cannot be used on Win9x systems
+    
+    Call ${UN}PFI_IsNT
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} 0 error_exit
+      
+    ; Check if the service exists
+    
+    SimpleSC::ExistsService "${L_SERVICENAME}"
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "0" 0 error_exit
+
+    ; Check if the service is running
+      
+    SimpleSC::ServiceIsRunning "${L_SERVICENAME}"
+    Pop ${L_PLUGINSTATUS}
+    IntCmp ${L_PLUGINSTATUS} 0 check_if_running
+    Push  ${L_PLUGINSTATUS}
+    SimpleSC::GetErrorMessage
+    Pop ${L_RESULT}
+    MessageBox MB_OK|MB_ICONSTOP "Internal Error: ServiceRunning call failed\
+        ${MB_NL}${MB_NL}\
+        (Code: ${L_PLUGINSTATUS} Error: ${L_RESULT})"
+    Goto error_exit
+   
+  check_if_running:
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "1" success_exit
+ 
+    ; Check if the service is paused
+    
+    SimpleSC::ServiceIsPaused "${L_SERVICENAME}"
+    Pop ${L_PLUGINSTATUS}
+    IntCmp ${L_PLUGINSTATUS} 0 check_if_paused
+    Push  ${L_PLUGINSTATUS}
+    SimpleSC::GetErrorMessage
+    Pop ${L_RESULT}
+    MessageBox MB_OK|MB_ICONSTOP "Internal Error: ServiceIsPaused call failed\
+        ${MB_NL}${MB_NL}\
+        (Code: ${L_PLUGINSTATUS} Error: ${L_RESULT})"
+    Goto error_exit
+      
+  check_if_paused:
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "0" error_exit
+  
+  success_exit:
+    StrCpy ${L_RESULT} "true"
+    Goto exit
+ 
+  error_exit:
+    StrCpy ${L_RESULT} "false"
+    
+  exit:
+    Pop ${L_SERVICENAME}
+    Pop ${L_PLUGINSTATUS}
+    Exch ${L_RESULT}           ; stack = result code string
+    
+  !undef L_PLUGINSTATUS
+  !undef L_RESULT
+  !undef L_SERVICENAME
+  
+  FunctionEnd
+!macroend
+
+!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_ServiceActive
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_ServiceActive ""
+!endif
+
+!ifdef ADDUSER | INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_ServiceActive
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_ServiceActive "un."
+!endif
+
+
+#--------------------------------------------------------------------------
 # Macro: PFI_ServiceCall
 #
 # The installation process and the uninstall process may both need a function which interfaces
@@ -3963,25 +4100,21 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_ServiceCall
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Installer Function: PFI_ServiceCall
+#
+# This function is used during the installation process
+#--------------------------------------------------------------------------
 
-    !insertmacro PFI_ServiceCall ""
-!endif
+;!insertmacro PFI_ServiceCall ""
 
-!ifdef ADDUSER | INSTALLER
-    #--------------------------------------------------------------------------
-    # Uninstaller Function: un.PFI_ServiceCall
-    #
-    # This function is used during the uninstall process
-    #--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.PFI_ServiceCall
+#
+# This function is used during the uninstall process
+#--------------------------------------------------------------------------
 
-    !insertmacro PFI_ServiceCall "un."
-!endif
+;!insertmacro PFI_ServiceCall "un."
 
 
 #--------------------------------------------------------------------------
@@ -4040,25 +4173,21 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_ServiceRunning
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Installer Function: PFI_ServiceRunning
+#
+# This function is used during the installation process
+#--------------------------------------------------------------------------
 
-    !insertmacro PFI_ServiceRunning ""
-!endif
+;!insertmacro PFI_ServiceRunning ""
 
-!ifdef ADDUSER | INSTALLER
-    #--------------------------------------------------------------------------
-    # Uninstaller Function: un.PFI_ServiceRunning
-    #
-    # This function is used during the uninstall process
-    #--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.PFI_ServiceRunning
+#
+# This function is used during the uninstall process
+#--------------------------------------------------------------------------
 
-    !insertmacro PFI_ServiceRunning "un."
-!endif
+;!insertmacro PFI_ServiceRunning "un."
 
 
 #--------------------------------------------------------------------------

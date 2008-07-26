@@ -3,7 +3,7 @@
 # installer-SecPOPFile-func.nsh --- This 'include' file contains the non-library functions
 #                                   used by the 'installer-SecPOPFile-body.nsh' file.
 #
-# Copyright (c) 2005-2007 John Graham-Cumming
+# Copyright (c) 2005-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -360,7 +360,7 @@ FunctionEnd
     ; to allow POPFile to be run as a Windows service.
 
     Push "POPFile"
-    Call ${UN}PFI_ServiceRunning
+    Call ${UN}PFI_ServiceActive
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "true" manual_shutdown
 
