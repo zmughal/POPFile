@@ -896,6 +896,7 @@
   ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
+  ReserveFile "${NSISDIR}\Plugins\SimpleSC.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\UAC.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"

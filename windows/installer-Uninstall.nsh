@@ -609,7 +609,7 @@ Section "-un.Shutdown POPFile" UnSecShutdown
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
-  Call un.PFI_ServiceRunning
+  Call un.PFI_ServiceActive
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "true" manual_shutdown
 

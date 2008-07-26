@@ -735,6 +735,7 @@
   ReserveFile "${NSISDIR}\Plugins\nsExec.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
+  ReserveFile "${NSISDIR}\Plugins\SimpleSC.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "ioA.ini"
@@ -2931,7 +2932,7 @@ Function MakeUserDirSafe
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
-  Call PFI_ServiceRunning
+  Call PFI_ServiceActive
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "true" manual_shutdown
 

@@ -270,7 +270,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.3.3"
+  !define C_PFI_VERSION  "0.3.4"
 
   ; Mention the wizard's version number in the window title
 
@@ -579,6 +579,7 @@
   ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
   ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
+  ReserveFile "${NSISDIR}\Plugins\SimpleSC.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
   ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
@@ -843,7 +844,7 @@ Function MakeRootDirSafe
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
-  Call PFI_ServiceRunning
+  Call PFI_ServiceActive
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "true" manual_shutdown
 
