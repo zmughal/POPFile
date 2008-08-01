@@ -618,7 +618,7 @@ sub configure_item
     if ( $name eq 'nntp_local' ) {
         $templ->param( 'nntp_if_local' => $self->config_( 'local' ) );
         return;
-     }
+    }
 
     if ( $name eq 'nntp_force_fork' ) {
         $templ->param( 'nntp_force_fork_on' => $self->config_( 'force_fork' ) );
@@ -632,8 +632,8 @@ sub configure_item
 #
 # validate_item
 #
-#    $name            The name of the item being configured, was passed in by the call
-#                     to register_configuration_item
+#    $name            The name of the item being configured, was passed in by
+#                     the call to register_configuration_item
 #    $templ           The loaded template
 #    $language        The language currently in use
 #    $form            Hash containing all form items
@@ -646,9 +646,9 @@ sub validate_item
 
     if ( $name eq 'nntp_port' ) {
         if ( defined $$form{nntp_port} ) {
-            if ( ( $$form{nntp_port} =~ /^\d+$/ ) &&
+            if ( ( $$form{nntp_port} =~ /^\d+$/ ) &&   # PROFILE BLOCK START
                  ( $$form{nntp_port} >= 1 ) &&
-                 ( $$form{nntp_port} <= 65535 ) ) {
+                 ( $$form{nntp_port} <= 65535 ) ) {    # PROFILE BLOCK STOP
                 $self->config_( 'port', $$form{nntp_port} );
                 $templ->param( 'nntp_port_feedback' => sprintf $$language{Configuration_NNTPUpdate}, $self->config_( 'port' ) );
             } 
