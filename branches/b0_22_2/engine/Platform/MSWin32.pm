@@ -177,9 +177,9 @@ sub prepare_trayicon
 
     $self->{trayicon_menu} = Win32::GUI::Menu->new(
         '&POPFile'       => 'POPFile',
-        '>&POPFile UI'   => { -name => 'Menu_Open_UI' },
+        '> POPFile &UI'   => { -name => 'Menu_Open_UI', -default => 1 },
         '> -'            => 0,
-        '> Quit POPFile' => { -name => 'Menu_Quit' },
+        '> &Quit POPFile' => { -name => 'Menu_Quit' },
     );
 
     # Set Timer
