@@ -21,6 +21,9 @@
 #
 # ----------------------------------------------------------------------------
 
+use strict;
+use warnings;
+
 use POPFile::Configuration;
 use POPFile::MQ;
 use POPFile::Logger;
@@ -196,31 +199,12 @@ sub server
         }
 
         if ( $command =~ /^ARTICLE ?(?=(\d+)|(.*))?/i ) {
-            my $index = $1;
-            my $message_id = $2;
-            my $g;
-            if ( $message_id ) {
-                # message_id is specified
-                $message_id =~ m/^<nntp(\d+)\@([^>]*)/;
-                $index = $1;
-                $g = $2;
-                if ( !exists $groups{$g} ) {
-                    print $client "430 No article with that message-id$eol";
-                    next;
-                }
-            } else {
-                # message number is specified
-                if ( $group eq '' ) {
-                    print $client "412 No newsgroup selected$eol";
-                    next;
-                }
-                $g = $group;
-                if ( !defined($index) ) {
-                    $index = $current_message;
-                } else {
-                    $index--;
-                }
+            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
+            if ( $err ne '' ) {
+                print $client $err;
+                next;
             }
+
             if ( ( $groups{$g} >= $index ) &&
                  defined( $messages[$index] ) && ( $messages[$index] ne '' ) ) {
                 if ( $g eq $group ) {
@@ -265,32 +249,13 @@ sub server
         }
 
         if ( $command =~ /^HEAD ?(?=(\d+)|(.*))?/i ) {
-            my $index = $1;
-            my $message_id = $2;
-            my $g;
-            if ( $message_id ) {
-                # message_id is specified
-                $message_id =~ m/^<nntp(\d+)\@([^>]*)/;
-                $index = $1;
-                $g = $2;
-                if ( !exists $groups{$g} ) {
-                    print $client "430 No article with that message-id$eol";
-                    next;
-                }
-            } else {
-                # message number is specified
-                if ( $group eq '' ) {
-                    print $client "412 No newsgroup selected$eol";
-                    next;
-                }
-                if ( !defined($index) ) {
-                    $index = $current_message;
-                } else {
-                    $index--;
-                }
-                $g = $group;
+            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
+            if ( $err ne '' ) {
+                print $client $err;
+                next;
             }
-            if ( ( $groups{$g} >= $index ) && ( $messages[$index] ne '' ) ) {
+
+            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
                 if ( $g eq $group ) {
                     print $client "221 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
                     $current_message = $index;
@@ -317,32 +282,13 @@ sub server
         }
 
         if ( $command =~ /^BODY ?(?=(\d+)|(.*))?/i ) {
-            my $index = $1;
-            my $message_id = $2;
-            my $g;
-            if ( $message_id ) {
-                # message_id is specified
-                $message_id =~ m/^<nntp(\d+)\@([^>]*)/;
-                $index = $1;
-                $g = $2;
-                if ( !exists $groups{$g} ) {
-                    print $client "430 No article with that message-id$eol";
-                    next;
-                }
-            } else {
-                # message number is specified
-                if ( $group eq '' ) {
-                    print $client "412 No newsgroup selected$eol";
-                    next;
-                }
-                if ( !defined($index) ) {
-                    $index = $current_message;
-                } else {
-                    $index--;
-                }
-                $g = $group;
+            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
+            if ( $err ne '' ) {
+                print $client $err;
+                next;
             }
-            if ( ( $groups{$g} >= $index ) && ( $messages[$index] ne '' ) ) {
+
+            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
                 if ( $g eq $group ) {
                     print $client "222 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
                     $current_message = $index;
@@ -373,32 +319,13 @@ sub server
         }
 
         if ( $command =~ /^STAT ?(?=(\d+)|(.*))?/i ) {
-            my $index = $1;
-            my $message_id = $2;
-            my $g;
-            if ( $message_id ) {
-                # message_id is specified
-                $message_id =~ m/^<nntp(\d+)\@([^>]*)/;
-                $index = $1;
-                $g = $2;
-                if ( !exists $groups{$g} ) {
-                    print $client "430 No article with that message-id$eol";
-                    next;
-                }
-            } else {
-                # message number is specified
-                if ( $group eq '' ) {
-                    print $client "412 No newsgroup selected$eol";
-                    next;
-                }
-                if ( !defined($index) ) {
-                    $index = $current_message;
-                } else {
-                    $index--;
-                }
-                $g = $group;
+            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
+            if ( $err ne '' ) {
+                print $client $err;
+                next;
             }
-            if ( ( $groups{$g} >= $index ) && ( $messages[$index] ne '' ) ) {
+
+            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
                 if ( $g eq $group ) {
                     print $client "223 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
                     $current_message = $index;
@@ -471,6 +398,35 @@ sub server
     }
 
     return 1;
+}
+
+sub get_group_and_index
+{
+    my ( $index, $message_id, $group, $current_message, $groups ) = @_;
+
+    my $g;
+    if ( $message_id ) {
+        # message_id is specified
+        $message_id =~ m/^<nntp(\d+)\@([^>]*)/;
+        $index = $1;
+        $g = $2;
+        if ( !exists $$groups{$g} ) {
+            return "430 No article with that message-id$eol";
+        }
+    } else {
+        # message number is specified
+        if ( $group eq '' ) {
+            return "412 No newsgroup selected$eol";
+        }
+        $g = $group;
+        if ( !defined($index) ) {
+            $index = $current_message;
+        } else {
+            $index--;
+        }
+    }
+
+    return ( '', $index, $g );
 }
 
 rmtree( 'corpus' );
@@ -709,22 +665,14 @@ if ( $pid == 0 ) {
         close $userverwriter;
         $dserverwriter->autoflush(1);
 
-        select(undef,undef,undef,5);
+        sleep 5;
 
-        my $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => '127.0.0.1',
-                        PeerPort => $port );
+        my $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         # Make sure that POPFile sends an appropriate banner
 
@@ -742,24 +690,16 @@ if ( $pid == 0 ) {
         close $client;
         sleep 5;
 
-        my $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => '127.0.0.1',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         # Make sure that POPFile sends an appropriate banner
 
-        my $result = <$client>;
+        $result = <$client>;
         test_assert_equal( $result,
             "201 NNTP POPFile (test suite) server ready$eol" );
 
@@ -787,12 +727,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "281 Now logged in$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         # Test that the catch all code works for connected servers
 
@@ -1015,12 +950,7 @@ if ( $pid == 0 ) {
         # the files to disk
 
         my $slot_file = $h->get_slot_file( $history_count );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1028,7 +958,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined( my $fl = <FILE> ) && defined( my $ml = <HIST> ) ) {
             $fl =~ s/[$cr$lf]+//g;
             $ml =~ s/[$cr$lf]+//g;
             test_assert_equal( $fl, $ml );
@@ -1081,13 +1011,8 @@ if ( $pid == 0 ) {
 
         select( undef, undef, undef, 0.1 );
 
-        my $slot_file = $h->get_slot_file( $history_count );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( $history_count );
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1095,7 +1020,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined( my $fl = <FILE> ) && defined( my $ml = <HIST> ) ) {
             $fl =~ s/[$cr$lf]+//g;
             $ml =~ s/[$cr$lf]+//g;
             test_assert_equal( $fl, $ml );
@@ -1107,7 +1032,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
             $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
@@ -1178,13 +1103,8 @@ if ( $pid == 0 ) {
 
         select( undef, undef, undef, 0.1 );
 
-        my $slot_file = $h->get_slot_file( $history_count );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( $history_count );
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1192,7 +1112,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined( my $fl = <FILE> ) && defined( my $ml = <HIST> ) ) {
             $fl =~ s/[$cr$lf]+//g;
             $ml =~ s/[$cr$lf]+//g;
             test_assert_equal( $fl, $ml );
@@ -1204,7 +1124,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
             $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
@@ -1244,12 +1164,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "205 Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
         sleep 1;
@@ -1260,10 +1175,7 @@ if ( $pid == 0 ) {
         my $line = <$ureader>;
         test_assert_equal( $line, "OK$eol" );
 
-        my $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1284,12 +1196,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "281 authentication accepted$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         print $client "GROUP test2.group$eol";
         $result = <$client>;
@@ -1326,13 +1233,8 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
-        my $slot_file = $h->get_slot_file( $history_count );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( $history_count );
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1340,7 +1242,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined( my $fl = <FILE> ) && defined( my $ml = <HIST> ) ) {
             $fl =~ s/[$cr$lf]+//g;
             $ml =~ s/[$cr$lf]+//g;
             test_assert_equal( $fl, $ml );
@@ -1350,7 +1252,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
             $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
@@ -1456,13 +1358,8 @@ if ( $pid == 0 ) {
 
         select( undef, undef, undef, 0.1 );
 
-        my $slot_file = $h->get_slot_file( $history_count );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( $history_count );
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1470,7 +1367,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined( my $fl = <FILE> ) && defined( my $ml = <HIST> ) ) {
             $fl =~ s/[$cr$lf]//g;
             $ml =~ s/[$cr$lf]//g;
             test_assert_equal( $fl, $ml );
@@ -1480,7 +1377,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
             $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
@@ -1551,13 +1448,8 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
-        my $slot_file = $h->get_slot_file( $history_count );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( $history_count );
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1565,7 +1457,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined( my $fl = <FILE> ) && defined( my $ml = <HIST> ) ) {
             $fl =~ s/[$cr$lf]//g;
             $ml =~ s/[$cr$lf]//g;
             test_assert_equal( $fl, $ml );
@@ -1574,7 +1466,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
             $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
@@ -1608,22 +1500,14 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "205 Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
         sleep 1;
 
         # Check insertion of the X-POPFile-Timeout headers
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1640,12 +1524,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "281 Now logged in$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         # ARTICLE before selecting group
 
@@ -1687,22 +1566,14 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "205 Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
         sleep 1;
 
         # Test slow LF's on a CRLF
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1719,12 +1590,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "281 Now logged in$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         print $client "ARTICLE <nntp0\@test2.group>$eol";
         $history_count++;
@@ -1748,22 +1614,14 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
         sleep 1;
 
         # Test QUIT straight after connect
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1776,22 +1634,14 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "205 goodbye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
         sleep 1;
 
         # Test odd command straight after connect gives error
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1808,12 +1658,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "205 goodbye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
         sleep 1;
@@ -1822,13 +1667,10 @@ if ( $pid == 0 ) {
         # anything
 
         print $dwriter "__SEPCHANGE Q$eol";
-        my $line = <$ureader>;
+        $line = <$ureader>;
         test_assert_equal( $line, "OK$eol" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1845,24 +1687,16 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "205 Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
         sleep 1;
 
         print $dwriter "__SEPCHANGE \$$eol";
-        my $line = <$ureader>;
+        $line = <$ureader>;
         test_assert_equal( $line, "OK$eol" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1879,25 +1713,17 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "205 Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
         sleep 1;
 
         # Send the remote server a special message that makes it die
         print $dwriter "__SEPCHANGE :$eol";
-        my $line = <$ureader>;
+        $line = <$ureader>;
         test_assert_equal( $line, "OK$eol" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1914,12 +1740,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "281 Now logged in$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         print $client "__QUIT__$eol";
         $result = <$client>;
@@ -1948,5 +1769,26 @@ if ( $pid == 0 ) {
 #        $c->stop();
     }
 }
+
+sub connect_proxy
+{
+    my $client = IO::Socket::INET->new(
+                    Proto    => "tcp",
+                    PeerAddr => 'localhost',
+                    PeerPort => $port );
+
+    return $client;
+}
+
+sub wait_proxy
+{
+    my $cd = 10;
+    while ( $cd-- ) {
+        select( undef, undef, undef, 0.1 );
+        $mq->service();
+        $h->service();
+    }
+}
+
 
 1;
