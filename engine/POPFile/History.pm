@@ -285,7 +285,8 @@ sub reserve_slot
     my $insert_sth = $self->db__()->prepare(
             "insert into history ( userid, committed, inserted )
                          values  (      ?,         ?,        ? );" );
-    my $is_sqlite2 = ( $self->db__()->{Driver}->{Name} =~ /SQLite2/ );
+    my $is_sqlite2 = ( $self->db__()->{Driver}->{Name} =~ /SQLite2?/ ) &&
+                     ( $self->db__()->{sqlite_version} =~ /^2\./ );
 
     my $slot;
 
