@@ -42,6 +42,8 @@ my $lf = "\012";
 
 my $eol = "$cr$lf";
 
+my $timeout = 2;
+
 sub pipeready
 {
     my ( $pipe ) = @_;
@@ -207,16 +209,16 @@ sub server
             my $index = $1 - 1;
             if ( defined( $messages[$index] ) &&
                  ( $messages[$index] ne '' ) ) {
-                 print $client "+OK " . ( -s $messages[$index] ) . "$eol";
+                print $client "+OK " . ( -s $messages[$index] ) . "$eol";
 
-                 my $slowlftemp = $slowlf;
+                my $slowlftemp = $slowlf;
 
-                 open FILE, "<$messages[$index]";
-                 binmode FILE;
-                 while ( <FILE> ) {
-                     s/\r|\n//g;
+                open FILE, "<$messages[$index]";
+                binmode FILE;
+                while ( <FILE> ) {
+                    s/\r|\n//g;
 
-                     if ($slowlftemp) {
+                    if ($slowlftemp) {
                         print $client "$_$cr";
                         flush $client;
                         select(undef,undef,undef, 1);
@@ -227,16 +229,17 @@ sub server
                         print $client "$_$eol" ;
                     }
 
-                     if ( $goslow ) {
-                         select( undef, undef, undef, 3 );
-                     }
-                     if ( $hang ) {
-                         select( undef, undef, undef, 30 );
-                     }
-                 }
-                 close FILE;
+                    if ( $goslow ) {
+                        select( undef, undef, undef, $timeout * 0.8 );
+                    }
+                    if ( $hang ) {
+                        select( undef, undef, undef, $timeout * 5 );
+                        last;
+                    }
+                }
+                close FILE;
 
-                 print $client ".$eol";
+                print $client ".$eol";
             } else {
                 print $client "-ERR No such message $1$eol";
             }
@@ -415,7 +418,7 @@ my $port = 9000 + int(rand(1000));
 
 $p->config_( 'port', $port );
 $p->config_( 'force_fork', 0 );
-$p->global_config_( 'timeout', 1 );
+$p->global_config_( 'timeout', $timeout );
 
 $p->config_( 'enabled', 0 );
 test_assert_equal( $p->start(), 2 );
@@ -1388,6 +1391,70 @@ if ( $pid == 0 ) {
 
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
+
+        my $cd = 10;
+        while ( $cd-- ) {
+            select( undef, undef, undef, 0.1 );
+            $mq->service();
+            $h->service();
+        }
+
+        close $client;
+
+        # Check server hang
+
+        $client = IO::Socket::INET->new(
+                        Proto    => "tcp",
+                        PeerAddr => 'localhost',
+                        PeerPort => $port );
+
+        test_assert( defined( $client ) );
+        test_assert( $client->connected );
+
+        $result = <$client>;
+        test_assert_equal( $result,
+            "+OK POP3 POPFile (test suite) server ready$eol" );
+
+        print $client "USER 127.0.0.1:8110:hang$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "+OK Welcome hang$eol" );
+
+        my $cd = 10;
+        while ( $cd-- ) {
+            select( undef, undef, undef, 0.1 );
+            $mq->service();
+            $h->service();
+        }
+
+        print $client "RETR 1$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "+OK " . ( -s $messages[0] ) . "$eol" );
+        $cam = $messages[0];
+        $cam =~ s/msg$/cam/;
+
+        test_assert( open FILE, "<$cam" );
+        binmode FILE;
+        while ( <FILE> ) {
+            my $line = $_;
+            $line   =~ s/\r|\n//g;
+            next if ( $line !~ /^(From|Subject|X-Text-Classification|X-POPFile-Link)/ );
+            $result = <$client>;
+            $line =~ s/Subject: \[.+\]/Subject: /;
+            $line =~ s/X-Text-Classification: .+/X-Text-Classification: /;
+            $result =~ s/Subject: \[.+\]/Subject: /;
+            $result =~ s/X-Text-Classification: .+/X-Text-Classification: /;
+            $result =~ s/view=9/view=popfile0=0.msg/;
+            $result =~ s/\r|\n//g;
+            test_assert_equal( $result, $line );
+        }
+        close FILE;
+
+        $result = <$client>;
+        test_assert_equal( $result, ".$eol" );
+
+        print $client "QUIT$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "-ERR no response from mail server$eol" );
 
         my $cd = 10;
         while ( $cd-- ) {

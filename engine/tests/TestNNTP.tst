@@ -42,6 +42,7 @@ my $cr = "\015";
 my $lf = "\012";
 
 my $eol = "$cr$lf";
+my $timeout = 2;
 
 sub pipeready
 {
@@ -233,10 +234,10 @@ sub server
                     }
 
                     if ( $goslow ) {
-                        select( undef, undef, undef, 3 );
+                        select( undef, undef, undef, $timeout * 0.8 );
                     }
                     if ( $hang ) {
-                        select( undef, undef, undef, 30 );
+                        select( undef, undef, undef, $timeout * 5 );
                     }
                 }
                 close FILE;
@@ -541,7 +542,7 @@ my $port = 9000 + int(rand(1000));
 
 $n->config_( 'port', $port );
 $n->config_( 'force_fork', 0 );
-$n->global_config_( 'timeout', 1 );
+$n->global_config_( 'timeout', $timeout );
 
 $n->config_( 'enabled', 0 );
 test_assert_equal( $n->start(), 2 );
