@@ -280,8 +280,6 @@ sub reserve_slot
     my $self = shift;
     my $inserted_time = shift || time;
 
-    my $r;
-    my $test_sth;
     my $insert_sth = $self->db__()->prepare(
             "insert into history ( userid, committed, inserted )
                          values  (      ?,         ?,        ? );" );
@@ -291,7 +289,7 @@ sub reserve_slot
     my $slot;
 
     while ( !defined($slot) || $slot == 0 ) {
-        $r = int(rand( 1000000000 )+2);
+        my $r = int(rand( 1000000000 )+2);
 
         $self->log_( 2, "reserve_slot selected random number $r" );
 
