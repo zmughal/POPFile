@@ -107,7 +107,7 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 4 May 2008 10:27:40
+  ; Tested with the inetc.dll plugin timestamped 15 July 2008 16:04:42
 
   ;------------------------------------------------
   ; This script requires the 'md5dll' NSIS plugin
@@ -270,7 +270,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.3.4"
+  !define C_PFI_VERSION  "0.3.5"
 
   ; Mention the wizard's version number in the window title
 

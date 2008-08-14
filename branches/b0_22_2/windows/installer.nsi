@@ -120,8 +120,8 @@
   ; (${NSISDIR}\Plugins\). The 'UAC' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with version v0.0.8 (20080310) of the 'UAC' plugin,
-  ; timestamped 10 March 2008 20:17:46.
+  ; Tested with version v0.0.9 (20080721) of the 'UAC' plugin,
+  ; timestamped 21 July 2008 23:56:04.
 
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
