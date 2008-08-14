@@ -94,7 +94,7 @@
 #--------------------------------------------------------------------------
 # URLs used to download the 'MeCab' parser support files from the POPFile
 # website (the Perl package, Windows binaries and the large dictionary files
-# are to big to include in the POPFile installer)
+# are too big to include in the POPFile installer)
 #--------------------------------------------------------------------------
 
   !ifndef C_MD5SUMS_FILE
