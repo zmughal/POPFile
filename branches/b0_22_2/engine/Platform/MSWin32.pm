@@ -114,9 +114,29 @@ sub start
 
 # ----------------------------------------------------------------------------
 #
+# prefork
+#
+# This is called when this module is about to fork POPFile
+#
+# There is no return value from this method
+#
+# ----------------------------------------------------------------------------
+sub prefork
+{
+    my ( $self ) = @_;
+
+    # If the trayicon is on, temporarily stop timer to avoid crash
+
+    if ( $self->config_( 'trayicon' ) && defined( $self->{trayicon_window} ) ) {
+        $self->{trayicon_window}->Poll->Kill(1);
+    }
+}
+
+# ----------------------------------------------------------------------------
+#
 # postfork
 #
-# This is called when some module has just forked POPFile.  It is
+# This is called when this module has just forked POPFile.  It is
 # called in the parent process.
 #
 # $pid The process ID of the new child process $reader The reading end
@@ -132,8 +152,8 @@ sub postfork
     # If the trayicon is on, recreate the trayicon to avoid crash
 
     # When the forked (pseudo-)child process exits, the Win32::GUI objects
-    # (Windows, Menus, etc.) seem to be purged and then POPFile crashes.
-    # To avoid this, recreate the trayicon.
+    # (Windows, Menus, etc.) seem to be purged. So we have to recreate the
+    # trayicon.
 
     if ( $self->config_( 'trayicon' ) ) {
         $self->prepare_trayicon();
