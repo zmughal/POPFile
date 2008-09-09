@@ -125,10 +125,10 @@ sub prefork
 {
     my ( $self ) = @_;
 
-    # If the trayicon is on, temporarily stop timer to avoid crash
+    # If the trayicon is on, temporarily disable trayicon to avoid crash
 
-    if ( $self->config_( 'trayicon' ) && defined( $self->{trayicon_window} ) ) {
-        $self->{trayicon_window}->Poll->Kill(1);
+    if ( $self->config_( 'trayicon' ) ) {
+        $self->dispose_trayicon();
     }
 }
 
@@ -149,7 +149,7 @@ sub postfork
 {
     my ( $self, $pid, $reader ) = @_;
 
-    # If the trayicon is on, recreate the trayicon to avoid crash
+    # If the trayicon is on, recreate the trayicon
 
     # When the forked (pseudo-)child process exits, the Win32::GUI objects
     # (Windows, Menus, etc.) seem to be purged. So we have to recreate the
@@ -172,39 +172,78 @@ sub prepare_trayicon
 {
     my $self = shift;
 
-    if ( defined( $self->{trayicon_window} ) ) {
-        $self->{trayicon_window}->DESTROY();
-        $self->{trayicon_menu}->DESTROY();
-
-        undef $self->{trayicon_window};
-        undef $self->{trayicon_menu};
-    }
-
-    # Create dummy window
+    # Create a dummy window
 
     $self->{trayicon_window} = Win32::GUI::Window->new();
+    if ( !defined( $self->{trayicon_window} ) ) {
+        $self->log_( 0, "Couldn't create a window for the trayicon" );
+        die "Couldn't create a window for the trayicon.";
+    }
 
-    # Create tray icon
+    # Create a trayicon
 
     my $icon = new Win32::GUI::Icon( $self->get_root_path_( 'trayicon.ico' ) );
-    my $ni = $self->{trayicon_window}->AddNotifyIcon(
+    $self->{trayicon} = $self->{trayicon_window}->AddNotifyIcon(
         -name => 'NI',
         -icon => $icon,
         -tip  => 'POPFile'
     );
+    if ( !defined( $self->{trayicon} ) ) {
+        $self->log_( 0, "Couldn't create a trayicon" );
+        die "Couldn't create a trayicon.";
+    }
 
-    # Create popup menu
+    # Create a popup menu
 
     $self->{trayicon_menu} = Win32::GUI::Menu->new(
-        '&POPFile'       => 'POPFile',
+        '&POPFile'        => 'POPFile',
         '> POPFile &UI'   => { -name => 'Menu_Open_UI', -default => 1 },
-        '> -'            => 0,
+        '> -'             => 0,
         '> &Quit POPFile' => { -name => 'Menu_Quit' },
     );
+    if ( !defined( $self->{trayicon_menu} ) ) {
+        $self->log_( 0, "Couldn't create a popup menu for the trayicon" );
+        die "Couldn't create a popup menu for the trayicon.";
+    }
 
-    # Set Timer
+    # Set timer
 
     $self->{trayicon_window}->AddTimer( 'Poll', 250 );
+}
+
+# ----------------------------------------------------------------------------
+#
+# dispose_trayicon
+#
+# Dispose dummy window and trayicon
+#
+# ----------------------------------------------------------------------------
+sub dispose_trayicon
+{
+    my ( $self ) = @_;
+
+    if ( defined( $self->{trayicon_window} ) ) {
+
+        # Stop timer
+
+        if ( defined( $self->{trayicon_window}->Poll ) ) {
+            $self->{trayicon_window}->Poll->Kill( 1 );
+        }
+
+        # Remove trayicon
+
+        if ( defined( $self->{trayicon} ) ) {
+            if ( $Win32::GUI::VERSION >= 1.04 ) {
+                $self->{trayicon}->Remove();
+            } else {
+                $self->{trayicon}->Delete( -id => $self->{trayicon}->{-id} );
+            }
+        }
+
+        undef $self->{trayicon};
+        undef $self->{trayicon_window};
+        undef $self->{trayicon_menu};
+    }
 }
 
 # ----------------------------------------------------------------------------
