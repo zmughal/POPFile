@@ -88,7 +88,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.7"
+  !define C_VERSION             "0.0.8"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -524,7 +524,7 @@ fatal_error:
 
 found_cfg:
   Push ${L_PFI_USER}        ; 'User Data' folder location
-  Push "1"                  ; assume system tray icon is enabled (the current default setting)
+  Push "0"                  ; assume system tray icon is disabled (the current default setting)
   Call GetTrayIconSetting
   Pop ${L_TRAYICON}         ; "i" if system tray icon enabled, "" if it is disabled
   DetailPrint "EnvVar: POPFILE_ROOT = ${L_PFI_ROOT}"
