@@ -60,7 +60,7 @@ sub initialize
 {
     my ( $self ) = @_;
 
-    $self->config_( 'trayicon', 1 );
+    $self->config_( 'trayicon', 0 );
     $self->config_( 'console',  0 );
 
     return 1;
