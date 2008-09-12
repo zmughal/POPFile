@@ -395,10 +395,18 @@ sub get_response_
 
     # Retrieve a single string containing the response
 
-    my $selector = new IO::Select( $mail );
-    my ($ready) = $selector->can_read( (!$null_resp?$self->global_config_( 'timeout' ):.5) );
+    my $can_read = 0;
+    if ( $mail =~ /ssl/i ) {
+        $can_read = ( $mail->pending() > 0 );
+    }
+    if ( !$can_read ) {
+        my $selector = new IO::Select( $mail );
+        my ( $ready ) = $selector->can_read(
+            ( !$null_resp ? $self->global_config_( 'timeout' ) : .5 ) );
+        $can_read = defined( $ready ) && ( $ready == $mail );
+    }
 
-    if ( ( defined( $ready ) ) && ( $ready == $mail ) ) {
+    if ( $can_read ) {
         $response = $self->slurp_( $mail );
 
         if ( $response ) {
@@ -507,20 +515,26 @@ sub verify_connected_
                 $self->tee_( $client, "$self->{ssl_not_supported_error_}$eol" );
                 return undef;
             }
-            $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
-                        Proto    => "tcp",
-                        PeerAddr => $hostname,
-                        PeerPort => $port ); # PROFILE BLOCK STOP
+
             $self->log_( 0, "Attempting to connect to SSL server at "
                         . "$hostname:$port" );
 
+            $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
+                        Proto      => "tcp",
+                        PeerAddr   => $hostname,
+                        PeerPort   => $port,
+                        MultiHomed => 1,
+                        Timeout    => $self->global_config_( 'timeout' ),
+            ); # PROFILE BLOCK STOP
+
         } else {
+            $self->log_( 0, "Attempting to connect to POP server at "
+                        . "$hostname:$port" );
+
             $mail = IO::Socket::INET->new( # PROFILE BLOCK START
                         Proto    => "tcp",
                         PeerAddr => $hostname,
                         PeerPort => $port ); # PROFILE BLOCK STOP
-            $self->log_( 0, "Attempting to connect to POP server at "
-                        . "$hostname:$port" );
         }
     }
 
@@ -537,11 +551,13 @@ sub verify_connected_
                 binmode( $mail );
             }
 
-            # Wait 10 seconds for a response from the remote server and if
-            # there isn't one then give up trying to connect
+            if ( !$ssl || ( $mail->pending() == 0 ) ) {
+                # Wait 'timeout' seconds for a response from the remote server and
+                # if there isn't one then give up trying to connect
 
-            my $selector = new IO::Select( $mail );
-            last unless $selector->can_read($self->global_config_( 'timeout' ));
+                my $selector = new IO::Select( $mail );
+                last unless $selector->can_read($self->global_config_( 'timeout' ));
+            }
 
             # Read the response from the real server and say OK
 
