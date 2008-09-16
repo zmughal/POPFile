@@ -3281,7 +3281,7 @@ Function StartPOPFilePage
 check_trayicon:
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "pfi-cfg.ini" "Inherited" "TrayIcon"
   StrCmp ${L_TEMP} "?" 0 close_file
-  FileWrite ${L_CFG} "windows_trayicon 1${MB_NL}"
+  FileWrite ${L_CFG} "windows_trayicon 0${MB_NL}"
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "0"
 
 close_file:
