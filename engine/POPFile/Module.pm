@@ -307,6 +307,20 @@ sub postfork
 
 # ----------------------------------------------------------------------------
 #
+# childexit
+#
+# Called in a child process when the child is about to exit
+#
+# There is no return value from this method
+#
+# ----------------------------------------------------------------------------
+sub childexit
+{
+    my ( $self ) = @_;
+}
+
+# ----------------------------------------------------------------------------
+#
 # deliver
 #
 # Called by the message queue to deliver a message
@@ -857,6 +871,17 @@ sub logger
     }
 
     return $self->{logger__};
+}
+
+sub setchildexit
+{
+    my ( $self, $value ) = @_;
+
+    if ( defined( $value ) ) {
+        $self->{childexit_} = $value;
+    }
+
+    return $self->{childexit_};
 }
 
 sub pipeready

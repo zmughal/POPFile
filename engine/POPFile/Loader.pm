@@ -85,6 +85,7 @@ sub new
     $self->{pipeready__}    = '';
     $self->{forker__}       = '';
     $self->{reaper__}       = '';
+    $self->{childexit__}    = '';
     $self->{warning__}      = '';
 
     # POPFile's version number as individual numbers and as
@@ -124,11 +125,12 @@ sub CORE_loader_init
     # to $self, without exposing $self to the unwashed. No reference to
     # POPFile::Loader is needed by the caller
 
-    $self->{aborting__} = sub { $self->CORE_aborting(@_) };
+    $self->{aborting__}  = sub { $self->CORE_aborting(@_) };
     $self->{pipeready__} = sub { $self->pipeready(@_) };
-    $self->{forker__} = sub { $self->CORE_forker(@_) };
-    $self->{reaper__} = sub { $self->CORE_reaper(@_) };
-    $self->{warning__} = sub { $self->CORE_warning(@_) };
+    $self->{forker__}    = sub { $self->CORE_forker(@_) };
+    $self->{reaper__}    = sub { $self->CORE_reaper(@_) };
+    $self->{childexit__} = sub { $self->CORE_childexit(@_) };
+    $self->{warning__}   = sub { $self->CORE_warning(@_) };
 
     # See if there's a file named popfile_version that contains the
     # POPFile version number
@@ -230,6 +232,30 @@ sub CORE_reaper
     }
 
     $SIG{CHLD} = $self->{reaper__};
+}
+
+#----------------------------------------------------------------------------
+#
+# CORE_childexit
+#
+# Called by a module that is in a child process and wants to exit.  This
+# warns all the other modules in the same process by calling their childexit
+# function and then does the exit.
+#
+# $code         The process exit code
+#
+#----------------------------------------------------------------------------
+sub CORE_childexit
+{
+    my ( $self, $code ) = @_;
+
+    foreach my $type (sort keys %{$self->{components__}}) {
+        foreach my $name (sort keys %{$self->{components__}{$type}}) {
+            $self->{components__}{$type}{$name}->childexit();
+        }
+    }
+
+    exit( $code );
 }
 
 #----------------------------------------------------------------------------
@@ -630,6 +656,7 @@ sub CORE_initialize
                  $self->{components__}{$type}{$name}->alive(     1 );
 
                  $self->{components__}{$type}{$name}->forker(    $self->{forker__} );
+                 $self->{components__}{$type}{$name}->setchildexit( $self->{childexit__} );
                  $self->{components__}{$type}{$name}->pipeready( $self->{pipeready__} );
 	    }
         }

@@ -193,6 +193,21 @@ sub forked
 
 #----------------------------------------------------------------------------
 #
+# childexit
+#
+# This is called inside a child process that is about to finish, since
+# the child does not need access to the database we close it
+#
+#----------------------------------------------------------------------------
+sub childexit
+{
+    my ( $self ) = @_;
+
+    $self->db_disconnect__();
+}
+
+#----------------------------------------------------------------------------
+#
 # initialize
 #
 # Called to set up the Bayes module's parameters
