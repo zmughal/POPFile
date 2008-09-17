@@ -251,7 +251,9 @@ sub service
                     if ( !defined( $pid ) || ( $pid == 0 ) ) {
                         $self->{child_}( $self, $client,
                             $self->{api_session__} );
-                        exit(0) if ( defined( $pid ) );
+                        if ( defined( $pid ) ) {
+                            &{$self->{childexit_}}( 0 );
+                        }
                     }
                 } else {
                     pipe my $reader, my $writer;
