@@ -24,8 +24,11 @@ LanguageDirection                       ltr
 # This is used to get the appropriate subdirectory for the manual
 ManualLanguage                          en
 
-# This is where to find the FAQ on the Wiki
+# These are where to find the documents on the Wiki
+WikiLink                                index.php
 FAQLink                                 FAQ
+RequestFeatureLink                      RequestFeature
+MailingListLink                         mailing_lists
 
 # Common words that are used on their own all over the interface
 Apply                                   Apply
@@ -118,6 +121,8 @@ Configuration_Error5                    The number of days in the history must b
 Configuration_Error6                    The TCP timeout must be a number between 10 and 1800
 Configuration_Error7                    The XML RPC listen port must be a number between 1 and 65535
 Configuration_Error8                    The SOCKS V proxy port must be a number between 1 and 65535
+Configuration_Error9                    The user interface port cannot be the same value as the POP3 listen port
+Configuration_Error10                   The POP3 listen port cannot be the same value as the user interface port
 Configuration_POP3Port                  POP3 listen port
 Configuration_POP3Update                Updated POP3 port to %s; this change will not take affect until you restart POPFile
 Configuration_XMLRPCUpdate              Updated XML-RPC port to %s; this change will not take affect until you restart POPFile
@@ -374,6 +379,6 @@ Imap_Use_SSL							Use SSL
 
 Shutdown_Message                        POPFile has shut down
 
-Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile misclassified to the correct bucket. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://getpopfile.org/docs/FAQ:EmailSorting">POPFile Documentation Project</a>.
+Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile misclassified to the correct bucket. Before POPFile will classify the first message, you will have to have reclassified messages to at least two buckets. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://getpopfile.org/docs/FAQ:EmailSorting">POPFile Documentation Project</a>.
 Help_Bucket_Setup                       POPFile requires at least two buckets in addition to the "unclassified" pseudo-bucket. What makes POPFile unique is that it can classify email more than that, you can have any number of buckets. A simple setup would be a "spam", "personal", and a "work" bucket.
 Help_No_More                            Don't show this again
