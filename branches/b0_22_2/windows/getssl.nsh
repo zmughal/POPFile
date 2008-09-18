@@ -153,12 +153,21 @@
 
 #--------------------------------------------------------------------------
 # URLs used to download the necessary SSL support archives and files
-# (all from the University of Winnipeg Repository)
+# (mainly from the University of Winnipeg Repository)
 #--------------------------------------------------------------------------
 
   ; In addition to some extra Perl modules, POPFile's SSL support needs two OpenSSL DLLs.
 
-  !define C_UWR_IO_SOCKET_SSL "http://theoryx5.uwinnipeg.ca/ppms/x86/IO-Socket-SSL.tar.gz"
+  ; In order to implement a timeout when attempting to connect to a SSL server POPFile
+  ; needs to use IO::Socket::SSL v1.10 or later. Unfortunately at present (17 September 2008)
+  ; the main source of the SSL support files (the University of Winnipeg repository) only has
+  ; v1.08 of this package so we get a more up-to-date version from a different repository
+  ; (currently that repository contains v1.13 of IO::Socket::SSL)
+  
+#  !define C_UWR_IO_SOCKET_SSL "http://theoryx5.uwinnipeg.ca/ppms/x86/IO-Socket-SSL.tar.gz"
+
+  !define C_UWR_IO_SOCKET_SSL "http://ppm.tcool.org/archives/IO-Socket-SSL.tar.gz"
+
   !define C_UWR_NET_SSLEAY    "http://theoryx5.uwinnipeg.ca/ppms/x86/Net_SSLeay.pm.tar.gz"
   !define C_UWR_DLL_SSLEAY32  "http://theoryx5.uwinnipeg.ca/ppms/scripts/ssleay32.dll"
   !define C_UWR_DLL_LIBEAY32  "http://theoryx5.uwinnipeg.ca/ppms/scripts/libeay32.dll"
