@@ -235,8 +235,8 @@ Security_Error1                         認証ポート番号は 1 から 65535 までにして
 Security_Stealth                        ステルスモード/サーバーオペレーション
 Security_NoStealthMode                  いいえ (ステルスモード)
 Security_StealthMode                    (ステルスモード)
-Security_ExplainStats                   (このオプションを有効にすると、POPFile は毎日一回以下の三つのデータを getpopfile.org 上のスクリプトに送ります。: bc (バケツの総数)、mc (POPFile が分類したメッセージの総数)、ec (分類エラーの総数)。これらはファイルに記録され、POPFile がどのように使用され、どの程度の効果をあげているのかを示す統計情報として公開させていただきます。Web サーバーはこれらのログファイルを約五日間保存したあと、削除します。これらの統計値を IP アドレスと関連付けて保存することはいっさいありません。)
-Security_ExplainUpdate                  (POPFile は毎日一回、以下の三つのデータを getpopfile.org 上のスクリプトに送ります。: ma (インストールされている POPFile のメジャーバージョン番号)、mi (インストールされている POPFile のマイナーバージョン番号)、bn (インストールされている POPFile のビルド番号)。新しいバージョンがリリースされると、POPFile はその情報を受けてページの上部にグラフィックを表示してお知らせします。Web サーバーはこれらのログファイルを約五日間保存したあと、削除します。これらの更新チェックに使用したデータを IP アドレスと関連付けて保存することはいっさいありません。)
+Security_ExplainStats                   (このオプションを有効にすると、POPFile は毎日一回以下の三つのデータを getpopfile.org 上のスクリプトに送ります。bc (バケツの総数)、mc (POPFile が分類したメッセージの総数)、ec (分類エラーの総数)。これらの三つの値はデータベースに記録され、POPFile がどのように使用され、どの程度の効果をあげているのかを示す<a href="http://getpopfile.org/popfile_stats.html">統計情報</a>を作成するのに使われます。Web サーバーはこれらのログファイルを数日間保存したあと、削除します。これらの統計値を IP アドレスと関連付けて保存することはいっさいありません)
+Security_ExplainUpdate                  (POPFile は毎日一回、以下の三つのデータを getpopfile.org 上のスクリプトに送ります。ma (インストールされている POPFile のメジャーバージョン番号)、mi (インストールされている POPFile のマイナーバージョン番号)、bn (インストールされている POPFile のビルド番号)。新しいバージョンがリリースされると、POPFile はその情報を受けてページの上部にグラフィックを表示してお知らせします。Web サーバーはこれらのログファイルを数日間保存したあと、削除します。これらの更新チェックに使用したデータを IP アドレスと関連付けて保存することはいっさいありません)
 Security_PasswordTitle                  ユーザーインターフェースパスワード
 Security_Password                       パスワード
 Security_PasswordUpdate                 パスワードを変更しました
