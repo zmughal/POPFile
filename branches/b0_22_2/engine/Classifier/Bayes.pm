@@ -340,29 +340,30 @@ sub start
 {
     my ( $self ) = @_;
 
-    # In Japanese or Korean mode, explicitly set LC_COLLATE to C.
+    # In Japanese or Korean or Chinese mode, explicitly set LC_COLLATE to C.
     #
     # This is to avoid Perl crash on Windows because default
     # LC_COLLATE of Japanese Win is Japanese_Japan.932(Shift_JIS),
     # which is different from the charset POPFile uses for Japanese
     # characters(EUC-JP).
 
-    if ( defined( $self->module_config_( 'html', 'language' ) ) &&
-       ( $self->module_config_( 'html', 'language' ) =~ /^Nihongo|Korean$/ )) {
+    my $lang = $self->module_config_( 'html', 'language' ) || '';
+
+    if ( $lang =~ /^(Nihongo$|Korean$|Chinese)/ ) {
         use POSIX qw( locale_h );
         setlocale( LC_COLLATE, 'C' );
     }
 
     # Pass in the current interface language for language specific parsing
 
-    $self->{parser__}->{lang__}  = $self->module_config_( 'html', 'language' ) || '';
+    $self->{parser__}->{lang__}  = $lang;
     $self->{unclassified__} = log( $self->config_( 'unclassified_weight' ) );
 
     if ( !$self->db_connect__() ) {
         return 0;
     }
 
-    if ( $self->{parser__}->{lang__} eq 'Nihongo' ) {
+    if ( $lang eq 'Nihongo' ) {
         # Setup Nihongo (Japanese) parser.
 
         my $nihongo_parser = $self->config_( 'nihongo_parser' );
