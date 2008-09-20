@@ -1616,10 +1616,6 @@ sub magnet_match_helper__
 
     $match = lc($match);
 
-    # In Japanese and Korean mode, disable locale.  Sorting Japanese
-    # and Korean with "use locale" is memory and time consuming, and
-    # may cause perl crash.
-
     my @magnets;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
@@ -3280,11 +3276,6 @@ sub get_bucket_word_prefixes
         "select words.word from matrix, words
          where matrix.wordid  = words.id and
                matrix.bucketid = $bucketid;");        # PROFILE BLOCK STOP
-
-    # In Japanese mode, disable locale and use substr_euc, the substr
-    # function which supports EUC Japanese charset.  Sorting Japanese
-    # with "use locale" is memory and time consuming, and may cause
-    # perl crash.
 
     if ( $self->module_config_( 'html', 'language' ) eq 'Nihongo' ) {
         return grep {$_ ne $prev && ($prev = $_, 1)} sort map {substr_euc__($_,0,1)} @{$result};
