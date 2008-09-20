@@ -1147,17 +1147,15 @@ sub advanced_page
     push ( @words, ' ' );
     for my $word (@words) {
         if ( $self->config_( 'language' ) =~ /^Korean$/ ) {
-            no locale;
             $word =~ /^(.)/;
             $c = $1;
         } else {
-                if ( $self->config_( 'language' ) =~ /^Nihongo$/ ) {
-               no locale;
-               $word =~ /^($euc_jp)/o;
-               $c = $1;
+            if ( $self->config_( 'language' ) =~ /^Nihongo$/ ) {
+                $word =~ /^($euc_jp)/o;
+                $c = $1;
             } else {
-               $word =~ /^(.)/;
-               $c = $1;
+                $word =~ /^(.)/;
+                $c = $1;
             }
         }
 
