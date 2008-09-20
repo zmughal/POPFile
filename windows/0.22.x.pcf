@@ -5,9 +5,9 @@ Format=1
 
 [Settings]
 POPFileVersion=0.22.x
-PatchIssue=2
+PatchIssue=3
 NumberOfPatches=1
-Comment=Updated to cope with current SSL files (14 February 2008 @ 15:20 GMT)
+Comment=Updated to cope with SSL file from ppm.tcool.org (20 September 2008 @ 14:01 GMT)
 
 [Patch-1]
 Category=ESSENTIAL
