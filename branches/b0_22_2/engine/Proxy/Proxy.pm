@@ -498,14 +498,15 @@ sub verify_connected_
 
     if ( $self->config_( 'socks_server' ) ne '' ) {
         require IO::Socket::Socks;
+        $self->log_( 0, "Attempting to connect to socks server at "
+                    . $self->config_( 'socks_server' ) . ":"
+                    . ProxyPort => $self->config_( 'socks_port' ) );
+
         $mail = IO::Socket::Socks->new( # PROFILE BLOCK START
                     ProxyAddr => $self->config_( 'socks_server' ),
                     ProxyPort => $self->config_( 'socks_port' ),
                     ConnectAddr  => $hostname,
                     ConnectPort  => $port ); # PROFILE BLOCK STOP
-        $self->log_( 0, "Attempting to connect to socks server at "
-                    . $self->config_( 'socks_server' ) . ":"
-                    . ProxyPort => $self->config_( 'socks_port' ) );
     } else {
         if ( $ssl ) {
             eval {
@@ -536,7 +537,9 @@ sub verify_connected_
             $mail = IO::Socket::INET->new( # PROFILE BLOCK START
                         Proto    => "tcp",
                         PeerAddr => $hostname,
-                        PeerPort => $port ); # PROFILE BLOCK STOP
+                        PeerPort => $port,
+                        Timeout    => $self->global_config_( 'timeout' ),
+            ); # PROFILE BLOCK STOP
         }
     }
 
