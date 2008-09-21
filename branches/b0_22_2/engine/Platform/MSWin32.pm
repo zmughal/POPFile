@@ -182,7 +182,7 @@ sub prepare_trayicon
 
     # Create a trayicon
 
-    my $icon = new Win32::GUI::Icon( $self->get_root_path_( 'trayicon.ico' ) );
+    my $icon = Win32::GUI::Icon->new( $self->get_root_path_( 'trayicon.ico' ) );
     $self->{trayicon} = $self->{trayicon_window}->AddNotifyIcon(
         -name => 'NI',
         -icon => $icon,
@@ -190,7 +190,6 @@ sub prepare_trayicon
     );
     if ( !defined( $self->{trayicon} ) ) {
         $self->log_( 0, "Couldn't create a trayicon" );
-        die "Couldn't create a trayicon.";
     }
 
     # Create a popup menu
@@ -203,7 +202,6 @@ sub prepare_trayicon
     );
     if ( !defined( $self->{trayicon_menu} ) ) {
         $self->log_( 0, "Couldn't create a popup menu for the trayicon" );
-        die "Couldn't create a popup menu for the trayicon.";
     }
 
     # Set timer
