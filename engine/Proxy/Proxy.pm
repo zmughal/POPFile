@@ -523,11 +523,10 @@ sub verify_connected_
                         . "$hostname:$port" );
 
             $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
-                        Proto      => "tcp",
-                        PeerAddr   => $hostname,
-                        PeerPort   => $port,
-                        MultiHomed => 1,
-                        Timeout    => $self->global_config_( 'timeout' ),
+                        Proto    => "tcp",
+                        PeerAddr => $hostname,
+                        PeerPort => $port,
+                        Timeout  => $self->global_config_( 'timeout' ),
             ); # PROFILE BLOCK STOP
 
         } else {
@@ -538,7 +537,7 @@ sub verify_connected_
                         Proto    => "tcp",
                         PeerAddr => $hostname,
                         PeerPort => $port,
-                        Timeout    => $self->global_config_( 'timeout' ),
+                        Timeout  => $self->global_config_( 'timeout' ),
             ); # PROFILE BLOCK STOP
         }
     }
