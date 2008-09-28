@@ -522,67 +522,12 @@ sub verify_connected_
             $self->log_( 0, "Attempting to connect to SSL server at "
                         . "$hostname:$port" );
 
-            if ( $^O eq 'MSWin32' ) {
-                my $timeout = $self->global_config_( 'timeout' );
-                my $tt = time + $timeout;
-
-                $mail = IO::Socket::INET->new( # PROFILE BLOCK START
-                            Proto    => "tcp",
-                            PeerAddr => $hostname,
-                            PeerPort => $port,
-                            Timeout  => $timeout,
-                ); # PROFILE BLOCK STOP
-
-                if ( $mail ) {
-                    # Change the socket to non-blocking mode
-
-                    my $non_blocking = 1;
-                    ioctl( $mail, 0x8004667e, \$non_blocking );
-
-                    $self->log_( 2, "Trying to upgrade socket $mail to SSL" );
-
-                    while ( $tt > time ) {
-                        # Upgrade the socket to SSL
-
-                        IO::Socket::SSL->start_SSL( # PROFILE BLOCK START
-                                $mail,
-                                Timeout  => $timeout,
-                        ); # PROFILE BLOCK STOP
-
-                        my $err = IO::Socket::SSL->errstr;
-                        last if ( $err eq '' );
-
-                        $self->log_( 1, "Got an error $err from start_SSL" );
-
-                        last if ( !defined $mail );
-
-                        my $vec = '';
-                        vec( $vec, $mail->fileno, 1 ) = 1;
-                        my $rv =  # PROFILE BLOCK START
-                            ( $err eq IO::Socket::SSL->SSL_WANT_READ )  ? select( $vec, undef, undef, $timeout ) :
-                            ( $err eq IO::Socket::SSL->SSL_WANT_WRITE ) ? select( undef, $vec, undef, $timeout ) :
-                            undef; # PROFILE BLOCK STOP
-
-                        last if ( !$rv );
-                    }
-
-                    if ( !defined $mail || ( ref $mail ne 'IO::Socket::SSL' ) ) {
-                        $self->log_( 0, "Failed to upgrade the socket to SSL" );
-                        $mail->close if defined $mail;
-                        undef $mail;
-                    }
-
-                    $self->log_( 2, "The socket $mail has successfully been upgraded" );
-                }
-
-            } else {
-                $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
-                            Proto    => "tcp",
-                            PeerAddr => $hostname,
-                            PeerPort => $port,
-                            Timeout  => $self->global_config_( 'timeout' ),
-                ); # PROFILE BLOCK STOP
-            }
+            $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
+                        Proto    => "tcp",
+                        PeerAddr => $hostname,
+                        PeerPort => $port,
+                        Timeout  => $self->global_config_( 'timeout' ),
+            ); # PROFILE BLOCK STOP
 
         } else {
             $self->log_( 0, "Attempting to connect to POP server at "
