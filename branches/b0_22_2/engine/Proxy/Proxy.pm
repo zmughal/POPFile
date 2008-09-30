@@ -523,6 +523,14 @@ sub verify_connected_
                         . "$hostname:$port" );
 
             if ( $^O eq 'MSWin32' ) {
+
+                # Workaround for avoiding intermittent password problem when
+                # using SSL. The problem occurs because IO::Socket->blocking
+                # is not supported on Windows.
+                # IO::Socket 1.30_01 which is included in Perl 5.10 seems to
+                # support blocking() on Windows. So we may remove this
+                # workaround when we move to Perl 5.10.
+
                 my $timeout = $self->global_config_( 'timeout' );
                 my $tt = time + $timeout;
 
