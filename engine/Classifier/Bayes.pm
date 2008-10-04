@@ -2340,7 +2340,7 @@ sub classify
         my %qm = %{$self->{parser__}->quickmagnets()};
         my $mlen = scalar(keys %{$self->{parser__}->quickmagnets()});
 
-        if ( $mlen >= 0 ) {
+        if ( $mlen > 0 ) {
             $templ->param( 'View_QuickMagnets_If' => 1 );
             $templ->param( 'View_QuickMagnets_Count' => ($mlen + 1) );
             my @buckets = $self->get_buckets( $session );
