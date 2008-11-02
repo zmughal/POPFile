@@ -440,7 +440,7 @@ sub connect_server__ {
         else {
             $self->log_( 0, "Could not STATUS folder $folder." );
             $imap->logout();
-            die "POPFILE-IMAP-EXCEPTION: Lost connection while trying to log out (" . __FILE__ . '(' . __LINE__ . '))';
+            die "POPFILE-IMAP-EXCEPTION: Could not get a STATUS for IMAP folder $folder (" . __FILE__ . '(' . __LINE__ . '))';
         }
     }
 }
