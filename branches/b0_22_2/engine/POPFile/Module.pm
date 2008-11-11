@@ -801,7 +801,12 @@ sub can_read__
             $can_read = ( $handle->pending() > 0 );
         }
         if ( !$can_read ) {
-            $can_read = defined( $slurp_data__{"$handle"}{select}->can_read( $timeout ) );
+            if ( defined( $slurp_data__{"$handle"}{select} ) ) {
+                $can_read = defined( $slurp_data__{"$handle"}{select}->can_read( $timeout ) );
+            } else {
+                my $selector    = new IO::Select( $handle );
+                $can_read = defined( $selector->can_read( $timeout ) );
+            }
         }
     }
 
