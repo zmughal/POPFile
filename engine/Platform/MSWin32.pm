@@ -46,6 +46,8 @@ sub new
 
     $self->name( 'windows' );
 
+    $self->{use_tray_icon__} = 0;
+
     return $self;
 }
 
@@ -127,7 +129,7 @@ sub prefork
 
     # If the trayicon is on, temporarily disable trayicon to avoid crash
 
-    if ( $self->config_( 'trayicon' ) ) {
+    if ( $self->{use_tray_icon__} ) {
         $self->dispose_trayicon();
     }
 }
@@ -155,7 +157,7 @@ sub postfork
     # (Windows, Menus, etc.) seem to be purged. So we have to recreate the
     # trayicon.
 
-    if ( $self->config_( 'trayicon' ) ) {
+    if ( $self->{use_tray_icon__} ) {
         $self->prepare_trayicon();
     }
 }
@@ -171,6 +173,8 @@ sub postfork
 sub prepare_trayicon
 {
     my $self = shift;
+
+    $self->{use_tray_icon__} = 1;
 
     # Create a dummy window
 
