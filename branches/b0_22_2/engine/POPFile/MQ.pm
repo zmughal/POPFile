@@ -115,7 +115,6 @@ sub service
     # pipes and deal with it now
 
     for my $kid (keys %{$self->{children__}}) {
-        $self->log_( 2, "Parent: call flush_child_data_() for pid $kid" );
         $self->flush_child_data_( $self->{children__}{$kid} );
     }
 
