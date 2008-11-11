@@ -2545,7 +2545,7 @@ sub shorten__
 {
     my ( $self, $string, $length ) = @_;
 
-    if ( length($string)>$length) {
+    if ( length($string) > $length ) {
         $string =~ /(.{$length})/;
         $1 =~ /((?:$euc_jp)*)/o if ( $self->config_( 'language' ) eq 'Nihongo' );
         $string = "$1...";
@@ -2564,6 +2564,11 @@ sub shorten__
 sub view_page
 {
     my ( $self, $client, $templ ) = @_;
+
+    if ( !$self->{history__}->is_valid_slot( $self->{form_}{view} ) ) {
+        return $self->http_redirect_( $client,
+             "/history?session=$self->{session_key__}" );
+    }
 
     my $mail_file = $self->{history__}->get_slot_file( $self->{form_}{view} );
     my $start_message = $self->{form_}{start_message} || 0;
