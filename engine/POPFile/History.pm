@@ -453,11 +453,14 @@ sub get_slot_fields
 {
     my ( $self, $slot ) = @_;
 
+    return undef if ( !defined( $slot ) || $slot !~ /^\d+$/ );
+
     return $self->db__()->selectrow_array(
         "select $fields_slot from history, buckets, magnets
-             where history.id = $slot and
-                   buckets.id = history.bucketid and
-                   magnets.id = magnetid;" );
+             where history.id        = $slot and
+                   buckets.id        = history.bucketid and
+                   magnets.id        = magnetid and
+                   history.committed = 1;" );
 }
 
 #---------------------------------------------------------------------------
@@ -473,8 +476,12 @@ sub is_valid_slot
 {
     my ( $self, $slot ) = @_;
 
+    return undef if ( !defined( $slot ) || $slot !~ /^\d+$/ );
+
     my @row = $self->db__()->selectrow_array(
-        "select id from history where history.id = $slot;" );
+        "select id from history
+             where history.id        = $slot and
+                   history.committed = 1;" );
 
     return ( ( @row ) && ( $row[0] == $slot ) );
 }
