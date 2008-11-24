@@ -235,8 +235,8 @@ sub initialize
     $self->config_( 'dbconnect', 'dbi:SQLite:dbname=$dbname' );
     $self->config_( 'dbuser', '' ); $self->config_( 'dbauth', '' );
 
-    # SQLite 1.05+ have some problems we are resolving.  This lets us
-    # give a nice message and then disable the version checking later
+    # SQLite 1.05+ had some problems we've resolved.
+    # This parameter is no longer used but we leave it for future use
 
     $self->config_( 'bad_sqlite_version', '4.0.0' );
 
@@ -737,6 +737,8 @@ sub db_connect__
     my $dbconnect = $self->config_( 'dbconnect' );
     my $dbpresent;
     my $sqlite = ( $dbconnect =~ /sqlite/i );
+    my $mysql  = ( $dbconnect =~ /mysql/i );
+    my %connection_options = ();
 
     if ( $sqlite ) {
         $dbname = $self->get_user_path_( $self->config_( 'database' ) );
@@ -744,6 +746,13 @@ sub db_connect__
     } else {
         $dbname = $self->config_( 'database' );
         $dbpresent = 1;
+
+        if ( $mysql ) {
+
+            # Turn on auto_reconnect
+
+            $connection_options{mysql_auto_reconnect} = 1;
+        }
     }
 
     # Record whether we are using SQLite or not and the name of the
@@ -824,9 +833,10 @@ sub db_connect__
         }
     }
 
-    $self->{db__} = DBI->connect( $dbconnect,                    # PROFILE BLOCK START
+    $self->{db__} = DBI->connect( $dbconnect,                 # PROFILE BLOCK START
                                   $self->config_( 'dbuser' ),
-                                  $self->config_( 'dbauth' ) );  # PROFILE BLOCK STOP
+                                  $self->config_( 'dbauth' ),
+                                  \%connection_options );     # PROFILE BLOCK STOP
 
     if ( !defined( $self->{db__} ) ) {
         $self->log_( 0, "Failed to connect to database and got error $DBI::errstr" );
