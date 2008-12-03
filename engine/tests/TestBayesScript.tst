@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for bayes.pl
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -19,10 +19,9 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 my $bayes = 'perl -I ../ ../bayes.pl';
-
 my @stdout;
 
 # One or no command line arguments
@@ -48,11 +47,9 @@ test_assert( $code != 0 );
 open TEMP, "<temp.tmp";
 $line = <TEMP>;
 close TEMP;
+unlink 'temp.tmp';
+
 test_assert_regexp( $line, 'Error: File `doesnotexist\' does not exist, classification aborted' );
-
-# Restore STDERR
-
-open STDERR, ">&", $old_stderr;
 
 # Check the output
 
@@ -67,9 +64,11 @@ while ( <WORDS> ) {
 close WORDS;
 
 @stdout = `$bayes TestMails/TestMailParse021.msg`;# 2> temp.tmp 1> temp2.tmp" );
+unlink 'temp.tmp';
+unlink 'temp2.tmp';
 
 $code = ($? >> 8);
-test_assert( $code == 0 );
+test_assert_equal( $code, 0 );
 $line = shift @stdout;
 test_assert_regexp( $line, '`TestMails/TestMailParse021.msg\' is `spam\'' );
 
@@ -88,7 +87,9 @@ foreach my $word (keys %output) {
     test_assert_equal( $words{$word}, $output{$word}, $word );
 }
 
-unlink 'temp.tmp';
-unlink 'temp2.tmp';
-rmtree( 'bayes.pl.' );
+# Restore STDERR
+
+open STDERR, ">&", $old_stderr;
+
+
 1;

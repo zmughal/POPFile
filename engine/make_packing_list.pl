@@ -5,7 +5,7 @@
 #
 # Builds the POPFile packing list of required modules
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -40,12 +40,11 @@ my $japanese = 'Japanese Language Support';
 my %explain = ( 'Encode' => $japanese,
                 'Encode::Guess' => $japanese,
                 'BerkeleyDB' => 'Upgrades from v0.20.x',
+                'DBD::SQLite' => 'SQLite3 backend',
                 'IO::Socket::SSL' => 'SSL Connection Support',
                 'IO::Socket::Socks' => 'Socks Proxy Support',
                 'MeCab' => $japanese,
                 'Text::Kakasi' => $japanese,
-                'Crypt::OpenSSL::Random' => 'Cryptgraphic Random support',
-                'Crypt::Random' => 'Cryptgraphic Random support',,
                 'XMLRPC::Transport::HTTP' => 'XML-RPC Server Support' );
 
 # ARGV should contain the name of the packing list to generate

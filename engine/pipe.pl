@@ -1,10 +1,9 @@
 #!/usr/bin/perl
 # ----------------------------------------------------------------------------
 #
-# pipe.pl --- Read a message in on STDIN and write out the modified
-# version on STDOUT
+# pipe.pl --- Read a message in on STDIN and write out the modified version on STDOUT
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -39,9 +38,11 @@ if ( $#ARGV == -1 ) {
     # Indicate that we should create not output on STDOUT (the POPFile
     # load sequence)
 
+    $POPFile->debug(0);
     $POPFile->CORE_loader_init();
     $POPFile->CORE_signals();
     $POPFile->CORE_load( 1 );
+    $POPFile->CORE_link_components();
     $POPFile->CORE_initialize();
 
     # Ugly hack which is needed because Bayes::classify_and_modify looks up
@@ -58,7 +59,6 @@ if ( $#ARGV == -1 ) {
 
         # Prevent the tool from finding another copy of POPFile running
 
-        my $current_piddir = $c->config_( 'piddir' );
         $c->config_( 'piddir', $c->config_( 'piddir' ) . 'pipe.pl.' );
 
         # TODO: interface violation
@@ -67,11 +67,9 @@ if ( $#ARGV == -1 ) {
         $POPFile->CORE_start();
 
         my $b = $POPFile->get_module('Classifier::Bayes');
-        my $session = $b->get_administrator_session_key();
+        my $session = $b->get_session_key( 'admin', '' );
 
         $b->classify_and_modify( $session, \*STDIN, \*STDOUT, 1, '', 0, 1, "\n" );
-
-        $c->config_( 'piddir', $current_piddir );
         $b->release_session_key( $session );
         $POPFile->CORE_stop();
     }

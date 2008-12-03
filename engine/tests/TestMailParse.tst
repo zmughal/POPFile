@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for MailParse.pm
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -19,31 +19,58 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
-
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
-
-my %valid = ( 'Classifier/Bayes' => 1,
-              'Classifier/WordMangle' => 1,
-              'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Database'     => 1,
-              'POPFile/Configuration' => 1 );
-
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+# ---------------------------------------------------------------------------------------------
 
 use Classifier::MailParse;
+use Classifier::Bayes;
+use Classifier::WordMangle;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+
+# Load the test corpus
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $b = new Classifier::Bayes;
+my $w = new Classifier::WordMangle;
+
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
+
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->start();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$c->module_config_( 'html', 'language', 'English' );
+
+$b->{parser__}->mangle( $w );
+$b->initialize();
+test_assert( $b->start() );
+
 my $cl = new Classifier::MailParse;
 
-$cl->{mangle__} = $POPFile->get_module( 'Classifier/WordMangle' );
+$cl->mangle( $w );
 $cl->{lang__} = "English";
-
 # map_color()
 test_assert_equal( $cl->map_color( 'red' ),     'ff0000' );
 test_assert_equal( $cl->map_color( 'ff0000' ),  'ff0000' );
@@ -98,7 +125,6 @@ $cl->{htmlfontcolor__} = $cl->map_color( 'black' );
 $cl->{words__}       = {};
 $cl->{first20count__} = 0;
 $cl->add_line( 'this is a test of,adding words: from a line of text!', 0, '' );
-
 test_assert_equal( $cl->{words__}{test},   1 );
 test_assert_equal( $cl->{words__}{adding}, 1 );
 test_assert_equal( $cl->{words__}{words},  1 );
@@ -142,6 +168,7 @@ $cl->{htmlfontcolor__} = '';
 test_assert_equal( $cl->parse_html( '<font color=#00FF00></font>' ), 0 ); # test for empty tag removal interacting with font tags
 test_assert_equal( $cl->{htmlfontcolor__}, '' );
 
+
 # Check comment detection
 $cl->{words__}         = {};
 test_assert_equal( $cl->parse_html( '<!-- foo -->' ), 0 );
@@ -153,14 +180,14 @@ test_assert_equal( $cl->parse_html( '<!DOCTYPE >' ), 0 );
 # test_assert_equal( $cl->{words__}{'html:comment'}, 3 );
 
 # Check invisible ink detection
-$cl->{htmlfontcolor__} = '';
+$cl->{htmlfontcolor__} = '000000';
 $cl->{words__}         = {};
 $cl->{in_html_tag}   = 0;
 test_assert_equal( $cl->parse_html( '<body bgcolor="#ffffff">hello <font color=white>invisible</font>visible</body>  ' ), 0 );
 test_assert_equal( $cl->{words__}{hello},     1 );
 test_assert_equal( $cl->{words__}{visible},   1 );
 test_assert_equal( defined( $cl->{words__}{invisible} ), '' );
-$cl->{htmlfontcolor__} = '';
+$cl->{htmlfontcolor__} = '000000';
 $cl->{words__}         = {};
 $cl->{in_html_tag}   = 0;
 test_assert_equal( $cl->parse_html( '   <body bgcolor="#ffffff">  hello<font color=white>' ), 0 );
@@ -169,7 +196,7 @@ test_assert_equal( $cl->parse_html( 'visible</body>'                            
 test_assert_equal( $cl->{words__}{hello},     1 );
 test_assert_equal( $cl->{words__}{visible},   1 );
 test_assert_equal( defined( $cl->{words__}{invisible} ), '' );
-$cl->{htmlfontcolor__} = '';
+$cl->{htmlfontcolor__} = '000000';
 $cl->{words__}         = {};
 $cl->{in_html_tag}   = 0;
 test_assert_equal( $cl->parse_html( '<body bgcolor="#ffffff">hello  <font' ), 1 );
@@ -180,7 +207,7 @@ test_assert_equal( $cl->{words__}{visible},   1 );
 test_assert_equal( defined( $cl->{words__}{invisible} ), '' );
 
 # CSS tests
-$cl->{htmlfontcolor__} = '';
+$cl->{htmlfontcolor__} = '000000';
 $cl->{words__}         = {};
 $cl->{in_html_tag}   = 0;
 
@@ -262,6 +289,7 @@ $cl->parse_html( '<body style="color:#ffffff;background: white">' );
 test_assert_equal( $cl->{words__}{'html:cssfontcolorffffff'}, 1 );
 test_assert_equal( $cl->{words__}{'html:cssbackcolorffffff'}, 1 );
 
+
 test_assert_equal( $cl->{cssfontcolortag__}, 'body' );
 test_assert_equal( $cl->{cssbackcolortag__}, 'body' );
 test_assert_equal( $cl->{htmlfontcolor__}, 'ffffff' );
@@ -299,6 +327,7 @@ test_assert_equal( $cl->{htmlcolordistance__}, 1 );
 test_assert_equal( $cl->{htmlfontcolor__}, '000000' );
 test_assert_equal( $cl->{htmlbackcolor__}, '010101' );
 
+
 $cl->parse_html( '</P>');
 
 test_assert_equal( $cl->{cssfontcolortag__}, '' );
@@ -322,7 +351,7 @@ $cl->update_tag( "faketag(|", "foo", 0, 0 );
 $cl->update_tag( "faketag(|", "foo", 1, 0 );
 
 # glob the tests directory for files called TestMails/TestMailParse\d+.msg which consist of messages
-# to be parsed with the resulting values for the words hash in TestMails/TestMailParse\d+.wrd
+# to be parsed with the resulting values for the words hash in TestMailParse\d+.wrd
 
 # Since the [[:alpha:]] regular expression is affected by the system locale, fix the
 # locale to 'C'.
@@ -346,7 +375,7 @@ for my $parse_test (@parse_tests) {
     while ( <WORDS> ) {
         if ( /^(.+) (\d+)/ ) {
             my ( $word, $value ) = ( $1, $2 );
-            test_assert_equal( $cl->{words__}{$word}, $value, "$words $word $value" );
+            test_assert_equal( $cl->{words__}{$word}, $value, "$words: $cl->{words__}{$word} $word $value" );
             delete $cl->{words__}{$word};
         }
     }
@@ -368,6 +397,10 @@ for my $parse_test (@parse_tests) {
         delete $cl->{words__}{$missed};
     }
 }
+
+# Restore the system locale
+
+setlocale( LC_CTYPE, $current_locale );
 
 # Check that from, to and subject get set correctly when parsing a message
 $cl->parse_file( 'TestMails/TestMailParse013.msg' );
@@ -392,7 +425,6 @@ test_assert_equal( $cl->{cc__},      'dsmith@dmi.net, dsmith@datamine.net, dsmit
 
 my @color_tests = ( 'TestMails/TestMailParse015.msg', 'TestMails/TestMailParse019.msg' );
 
-my $b = $POPFile->get_module( 'Classifier/Bayes' );
 my $session = $b->get_session_key( 'admin', '' );
 
 for my $color_test (@color_tests) {
@@ -433,6 +465,8 @@ test_assert_equal($cl->decode_string("=?ISO-8859-1?B?QWxhZGRpbjpvcGVuIHNlc2FtZQ=
 test_assert_equal($cl->decode_string("=?ISO-8859-1?B?QWxhZGRpbjpvcGVuIHNlc2FtZQ==?= =?ISO-8859-1?B?QWxhZGRpbjpvcGVuIHNlc2FtZQ==?= aaa"), "Aladdin:open sesameAladdin:open sesame aaa");
 test_assert_equal($cl->decode_string("abba =?ISO-8859-1?B?QWxhZGRpbjpvcGVuIHNlc2FtZQ==?= =?ISO-8859-1?B?QWxhZGRpbjpvcGVuIHNlc2FtZQ==?= aaa"), "abba Aladdin:open sesameAladdin:open sesame aaa");
 test_assert_equal($cl->decode_string("=?ISO-8859-1?B?QWxhZGRpbjpvcGVuIHNlc2FtZQ==?= a =?ISO-8859-1?B?QWxhZGRpbjpvcGVuIHNlc2FtZQ==?= aaa"), "Aladdin:open sesame a Aladdin:open sesame aaa");
+
+
 
 # test get_header
 
@@ -558,12 +592,12 @@ foreach my $prefix (@INC) {
 }
 
 if ( $have_text_kakasi ) {
-    $b->global_config_( 'language', 'Nihongo' );
-#    $b->{parser__}->mangle( $w );
+    $b->module_config_( 'html', 'language', 'Nihongo' );
+    $b->config_( 'nihongo_parser', 'kakasi' );
+    $b->{parser__}->mangle( $w );
     $b->initialize();
     test_assert( $b->start() );
     $cl->{lang__} = 'Nihongo';
-
     my $nihongo_parser = $cl->setup_nihongo_parser( 'kakasi' );
     test_assert_equal( $nihongo_parser, 'kakasi' );
 
@@ -586,18 +620,18 @@ if ( $have_text_kakasi ) {
 
     # Test kakasi wakachi-gaki
 
-    $cl->{nihongo_parser__}{init}($cl);
+    $cl->{nihongo_parser__}{init}();
 
     my $wakati_string = pack( "H*", "504f5046696c6520a4cf20bcabc6b020a5e1a1bca5eb20bfb6a4eacaaca4b120a5c4a1bca5eb20a4c7a4b9" );
-    test_assert_equal( $cl->{nihongo_parser__}{parse}($cl, $original_string), $wakati_string );
+    test_assert_equal( $cl->parse_line_with_kakasi($original_string), $wakati_string );
 
     $original_string = pack( "H*", "504f5046696c65a4cfbcab0a09c6b0a5e1a1bca5ebbfb609a4ea0dcaac202020a4b1a5c4a1bca5eba4c7a4b9" );
     $wakati_string = pack( "H*", "504f5046696c6520a4cf20bcabc6b00a09a5e1a1bca5eb20bfb6a4eacaaca4b1090d202020a5c4a1bca5eb20a4c7a4b9" );
-    test_assert_equal( $cl->{nihongo_parser__}{parse}($cl, $original_string), $wakati_string );
+    test_assert_equal( $cl->parse_line_with_kakasi($original_string), $wakati_string );
 
-    $cl->{nihongo_parser__}{close}($cl);
+    $cl->{nihongo_parser__}{close}();
 
-    # Test for parsing Japanese e-mails.
+    # parse test for Japanese e-mails.
 
     require POPFile::Mutex;
     $cl->{kakasi_mutex__} = new POPFile::Mutex( 'mailparse_kakasi' );
@@ -689,6 +723,6 @@ if ( $have_text_kakasi ) {
     print "\nWarning: Japanese tests skipped because Text::Kakasi was not found\n";
 }
 
-$POPFile->CORE_stop();
+$b->stop();
 
 1;

@@ -2,7 +2,7 @@
 #
 # stop_popfile.nsi --- A simple 'command-line' utility to shutdown POPFile silently.
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -81,18 +81,20 @@
 # The '/WAIT' parameter is important, otherwise the 'failed' case will not be detected.
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.37" compiler,
+  ; released 3 May 2008. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.37"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -100,6 +102,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -122,7 +125,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.5.12"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.6.8"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
@@ -135,6 +138,12 @@
   ; Selecting 'silent' mode makes the installer behave like a command-line utility
 
   SilentInstall silent
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
   ;-------------------------------------------------------------------------------
   ; Time delay constants used in conjunction with the NSISdl plugin
@@ -165,15 +174,19 @@
 
   VIProductVersion                          "${C_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "POPFile Silent Shutdown Utility - stops POPFile without \
                                             opening a browser window."
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Silent Shutdown Utility"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -227,7 +240,7 @@ Section Shutdown
 
 usage:
   MessageBox MB_OK "POPFile Silent Shutdown Utility v${C_VERSION}            \
-    Copyright (c) 2005  John Graham-Cumming\
+    Copyright (c)  ${C_BUILD_YEAR}  John Graham-Cumming\
     ${MB_NL}${MB_NL}\
     This command-line utility shuts POPFile down silently, without opening a browser window.\
     ${MB_NL}${MB_NL}\
@@ -248,8 +261,10 @@ usage:
     ${MB_NL}          IF ERRORLEVEL 1 GOTO FAILED\
     ${MB_NL}          ECHO Shutdown succeeded\
     ${MB_NL}          GOTO DONE\
+    ${MB_NL}\
     ${MB_NL}          :FAILED\
     ${MB_NL}          ECHO **** Shutdown failed ****\
+    ${MB_NL}\
     ${MB_NL}          :DONE\
     ${MB_NL}${MB_NL}\
     Distributed under the terms of the GNU General Public License (GPL) v2."
@@ -432,42 +447,49 @@ SectionEnd
 Function GetNextParam
 
   !define L_CHAR      $R9                     ; a character from the input list
-  !define L_LIST      $R8                     ; input list of parameters (may be empty)
-  !define L_PARAM     $R7                     ; the first parameter found
+  !define L_LENGTH    $R8                     ; use string length to determine if end-of-string reached
+  !define L_LIST      $R7                     ; input list of parameters (may be empty)
+  !define L_PARAM     $R6                     ; the first parameter found
 
   Exch ${L_LIST}
   Push ${L_PARAM}
   Push ${L_CHAR}
+  Push ${L_LENGTH}
 
   StrCpy ${L_PARAM} ""
 
 loop_L:
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCpy ${L_LIST} ${L_LIST} "" 1             ; remove char from input list
   StrCmp ${L_CHAR} " " loop_L
 
 loop_P:
   StrCpy ${L_PARAM} ${L_PARAM}${L_CHAR}
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCpy ${L_LIST} ${L_LIST} "" 1
   StrCmp ${L_CHAR} " " 0 loop_P               ; loop until a space is found
 
 loop_T:
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCmp ${L_CHAR} " " 0 done
   StrCpy ${L_LIST} ${L_LIST} "" 1             ; remove trailing spaces
   Goto loop_T
 
 done:
+  Pop ${L_LENGTH}
   Pop ${L_CHAR}
   Exch ${L_PARAM}                             ; put parameter on stack (may be "")
   Exch
   Exch ${L_LIST}                              ; put revised list on stack (may be "")
 
   !undef L_CHAR
+  !undef L_LENGTH
   !undef L_LIST
   !undef L_PARAM
 

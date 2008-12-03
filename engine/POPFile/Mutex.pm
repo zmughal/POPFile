@@ -5,7 +5,7 @@ package POPFile::Mutex;
 # This is a mutex object that uses mkdir() to provide exclusive access
 # to a region on a per thread or per process basis.
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -52,13 +52,11 @@ sub new
 #   Returns 1 if it manages to grab the mutex (and will block if necessary)
 #   and 0 if it fails.
 #
-#   $self                     Reference to this object
-#   $timeout                  Timeout in seconds to wait (undef = infinite)
-#
 #----------------------------------------------------------------------------
 sub acquire
 {
-    my ( $self, $timeout ) = @_;
+    my ( $self,             # Reference to this object
+         $timeout ) = @_;   # Timeout in seconds to wait (undef = infinite)
 
     # If acquire() has been called without a matching release() then
     # fail at once

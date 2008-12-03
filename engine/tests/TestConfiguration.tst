@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for Configuration.pm
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -19,23 +19,21 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 use locale;
 use POSIX qw( locale_h );
 setlocale( LC_COLLATE, 'C' );
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
 
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 
-$POPFile->CORE_load( 0, \%valid );
-my $c = $POPFile->get_module( 'POPFile/Configuration' );
+$c->configuration( $c );
 
 # Check that we can get and set a parameter
 $c->parameter( 'testparam', 'testvalue' );
@@ -46,9 +44,18 @@ my @all = $c->configuration_parameters();
 test_assert_equal( $#all, 0 );
 test_assert_equal( $all[0], 'testparam' );
 
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$c->mq( $mq );
+$c->logger( $l );
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
 
 # Basic tests
 test_assert_equal( $c->name(), 'config' );
@@ -61,20 +68,16 @@ test_assert_equal( $c->global_config_( 'msgdir' ), 'messages/' );
 
 # Save STDERR
 
-my $old_stderr;
-open $old_stderr, ">&STDERR";
+open my $old_stderr, ">&STDERR";
 
 # Check that the PID file gets created and then deleted and
 # contains the correct process ID
 
 $c->config_( 'piddir', '../tests/' );
-$c->{pid_delay__} = 1;
-open (STDERR, ">stdout.tmp");
-
 test_assert_equal( $c->start(), 1 );
 test_assert( $c->check_pid_() );
 test_assert_equal( $c->get_pid_(), $$ );
-
+open (STDERR, ">stdout.tmp");
 test_assert_equal( $c->start(), 1 );
 $c->stop();
 test_assert( !$c->check_pid_() );
@@ -117,36 +120,31 @@ if ($process != 0) {
 
 close STDERR;
 $c->stop();
+
 # Check that the popfile.cfg was written
 
-my @expected_config = (
- 'GLOBAL_ca_file ./certs/ca.pem',
- 'GLOBAL_cert_file ./certs/server-cert.pem',
- 'GLOBAL_crypt_device ',
- 'GLOBAL_crypt_strength 0',
- 'GLOBAL_debug 0',
- 'GLOBAL_key_file ./certs/server-key.pem',
- 'GLOBAL_language English',
- 'GLOBAL_message_cutoff 100000',
- 'GLOBAL_msgdir messages/',
- 'GLOBAL_random_module Crypt::OpenSSL::Random',
- 'GLOBAL_session_timeout 1800',
- 'GLOBAL_single_user 1',
- 'GLOBAL_timeout 60',
- 'config_pidcheck_interval 5',
- 'config_piddir ../tests/',
- 'logger_format default',
- 'logger_level 0',
- 'logger_logdir ./',
- 'testparam testvalue',
-);
-
 open FILE, "<popfile.cfg";
-foreach ( @expected_config ) {
-    my $line = <FILE>;
-    chomp $line;
-    test_assert_equal( $line, $_ );
-}
+my $line = <FILE>;
+test_assert_regexp( $line, 'GLOBAL_debug 0' );
+$line = <FILE>;
+test_assert_regexp( $line, 'GLOBAL_message_cutoff 100000' );
+$line = <FILE>;
+test_assert_regexp( $line, 'GLOBAL_msgdir messages/' );
+$line = <FILE>;
+test_assert_regexp( $line, 'GLOBAL_timeout 60' );
+$line = <FILE>;
+test_assert_regexp( $line, 'config_pidcheck_interval 5' );
+$line = <FILE>;
+test_assert_regexp( $line, 'config_piddir ../tests/' );
+$line = <FILE>;
+test_assert_regexp( $line, 'logger_format default' );
+$line = <FILE>;
+test_assert_regexp( $line, 'logger_level 0' );
+$line = <FILE>;
+test_assert_regexp( $line, 'logger_logdir ./' );
+$line = <FILE>;
+test_assert_regexp( $line, 'testparam testvalue' );
+$line = <FILE>;
 close FILE;
 
 # Now add a parameter and reload the configuration
@@ -225,7 +223,7 @@ open OUTPUT, "<stdout.tmp";
 <OUTPUT>;
 my $line = <OUTPUT>;
 close OUTPUT;
-test_assert_regexp( $line, 'Unknown option: -config_foobar' );
+test_assert_regexp( $line, 'Unknown option -config_foobar' );
 @ARGV = ( '--', '-config_piddir', 'test4/' );
 test_assert( $c->parse_command_line() );
 test_assert_equal( $c->module_config_( 'config', 'piddir' ), 'test4/' );
@@ -234,10 +232,9 @@ open (STDERR, ">stdout.tmp");
 test_assert( !$c->parse_command_line() );
 close STDERR;
 open OUTPUT, "<stdout.tmp";
-<OUTPUT>;
 my $line = <OUTPUT>;
 close OUTPUT;
-test_assert_regexp( $line, 'Unknown option: --doesnotexist' );
+test_assert_regexp( $line, 'Unknown option: doesnotexist' );
 @ARGV = ( '--set', 'baz' );
 open (STDERR, ">stdout.tmp");
 test_assert( !$c->parse_command_line() );
@@ -260,24 +257,25 @@ test_assert_regexp( $line, 'Expected a command line option and got baz' );
 # Restore STDERR
 
 open STDERR, ">&", $old_stderr;
+
 # path_join__
 
-test_assert_equal( $c->path_join( 'foo', '/root', 0 ), '/root' );
-test_assert_equal( $c->path_join( 'foo', '/', 0 ), '/' );
-test_assert_equal( $c->path_join( 'foo', 'c:\\root', 0 ), 'c:\\root' );
-test_assert_equal( $c->path_join( 'foo', 'c:\\', 0 ), 'c:\\' );
+test_assert_equal( $c->path_join__( 'foo', '/root', 0 ), '/root' );
+test_assert_equal( $c->path_join__( 'foo', '/', 0 ), '/' );
+test_assert_equal( $c->path_join__( 'foo', 'c:\\root', 0 ), 'c:\\root' );
+test_assert_equal( $c->path_join__( 'foo', 'c:\\', 0 ), 'c:\\' );
 
-test_assert( !defined( $c->path_join( 'foo', '/root' ) ) );
-test_assert( !defined( $c->path_join( 'foo', '/' ) ) );
-test_assert( !defined( $c->path_join( 'foo', 'c:\\root' ) ) );
-test_assert( !defined( $c->path_join( 'foo', 'c:\\' ) ) );
+test_assert( !defined( $c->path_join__( 'foo', '/root' ) ) );
+test_assert( !defined( $c->path_join__( 'foo', '/' ) ) );
+test_assert( !defined( $c->path_join__( 'foo', 'c:\\root' ) ) );
+test_assert( !defined( $c->path_join__( 'foo', 'c:\\' ) ) );
 
-test_assert_equal( $c->path_join( '/foo', 'bar' ), '/foo/bar' );
-test_assert_equal( $c->path_join( '/foo/', 'bar' ), '/foo/bar' );
-test_assert_equal( $c->path_join( 'foo/', 'bar' ), 'foo/bar' );
-test_assert_equal( $c->path_join( 'foo', 'bar' ), 'foo/bar' );
-test_assert_equal( $c->path_join( 'foo', '\\\\bar', 0 ), '\\\\bar' );
-test_assert( !defined( $c->path_join( 'foo', '\\\\bar' ) ) );
+test_assert_equal( $c->path_join__( '/foo', 'bar' ), '/foo/bar' );
+test_assert_equal( $c->path_join__( '/foo/', 'bar' ), '/foo/bar' );
+test_assert_equal( $c->path_join__( 'foo/', 'bar' ), 'foo/bar' );
+test_assert_equal( $c->path_join__( 'foo', 'bar' ), 'foo/bar' );
+test_assert_equal( $c->path_join__( 'foo', '\\\\bar', 0 ), '\\\\bar' );
+test_assert( !defined( $c->path_join__( 'foo', '\\\\bar' ) ) );
 
 # get_user_path (note Makefile sets POPFILE_USER to ../tests/)
 
@@ -315,12 +313,6 @@ test_assert( !defined( $c->get_root_path( '/foo' ) ) );
 test_assert_equal( $c->get_root_path( 'foo/' ), './foo/' );
 $c->{popfile_root__} = '../';
 
-# TODO : multi user test
-
-$POPFile->CORE_stop();
-
-#unlink 'stdout.tmp';
-
-print "\nfinished\n";
+unlink 'stdout.tmp';
 
 1;

@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -178,8 +178,8 @@ Password_Error1                         Z³e has³o
 Security_Error1                         Port musi byæ miêdzy 1 a 65535
 Security_Stealth                        Operacje w trybie niewidocznym
 Security_NoStealthMode                  Nie (tryb niewidoczny)
-Security_ExplainStats                   (gdy to jest w³±czone POPFile wysy³a raz dziennie nastêpuj±ce trzy warto¶ci do skryptu na www.usethesource.com: bc (liczba folderów, które posiadasz), mc (liczba klasyfikowanych wiadomo¶ci) i ec (liczba b³êdów klasyfikacji).  S± one gromadzone w pliku i wykorzystam je do publikacji o ludziach u¿ywaj±cych POPFile'a i jak on dzia³a.  Mój serwer przechowuje dane przez 5 dni a nastêpnie je kasuje; Nie przechowujê ¿adnych danych o adresach IP, itp.)
-Security_ExplainUpdate                  (gdy to jest w³±czone POPFile wysy³a raz dziennie nastêpuj±ce trzy warto¶ci do skryptu na www.usethesource.com: ma (numer wersji POPFile'a), mi (numer podwersji POPFile'a) i bn (numer kompilacji POPFile'a).  POPFile otrzymuje graficzn± informacjê na g³ównej stronie je¶li pojawi siê nowa wersja.  Mój serwer przechowuje dane przez 5 dni a nastêpnie je kasuje; Nie przechowujê ¿adnych danych o adresach IP, itp.)
+Security_ExplainStats                   (gdy to jest w³±czone POPFile wysy³a raz dziennie nastêpuj±ce trzy warto¶ci do skryptu na getpopfile.org: bc (liczba folderów, które posiadasz), mc (liczba klasyfikowanych wiadomo¶ci) i ec (liczba b³êdów klasyfikacji).  S± one gromadzone w pliku i wykorzystam je do publikacji o ludziach u¿ywaj±cych POPFile'a i jak on dzia³a.  Mój serwer przechowuje dane przez 5 dni a nastêpnie je kasuje; Nie przechowujê ¿adnych danych o adresach IP, itp.)
+Security_ExplainUpdate                  (gdy to jest w³±czone POPFile wysy³a raz dziennie nastêpuj±ce trzy warto¶ci do skryptu na getpopfile.org: ma (numer wersji POPFile'a), mi (numer podwersji POPFile'a) i bn (numer kompilacji POPFile'a).  POPFile otrzymuje graficzn± informacjê na g³ównej stronie je¶li pojawi siê nowa wersja.  Mój serwer przechowuje dane przez 5 dni a nastêpnie je kasuje; Nie przechowujê ¿adnych danych o adresach IP, itp.)
 Security_PasswordTitle                  Has³o interface'u u¿ytkownika
 Security_Password                       Has³o
 Security_PasswordUpdate                 Zmieniono has³o na %s
@@ -208,7 +208,7 @@ Magnet_Error3                           Utwórz nowy musik '%s' w folderze '%s'
 Magnet_CurrentMagnets                   Aktualne musiki
 Magnet_Message1                         Nastêpuj±ce musiki spowoduj± klasyfikacjê listów zawsze w okre¶lonych folderach.
 Magnet_CreateNew                        Utwórz nowy musik
-Magnet_Explanation                      <b>Nastêpuj±ce rodzaje musików s± dostêpne:</b> <ul><li><b>Adres lub nazwa nadawcy:</b> na przyk³ad: john@company.com dotyczy konkretnego adresu, <br />company.com dotyczy wszystkich nadawców z company.com, <br />John Doe dotyczy konkretnej osoby, John dotyczy wszystkich Johnów</li><li><b>Adres lub nazwa Do/Cc:</b> Jak w przypadku pola Od, ale dotyczy pól Do:/Cc: </li> <li><b>S³owa w temacie:</b> na przyk³ad: hello dotyczy wszystkich wiadomo¶ci z hello w temacie</li></ul>
+Magnet_Explanation                      Nastêpuj±ce rodzaje musików s± dostêpne:</b> <ul><li><b>Adres lub nazwa nadawcy:</b> na przyk³ad: john@company.com dotyczy konkretnego adresu, <br />company.com dotyczy wszystkich nadawców z company.com, <br />John Doe dotyczy konkretnej osoby, John dotyczy wszystkich Johnów</li><li><b>Adres lub nazwa Do/Cc:</b> Jak w przypadku pola Od, ale dotyczy pól Do:/Cc: </li> <li><b>S³owa w temacie:</b> na przyk³ad: hello dotyczy wszystkich wiadomo¶ci z hello w temacie</li></ul>
 Magnet_MagnetType                       Rodzaj musika
 Magnet_Value                            Warto¶æ
 Magnet_Always                           Zawsze idzie do folderu

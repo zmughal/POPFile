@@ -2,7 +2,7 @@
 #
 # Tests for IMAP.pm
 #
-# Copyright (c) 2003-2007 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -51,11 +51,10 @@ my $lf = "\012";
 my $eol = "$cr$lf";
 my $debug = 0;
 my $spool = "imap.spool";
-my $uid_file = 'imap.uids';
 
 # if nothing happens with in $idle_timeout seconds
 # we call exit.
-my $idle_timeout = 300;
+my $idle_timeout = 60;
 
 my @mailboxes = qw/INBOX spam personal other unclassified/;
 
@@ -77,6 +76,7 @@ my $state           = 'Not Authenticated';
 my $drop_connection_at  = -1;
 my $uidvalidity         =  1;
 my $time_out_at         = -1;
+my $unsolicited         = '';
 
 
 # Create the spool directory
@@ -204,7 +204,7 @@ while ( 1 ) {
 }
 
 close $main_sock;
-unlink $uid_file;
+unlink 'imap.uids';
 print "\nThe IMAP_test_server is exiting.\n";
 
 # handle_command
@@ -253,10 +253,13 @@ sub handle_command
                     $uidvalidity = 2;
                 }
                 elsif ( $user =~ /^duplicateMessage/ ) {
-
+                    # TODO: something seems to be missing here
                 }
                 elsif ( $user =~ /^timeOut(\d+)$/ ) {
                     $time_out_at = $1;
+                }
+                elsif ( $user =~ /unsolicited(.+)$/ ) {
+                    $unsolicited = $1;
                 }
             }
 
@@ -311,8 +314,15 @@ sub handle_command
 
     # NOOP
         if ( $command =~ /^NOOP/ ) {
-            print $client "$tag OK NOOP complete.$eol";
-            return;
+            if ( $unsolicited ) {
+                print $client "* $unsolicited$eol";
+                $client->shutdown( 2 );
+                return;
+            }
+            else {
+                print $client "$tag OK NOOP complete.$eol";
+                return;
+            }
         }
 
     # EXPUNGE
@@ -462,7 +472,7 @@ sub file_message {
     uid_next( $folder );
     my $new_uid = $uidnext{ $folder };
     uid_next( $folder, $uidnext{ $folder }+1 );
-    debug( "Trying to copy TestMails/TestMailParse$msg.msg to $spool/$folder/$new_uid" );
+    debug( "Trying to copy TestMailParse$msg.msg to $spool/$folder/$new_uid" );
     copy "TestMails/TestMailParse$msg.msg", "$spool/$folder/$new_uid";
 }
 
@@ -628,12 +638,15 @@ sub uid_next {
     my $folder  = shift;
     my $uidnext = shift;
 
-    if ( open my $UIDS, '<', $uid_file ) {
+    if ( open my $UIDS, '<', 'imap.uids' ) {
         while ( <$UIDS> ) {
             /(.+):(.+)[\r\n]/;
             $uidnext{ $1 } = $2;
         }
     }
+#    else {
+#        die "IMAP-test-server has a problem: cannot open file 'imap.uids'";
+#    }
 
     if ( defined $uidnext ) {
         $uidnext{ $folder } = $uidnext;

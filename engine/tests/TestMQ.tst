@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for MQ.pm
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -19,23 +19,29 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
 
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-my $mq = $POPFile->get_module( 'POPFile/MQ' );
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
 
 # Basic configuration
 test_assert_equal( $mq->name(), 'mq' );
@@ -51,9 +57,9 @@ my $r = new Test::MQReceiver;
 # Register three different message types
 
 $mq->register( 'MESG1', $r );
-$mq->register( 'MSG1',  $r );
-$mq->register( 'MSG2',  $r );
-$mq->register( 'MSG3',  $r );
+$mq->register( 'MSG1', $r );
+$mq->register( 'MSG2', $r );
+$mq->register( 'MSG3', $r );
 
 # Now send messages and check for their receipt
 
@@ -115,7 +121,5 @@ test_assert_equal( $messages[1][1][1], 'param1' );
 test_assert_equal( $messages[1][0], 'MSG1' );
 test_assert_equal( $messages[1][1][0], 'message1' );
 test_assert_equal( $messages[1][1][1], 'param1' );
-
-$POPFile->CORE_stop();
 
 1;

@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for XMLRPC.pm
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -21,112 +21,147 @@
 #
 #   Modified by Sam Schinke (sschinke@users.sourceforge.net)
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
+
 
 use POSIX ":sys_wait_h";
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->{debug__} = 1;
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use Classifier::MailParse;
+use Classifier::Bayes;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use UI::XMLRPC;
 
-my %valid = ( 'POPFile/Database'      => 1,
-              'POPFile/Logger'        => 1,
-              'POPFile/MQ'            => 1,
-              'Classifier/Bayes'      => 1,
-              'POPFile/Configuration' => 1,
-              'UI/XMLRPC'             => 1, );
+# Load the test corpus
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $b = new Classifier::Bayes;
+my $x = new UI::XMLRPC;
 
-#use UI::XMLRPC;
-#my $x = new UI::XMLRPC;
-#$x->loader( $POPFile );
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
 
-my $x = $POPFile->get_module( 'UI::XMLRPC' );
+$l->initialize();
 
-#$x->initialize();
-$x->config_( 'enabled', 1 );
-test_assert( $x->config_( 'enabled' ), 1 );
-my $xport = 12000 + int( rand( 2000 ) );
-$x->config_( 'port', $xport );
-$POPFile->CORE_start();
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
 
-my ( $pid, $handle ) = $POPFile->CORE_forker();
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
 
-if ( $pid == 0 ) {
+$x->configuration( $c );
+$x->mq( $mq );
+$x->logger( $l );
+$x->{classifier__} = $b;
+
+$c->module_config_( 'html', 'language', 'English' );
+
+$b->initialize();
+test_assert( $b->start() );
+
+$x->initialize();
+$x->config_('enabled',1);
+
+my $xport = 12000 + int(rand(2000));
+
+$x->config_("port", $xport);
+
+$b->prefork();
+$mq->prefork();
+
+$l->config_( 'level', 2 );
+
+pipe my $reader, my $writer;
+my $pid = fork();
+
+if ($pid == 0) {
+
+    close $reader;
+
+    $b->forked( $writer );
+    $mq->forked( $writer );
+
     # CHILD THAT WILL RUN THE XMLRPC SERVER
+    if ($x->start() == 1) {
+        test_assert(1, "start passed\n");
 
-    my $count = 50;
-    while ( $POPFile->CORE_service( 1 ) ) {
-        select( undef, undef, undef, 0.1 );
-        last if ( $count-- <= 0 );
+        my $count = 50;
+        while ( $mq->service() && $x->service() && $b->alive()) {
+            select(undef,undef,undef, 0.1);
+            last if ( $count-- <= 0 );
+        }
+    } else {
+        test_assert(0,"start failed\n");
     }
 
-    sleep 2;
     exit(0);
 } else {
     # PARENT -- test the XMLRPC server
 
-    sleep 2;
+    close $writer;
+
+    $b->postfork( $pid, $reader );
+    $mq->postfork( $pid, $reader );
+
+    select(undef,undef,undef,1);
     use XMLRPC::Lite;
 
-    print "Testing $xport\n";
+    my $session = XMLRPC::Lite
+    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+    -> call('POPFile/API.get_session_key','admin', '')
+    -> result;
 
-    my $session;
-    eval {
-        $session = XMLRPC::Lite
-            -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-            -> call('POPFile/API.get_session_key','admin', '')
-            -> result;
-    };
+    test_assert( $session ne '' );
 
-    test_assert( defined( $session ) );
-    test_assert_equal( $@, '' );
+    my $set_bucket_color = XMLRPC::Lite
+    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+    -> call('POPFile/API.set_bucket_color', $session, 'personal', 'somecolour')
+    -> result;
 
-    if ( defined( $session ) ) {
-        my $set_bucket_color = XMLRPC::Lite
-        -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-        -> call('POPFile/API.set_bucket_color', $session, 'personal', 'somecolour')
-        -> result;
+    test_assert_equal( $set_bucket_color, 1 );
 
-        test_assert_equal( $set_bucket_color, 1 );
+    select(undef,undef,undef,.2);
 
-        select( undef, undef, undef, .2 );
+    my $bucket_color = XMLRPC::Lite
+    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+    -> call('POPFile/API.get_bucket_color', $session, 'personal')
+    -> result;
 
-        my $bucket_color = XMLRPC::Lite
-        -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-        -> call('POPFile/API.get_bucket_color', $session, 'personal')
-        -> result;
+    test_assert_equal( $bucket_color, 'somecolour' );
 
-        test_assert_equal( $bucket_color, 'somecolour' );
+    select(undef,undef,undef,.2);
 
-        select( undef, undef, undef, .2 );
+    my $buckets = XMLRPC::Lite
+    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+    -> call('POPFile/API.get_buckets', $session )
+    -> result;
 
-        my $buckets = XMLRPC::Lite
-        -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-        -> call('POPFile/API.get_buckets', $session )
-        -> result;
+    test_assert_equal( @$buckets[0], 'other' );
+    test_assert_equal( @$buckets[1], 'personal' );
+    test_assert_equal( @$buckets[2], 'spam' );
 
-        test_assert_equal( @$buckets[0], 'other' );
-        test_assert_equal( @$buckets[1], 'personal' );
-        test_assert_equal( @$buckets[2], 'spam' );
+    select(undef,undef,undef,.2);
 
-        select( undef, undef, undef, .2 );
+    XMLRPC::Lite
+    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+    -> call('POPFile/API.release_session_key', $session );
 
-        XMLRPC::Lite
-        -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-        -> call('POPFile/API.release_session_key', $session );
-    }
+    $b->stop();
+    $x->stop();
 
-    $POPFile->CORE_stop();
-
+    sleep 4 if ( $^O eq 'MSWin32' );
     while ( waitpid( -1, &WNOHANG ) > 0 ) {
         sleep 1;
     }
 }
 
-1;
+

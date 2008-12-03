@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Platform::MSWin32;
 
 use POPFile::Module;
@@ -8,7 +8,7 @@ use POPFile::Module;
 #
 # This module handles POPFile specifics on Windows
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -46,6 +46,8 @@ sub new
 
     $self->name( 'windows' );
 
+    $self->{use_tray_icon__} = 0;
+
     return $self;
 }
 
@@ -60,7 +62,7 @@ sub initialize
 {
     my ( $self ) = @_;
 
-    $self->config_( 'trayicon', 1 );
+    $self->config_( 'trayicon', 0 );
     $self->config_( 'console',  0 );
 
     return 1;
@@ -103,13 +105,147 @@ sub start
 
     foreach my $dir (@temp) {
         if ( $dir =~ /pdk\-.+\-(\d+)$/ ) {
-            if ( $$ != $1 ) {
+   	        if ( $$ != $1 ) {
                 rmdir $dir;
-            }
+	        }
         }
     }
 
     return $self->SUPER::start();
+}
+
+# ----------------------------------------------------------------------------
+#
+# prefork
+#
+# This is called when this module is about to fork POPFile
+#
+# There is no return value from this method
+#
+# ----------------------------------------------------------------------------
+sub prefork
+{
+    my ( $self ) = @_;
+
+    # If the trayicon is on, temporarily disable trayicon to avoid crash
+
+    if ( $self->{use_tray_icon__} ) {
+        $self->dispose_trayicon();
+    }
+}
+
+# ----------------------------------------------------------------------------
+#
+# postfork
+#
+# This is called when this module has just forked POPFile.  It is
+# called in the parent process.
+#
+# $pid The process ID of the new child process $reader The reading end
+#      of a pipe that can be used to read messages from the child
+#
+# There is no return value from this method
+#
+# ----------------------------------------------------------------------------
+sub postfork
+{
+    my ( $self, $pid, $reader ) = @_;
+
+    # If the trayicon is on, recreate the trayicon
+
+    # When the forked (pseudo-)child process exits, the Win32::GUI objects
+    # (Windows, Menus, etc.) seem to be purged. So we have to recreate the
+    # trayicon.
+
+    if ( $self->{use_tray_icon__} ) {
+        $self->prepare_trayicon();
+    }
+}
+
+# ----------------------------------------------------------------------------
+#
+# prepare_trayicon
+#
+# Create a dummy window, a trayicon and a menu, and then set a timer to the
+# window.
+#
+# ----------------------------------------------------------------------------
+sub prepare_trayicon
+{
+    my $self = shift;
+
+    $self->{use_tray_icon__} = 1;
+
+    # Create a dummy window
+
+    $self->{trayicon_window} = Win32::GUI::Window->new();
+    if ( !defined( $self->{trayicon_window} ) ) {
+        $self->log_( 0, "Couldn't create a window for the trayicon" );
+        die "Couldn't create a window for the trayicon.";
+    }
+
+    # Create a trayicon
+
+    my $icon = Win32::GUI::Icon->new( $self->get_root_path_( 'trayicon.ico' ) );
+    $self->{trayicon} = $self->{trayicon_window}->AddNotifyIcon(
+        -name => 'NI',
+        -icon => $icon,
+        -tip  => 'POPFile'
+    );
+    if ( !defined( $self->{trayicon} ) ) {
+        $self->log_( 0, "Couldn't create a trayicon" );
+    }
+
+    # Create a popup menu
+
+    $self->{trayicon_menu} = Win32::GUI::Menu->new(
+        '&POPFile'        => 'POPFile',
+        '> POPFile &UI'   => { -name => 'Menu_Open_UI', -default => 1 },
+        '> -'             => 0,
+        '> &Quit POPFile' => { -name => 'Menu_Quit' },
+    );
+    if ( !defined( $self->{trayicon_menu} ) ) {
+        $self->log_( 0, "Couldn't create a popup menu for the trayicon" );
+    }
+
+    # Set timer
+
+    $self->{trayicon_window}->AddTimer( 'Poll', 250 );
+}
+
+# ----------------------------------------------------------------------------
+#
+# dispose_trayicon
+#
+# Dispose dummy window and trayicon
+#
+# ----------------------------------------------------------------------------
+sub dispose_trayicon
+{
+    my ( $self ) = @_;
+
+    if ( defined( $self->{trayicon_window} ) ) {
+
+        # Stop timer
+
+        if ( defined( $self->{trayicon_window}->Poll ) ) {
+            $self->{trayicon_window}->Poll->Kill( 1 );
+        }
+
+        # Remove trayicon
+
+        if ( defined( $self->{trayicon} ) ) {
+            if ( $Win32::GUI::VERSION >= 1.04 ) {
+                $self->{trayicon}->Remove();
+            } else {
+                $self->{trayicon}->Delete( -id => $self->{trayicon}->{-id} );
+            }
+        }
+
+        undef $self->{trayicon};
+        undef $self->{trayicon_window};
+        undef $self->{trayicon_menu};
+    }
 }
 
 # ----------------------------------------------------------------------------
@@ -149,28 +285,20 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ( $status_message );
-
     if ( $name eq 'windows_trayicon_and_console' ) {
 
-        if ( defined( $$form{update_windows_configuration} ) ) {
-            if ( $$form{windows_trayicon} ) {
-                $self->config_( 'trayicon', 1 );
-            } else {
-                $self->config_( 'trayicon', 0 );
-            }
+        if ( defined($$form{windows_trayicon}) ) {
+            $self->config_( 'trayicon', $$form{windows_trayicon} );
+            $templ->param( 'trayicon_feedback' => 1 );
+        }
 
-            if ( $$form{windows_console} ) {
-                $self->config_( 'console', 1 );
-            } else {
-                $self->config_( 'console', 0 );
-            }
-
-            $status_message = $$language{Windows_NextTime};
+        if ( defined($$form{windows_console}) ) {
+            $self->config_( 'console', $$form{windows_console} );
+            $templ->param( 'console_feedback' => 1 );
         }
     }
 
-   return ( $status_message, undef );
+   return '';
 }
 
 1;

@@ -1,8 +1,8 @@
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 #
 # Tests for HTTP.pm
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -19,7 +19,7 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------
 
 
 sub my_handler
@@ -40,27 +40,40 @@ sub my_handler
 use IO::Handle;
 use POSIX ":sys_wait_h";
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
-
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
-
-$POPFile->CORE_load( 0, \%valid );
 use UI::HTTP;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 my $h = new UI::HTTP;
-$h->loader( $POPFile );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$h->configuration( $c );
+$h->mq( $mq );
+$h->logger( $l );
+
+$c->initialize();
+$h->initialize();
 
 my $port = 9000 + int(rand(1000));
 $h->config_( 'port', $port );
 $h->config_( 'local', 1 );
-$h->config_( 'cookie_cipher', 'Blowfish' );
 test_assert_equal( $h->config_( 'port' ),  $port );
 test_assert_equal( $h->config_( 'local' ), 1 );
 test_assert_equal( $h->start(), 1 );
@@ -121,6 +134,25 @@ test_assert_equal( $h->url_encode_( 'thealmighty$' ), 'thealmighty%24' );
 test_assert_equal( $h->url_encode_( 'youcan"me' ), 'youcan%22me' );
 test_assert_equal( $h->url_encode_( '{start' ), '%7bstart' );
 
+# http_redirect_ tests
+
+open FILE, ">temp.tmp";
+binmode FILE;
+$h->http_redirect_( \*FILE, 'http://www.usethesource.com/' );
+close FILE;
+open FILE, "<temp.tmp";
+binmode FILE;
+my $line = <FILE>;
+test_assert_equal( $line, "HTTP/1.0 302 Found$eol" );
+$line = <FILE>;
+test_assert_equal( $line, "Location: http://www.usethesource.com/$eol" );
+$line = <FILE>;
+test_assert( defined( $line ) );
+test_assert( $line =~ /^$eol$/ );
+$line = <FILE>;
+test_assert( !defined( $line ) );
+close FILE;
+
 # http_error_ tests
 
 open FILE, ">temp.tmp";
@@ -131,15 +163,6 @@ open FILE, "<temp.tmp";
 binmode FILE;
 my $line = <FILE>;
 test_assert_equal( $line, "HTTP/1.0 404 Error$eol" );
-$line = <FILE>;
-test_assert( defined( $line ) );
-$line = <FILE>;
-test_assert( defined( $line ) );
-$line = <FILE>;
-test_assert( defined( $line ) );
-test_assert( $line =~ /^$eol$/ );
-#$line = <FILE>;
-#test_assert( !defined( $line ) );
 close FILE;
 
 # http_file_ tests
@@ -152,15 +175,6 @@ open FILE, "<temp.tmp";
 binmode FILE;
 my $line = <FILE>;
 test_assert_equal( $line, "HTTP/1.0 404 Error$eol" );
-$line = <FILE>;
-test_assert( defined( $line ) );
-$line = <FILE>;
-test_assert( defined( $line ) );
-$line = <FILE>;
-test_assert( defined( $line ) );
-test_assert( $line =~ /^$eol$/ );
-#$line = <FILE>;
-#test_assert( !defined( $line ) );
 close FILE;
 
 open FILE, ">send.tmp";
@@ -191,6 +205,7 @@ $line = <FILE>;
 test_assert_equal( $line, "Expires: $expires$eol" );
 $line = <FILE>;
 test_assert_equal( $line, "Content-Length: " . ( -s 'send.tmp' ) . "$eol" );
+unlink 'send.tmp';
 $line = <FILE>;
 test_assert( defined( $line ) );
 test_assert( $line =~ /^$eol$/ );
@@ -204,7 +219,10 @@ close FILE;
 
 my $h2 = new UI::HTTP;
 
-$h2->loader( $POPFile );
+$h2->configuration( $c );
+$h2->mq( $mq );
+$h2->logger( $l );
+
 $h2->initialize();
 $h2->name( 'simple' );
 $h2->config_( 'port', -1 );
@@ -224,9 +242,7 @@ close TEMP;
 
 $h2->stop();
 
-unlink 'temp.tmp';
 unlink 'stdout.tmp';
-unlink 'send.tmp';
 
 # Fork into a subprocess that keeps calling service() on the HTTP
 # module to handle requests and a top level process that sends down
@@ -265,9 +281,9 @@ if ( $pid == 0 ) {
     test_assert( $client->connected );
 
     print $client "GET / HTTP/1.0$eol" . "Header: Mine$eol" . "~~~~~~: ~~~~~~~$eol$eol";
-    select( undef, undef, undef, 0 );
+    select( undef, undef, undef, 0.1 );
     $line = <$client>;
-    test_assert_equal( $line, "HTTP/1.0 500 Error$eol" );
+    test_assert_equal( $line, "HTTP/1.0 / GET  Error$eol" );
     close $client;
 
     # Get a protocol error
@@ -283,7 +299,7 @@ if ( $pid == 0 ) {
     test_assert( $client->connected );
 
     print $client "GET / HTTP/2.0$eol$eol";
-    select( undef, undef, undef, 0 );
+    select( undef, undef, undef, 0.1 );
     $line = <$client>;
     test_assert_equal( $line, "HTTP/1.0 500 Error$eol" );
     close $client;
@@ -301,9 +317,9 @@ if ( $pid == 0 ) {
     test_assert( $client->connected );
 
     print $client "POST /body HTTP/1.0$eol" . "Content-Length: 12$eol$eol" . "1234567890$eol$eol";
-    select( undef, undef, undef, 0 );
+    select( undef, undef, undef, 0.1 );
     $line = <$client>;
-    test_assert_equal( $line, "HTTP/1.0 500 Error$eol" );
+    test_assert_equal( $line, "HTTP/1.0 /body POST 1234567890$eol" );
     close $client;
 
     # kill child
@@ -323,15 +339,14 @@ if ( $pid == 0 ) {
     print $client "GET /stop HTTP/1.0$eol$eol";
     select( undef, undef, undef, 0.1 );
     $line = <$client>;
-    test_assert_equal( $line, "HTTP/1.0 500 Error$eol" );
+    test_assert_equal( $line, "HTTP/1.0 /stop GET  Error$eol" );
     close $client;
 
-    while ( waitpid( $pid, &WNOHANG ) != $pid ) {
+    while ( waitpid( -1, &WNOHANG ) > 0 ) {
+        sleep 1;
     }
 
     $h->stop();
 }
-
-$POPFile->CORE_stop();
 
 1;

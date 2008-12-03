@@ -1,15 +1,13 @@
 #!/usr/bin/perl
 # ----------------------------------------------------------------------------
 #
-# popfile-service.pl --- Message analyzer and sorter (Windows loader
-# used with PerlSvc)
+# popfile-service.pl --- Message analyzer and sorter (Windows loader used with PerlSvc)
 #
-# Acts as a server and client designed to sit between a real mail/news
-# client and a real mail/ news server using POP3.  Inserts an extra
-# header X-Text-Classification: into the header to tell the client
-# which category the message belongs in and much more...
+# Acts as a server and client designed to sit between a real mail/news client and a real mail/
+# news server using POP3.  Inserts an extra header X-Text-Classification: into the header to
+# tell the client which category the message belongs in and much more...
 #
-# Copyright (c) 2003-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -73,13 +71,13 @@ sub Startup
 
     $SIG{QUIT}  = 'IGNORE';
 
-    # Create the main objects that form the core of POPFile.  Consists
-    # of the configuration modules, the classifier, the UI (currently
-    # HTML based), platform specific code, and the POP3 proxy.  The
-    # link the components together, intialize them all, load the
-    # configuration from disk, start the modules running
+    # Create the main objects that form the core of POPFile.  Consists of the configuration
+    # modules, the classifier, the UI (currently HTML based), platform specific code,
+    # and the POP3 proxy.  The link the components together, intialize them all, load
+    # the configuration from disk, start the modules running
 
     $POPFile->CORE_load();
+    $POPFile->CORE_link_components();
     $POPFile->CORE_initialize();
     $POPFile->CORE_config();
     $POPFile->CORE_start();

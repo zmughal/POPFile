@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 0
+# POPFILE LOADABLE MODULE
 package POPFile::MQ;
 
 use POPFile::Module;
@@ -11,7 +11,7 @@ use POPFile::Module;
 # send messages without having to know which modules need to receive
 # its messages.
 #
-# Message delivery is asynchronous and guaranteed, as well as guaranteed
+# Message delivery is asynchronous and guaranteed, as well as guaranteed 
 # first in, first out (FIFO) per process.
 #
 # The following public functions are defined:
@@ -37,13 +37,9 @@ use POPFile::Module;
 #     COMIT    Sent when an item is committed to the history through a call
 #              to POPFile::History::commit_slot
 #
-#     RELSE    Sent when a session key is being released by a client
+#    RELSE    Sent when a session key is being released by a client
 #
-#     CREAT    A sub-process has created a session key so send the session
-#              to the parent so that it can be released by the parent
-#              process at the right moment and used for API access
-#
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -67,17 +63,6 @@ use warnings;
 use locale;
 
 use POSIX ":sys_wait_h";
-
-# Messages are handled in this order.
-
-my %message_type_list = ( # PROFILE BLOCK START
-    'CREAT'     => 1,
-    'LOGIN'     => 2,
-    'UIREG'     => 3,
-    'COMIT'     => 4,
-    'TICKD'     => 5,
-    'RELSE'     => 6,
-);                        # PROFILE BLOCK STOP
 
 #----------------------------------------------------------------------------
 # new
@@ -135,18 +120,16 @@ sub service
 
     # Iterate through all the messages in all the queues
 
-    for my $type ( sort sort_message__          # PROFILE BLOCK START
-                   keys %{$self->{queue__}} ) { # PROFILE BLOCK STOP
+    for my $type (sort keys %{$self->{queue__}}) {
+         while ( my $ref = shift @{$self->{queue__}{$type}} ) {
+             my @message = @$ref;
+             my $flat = join(':', @message);
 
-        while ( my $ref = shift @{$self->{queue__}{$type}} ) {
-            my @message = @$ref;
-            my $flat = join(':', @message);
+             $self->log_( 2, "Message $type ($flat) ready for delivery" );
 
-            $self->log_( 2, "Message $type ($flat) ready for delivery" );
-
-            for my $waiter (@{$self->{waiters__}{$type}}) {
-                $self->log_( 2, "Delivering message $type ($flat) to " . # PROFILE BLOCK START
-                    $waiter->name() );                                   # PROFILE BLOCK STOP
+             for my $waiter (@{$self->{waiters__}{$type}}) {
+                $self->log_( 2, "Delivering message $type ($flat) to " .
+                    $waiter->name() );
 
                 $waiter->deliver( $type, @message );
             }
@@ -154,24 +137,6 @@ sub service
     }
 
     return 1;
-}
-
-#----------------------------------------------------------------------------
-#
-# sort_message__
-#
-# Sort message types
-#
-#----------------------------------------------------------------------------
-sub sort_message__
-{
-    if ( defined($message_type_list{$a}) && defined($message_type_list{$b}) ) {
-        $message_type_list{$a} <=> $message_type_list{$b};
-    } elsif ( !defined($message_type_list{$a}) && !defined($message_type_list{$b}) ) {
-        $a cmp $b;
-    } else {
-        !defined($message_type_list{$a}) <=> !defined($message_type_list{$b});
-    }
 }
 
 #----------------------------------------------------------------------------
@@ -195,8 +160,6 @@ sub stop
         close $self->{children__}{$kid};
         delete $self->{children__}{$kid};
     }
-
-    $self->SUPER::stop();
 }
 
 #----------------------------------------------------------------------------
@@ -234,8 +197,6 @@ sub forked
 {
     my ( $self, $writer ) = @_;
 
-    $self->SUPER::forked( $writer );
-
     $self->{writer__} = $writer;
 
     for my $kid (keys %{$self->{children__}}) {
@@ -263,6 +224,7 @@ sub postfork
     my ( $self, $pid, $reader ) = @_;
 
     $self->{children__}{"$pid"} = $reader;
+    $self->log_( 2, "Parent: postfork() called for pid $pid, reader $reader" );
 }
 
 #----------------------------------------------------------------------------
@@ -370,11 +332,13 @@ sub flush_child_data_
     my $stats_changed = 0;
     my $message;
 
-    while ( ($message = $self->read_pipe_( $handle )) && defined($message) )
+    while ( defined ( $message = $self->read_pipe_( $handle ) ) )
     {
         if ( $message =~ /([^:]+):([^\r\n]*)/ ) {
             my @parameters = split( ':', $2 || '' );
             $self->post( $1, @parameters );
+        } else {
+            $self->log_( 2, "Recieved invalid message from child: $message" );
         }
     }
 }

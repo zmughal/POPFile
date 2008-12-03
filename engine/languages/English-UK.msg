@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -24,8 +24,11 @@ LanguageDirection                       ltr
 # This is used to get the appropriate subdirectory for the manual
 ManualLanguage                          en
 
-# This is where to find the FAQ on the Wiki
-FAQLink                                 faq
+# These are where to find the documents on the Wiki
+WikiLink                                index.php
+FAQLink                                 FAQ
+RequestFeatureLink                      RequestFeature
+MailingListLink                         mailing_lists
 
 # Common words that are used on their own all over the interface
 Apply                                   Apply
@@ -74,9 +77,6 @@ ID                                      ID
 Date                                    Date
 Arrived                                 Arrived
 Size                                    Size
-Go                                      Go
-Edit                                    Edit
-Logout                                  Logout
 
 # This is a regular expression pattern that is used to convert
 # a number into a friendly looking number (for the US and UK this
@@ -103,9 +103,7 @@ Header_Buckets                          Buckets
 Header_Configuration                    Configuration
 Header_Advanced                         Advanced
 Header_Security                         Security
-Header_Administration                   Administration
 Header_Magnets                          Magnets
-Header_Users                            Users
 
 Footer_HomePage                         POPFile Home Page
 Footer_Manual                           Manual
@@ -123,6 +121,8 @@ Configuration_Error5                    The number of days in the history must b
 Configuration_Error6                    The TCP timeout must be a number between 10 and 1800
 Configuration_Error7                    The XML RPC listen port must be a number between 1 and 65535
 Configuration_Error8                    The SOCKS V proxy port must be a number between 1 and 65535
+Configuration_Error9                    The user interface port cannot be the same value as the POP3 listen port
+Configuration_Error10                   The POP3 listen port cannot be the same value as the user interface port
 Configuration_POP3Port                  POP3 listen port
 Configuration_POP3Update                Updated POP3 port to %s; this change will not take affect until you restart POPFile
 Configuration_XMLRPCUpdate              Updated XML-RPC port to %s; this change will not take affect until you restart POPFile
@@ -140,15 +140,15 @@ Configuration_POP3SepUpdate             Updated POP3 separator to %s
 Configuration_NNTPSepUpdate             Updated NNTP separator to %s
 Configuration_UI                        User interface web port
 Configuration_UIUpdate                  Updated user interface web port to %s; this change will not take affect until you restart POPFile
-Configuration_History                   Messages per page
+Configuration_History                   Number of messages per page
 Configuration_HistoryUpdate             Updated number of messages per page to %s
-Configuration_Days                      Days of history to keep
+Configuration_Days                      Number of days of history to keep
 Configuration_DaysUpdate                Updated number of days of history to %s
 Configuration_UserInterface             User Interface
 Configuration_Skins                     Skins
-Configuration_SkinsChoose               Skin
+Configuration_SkinsChoose               Choose skin
 Configuration_Language                  Language
-Configuration_LanguageChoose            Language
+Configuration_LanguageChoose            Choose language
 Configuration_ListenPorts               Module Options
 Configuration_HistoryView               History View
 Configuration_TCPTimeout                Connection Timeout
@@ -172,9 +172,7 @@ Configuration_SOCKSServer               SOCKS V proxy host
 Configuration_SOCKSPort                 SOCKS V proxy port
 Configuration_SOCKSPortUpdate           Updated SOCKS V proxy port to %s
 Configuration_SOCKSServerUpdate         Updated SOCKS V proxy host to %s
-Configuration_Fields                    Add history columns
-Configuration_Hide_Bar                  Hide configuration bar
-Configuration_Show_Bar                  Show configuration bar
+Configuration_Fields                    History Columns
 
 Advanced_Error1                         '%s' already in the Ignored Words list
 Advanced_Error2                         Ignored words can only contain alphanumeric, ., _, -, or @ characters
@@ -185,14 +183,14 @@ Advanced_StopWords                      Ignored Words
 Advanced_Message1                       POPFile ignores the following frequently-used words:
 Advanced_AddWord                        Add word
 Advanced_RemoveWord                     Remove word
-Advanced_AllParameters                  Global POPFile Parameters
+Advanced_AllParameters                  All POPFile Parameters
 Advanced_Parameter                      Parameter
 Advanced_Value                          Value
 Advanced_Warning                        This is the complete list of POPFile parameters.  Advanced users only: you may change any and click Update; there is no validity checking.  Items shown in bold have been changed from the default setting.  See <a href="http://getpopfile.org/docs/OptionReference">OptionReference</a> for more information on options.
 Advanced_ConfigFile                     Configuration file:
 
 History_Filter                          &nbsp;(just showing bucket <font color="%s">%s</font>)
-History_FilterBy                        Filter&nbsp;By
+History_FilterBy                        Filter By
 History_Search                          &nbsp;(searched for from/subject %s)
 History_Title                           Recent Messages
 History_Jump                            Jump to page
@@ -208,6 +206,7 @@ History_Already                         Reclassified as <font color="%s">%s</fon
 History_RemoveAll                       Remove All
 History_RemovePage                      Remove Page
 History_RemoveChecked                   Remove Checked
+History_Remove                          To remove entries in the history click
 History_SearchMessage                   Search From/Subject
 History_NoMessages                      No messages
 History_ShowMagnet                      magnetised
@@ -219,25 +218,24 @@ History_ChangedClass                    Would now classify as
 History_Purge                           Expire Now
 History_Increase                        Increase
 History_Decrease                        Decrease
-History_Column_Characters               History column width
+History_Column_Characters               Change width of From, To, Cc and Subject columns
 History_Automatic                       Automatic
 History_Reclassified                    Reclassified
 History_Size_Bytes                      %d&nbsp;B
 History_Size_KiloBytes                  %.1f&nbsp;KB
 History_Size_MegaBytes                  %.1f&nbsp;MB
 
-Password_Title                          Login
-Password_Password                       Password
-Password_Username                       User name
-Password_Go                             Login
-Password_Error1                         Incorrect user name or password
+Password_Title                          Password
+Password_Enter                          Enter password
+Password_Go                             Go!
+Password_Error1                         Incorrect password
 
 Security_Error1                         The port must be a number between 1 and 65535
 Security_Stealth                        Stealth Mode/Server Operation
 Security_NoStealthMode                  No (Stealth Mode)
 Security_StealthMode                    (Stealth Mode)
-Security_ExplainStats                   (With this turned on POPFile sends once per day the following three values to a script on www.usethesource.com: bc (the total number of buckets that you have), mc (the total number of messages that POPFile has classified) and ec (the total number of classification errors).  These get stored in a file and I will use this to publish some statistics about how people use POPFile and how well it works.  My web server keeps its log files for about 5 days and then they get deleted; I am not storing any connection between the statistics and individual IP addresses.)
-Security_ExplainUpdate                  (With this turned on POPFile sends once per day the following three values to a script on www.usethesource.com: ma (the major version number of your installed POPFile), mi (the minor version number of your installed POPFile) and bn (the build number of your installed POPFile).  POPFile receives a response in the form of a graphic that appears at the top of the page if a new version is available.  My web server keeps its log files for about 5 days and then they get deleted; I am not storing any connection between the update checks and individual IP addresses.)
+Security_ExplainStats                   (With this turned on POPFile sends once per day the following three values to a script on getpopfile.org: bc (the total number of buckets that you have), mc (the total number of messages that POPFile has classified) and ec (the total number of classification errors). These three values get stored in a database which is used to generate some <a href="http://getpopfile.org/popfile_stats.html"><b>statistics</b></a> about how people use POPFile and how well it works.  Our web server keeps its log files for several days and then they get deleted; we are not storing any connection between the statistics and individual IP addresses.)
+Security_ExplainUpdate                  (With this turned on POPFile sends once per day the following three values to a script on getpopfile.org: ma (the major version number of your installed POPFile), mi (the minor version number of your installed POPFile) and bn (the build number of your installed POPFile).  POPFile receives a response in the form of a graphic that appears at the top of the page if a new version is available.  Our web server keeps its log files for several days and then they get deleted; we are not storing any connection between the update checks and individual IP addresses.)
 Security_PasswordTitle                  User Interface Password
 Security_Password                       Password
 Security_PasswordUpdate                 Updated password
@@ -266,7 +264,7 @@ Magnet_Error3                           Create new magnet '%s' in bucket '%s'
 Magnet_CurrentMagnets                   Current Magnets
 Magnet_Message1                         The following magnets cause mail to always be classified into the specified bucket.
 Magnet_CreateNew                        Create New Magnet
-Magnet_Explanation                      <b>These types of magnets are available:</b> <ul><li><b>From address or name:</b> For example: john@company.com to match a specific address, <br />company.com to match everyone who sends from company.com, <br />John Doe to match a specific person, John to match all Johns</li><li><b>To/Cc address or name:</b> Like a From: magnet but for the To:/Cc: address in a message</li> <li><b>Subject words:</b> For example: hello to match all messages with hello in the subject</li></ul>
+Magnet_Explanation                      These types of magnets are available:</b> <ul><li><b>From address or name:</b> For example: john@company.com to match a specific address, <br />company.com to match everyone who sends from company.com, <br />John Doe to match a specific person, John to match all Johns</li><li><b>To/Cc address or name:</b> Like a From: magnet but for the To:/Cc: address in a message</li> <li><b>Subject words:</b> For example: hello to match all messages with hello in the subject</li></ul>
 Magnet_MagnetType                       Magnet type
 Magnet_Value                            Values
 Magnet_Always                           Always goes to bucket
@@ -296,7 +294,6 @@ Bucket_ClassificationFP                 False Positives
 Bucket_ClassificationFN                 False Negatives
 Bucket_ResetStatistics                  Reset Statistics
 Bucket_LastReset                        Last Reset
-Bucket_MessagesPerDay                   Average Messages Per Day
 Bucket_CurrentColor                     %s current colour is %s
 Bucket_SetColorTo                       Set %s colour to %s
 Bucket_Maintenance                      Maintenance
@@ -357,7 +354,6 @@ Advanced_MainTableSummary               This table provides a list of words that
 
 Imap_Bucket2Folder                      Mail for bucket '<b>%s</b>' goes to folder
 Imap_MapError                           You cannot map more than one bucket to a single folder!
-Imap_MapUpdated                         Mapped bucket '%s' to folder '%s'.
 Imap_Server                             IMAP server hostname:
 Imap_ServerNameError                    Please enter the server's hostname!
 Imap_Port                               IMAP Server port:
@@ -369,6 +365,8 @@ Imap_PasswordError                      Please enter a password for the server!
 Imap_Expunge                            Expunge deleted messages from watched folders.
 Imap_Interval                           Update interval in seconds:
 Imap_IntervalError                      Please enter an interval between 10 and 3600 seconds.
+Imap_Bytelimit                          Bytes per message to use for classification. Enter 0 (Null) for the complete message:
+Imap_BytelimitError                     Please enter a number.
 Imap_RefreshFolders                     Refresh list of folders
 Imap_Now                                now!
 Imap_UpdateError1                       Could not login. Verify your login name and password, please.
@@ -377,9 +375,10 @@ Imap_UpdateError3                       Please configure the connection details 
 Imap_NoConnectionMessage                Please configure the connection details first. After you have done that, more options will be available on this page.
 Imap_WatchMore                          a folder to list of watched folders
 Imap_WatchedFolder                      Watched folder no
+Imap_Use_SSL							Use SSL
 
 Shutdown_Message                        POPFile has shut down
 
-Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile misclassified to the correct bucket. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://getpopfile.org/docs/faq/EmailSorting">POPFile Documentation Project</a>.
+Help_Training                           When you first use POPFile, it knows nothing and will need some training. POPFile requires training on messages for each bucket, training occurs when you reclassify a message POPFile misclassified to the correct bucket. Before POPFile will classify the first message, you will have to have reclassified messages to at least two buckets. You must also setup your mail client to filter messages based on POPFile's classification. Information on setting up your client filtering can be found at the <a href="http://getpopfile.org/docs/FAQ:EmailSorting">POPFile Documentation Project</a>.
 Help_Bucket_Setup                       POPFile requires at least two buckets in addition to the "unclassified" pseudo-bucket. What makes POPFile unique is that it can classify email more than that, you can have any number of buckets. A simple setup would be a "spam", "personal", and a "work" bucket.
 Help_No_More                            Don't show this again

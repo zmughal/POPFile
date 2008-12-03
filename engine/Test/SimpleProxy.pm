@@ -7,7 +7,7 @@ use Proxy::Proxy;
 #
 # A simple test proxy server for testing Proxy::Proxy
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -52,6 +52,7 @@ sub new
     bless $self, $type;
 
     $self->{child_} = \&child__;
+    $self->{childexit_} = sub { $self->childexit__( @_ ) };
     $self->name( 'simple' );
 
     $self->{send__} = '';
@@ -201,6 +202,23 @@ sub child__
 
     $self->log_( 0, "Child stopped" );
 }
+
+#----------------------------------------------------------------------------
+#
+# childexit__
+#
+# Called by a module that is in a child process and wants to exit.
+#
+# $code         The process exit code
+#
+#----------------------------------------------------------------------------
+sub childexit__
+{
+    my ( $self, $code ) = @_;
+
+    exit( $code );
+}
+
 
 # Getter/setter
 

@@ -4,7 +4,7 @@ package Proxy::Proxy;
 #
 # This module implements the base class for all POPFile proxy Modules
 #
-# Copyright (c) 2001-2006 John Graham-Cumming
+# Copyright (c) 2001-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -48,6 +48,11 @@ sub new
     my $type = shift;
     my $self = POPFile::Module->new();
 
+    # A reference to the classifier and history
+
+    $self->{classifier__}     = 0;
+    $self->{history__}        = 0;
+
     # Reference to a child() method called to handle a proxy
     # connection
 
@@ -57,7 +62,8 @@ sub new
 
     $self->{pipe_cache__} = {};
 
-    # Holds an administrator session
+    # This is where we keep the session with the Classifier::Bayes
+    # module
 
     $self->{api_session__} = '';
 
@@ -123,41 +129,14 @@ sub start
     my ( $self ) = @_;
 
     # Open the socket used to receive request for proxy service
+    $self->log_( 1, "Opening listening socket on port " . $self->config_('port') . '.' );
+    $self->{server__} = IO::Socket::INET->new( Proto     => 'tcp', # PROFILE BLOCK START
+                                    ($self->config_( 'local' ) || 0) == 1 ? (LocalAddr => 'localhost') : (),
+                                    LocalPort => $self->config_( 'port' ),
+                                    Listen    => SOMAXCONN,
+                                    Reuse     => 1 ); # PROFILE BLOCK STOP
 
     my $name = $self->name();
-
-    if ( $name eq 'pop3s' ) {
-        eval {
-            require IO::Socket::SSL;
-        };
-        if ( $@ ) {
-            # Cannot load IO::Socket::SSL
-
-            print STDERR <<EOM; # PROFILE BLOCK START
-
-\nCouldn't start the $name proxy because POPFile could not load the
-IO::Socket::SSL module. This is because either IO::socket::SSL or
-Net::SSLeay module is not installed.
-
-EOM
-# PROFILE BLOCK STOP
-            return 0;
-        }
-        $self->{server__} = IO::Socket::SSL->new( Proto     => 'tcp', # PROFILE BLOCK START
-                                    ($self->config_( 'local' ) || 0) == 1 ? (LocalAddr => 'localhost') : (),
-                                    LocalPort => $self->config_( 'port' ),
-                                    Listen    => SOMAXCONN,
-                                    SSL_cert_file => $self->get_user_path_( $self->global_config_( 'cert_file' ) ),
-                                    SSL_key_file => $self->get_user_path_( $self->global_config_( 'key_file' ) ),
-                                    SSL_ca_file => $self->get_user_path_( $self->global_config_( 'ca_file' ) ),
-                                    Reuse     => 1 ); # PROFILE BLOCK STOP
-    } else {
-        $self->{server__} = IO::Socket::INET->new( Proto     => 'tcp', # PROFILE BLOCK START
-                                    ($self->config_( 'local' ) || 0) == 1 ? (LocalAddr => 'localhost') : (),
-                                    LocalPort => $self->config_( 'port' ),
-                                    Listen    => SOMAXCONN,
-                                    Reuse     => 1 ); # PROFILE BLOCK STOP
-    }
 
     if ( !defined( $self->{server__} ) ) {
         my $port = $self->config_( 'port' );
@@ -193,39 +172,33 @@ EOM
 #
 # stop
 #
-# Called when POPFile is closing down, this is the last method that
-# will get called before the object is destroyed.  There is no return
-# value from stop().
+# Called when POPFile is closing down, this is the last method that will get called before
+# the object is destroyed.  There is no return value from stop().
 #
 # ----------------------------------------------------------------------------
 sub stop
 {
     my ( $self ) = @_;
 
-    if ( defined $self->{api_session__} ne '' ) {
-        $self->classifier_()->release_session_key( $self->{api_session__} );
+    if ( $self->{api_session__} ne '' ) {
+        $self->{classifier__}->release_session_key( $self->{api_session__} );
     }
 
-    # Need to close all the duplicated file handles, this include the
-    # POP3 listener and all the reading ends of pipes to active
-    # children
+    # Need to close all the duplicated file handles, this include the POP3 listener
+    # and all the reading ends of pipes to active children
 
     close $self->{server__} if ( defined( $self->{server__} ) );
-
-    $self->SUPER::stop();
 }
 
 # ----------------------------------------------------------------------------
 #
 # service
 #
-# service() is a called periodically to give the module a chance to do
-# housekeeping work.
+# service() is a called periodically to give the module a chance to do housekeeping work.
 #
-# If any problem occurs that requires POPFile to shutdown service()
-# should return 0 and the top level process will gracefully terminate
-# POPFile including calling all stop() methods.  In normal operation
-# return 1.
+# If any problem occurs that requires POPFile to shutdown service() should return 0 and
+# the top level process will gracefully terminate POPFile including calling all stop()
+# methods.  In normal operation return 1.
 #
 # ----------------------------------------------------------------------------
 sub service
@@ -240,20 +213,27 @@ sub service
     # of handles with data to read, if the handle is the server then
     # we're off.
 
-    if ( ( defined( $self->{selector__}->can_read(0) ) ) && # PROFILE BLOCK START
-         ( $self->{alive_} ) ) {                            # PROFILE BLOCK STOP
+    if ( ( defined( $self->{selector__}->can_read(0) ) ) &&
+         ( $self->{alive_} ) ) {
         if ( my $client = $self->{server__}->accept() ) {
+
+            # Check to see if we have obtained a session key yet
+
+            if ( $self->{api_session__} eq '' ) {
+                $self->{api_session__} =
+                    $self->{classifier__}->get_session_key( 'admin', '' );
+            }
 
             # Check that this is a connection from the local machine,
             # if it's not then we drop it immediately without any
             # further processing.  We don't want to act as a proxy for
             # just anyone's email
 
-            my ( $remote_port, $remote_host ) = sockaddr_in(                # PROFILE BLOCK START
-                                                    $client->peername() );  # PROFILE BLOCK STOP
+            my ( $remote_port, $remote_host ) = sockaddr_in(
+                                                    $client->peername() );
 
-            if  ( ( ( $self->config_( 'local' ) || 0 ) == 0 ) ||        # PROFILE BLOCK START
-                    ( $remote_host eq inet_aton( "127.0.0.1" ) ) ) {    # PROFILE BLOCK STOP
+            if  ( ( ( $self->config_( 'local' ) || 0 ) == 0 ) ||
+                    ( $remote_host eq inet_aton( "127.0.0.1" ) ) ) {
 
                 # If we have force_fork turned on then we will do a
                 # fork, otherwise we will handle this inline, in the
@@ -262,10 +242,6 @@ sub service
 
                 binmode( $client );
 
-                if ( $self->{api_session__} eq '' ) {
-                    $self->{api_session__} = $self->classifier_()->get_administrator_session_key();
-                }
-
                 if ( $self->config_( 'force_fork' ) ) {
                     my ( $pid, $pipe ) = &{$self->{forker_}};
 
@@ -273,10 +249,10 @@ sub service
                     # then process this request
 
                     if ( !defined( $pid ) || ( $pid == 0 ) ) {
-                        $self->{child_}( $self, $client,        # PROFILE BLOCK START
-                            $self->{api_session__} );           # PROFILE BLOCK STOP
+                        $self->{child_}( $self, $client,
+                            $self->{api_session__} );
                         if ( defined( $pid ) ) {
-                            &{$self->{childexit_}}(0)
+                            &{$self->{childexit_}}( 0 );
                         }
                     }
                 } else {
@@ -287,7 +263,7 @@ sub service
                 }
             }
 
-            close $client if ( $self->name() ne 'pop3s' );
+            close $client;
         }
     }
 
@@ -298,20 +274,17 @@ sub service
 #
 # forked
 #
-# This is called when some module forks POPFile and is within the
-# context of the child process so that this module can close any
-# duplicated file handles that are not needed.
+# This is called when some module forks POPFile and is within the context of the child
+# process so that this module can close any duplicated file handles that are not needed.
 #
 # There is no return value from this method
 #
 # ----------------------------------------------------------------------------
 sub forked
 {
-    my ( $self, $writer ) = @_;
+    my ( $self ) = @_;
 
-    $self->SUPER::forked( $writer );
-
-    close $self->{server__} if ( $self->name() ne 'pop3s' );
+    close $self->{server__};
 }
 
 # ----------------------------------------------------------------------------
@@ -424,10 +397,18 @@ sub get_response_
 
     # Retrieve a single string containing the response
 
-    my $selector = new IO::Select( $mail );
-    my ($ready) = $selector->can_read( (!$null_resp?$self->global_config_( 'timeout' ):.5) );
+    my $can_read = 0;
+    if ( $mail =~ /ssl/i ) {
+        $can_read = ( $mail->pending() > 0 );
+    }
+    if ( !$can_read ) {
+        my $selector = new IO::Select( $mail );
+        my ( $ready ) = $selector->can_read(
+            ( !$null_resp ? $self->global_config_( 'timeout' ) : .5 ) );
+        $can_read = defined( $ready ) && ( $ready == $mail );
+    }
 
-    if ( ( defined( $ready ) ) && ( $ready == $mail ) ) {
+    if ( $can_read ) {
         $response = $self->slurp_( $mail );
 
         if ( $response ) {
@@ -491,55 +472,16 @@ sub echo_response_
 
 # ----------------------------------------------------------------------------
 #
-# get_session_key_
-#
-# Used by a proxy module to get a session key based on a token (usually an
-# account name)
-#
-# $token      The magic token
-#
-# Returns a session key if the token is associated with a user or undef
-#
-# ----------------------------------------------------------------------------
-sub get_session_key_
-{
-    my ( $self, $token ) = @_;
-
-    return $self->classifier_()->get_session_key_from_token( # PROFILE BLOCK START
-                                     $self->{api_session__},
-                                     $self->name(),
-                                     $token );               # PROFILE BLOCK STOP
-}
-
-# ----------------------------------------------------------------------------
-#
-# release_session_key_
-#
-# Release a session key obtained with get_session_key_
-#
-# $session    The session key to release
-#
-# ----------------------------------------------------------------------------
-sub release_session_key_
-{
-    my ( $self, $session ) = @_;
-
-    $self->classifier_()->release_session_key( $session );
-}
-
-# ----------------------------------------------------------------------------
-#
 # verify_connected_
 #
 # $mail        The handle of the real mail server
 # $client      The handle to the mail client
 # $hostname    The host name of the remote server
 # $port        The port
-# $ssl         If set to 1 then the connection to the remote is established 
-#              using SSL
+# $ssl         If set to 1 then the connection to the remote is established using SSL
 #
-# Check that we are connected to $hostname on port $port putting the
-# open handle in $mail.  Any messages need to be sent to $client
+# Check that we are connected to $hostname on port $port putting the open handle in $mail.
+# Any messages need to be sent to $client
 #
 # ----------------------------------------------------------------------------
 sub verify_connected_
@@ -556,9 +498,9 @@ sub verify_connected_
 
     if ( $self->config_( 'socks_server' ) ne '' ) {
         require IO::Socket::Socks;
-        $self->log_( 0, "Attempting to connect to socks server at " # PROFILE BLOCK START
-                    . $self->config_( 'socks_server' ) . ":" 
-                    . ProxyPort => $self->config_( 'socks_port' ) ); # PROFILE BLOCK STOP
+        $self->log_( 0, "Attempting to connect to socks server at "
+                    . $self->config_( 'socks_server' ) . ":"
+                    . ProxyPort => $self->config_( 'socks_port' ) );
 
         $mail = IO::Socket::Socks->new( # PROFILE BLOCK START
                     ProxyAddr => $self->config_( 'socks_server' ),
@@ -577,19 +519,87 @@ sub verify_connected_
                 return undef;
             }
 
-            $self->log_( 0, "Attempting to connect to SSL server at " # PROFILE BLOCK START
-                        . "$hostname:$port" ); # PROFILE BLOCK STOP
+            $self->log_( 0, "Attempting to connect to SSL server at "
+                        . "$hostname:$port" );
 
-            $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
-                        Proto    => "tcp",
-                        PeerAddr => $hostname,
-                        PeerPort => $port,
-                        Timeout  => $self->global_config_( 'timeout' ),
-            ); # PROFILE BLOCK STOP
+            if ( $^O eq 'MSWin32' ) {
+
+                # Workaround for avoiding intermittent password problem when
+                # using SSL. The problem occurs because IO::Socket->blocking
+                # is not supported on Windows.
+                # IO::Socket 1.30_01 which is included in Perl 5.10 seems to
+                # support blocking() on Windows. So we may remove this
+                # workaround when we move to Perl 5.10.
+
+                my $timeout = $self->global_config_( 'timeout' );
+                my $tt = time + $timeout;
+
+                $mail = IO::Socket::INET->new( # PROFILE BLOCK START
+                            Proto    => "tcp",
+                            PeerAddr => $hostname,
+                            PeerPort => $port,
+                            Timeout  => $timeout,
+                ); # PROFILE BLOCK STOP
+
+                if ( $mail ) {
+                    # Change the socket to non-blocking mode
+
+                    my $non_blocking = 1;
+                    ioctl( $mail, 0x8004667e, pack( 'L!', $non_blocking ) );
+
+                    $self->log_( 2, "Trying to upgrade socket $mail to SSL" );
+
+                    while ( $tt > time ) {
+                        # Upgrade the socket to SSL
+
+                        IO::Socket::SSL->start_SSL( # PROFILE BLOCK START
+                                $mail,
+                                Timeout  => $timeout,
+                        ); # PROFILE BLOCK STOP
+
+                        my $err = IO::Socket::SSL->errstr;
+                        last if ( $err eq '' );
+
+                        $self->log_( 1, "Got an error $err from start_SSL" );
+
+                        last if ( !defined $mail );
+
+                        my $vec = '';
+                        vec( $vec, $mail->fileno, 1 ) = 1;
+                        my $rv =  # PROFILE BLOCK START
+                            ( $err eq IO::Socket::SSL->SSL_WANT_READ )  ? select( $vec, undef, undef, $timeout ) :
+                            ( $err eq IO::Socket::SSL->SSL_WANT_WRITE ) ? select( undef, $vec, undef, $timeout ) :
+                            undef; # PROFILE BLOCK STOP
+
+                        last if ( !$rv );
+                    }
+
+                    if ( !defined $mail || ( ref $mail ne 'IO::Socket::SSL' ) ) {
+                        $self->log_( 0, "Failed to upgrade the socket to SSL" );
+                        $mail->close if defined $mail;
+                        undef $mail;
+                    } else {
+                        $self->log_( 2, "The socket $mail has successfully been upgraded" );
+
+                        # Restore to blocking mode
+
+                        $non_blocking = 0;
+                        ioctl( $mail, 0x8004667e, pack( 'L!', $non_blocking ) );
+                    }
+                }
+
+            } else {
+                $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
+                            Proto    => "tcp",
+                            PeerAddr => $hostname,
+                            PeerPort => $port,
+                            Timeout  => $self->global_config_( 'timeout' ),
+                ); # PROFILE BLOCK STOP
+            }
 
         } else {
-            $self->log_( 0, "Attempting to connect to POP server at " # PROFILE BLOCK START
-                        . "$hostname:$port" ); # PROFILE BLOCK STOP
+            $self->log_( 0, "Attempting to connect to POP server at "
+                        . "$hostname:$port" );
 
             $mail = IO::Socket::INET->new( # PROFILE BLOCK START
                         Proto    => "tcp",
@@ -613,11 +623,13 @@ sub verify_connected_
                 binmode( $mail );
             }
 
-            # Wait 10 seconds for a response from the remote server and if
-            # there isn't one then give up trying to connect
+            if ( !$ssl || ( $mail->pending() == 0 ) ) {
+                # Wait 'timeout' seconds for a response from the remote server and
+                # if there isn't one then give up trying to connect
 
-            my $selector = new IO::Select( $mail );
-            last unless () = $selector->can_read($self->global_config_( 'timeout' ));
+                my $selector = new IO::Select( $mail );
+                last unless $selector->can_read($self->global_config_( 'timeout' ));
+            }
 
             # Read the response from the real server and say OK
 
@@ -629,6 +641,10 @@ sub verify_connected_
                 my $hit_newline = 0;
                 my $temp_buf;
 
+                # If we are on Windows, we will have to wait ourselves as
+                # we are not going to call IO::Select::can_read.
+                my $wait = ( ($^O eq 'MSWin32') && !($mail =~ /socket/i) ) ? 1 : 0;
+
                 # Read until timeout or a newline (newline _should_ be immediate)
 
                 for my $i ( 0..($self->global_config_( 'timeout' ) * 100) ) {
@@ -636,7 +652,11 @@ sub verify_connected_
                         $temp_buf = $self->flush_extra_( $mail, $client, 1 );
                         $hit_newline = ( $temp_buf =~ /[\r\n]/ );
                         $buf .= $temp_buf;
-                    } else {
+                        if ( $wait && ! length $temp_buf ) {
+                            select undef, undef, undef, 0.01;
+                        }
+                    }
+                    else {
                         last;
                     }
                 }
@@ -673,8 +693,7 @@ sub verify_connected_
 #
 # configure_item
 #
-#    $name            The name of the item being configured, was passed in by
-#                     the call
+#    $name            The name of the item being configured, was passed in by the call
 #                     to register_configuration_item
 #    $templ           The loaded template
 #
@@ -683,14 +702,9 @@ sub configure_item
 {
     my ( $self, $name, $templ ) = @_;
 
-    my $me = $self->name();
-
-    if ( $name eq $me . "_socks_configuration" ) {
-
-        $templ->param( 'Socks_Widget_Name' => $me );
-        $templ->param( 'Socks_Server'      => $self->config_( 'socks_server' ) );
-        $templ->param( 'Socks_Port'        => $self->config_( 'socks_port'   ) );
-    }
+    $templ->param( 'Socks_Widget_Name' => $self->name() );
+    $templ->param( 'Socks_Server'      => $self->config_( 'socks_server' ) );
+    $templ->param( 'Socks_Port'        => $self->config_( 'socks_port'   ) );
 }
 
 # ----------------------------------------------------------------------------
@@ -703,6 +717,7 @@ sub configure_item
 #    $language        Reference to the hash holding the current language
 #    $form            Hash containing all form items
 #
+#  Must return the HTML for this item
 # ----------------------------------------------------------------------------
 sub validate_item
 {
@@ -710,34 +725,37 @@ sub validate_item
 
     my $me = $self->name();
 
-    my ($status, $error);
-
-    if ( $name eq $me . "_socks_configuration" ) {
-        if ( defined($$form{"$me" . "_socks_port"}) ) {
-            if ( $self->is_valid_port_( $$form{"$me" . "_socks_port"} ) ) {
-                if ( $self->config_( 'socks_port' ) ne $$form{"$me" . "_socks_port"} ) {
-                    $self->config_( 'socks_port', $$form{"$me" . "_socks_port"} );
-                    $status = sprintf(                        # PROFILE BLOCK START
-                            $$language{Configuration_SOCKSPortUpdate},
-                            $self->config_( 'socks_port' ) ); # PROFILE BLOCK STOP
-                }
-            } else {
-                $error = $$language{Configuration_Error8};
-            }
-        }
-
-        if ( defined($$form{"$me" . "_socks_server"}) ) {
-            if ( $self->config_( 'socks_server' ) ne $$form{"$me" . "_socks_server"} ) {
-                $self->config_( 'socks_server', $$form{"$me" . "_socks_server"} );
-                $status .= "\n" if (defined $status);
-                $status .= sprintf(                         # PROFILE BLOCK START
-                        $$language{Configuration_SOCKSServerUpdate},
-                        $self->config_( 'socks_server' ) ); # PROFILE BLOCK STOP
-            }
+    if ( defined($$form{"$me" . "_socks_port"}) ) {
+        if ( ( $$form{"$me" . "_socks_port"} >= 1 ) && ( $$form{"$me" . "_socks_port"} < 65536 ) ) {
+            $self->config_( 'socks_port', $$form{"$me" . "_socks_port"} );
+            $templ->param( 'Socks_Widget_If_Port_Updated' => 1 );
+            $templ->param( 'Socks_Widget_Port_Updated' => sprintf( $$language{Configuration_SOCKSPortUpdate}, $self->config_( 'socks_port' ) ) );
+        } else {
+            $templ->param( 'Socks_Widget_If_Port_Error' => 1 );
         }
     }
 
-    return( $status, $error );
+    if ( defined($$form{"$me" . "_socks_server"}) ) {
+        $self->config_( 'socks_server', $$form{"$me" . "_socks_server"} );
+        $templ->param( 'Socks_Widget_If_Server_Updated' => 1 );
+        $templ->param( 'Socks_Widget_Server_Updated' => sprintf( $$language{Configuration_SOCKSServerUpdate}, $self->config_( 'socks_server' ) ) );
+    }
+}
+
+# SETTERS
+
+sub classifier
+{
+    my ( $self, $classifier ) = @_;
+
+    $self->{classifier__} = $classifier;
+}
+
+sub history
+{
+    my ( $self, $history ) = @_;
+
+    $self->{history__} = $history;
 }
 
 1;
