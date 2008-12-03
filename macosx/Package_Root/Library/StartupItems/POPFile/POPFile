@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# Copyright (c) John Graham-Cumming
+#
+#   This file is part of POPFile
+#
+#   POPFile is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   POPFile is free software; you can redistribute it and/or modify it
+#   under the terms of version 2 of the GNU General Public License as
+#   published by the Free Software Foundation.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with POPFile; if not, write to the Free Software
+#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+
+
+. /etc/rc.common
+
+POPFILEDIR="/Library/POPFile"
+
+export POPFILE_ROOT="$POPFILEDIR"
+export POPFILE_USER="$POPFILEDIR"
+
+export KANWADICTPATH="$POPFILEDIR/kakasi/kanwadict"
+export ITAIJIDICTPATH="$POPFILEDIR/kakasi/itaijidict"
+export MECABRC="$POPFILEDIR/mecab/etc/mecabrc"
+
+StartService ()
+{
+    pid=$( ps -axww | grep popfile.pl | grep -v grep | awk '{ print $1 }' )
+    if ! [ $pid ]; then
+      ConsoleMessage "Starting POPFile POP mail proxy"
+      rm -f "$POPFILE_USER"/popfile.pid
+      /usr/bin/perl -I"$POPFILE_ROOT"/lib "$POPFILE_ROOT"/popfile.pl > "$POPFILE_USER"/console.log 2>&1 &
+    else
+      ConsoleMessage "POPFile is already running"
+    fi
+}
+
+StopService ()
+{
+    pid=$( ps -axww | grep popfile.pl | grep -v grep | awk '{ print $1 }' )
+    if [ $pid ]; then
+      ConsoleMessage "Stopping POPFile POP mail proxy"
+      kill -6 $pid
+      rm -f "$POPFILE_USER"/popfile.pid
+    else
+      ConsoleMessage "POPFile is not running."
+    fi
+}
+
+RestartService ()
+{
+    pid=$( ps -axww | grep popfile.pl | grep -v grep | awk '{ print $1 }' )
+    if [ $pid ]; then
+      ConsoleMessage "Restarting POPFile POP mail proxy"
+      kill -HUP $pid
+    else
+      ConsoleMessage "POPFile is not running. Starting POPFile POP mail proxy"
+    fi
+    rm -f "$POPFILE_USER"/popfile.pid
+    /usr/bin/perl -I"$POPFILE_ROOT"/lib "$POPFILE_ROOT"/popfile.pl > "$POPFILE_USER"/console.log 2>&1 &
+}
+
+RunService "$1"
