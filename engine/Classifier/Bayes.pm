@@ -259,6 +259,12 @@ sub initialize
     $self->config_( 'subject_mod_left',  '[' );
     $self->config_( 'subject_mod_right', ']' );
 
+    # The position to insert a subject modification
+    #  1 : Beginning of the subject (default)
+    # -1 : End of the subject
+
+    $self->config_( 'subject_mod_pos',  1 );
+
     # Get the hostname for use in the X-POPFile-Link header
 
     $self->{hostname__} = hostname;
@@ -2849,7 +2855,13 @@ sub classify_and_modify
         if ( !defined( $msg_subject ) ) {   # PROFILE BLOCK START
             $msg_subject = " $modification";
         } elsif ( $msg_subject !~ /\Q$modification\E/ ) {
-            $msg_subject = " $modification$msg_subject";
+            if ( $self->config_( 'subject_mod_pos' ) > 0 ) {
+                # Beginning
+                $msg_subject = " $modification$msg_subject";
+            } else {
+                # End
+                $msg_subject = "$msg_subject $modification";
+            }
         }                                   # PROFILE BLOCK STOP
     }
 
