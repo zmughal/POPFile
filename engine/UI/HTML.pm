@@ -1346,30 +1346,30 @@ sub magnet_page
                 if ( $found == 0 ) {
                     foreach my $current_mtext (@mtexts) {
 
-                    # Skip mangnet definition if it consists only of white spaces
+                        # Skip mangnet definition if it consists only of white spaces
 
-                    if ( $current_mtext =~ /^[ \t]*$/ ) {
-                        next;
-                    }
+                        if ( $current_mtext =~ /^[ \t]*$/ ) {
+                            next;
+                        }
 
-                    # It is possible to type leading or trailing white
-                    # space in a magnet definition which can later
-                    # cause mysterious failures because the whitespace
-                    # is eaten by the browser when the magnet is
-                    # displayed but is matched in the regular
-                    # expression that does the magnet matching and
-                    # will cause failures... so strip off the
-                    # whitespace
+                        # It is possible to type leading or trailing white
+                        # space in a magnet definition which can later
+                        # cause mysterious failures because the whitespace
+                        # is eaten by the browser when the magnet is
+                        # displayed but is matched in the regular
+                        # expression that does the magnet matching and
+                        # will cause failures... so strip off the
+                        # whitespace
 
-                    $current_mtext =~ s/^[ \t]+//;
-                    $current_mtext =~ s/[ \t]+$//;
+                        $current_mtext =~ s/^[ \t]+//;
+                        $current_mtext =~ s/[ \t]+$//;
 
-                    $self->{c__}->create_magnet( $self->{api_session__}, $mbucket, $mtype, $current_mtext );
-                    if ( !defined( $self->{form_}{update} ) ) {
-                        $magnet_message .= sprintf( $self->{language__}{Magnet_Error3}, "$mtype: $current_mtext", $mbucket )  . '<br>';
+                        $self->{c__}->create_magnet( $self->{api_session__}, $mbucket, $mtype, $current_mtext );
+                        if ( !defined( $self->{form_}{update} ) ) {
+                            $magnet_message .= sprintf( $self->{language__}{Magnet_Error3}, "$mtype: $current_mtext", $mbucket )  . '<br>';
+                        }
                     }
                 }
-            }
             }
         }
     }
@@ -1874,18 +1874,25 @@ sub corpus_page
     $templ->param( 'Corpus_If_Last_Reset' => 1 );
     $templ->param( 'Corpus_Last_Reset' => $self->config_( 'last_reset' ) );
 
-    if ( ( defined($self->{form_}{lookup}) ) || ( defined($self->{form_}{word}) ) ) {
+    if ( ( defined($self->{form_}{lookup}) ) ||
+         ( defined($self->{form_}{word}) &&
+           ( $self->{form_}{word} ne '' ) ) ) {
         $templ->param( 'Corpus_If_Looked_Up' => 1 );
         $templ->param( 'Corpus_Word' => $self->{form_}{word} );
         my $word = $self->{form_}{word};
 
         if ( !( $word =~ /^[A-Za-z0-9\-_]+:/ ) ) {
-            $word = $self->{c__}->{parser__}->{mangle__}->mangle($word, 1);
+            $word = $self->{c__}->{parser__}->{mangle__}->mangle( $word, 1 );
         }
 
-        if ( $self->{form_}{word} ne '' ) {
+        if ( !$word ) {
+            $templ->param( 'Corpus_Lookup_Message' =>
+                           sprintf(
+                                $self->{language__}{Bucket_InIgnoredWords},
+                                $self->{form_}{word} ) );
+        } else {
             my $max = 0;
-                my $max_bucket = '';
+            my $max_bucket = '';
             my $total = 0;
             foreach my $bucket (@buckets) {
                 my $val = $self->{c__}->get_value_( $self->{api_session__}, $bucket, $word );
@@ -2119,7 +2126,7 @@ sub history_reclassify
         while ( my ( $slot, $newbucket ) = each %messages ) {
             push @{$work{$newbucket}},
                 $self->{history__}->get_slot_file( $slot );
-            my @fields = $self->{history__}->get_slot_fields( $slot);
+            my @fields = $self->{history__}->get_slot_fields( $slot );
             my $bucket = $fields[8];
             $self->{c__}->reclassified(
                 $self->{api_session__}, $bucket, $newbucket, 0 );
@@ -2339,7 +2346,7 @@ sub history_page
     }
 
     $templ->param( 'History_Field_Search'  => $self->{form_}{search} );
-    $templ->param( 'History_Field_Not'  => $self->{form_}{negate} );
+    $templ->param( 'History_Field_Not'     => $self->{form_}{negate} );
     $templ->param( 'History_If_Search'     => defined( $self->{form_}{search} ) );
     $templ->param( 'History_Field_Sort'    => $self->{form_}{sort} );
     $templ->param( 'History_Field_Filter'  => $self->{form_}{filter} );
