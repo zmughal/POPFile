@@ -1333,21 +1333,21 @@ sub db_put_word_count__
     # word in the words table (if there's none then we need to add the
     # word), the bucket id in the buckets table (which must exist)
 
-    $word = $self->db_quote($word);
-
-    my $result = $self->{db__}->selectrow_arrayref(
-                     "select words.id from words where words.word = $word limit 1;");
+    my $result = $self->validate_sql_prepare_and_execute(
+            $self->{db_get_wordid__}, $word )->fetchrow_arrayref;
 
     if ( !defined( $result ) ) {
-        $self->{db__}->do( "insert into words ( word ) values ( $word );" );
-        $result = $self->{db__}->selectrow_arrayref(
-                     "select words.id from words where words.word = $word limit 1;");
+        $self->validate_sql_prepare_and_execute(
+                'insert into words ( word ) values ( ? );', $word );
+        $result = $self->validate_sql_prepare_and_execute(
+                $self->{db_get_wordid__}, $word )->fetchrow_arrayref;
     }
 
     my $wordid = $result->[0];
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
 
-    $self->validate_sql_prepare_and_execute( $self->{db_put_word_count__}, $bucketid, $wordid, $count );
+    $self->validate_sql_prepare_and_execute(
+            $self->{db_put_word_count__}, $bucketid, $wordid, $count );
 
     return 1;
 }
@@ -1629,14 +1629,16 @@ sub magnet_match_helper__
     my @magnets;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->validate_sql_prepare_and_execute(                                           # PROFILE BLOCK START
-        "select magnets.val, magnets.id from magnets, users, buckets, magnet_types
-             where buckets.id = $bucketid and
-                   magnets.id != 0 and
-                   users.id = buckets.userid and
-                   magnets.bucketid = buckets.id and
-                   magnet_types.mtype = '$type' and
-                   magnets.mtid = magnet_types.id order by magnets.val;" );   # PROFILE BLOCK STOP
+    my $h = $self->validate_sql_prepare_and_execute(   # PROFILE BLOCK START
+            "select magnets.val, magnets.id from magnets, users, buckets, magnet_types
+                    where buckets.id         = ? and
+                          magnets.id        != 0 and
+                          users.id           = buckets.userid and
+                          magnets.bucketid   = buckets.id and
+                          magnet_types.mtype = ? and
+                          magnets.mtid       = magnet_types.id
+                    order by magnets.val;",
+            $bucketid, $type );                        # PROFILE BLOCK STOP
     while ( my $row = $h->fetchrow_arrayref ) {
         push @magnets, [$row->[0], $row->[1]];
     }
@@ -1745,11 +1747,12 @@ sub add_words_to_bucket__
 
     my $ids = join( ',', @id_list );
 
-    $self->{db_getwords__} = $self->validate_sql_prepare_and_execute(                                         # PROFILE BLOCK START
-             "select matrix.times, matrix.wordid
-                  from matrix
-                  where matrix.wordid in ( $ids )
-                    and matrix.bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};" );  # PROFILE BLOCK STOP
+    $self->{db_getwords__} = $self->validate_sql_prepare_and_execute(   # PROFILE BLOCK START
+            "select matrix.times, matrix.wordid
+                    from matrix
+                    where matrix.wordid in ( $ids ) and
+                          matrix.bucketid = ?;",
+            $self->{db_bucketid__}{$userid}{$bucket}{id} );             # PROFILE BLOCK STOP
 
     my %counts;
 
@@ -3253,11 +3256,12 @@ sub get_bucket_word_list
     return undef if ( !defined( $userid ) );
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $result = $self->{db__}->selectcol_arrayref(  # PROFILE BLOCK START
-        "select words.word from matrix, words
-         where matrix.wordid  = words.id and
-               matrix.bucketid = $bucketid and
-               words.word like '$prefix%';");        # PROFILE BLOCK STOP
+    $prefix = $self->db_quote( "$prefix%" );
+    my $result = $self->{db__}->selectcol_arrayref(         # PROFILE BLOCK START
+            "select words.word from matrix, words
+                    where matrix.wordid   =    words.id and
+                          matrix.bucketid =    $bucketid and
+                          words.word      like $prefix;");  # PROFILE BLOCK STOP
 
     return @{$result};
 }
@@ -3608,10 +3612,10 @@ sub create_bucket
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $bucket = $self->{db__}->quote( $bucket );
-
-    $self->{db__}->do(                                                                    # PROFILE BLOCK START
-        "insert into buckets ( name, pseudo, userid ) values ( $bucket, 0, $userid );" ); # PROFILE BLOCK STOP
+    $self->validate_sql_prepare_and_execute(   # PROFILE BLOCK START
+            'insert into buckets ( name, pseudo, userid )
+                         values  (    ?,      0,      ? );',
+            $bucket, $userid );                # PROFILE BLOCK STOP
     $self->db_update_cache__( $session );
 
     return 1;
@@ -3640,8 +3644,11 @@ sub delete_bucket
         return 0;
     }
 
-    $self->{db__}->do(                                                                        # PROFILE BLOCK START
-        "delete from buckets where buckets.userid = $userid and buckets.name = '$bucket';" ); # PROFILE BLOCK STOP
+    $self->validate_sql_prepare_and_execute(   # PROFILE BLOCK START
+            'delete from buckets
+                    where buckets.userid = ? and
+                          buckets.name   = ?;',
+            $userid, $bucket );                # PROFILE BLOCK STOP
     $self->db_update_cache__( $session );
 
     return 1;
@@ -3672,12 +3679,13 @@ sub rename_bucket
         return 0;
     }
 
-    my $id = $self->{db__}->quote( $self->{db_bucketid__}{$userid}{$old_bucket}{id} );
-    $new_bucket = $self->{db__}->quote( $new_bucket );
+    my $id = $self->{db_bucketid__}{$userid}{$old_bucket}{id};
 
     $self->log_( 1, "Rename bucket $old_bucket to $new_bucket" );
 
-    my $result = $self->{db__}->do( "update buckets set name = $new_bucket where id = $id;" );
+    my $result = $self->validate_sql_prepare_and_execute(
+            'update buckets set name = ? where id = ?;',
+            $new_bucket, $id );
 
     if ( !defined( $result ) || ( $result == -1 ) ) {
         return 0;
@@ -3821,12 +3829,14 @@ sub get_magnet_types_in_bucket
     my @result;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->validate_sql_prepare_and_execute( "select magnet_types.mtype from magnet_types, magnets, buckets
-        where magnet_types.id = magnets.mtid and
-              magnets.bucketid = buckets.id and
-              buckets.id = $bucketid
-              group by magnet_types.mtype
-              order by magnet_types.mtype;" );
+    my $h = $self->validate_sql_prepare_and_execute(
+            'select magnet_types.mtype from magnet_types, magnets, buckets
+                    where magnet_types.id  = magnets.mtid and
+                          magnets.bucketid = buckets.id and
+                          buckets.id       = ?
+                    group by magnet_types.mtype
+                    order by magnet_types.mtype;',
+            $bucketid );
 
     while ( my $row = $h->fetchrow_arrayref ) {
         push @result, ($row->[0]);
@@ -3855,7 +3865,10 @@ sub clear_bucket
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
 
-    $self->{db__}->do( "delete from matrix where matrix.bucketid = $bucketid;" );
+    $self->validate_sql_prepare_and_execute(
+            'delete from matrix
+                    where matrix.bucketid = ?;',
+            $bucketid );
     $self->db_update_cache__( $session );
 }
 
@@ -3877,7 +3890,10 @@ sub clear_magnets
 
     for my $bucket (keys %{$self->{db_bucketid__}{$userid}}) {
         my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-        $self->{db__}->do( "delete from magnets where magnets.bucketid = $bucketid;" );
+        $self->validate_sql_prepare_and_execute(
+                'delete from magnets
+                        where magnets.bucketid = ?;',
+                $bucketid );
     }
 }
 
@@ -3902,11 +3918,14 @@ sub get_magnets
     my @result;
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $h = $self->validate_sql_prepare_and_execute( "select magnets.val from magnets, magnet_types
-        where magnets.bucketid = $bucketid and
-              magnets.id != 0 and
-              magnet_types.id = magnets.mtid and
-              magnet_types.mtype = '$type' order by magnets.val;" );
+    my $h = $self->validate_sql_prepare_and_execute(
+            'select magnets.val from magnets, magnet_types
+                    where magnets.bucketid   = ? and
+                          magnets.id        != 0 and
+                          magnet_types.id    = magnets.mtid and
+                          magnet_types.mtype = ?
+                    order by magnets.val;',
+            $bucketid, $type );
 
     while ( my $row = $h->fetchrow_arrayref ) {
         push @result, ($row->[0]);
@@ -3936,15 +3955,17 @@ sub create_magnet
     return undef if ( !defined( $userid ) );
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $result = $self->{db__}->selectrow_arrayref("select magnet_types.id from magnet_types
-                                                        where magnet_types.mtype = '$type';" );
+    my $result = $self->validate_sql_prepare_and_execute(
+            'select magnet_types.id from magnet_types
+                    where magnet_types.mtype = ?;',
+            $type )->fetchrow_arrayref;
 
     my $mtid = $result->[0];
 
-    $text = $self->{db__}->quote( $text );
-
-    $self->{db__}->do( "insert into magnets ( bucketid, mtid, val )
-                                     values ( $bucketid, $mtid, $text );" );
+    $self->validate_sql_prepare_and_execute(
+            'insert into magnets ( bucketid, mtid, val )
+                          values (        ?,    ?,   ? );',
+            $bucketid, $mtid, $text );
 }
 
 #----------------------------------------------------------------------------
@@ -3965,7 +3986,9 @@ sub get_magnet_types
 
     my %result;
 
-    my $h = $self->validate_sql_prepare_and_execute( "select magnet_types.mtype, magnet_types.header from magnet_types order by mtype;" );
+    my $h = $self->validate_sql_prepare_and_execute(
+            'select magnet_types.mtype, magnet_types.header
+                    from magnet_types order by mtype;' );
 
     while ( my $row = $h->fetchrow_arrayref ) {
         $result{$row->[0]} = $row->[1];
@@ -3979,7 +4002,7 @@ sub get_magnet_types
 #
 # delete_magnet
 #
-# Remove a new magnet
+# Remove a magnet
 #
 # $session         A valid session key returned by a call to get_session_key
 # $bucket          The bucket the magnet belongs in
@@ -3995,16 +4018,19 @@ sub delete_magnet
     return undef if ( !defined( $userid ) );
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
-    my $result = $self->{db__}->selectrow_arrayref("select magnet_types.id from magnet_types
-                                                        where magnet_types.mtype = '$type';" );
+    my $result = $self->validate_sql_prepare_and_execute(
+            'select magnet_types.id from magnet_types
+                    where magnet_types.mtype = ?;',
+            $type )->fetchrow_arrayref;
 
     my $mtid = $result->[0];
-    $text = $self->{db__}->quote( $text );
 
-    $self->{db__}->do( "delete from magnets
-                            where magnets.bucketid = $bucketid and
-                                  magnets.mtid = $mtid and
-                                  magnets.val  = $text;" );
+    my $magnetid = $self->validate_sql_prepare_and_execute(
+            'delete from magnets
+                    where magnets.bucketid = ? and
+                          magnets.mtid     = ? and
+                          magnets.val      = ?;',
+            $bucketid, $mtid, $text );
 }
 
 #----------------------------------------------------------------------------
@@ -4042,10 +4068,12 @@ sub magnet_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    my $result = $self->{db__}->selectrow_arrayref( "select count(*) from magnets, buckets
-        where buckets.userid = $userid and
-              magnets.id != 0 and
-              magnets.bucketid = buckets.id;" );
+    my $result = $self->validate_sql_prepare_and_execute(
+            'select count(*) from magnets, buckets
+                    where buckets.userid   = ? and
+                          magnets.id      != 0 and
+                          magnets.bucketid = buckets.id;',
+            $userid )->fetchrow_arrayref;
 
     if ( defined( $result ) ) {
         return $result->[0];
