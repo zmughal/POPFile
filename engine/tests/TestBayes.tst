@@ -993,30 +993,34 @@ if ( $have_text_kakasi ) {
     test_assert_equal( $words[19], chr(0xa4) . chr(0xc7) );
     test_assert_equal( $words[20], chr(0xa5) . chr(0xb9) );
 
-    # qurantine test
+    # quarantine test
 
     $b->set_bucket_parameter( $session, 'gomi', 'quarantine', 1 );
 
-    open CLIENT, ">temp.tmp";
-    open MAIL, "<TestMails/TestNihongo021.msg";
-    my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 1 );
-    close CLIENT;
-    close MAIL;
-
-    test_assert_equal( $class, 'gomi' );
-    test_assert( -e $h->get_slot_file( $slot ) );
-
-    open TEMP, "<temp.tmp";
-    open MAIL, "<TestMails/TestNihongo021.qrn";
-    while ( !eof( MAIL ) && !eof( TEMP ) ) {
-        my $temp = <TEMP>;
-        $temp =~ s/[\r\n]//g;
-        my $mail = <MAIL>;
-        $mail =~ s/[\r\n]//g;
-        test_assert_equal( $temp, $mail );
+    foreach my $test_message ( 'TestMails/TestNihongo021.msg', 'TestMails/TestNihongo022.msg' ) {
+        open CLIENT, ">temp.tmp";
+        open MAIL, "<$test_message";
+        my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 1 );
+        close CLIENT;
+        close MAIL;
+    
+        test_assert_equal( $class, 'gomi' );
+        test_assert( -e $h->get_slot_file( $slot ) );
+    
+        open TEMP, "<temp.tmp";
+        my $quarantined_message = $test_message;
+        $quarantined_message =~ s/\.msg$/.qrn/;
+        open MAIL, "<$quarantined_message";
+        while ( !eof( MAIL ) && !eof( TEMP ) ) {
+            my $temp = <TEMP>;
+            $temp =~ s/[\r\n]//g;
+            my $mail = <MAIL>;
+            $mail =~ s/[\r\n]//g;
+            test_assert_equal( $temp, $mail );
+        }
+        close MAIL;
+        close TEMP;
     }
-    close MAIL;
-    close TEMP;
 
     # remove_message_from_bucket
 
