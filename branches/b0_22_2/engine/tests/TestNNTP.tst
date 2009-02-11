@@ -1281,6 +1281,28 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
+        # Test ARTICLE number after HEAD comes from cache
+
+        print $client "ARTICLE 8$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "220 0 <nntp7\@test2.group>$eol" );
+
+        $cam = $messages[7];
+        $cam =~ s/msg$/cam/;
+        test_assert( open FILE, "<$cam" );
+        binmode FILE;
+        while ( my $line = <FILE> ) {
+            $line =~ s/[$cr$lf]//g;
+            $result = <$client>;
+            $result =~ s/[$cr$lf]//g;
+            $result =~ s/view=$history_count/view=popfile0=0.msg/;
+            test_assert_equal( $result, $line );
+        }
+        close FILE;
+
+        $result = <$client>;
+        test_assert_equal( $result, ".$eol" );
+
         # Test HEAD <message-id> after HEAD comes from cache
 
         print $client "HEAD <nntp7\@test2.group>$eol";
@@ -1305,9 +1327,60 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
+        # Test HEAD number after HEAD comes from cache
+
+        print $client "HEAD 8$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "221 8 <nntp7\@test2.group>$eol" );
+
+        $cam = $messages[7];
+        $cam =~ s/msg$/cam/;
+        test_assert( open FILE, "<$cam" );
+        binmode FILE;
+        while ( ( my $line = <FILE> ) ) {
+            last if ( $line =~ /^[$cr$lf]+$/ );
+            $result = <$client>;
+            $result =~ s/view=$history_count/view=popfile0=0.msg/;
+            test_assert( $result =~ /$cr/ );
+            $result =~ s/[$cr$lf]//g;
+            $line   =~ s/[$cr$lf]//g;
+            test_assert_equal( $result, $line, "[$result][$cam][$line]" );
+        }
+        close FILE;
+
+        $result = <$client>;
+        test_assert_equal( $result, ".$eol" );
+
         # Test BODY <message-id> after HEAD comes from cache
 
         print $client "BODY <nntp7\@test2.group>$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "222 0 <nntp7\@test2.group>$eol" );
+
+        $cam = $messages[7];
+        $cam =~ s/msg$/cam/;
+        test_assert( open FILE, "<$cam" );
+        binmode FILE;
+        # skip message header
+        while ( <FILE> ) {
+            last if ( /^[$cr$lf]+$/ );
+        }
+        # read message body
+        while ( my $line = <FILE> ) {
+            $line =~ s/[$cr$lf]//g;
+            $result = <$client>;
+            $result =~ s/[$cr$lf]//g;
+            $result =~ s/view=$history_count/view=popfile0=0.msg/;
+            test_assert_equal( $result, $line );
+        }
+        close FILE;
+
+        $result = <$client>;
+        test_assert_equal( $result, ".$eol" );
+
+        # Test BODY number after HEAD comes from cache
+
+        print $client "BODY 8$eol";
         $result = <$client>;
         test_assert_equal( $result, "222 0 <nntp7\@test2.group>$eol" );
 
@@ -1424,6 +1497,26 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
+        print $client "ARTICLE 9$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "220 0 <nntp8\@test2.group>$eol" );
+
+        $cam = $messages[8];
+        $cam =~ s/msg$/cam/;
+        test_assert( open FILE, "<$cam" );
+        binmode FILE;
+        while ( my $line = <FILE> ) {
+            $line =~ s/[$cr$lf]//g;
+            $result = <$client>;
+            $result =~ s/[$cr$lf]//g;
+            $result =~ s/view=$history_count/view=popfile0=0.msg/;
+            test_assert_equal( $result, $line );
+        }
+        close FILE;
+
+        $result = <$client>;
+        test_assert_equal( $result, ".$eol" );
+
         # Test HEADTOO and caching with illegal CRLF.CRLF in message
 
         print $client "HEAD 28$eol";
@@ -1496,6 +1589,18 @@ if ( $pid == 0 ) {
         test_assert_equal( $result, ".$eol" );
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
+
+        # Check what happens when HEAD fails
+
+        print $client "HEAD <notexist\@test2.group>$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "430 No article with that message-id$eol" );
+
+        # Check what happens when BODY fails
+
+        print $client "BODY <notexist\@test2.group>$eol";
+        $result = <$client>;
+        test_assert_equal( $result, "430 No article with that message-id$eol" );
 
         print $client "QUIT$eol";
         $result = <$client>;

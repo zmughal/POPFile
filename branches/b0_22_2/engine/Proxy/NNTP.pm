@@ -197,6 +197,7 @@ sub child__
 
     while  ( <$client> ) {
         my $command;
+        my ( $response, $ok );
 
         $command = $_;
 
@@ -284,10 +285,10 @@ sub child__
 
         if ( $connection_state eq "password needed" ) {
             if ( $command =~ /^ *AUTHINFO PASS (.*)/i ) {
-                my ( $response, $ok ) =                              # PROFILE BLOCK START
+                ( $response, $ok ) =                                 # PROFILE BLOCK START
                     $self->get_response_( $news, $client, $command); # PROFILE BLOCK STOP
 
-                if ($response =~ /^281 .*/) {
+                if ( $response =~ /^281 .*/ ) {
                     $connection_state = "connected";
                 }
             } else {
@@ -313,6 +314,7 @@ sub child__
         }
 
         if ( $connection_state eq "connected" ) {
+            my $message_id;
 
             # COMMANDS USED DIRECTLY WITH THE REMOTE NNTP SERVER GO HERE
 
@@ -320,13 +322,23 @@ sub child__
             # insert classification headers.
 
             if ( $command =~ /^ *ARTICLE ?(.*)?/i ) {
-                my $option = $1;
                 my $file;
 
-                if ( ( $option !~ /^\d+$/ ) && defined($downloaded{$option}) &&  # PROFILE BLOCK START
+                if ( $1 =~ /^\d*$/ ) {
+                    ( $message_id, $response ) =                            # PROFILE BLOCK START
+                        $self->get_message_id_( $news, $client, $command ); # PROFILE BLOCK STOP
+                    if ( !defined( $message_id ) ) {
+                        $self->tee_( $client, $response );
+                        next;
+                    }
+                } else {
+                    $message_id = $1;
+                }
+
+                if ( defined($downloaded{$message_id}) &&  # PROFILE BLOCK START
                      ( $file = $self->{history__}->get_slot_file(
-                            $downloaded{$option}{slot} ) ) &&
-                     ( open RETRFILE, "<$file" ) ) {                             # PROFILE BLOCK STOP
+                            $downloaded{$message_id}{slot} ) ) &&
+                     ( open RETRFILE, "<$file" ) ) {       # PROFILE BLOCK STOP
 
                     # Act like a network stream
 
@@ -338,7 +350,7 @@ sub child__
 
                     # Give the client 220 (ok)
 
-                    $self->tee_( $client, "220 0 $option$eol" );
+                    $self->tee_( $client, "220 0 $message_id$eol" );
 
                     # Echo file, inserting known classification,
                     # without saving
@@ -346,17 +358,17 @@ sub child__
                     ( my $class, undef ) =                          # PROFILE BLOCK START
                         $self->{classifier__}->classify_and_modify(
                             $session, \*RETRFILE, $client, 1,
-                            $downloaded{$option}{class},
-                            $downloaded{$option}{slot} );           # PROFILE BLOCK STOP
+                            $downloaded{$message_id}{class},
+                            $downloaded{$message_id}{slot} );       # PROFILE BLOCK STOP
                     print $client ".$eol";
 
                     close RETRFILE;
                 } else {
 
-                    my ( $response, $ok ) =                               # PROFILE BLOCK START
+                    ( $response, $ok ) =                                  # PROFILE BLOCK START
                         $self->get_response_( $news, $client, $command ); # PROFILE BLOCK STOP
                     if ( $response =~ /^220 +(\d+) +([^ \015]+)/i ) {
-                        my $message_id = $2;
+                        $message_id = $2;
 
                         my ( $class, $history_file ) =                  # PROFILE BLOCK START
                             $self->{classifier__}->classify_and_modify(
@@ -371,20 +383,27 @@ sub child__
             }
 
             if ( $command =~ /^ *HEAD ?(.*)?/i ) {
-                my $option = $1;
+                if ( $1 =~ /^\d*$/ ) {
+                    ( $message_id, $response ) =                            # PROFILE BLOCK START
+                        $self->get_message_id_( $news, $client, $command ); # PROFILE BLOCK STOP
+                    if ( !defined( $message_id ) ) {
+                        $self->tee_( $client, $response );
+                        next;
+                    }
+                } else {
+                    $message_id = $1;
+                }
 
                 if ( $self->config_( 'headtoo' ) ) {
                     my ( $class, $history_file );
-                    my ( $response, $ok );
                     my $cached = 0;
 
-                    if ( ( $option !~ /^\d+$/ ) && defined($downloaded{$option}) ) {
+                    if ( defined($downloaded{$message_id}) ) {
                         # Already cached
 
                         $cached = 1;
-                        ( $class, $history_file ) =          # PROFILE BLOCK START
-                            ( $downloaded{$option}{class},
-                              $downloaded{$option}{slot}  ); # PROFILE BLOCK STOP
+                        $class = $downloaded{$message_id}{class};
+                        $history_file = $downloaded{$message_id}{slot};
                     } else {
 
                         # Send ARTICLE command to server
@@ -395,7 +414,7 @@ sub child__
                             $self->get_response_( $news, $client,
                                                   $article_command, 0, 1 ); # PROFILE BLOCK STOP
                         if ( $response =~ /^220 +(\d+) +([^ \015]+)/i ) {
-                            my $message_id = $2;
+                            $message_id = $2;
                             $response =~ s/^220/221/;
                             $self->tee_( $client, "$response" );
 
@@ -428,13 +447,23 @@ sub child__
             }
 
             if ( $command =~ /^ *BODY ?(.*)?/i ) {
-                my $option = $1;
                 my $file;
 
-                if ( ( $option !~ /^\d+$/ ) && defined($downloaded{$option}) &&  # PROFILE BLOCK START
+                if ( $1 =~ /^\d*$/ ) {
+                    ( $message_id, $response ) =                            # PROFILE BLOCK START
+                        $self->get_message_id_( $news, $client, $command ); # PROFILE BLOCK STOP
+                    if ( !defined( $message_id ) ) {
+                        $self->tee_( $client, $response );
+                        next;
+                    }
+                } else {
+                    $message_id = $1;
+                }
+
+                if ( defined($downloaded{$message_id}) &&  # PROFILE BLOCK START
                      ( $file = $self->{history__}->get_slot_file(
-                            $downloaded{$option}{slot} ) ) &&
-                     ( open RETRFILE, "<$file" ) ) {                             # PROFILE BLOCK STOP
+                            $downloaded{$message_id}{slot} ) ) &&
+                     ( open RETRFILE, "<$file" ) ) {       # PROFILE BLOCK STOP
                     
                     # Act like a network stream
 
@@ -446,7 +475,7 @@ sub child__
 
                     # Give the client 222 (ok)
 
-                    $self->tee_( $client, "222 0 $option$eol" );
+                    $self->tee_( $client, "222 0 $message_id$eol" );
 
                     # Skip header
 
@@ -465,11 +494,11 @@ sub child__
 
                     my $article_command = $command;
                     $article_command =~ s/^ *BODY/ARTICLE/i;
-                    my ( $response, $ok ) =                                     # PROFILE BLOCK START
+                    ( $response, $ok ) =                                        # PROFILE BLOCK START
                         $self->get_response_( $news, $client, $article_command,
                                               0, 1 );                           # PROFILE BLOCK STOP
                     if ( $response =~ /^220 +(\d+) +([^ \015]+)/i ) {
-                        my $message_id = $2;
+                        $message_id = $2;
                         $response =~ s/^220/222/;
                         $self->tee_( $client, "$response" );
 
@@ -502,8 +531,8 @@ sub child__
             if ( $command =~                                 # PROFILE BLOCK START
                 /^[ ]*(LIST|HEAD|NEWGROUPS|NEWNEWS|LISTGROUP|XGTITLE|XINDEX|XHDR|
                      XOVER|XPAT|XROVER|XTHREAD)/ix ) {       # PROFILE BLOCK STOP
-                my ( $response, $ok ) =                              # PROFILE BLOCK START
-                    $self->get_response_( $news, $client, $command); # PROFILE BLOCK STOP
+                ( $response, $ok ) =                                  # PROFILE BLOCK START
+                    $self->get_response_( $news, $client, $command ); # PROFILE BLOCK STOP
 
                 # 2xx (200) series response indicates multi-line text
                 # follows to .crlf
@@ -517,8 +546,8 @@ sub child__
             # Exceptions to 200 code above
 
             if ( $ command =~ /^ *(HELP)/i ) {
-                my ( $response, $ok ) =                              # PROFILE BLOCK START
-                    $self->get_response_( $news, $client, $command); # PROFILE BLOCK STOP
+                ( $response, $ok ) =                                  # PROFILE BLOCK START
+                    $self->get_response_( $news, $client, $command ); # PROFILE BLOCK STOP
                 if ( $response =~ /^1\d\d/ ) {
                     $self->echo_to_dot_( $news, $client, 0 );
                 }
@@ -536,13 +565,13 @@ sub child__
             # Commands followed by multi-line client response
 
             if ( $command =~ /^ *(IHAVE|POST|XRELPIC)/i ) {
-                my ( $response, $ok ) =                               # PROFILE BLOCK START
+                ( $response, $ok ) =                                  # PROFILE BLOCK START
                     $self->get_response_( $news, $client, $command ); # PROFILE BLOCK STOP
 
                 # 3xx (300) series response indicates multi-line text
                 # should be sent, up to .crlf
 
-                if ($response =~ /^3\d\d/ ) {
+                if ( $response =~ /^3\d\d/ ) {
 
                     # Echo from the client to the server
 
@@ -572,7 +601,7 @@ sub child__
         # hope for the best
 
         if ( $news && $news->connected )  {
-            $self->echo_response_($news, $client, $command );
+            $self->echo_response_( $news, $client, $command );
             next;
         } else {
             $self->tee_(  $client, "500 unknown command or bad syntax$eol" );
@@ -688,6 +717,34 @@ sub validate_item
     }
 
     $self->SUPER::validate_item( $name, $templ, $language, $form );
+}
+
+# ----------------------------------------------------------------------------
+#
+# get_message_id_
+#
+# Get message_id of the article to retrieve
+#
+#    $news            A connection to the news server
+#    $client          A connection from the news client
+#    $command         A command sent from the news client
+#
+# ----------------------------------------------------------------------------
+
+sub get_message_id_
+{
+    my ( $self, $news, $client, $command ) = @_;
+
+    # Send STAT command to get the message_id
+
+    $command =~ s/^ *(ARTICLE|HEAD|BODY)/STAT/i;
+    my ( $response, $ok ) =                                     # PROFILE BLOCK START
+        $self->get_response_( $news, $client, $command, 0, 1 ); # PROFILE BLOCK STOP
+    if ( $response =~ /^223 +(\d+) +([^ \015]+)/i ) {
+        return ( $2, $response );
+    } else {
+        return ( undef, $response );
+    }
 }
 
 1;
