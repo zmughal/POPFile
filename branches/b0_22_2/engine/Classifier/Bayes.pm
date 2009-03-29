@@ -2298,27 +2298,29 @@ sub classify
     $self->{db_classify__}->finish;
     undef $self->{db_classify__};
 
+    my $not_likely = $self->{not_likely__}{$userid};
+
     foreach my $id (@id_list) {
         $word_count += 2;
         my $wmax = -10000;
+        my $count = $self->{parser__}{words__}{$$idmap{$id}};
 
         foreach my $bucket (@buckets) {
-            my $probability = 0;
+            my $probability = $not_likely;
 
             if ( defined($$matrix{$id}{$bucket}) && ( $$matrix{$id}{$bucket} > 0 ) ) {
                 $probability = log( $$matrix{$id}{$bucket} / $self->{db_bucketcount__}{$userid}{$bucket} );
+                $matchcount{$bucket} += $count;
             }
 
-            $matchcount{$bucket} += $self->{parser__}{words__}{$$idmap{$id}} if ($probability != 0);
-            $probability = $self->{not_likely__}{$userid} if ( $probability == 0 );
             $wmax = $probability if ( $wmax < $probability );
-            $score{$bucket} += ( $probability * $self->{parser__}{words__}{$$idmap{$id}} );
+            $score{$bucket} += ( $probability * $count );
         }
 
-        if ($wmax > $self->{not_likely__}{$userid}) {
-            $correction += $self->{not_likely__}{$userid} * $self->{parser__}{words__}{$$idmap{$id}};
+        if ( $wmax > $not_likely ) {
+            $correction += $not_likely * $count;
         } else {
-            $correction += $wmax * $self->{parser__}{words__}{$$idmap{$id}};
+            $correction += $wmax * $count;
         }
     }
 
@@ -2404,39 +2406,39 @@ sub classify
 
         my @score_data;
         foreach my $b (@ranking) {
-             my %row_data;
-             my $prob = exp($score{$b})/$total;
-             my $probstr;
-             my $rawstr;
+            my %row_data;
+            my $prob = exp($score{$b})/$total;
+            my $probstr;
+            my $rawstr;
 
-             # If the computed probability would display as 1, display
-             # it as .999999 instead.  We don't want to give the
-             # impression that POPFile is ever completely sure of its
-             # classification.
+            # If the computed probability would display as 1, display
+            # it as .999999 instead.  We don't want to give the
+            # impression that POPFile is ever completely sure of its
+            # classification.
 
-             if ($prob >= .999999) {
-                 $probstr = sprintf("%12.6f", 0.999999);
-             } else {
-                 if ($prob >= 0.1 || $prob == 0.0) {
-                     $probstr = sprintf("%12.6f", $prob);
-                 } else {
+            if ($prob >= .999999) {
+                $probstr = sprintf("%12.6f", 0.999999);
+            } else {
+                if ($prob >= 0.1 || $prob == 0.0) {
+                    $probstr = sprintf("%12.6f", $prob);
+                } else {
                     $probstr = sprintf("%17.6e", $prob);
-                 }
-             }
+                }
+            }
 
-             my $color = $self->get_bucket_color( $session, $b );
+            my $color = $self->get_bucket_color( $session, $b );
 
-             $row_data{View_Score_Bucket} = $b;
-             $row_data{View_Score_Bucket_Color} = $color;
-             $row_data{View_Score_MatchCount} = $matchcount{$b};
-             $row_data{View_Score_ProbStr} = $probstr;
+            $row_data{View_Score_Bucket} = $b;
+            $row_data{View_Score_Bucket_Color} = $color;
+            $row_data{View_Score_MatchCount} = $matchcount{$b};
+            $row_data{View_Score_ProbStr} = $probstr;
 
-             if ($self->{wmformat__} eq 'score') {
-                 $row_data{View_Score_If_Score} = 1;
-                 $rawstr = sprintf("%12.6f", ($raw_score{$b} - $correction)/$log10);
-                 $row_data{View_Score_RawStr} = $rawstr;
-             }
-             push ( @score_data, \%row_data );
+            if ($self->{wmformat__} eq 'score') {
+                $row_data{View_Score_If_Score} = 1;
+                $rawstr = sprintf("%12.6f", ($raw_score{$b} - $correction)/$log10);
+                $row_data{View_Score_RawStr} = $rawstr;
+            }
+            push ( @score_data, \%row_data );
         }
         $templ->param( 'View_Score_Loop_Scores' => \@score_data );
 
