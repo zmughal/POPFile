@@ -21,8 +21,15 @@
     <tr>
         <td class="openMessageCloser" colspan="2">
             <a class="messageLink" href="#message_body"><TMPL_VAR NAME="Localize_View_MessageBody"></a>
+
+            <TMPL_IF NAME="View_QuickMagnets_If">
             | <a class="messageLink" href="#quick_magnet"><TMPL_VAR NAME="Localize_QuickMagnets"></a>
+            </TMPL_IF>
+
+            <TMPL_IF NAME="View_If_Magnetized">
+            <TMPL_ELSE>
             | <a class="messageLink" href="#scores"><TMPL_VAR NAME="Localize_Scores"></a>
+            </TMPL_IF>
         </td>
     </tr>
     <tr>
