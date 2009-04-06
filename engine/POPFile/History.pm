@@ -988,13 +988,18 @@ sub set_query
             $self->{queries__}{$id}{base} .=
                 " and history.magnetid $equal 0";
         } else {
-            my $session = $self->{classifier__}->get_session_key(
-                              'admin', '' );
-            my $bucketid = $self->{classifier__}->get_bucket_id(
-                               $session, $filter );
-            $self->{classifier__}->release_session_key( $session );
-            $self->{queries__}{$id}{base} .=
-                " and history.bucketid $not_equal $bucketid";
+            if ( $filter eq '__filter__reclassified' ) {
+                $self->{queries__}{$id}{base} .=
+                    " and history.usedtobe $equal 0";
+            } else {
+                my $session = $self->{classifier__}->get_session_key(
+                                  'admin', '' );
+                my $bucketid = $self->{classifier__}->get_bucket_id(
+                                   $session, $filter );
+                $self->{classifier__}->release_session_key( $session );
+                $self->{queries__}{$id}{base} .=
+                    " and history.bucketid $not_equal $bucketid";
+            }
         }
     }
 
