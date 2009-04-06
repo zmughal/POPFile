@@ -537,6 +537,28 @@ personal
 </font>
 </td>
 ENDMATCH
+
+MATCH
+<a class="messageLink" href="#message_body">Message Body</a>
+| <a class="messageLink" href="#quick_magnet">QuickMagnets</a>
+| <a class="messageLink" href="#scores">Scores</a>
+ENDMATCH
+MATCH <a name="message_body" />
+MATCH
+<a name="quick_magnet">
+<b>
+QuickMagnets
+</b>
+</a>
+ENDMATCH
+MATCH
+<a name="scores">
+<b>
+Scores
+</b>
+</a>
+ENDMATCH
+
 MATCH Scores
 MATCH 0.769209
 MATCH 0.230763

@@ -409,6 +409,7 @@ EOM
     close $uwriter;
 
     $h->stop();
+    $b->stop();
 
     exit(0);
 } else {
