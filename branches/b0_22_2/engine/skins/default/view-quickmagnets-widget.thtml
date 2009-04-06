@@ -5,9 +5,11 @@
     <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
     <input type="hidden" name="count" value="<TMPL_VAR NAME="View_QuickMagnets_Count">" />
     <hr />
+    <a name="quick_magnet">
     <b>
         <TMPL_VAR NAME="Localize_QuickMagnets">
     </b>
+    </a>
     <table class="top20Words">
         <tr>
             <th scope="col">
