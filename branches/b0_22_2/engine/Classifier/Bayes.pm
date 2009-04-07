@@ -3675,6 +3675,8 @@ sub delete_bucket
             $userid, $bucket );                # PROFILE BLOCK STOP
     $self->db_update_cache__( $session );
 
+    $self->{history__}->force_requery();
+
     return 1;
 }
 
@@ -3715,6 +3717,8 @@ sub rename_bucket
         return 0;
     } else {
         $self->db_update_cache__( $session );
+        $self->{history__}->force_requery();
+
         return 1;
     }
 }
@@ -3918,6 +3922,14 @@ sub clear_magnets
                 'delete from magnets
                         where magnets.bucketid = ?;',
                 $bucketid );
+
+        # Change status of the magnetized message in this bucket
+
+        $self->validate_sql_prepare_and_execute(
+                'update history set magnetid = 0
+                        where bucketid = ? and
+                              userid   = ?;',
+                $bucketid, $userid );
     }
 }
 
@@ -4042,19 +4054,33 @@ sub delete_magnet
     return undef if ( !defined( $userid ) );
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
+
     my $result = $self->validate_sql_prepare_and_execute(
-            'select magnet_types.id from magnet_types
-                    where magnet_types.mtype = ?;',
-            $type )->fetchrow_arrayref;
+            'select magnets.id from magnets, magnet_types
+                    where magnets.mtid       = magnet_types.id and
+                          magnets.bucketid   = ? and
+                          magnets.val        = ? and
+                          magnet_types.mtype = ?;',
+            $bucketid, $text, $type )->fetchrow_arrayref;
 
-    my $mtid = $result->[0];
+    return if ( !defined( $result ) );
 
-    my $magnetid = $self->validate_sql_prepare_and_execute(
+    my $magnetid = $result->[0];
+
+    $self->validate_sql_prepare_and_execute(
             'delete from magnets
-                    where magnets.bucketid = ? and
-                          magnets.mtid     = ? and
-                          magnets.val      = ?;',
-            $bucketid, $mtid, $text );
+                    where id = ?;',
+            $magnetid );
+
+    # Change status of the magnetized message by this magnet
+
+    $self->validate_sql_prepare_and_execute(
+            'update history set magnetid = 0
+                    where magnetid = ? and
+                          userid   = ?;',
+            $magnetid, $userid )->finish;
+
+    $self->{history__}->force_requery();
 }
 
 #----------------------------------------------------------------------------

@@ -413,7 +413,7 @@ sub change_slot_classification
     $self->db__()->do( "update history set bucketid = $bucketid,
                                            usedtobe = $oldbucketid
                                        where id = $slot;" );
-    $self->force_requery__();
+    $self->force_requery();
 }
 
 #----------------------------------------------------------------------------
@@ -436,7 +436,7 @@ sub revert_slot_classification
     $self->db__()->do( "update history set bucketid = $oldbucketid,
                                            usedtobe = 0
                                        where id = $slot;" );
-    $self->force_requery__();
+    $self->force_requery();
 }
 
 #---------------------------------------------------------------------------
@@ -658,7 +658,7 @@ sub commit_history__
     $update_history->finish;
 
     $self->{commit_list__} = ();
-    $self->force_requery__();
+    $self->force_requery();
 }
 
 # ---------------------------------------------------------------------------
@@ -721,7 +721,7 @@ sub delete_slot
     # may have been affected
 
     $self->release_slot( $slot );
-    $self->force_requery__();
+    $self->force_requery();
 }
 
 #----------------------------------------------------------------------------
@@ -1345,13 +1345,13 @@ sub copy_file__
 
 # ---------------------------------------------------------------------------
 #
-# force_requery__
+# force_requery
 #
 # Called when the database has changed to invalidate any queries that are
 # open so that cached data is not returned and the database is requeried
 #
 # ---------------------------------------------------------------------------
-sub force_requery__
+sub force_requery
 {
     my ( $self ) = @_;
     # Force requery since the messages have changed
