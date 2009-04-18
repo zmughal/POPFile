@@ -1070,13 +1070,13 @@ MATCH The port must be a number between 1 and 65535
 
 HIDDEN 1
 INPUTIS update_check 2
-CONFIGIS html_update_check 0
+CONFIGIS GLOBAL_update_check 0
 SETSUBMIT update_check 1
 INPUTIS update_check 2
-CONFIGIS html_update_check 0
+CONFIGIS GLOBAL_update_check 0
 SETSUBMIT update_check 2
 INPUTIS update_check 1
-CONFIGIS html_update_check 1
+CONFIGIS GLOBAL_update_check 1
 HIDDEN 0
 
 # Check statistics sending
@@ -1442,9 +1442,9 @@ GET /foo
 
 # Check update checking
 
-SETCONFIG html_update_check 1
-SETCONFIG html_send_stats 1
-SETCONFIG html_last_update_check 0
+SETCONFIG GLOBAL_update_check 1
+SETCONFIG GLOBAL_send_stats 1
+SETCONFIG GLOBAL_last_update_check 0
 SETCONFIG GLOBAL_ecount 1
 GET /
 MATCH popfile_update.pl
