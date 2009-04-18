@@ -71,6 +71,7 @@ sub new
 
     $self->{update_check_url__} = 'http://getpopfile.org/downloads/current_release.txt';
     $self->{trayicon_filename__} = 'trayicon.ico';
+    $self->{trayicon_updated_filename__} = 'trayicon_up.ico';
 
     $self->{update_check_dialog_title__} = 'POPFile Update Check';
     $self->{new_version_available_text__} = 'A new version of POPFile is available.';
@@ -201,22 +202,14 @@ sub service
 {
     my ( $self ) = @_;
 
-    if ( $self->global_config_( 'update_check' ) &&
+    if ( $self->{use_tray_icon__} &&
+         $self->global_config_( 'update_check' ) &&
          ( time >= $self->{next_update_check__} ) ) {
         $self->{next_update_check__} = time + $self->{update_check_interval__};
         $self->global_config_( 'last_update_check', time );
 
         if ( $self->{updated__} || $self->update_check() ) {
-            # Show balloon
-
-            $self->{trayicon}->Change(
-                -balloon_tip     => 'A new version of POPFile is available.',
-                -balloon_timeout => 100,
-                -balloon_icon    => 'none',
-            );
-
-            $self->{trayicon}->ShowBalloon(1);
-            $self->{updated__} = 1;
+            $self->update_check_result( 1, 0, 1 );
         }
     }
 
@@ -247,7 +240,11 @@ sub prepare_trayicon
 
     # Create a trayicon
 
-    my $icon = Win32::GUI::Icon->new( $self->get_root_path_( $self->{trayicon_filename__} ) );
+    my $icon = Win32::GUI::Icon->new(
+        $self->get_root_path_( ( $self->{updated__} ?
+                                 $self->{trayicon_updated_filename__} :
+                                 $self->{trayicon_filename__} ) ) );
+
     $self->{trayicon} = $self->{trayicon_window}->AddNotifyIcon(
         -name => 'NI',
         -icon => $icon,
@@ -359,7 +356,13 @@ sub update_check
                ( $latest_mi <=> $minor_version ) * 2 +
                ( $latest_bu <=> $build_version );
 
-        return ( $cmp > 0 );
+        my $updated = ( $cmp > 0 );
+
+        $self->{updated__} = $updated;
+        $self->{next_update_check__} = time + $self->{update_check_interval__};
+        $self->global_config_( 'last_update_check' , time );
+
+        return $updated;
     }
 
     return 0;
@@ -371,92 +374,121 @@ sub update_check
 #
 # Show result of checking updates
 #
+#    $updated        1 : New version of POPFile is available
+#    $show_dialog    1 : Show update check result dialog
+#    $show_balloon   1 : Show balloon tips
+#
 # ----------------------------------------------------------------------------
 sub update_check_result
 {
-    my ( $self, $updated ) = @_;
+    my ( $self, $updated, $show_dialog, $show_balloon ) = @_;
 
-    my $db = new Win32::GUI::DialogBox(
-        -name        => "update_check",
-        -text        => $self->{update_check_dialog_title__},
-        -size        => [250,100],
-        -menu        => 0,
-        -maximizebox => 0,
-        -minimizebox => 0,
-        -helpbox     => 0,
-        -resizable   => 0,
-    );
+    $self->{updated__} = $updated;
 
-    my $icon = Win32::GUI::Icon->new( $self->get_root_path_( $self->{trayicon_filename__} ) );
-    $db->SetIcon( $icon, 0 );
-
-    if ( $updated ) {
-        $db->AddLabel(
-            -text => $self->{new_version_available_text__},
-            -left => 10,
-            -top  => 10,
-        );
-        $db->AddLabel(
-            -text => $self->{open_download_page_text__},
-            -left => 10,
-            -top  => 25,
-        );
-        $db->AddButton(
-            -name    => 'Open_Download_Page',
-            -text    => 'Open',
-            -default => 1,    # Default
-            -ok      => 1,    # Press 'Return' to click this button
-            -width   => 60,
-            -height  => 20,
-            -left    => $db->ScaleWidth() - 140,
-            -top     => $db->ScaleHeight() - 30,
+    if ( $show_dialog ) {
+        my $db = new Win32::GUI::DialogBox(
+            -name        => "update_check",
+            -text        => $self->{update_check_dialog_title__},
+            -size        => [250,100],
+            -menu        => 0,
+            -maximizebox => 0,
+            -minimizebox => 0,
+            -helpbox     => 0,
+            -resizable   => 0,
         );
 
-        $db->AddButton(
-            -name   => 'Cancel',
-            -text   => 'Cancel',
-            -cancel => 1,    # Press 'Esc' to click this button
-            -width  => 60,
-            -height => 20,
-            -left   => $db->ScaleWidth() - 70,
-            -top    => $db->ScaleHeight() - 30,
-        );
-    } else {
-        $db->Resize( 200, 80 );
-        $db->AddLabel(
-            -text => $self->{up_to_date_text__},
-            -left => 10,
-            -top  => 10,
-        );
-        $db->AddButton(
-            -name   => 'Cancel',
-            -text   => 'OK',
-            -default => 1,    # Default
-            -ok      => 1,    # Press 'Return' to click this button
-            -width  => 60,
-            -height => 20,
-            -left   => $db->ScaleWidth() - 70,
-            -top    => $db->ScaleHeight() - 30,
-        );
+        my $icon = Win32::GUI::Icon->new(
+            $self->get_root_path_( $self->{trayicon_filename__} ) );
+        $db->SetIcon( $icon, 0 );
+
+        if ( $updated ) {
+            $db->AddLabel(
+                -text => $self->{new_version_available_text__},
+                -left => 10,
+                -top  => 10,
+            );
+            $db->AddLabel(
+                -text => $self->{open_download_page_text__},
+                -left => 10,
+                -top  => 25,
+            );
+            $db->AddButton(
+                -name    => 'Open_Download_Page',
+                -text    => 'Open',
+                -default => 1,    # Default
+                -ok      => 1,    # Press 'Return' to click this button
+                -width   => 60,
+                -height  => 20,
+                -left    => $db->ScaleWidth() - 140,
+                -top     => $db->ScaleHeight() - 30,
+            );
+
+            $db->AddButton(
+                -name   => 'Cancel',
+                -text   => 'Cancel',
+                -cancel => 1,    # Press 'Esc' to click this button
+                -width  => 60,
+                -height => 20,
+                -left   => $db->ScaleWidth() - 70,
+                -top    => $db->ScaleHeight() - 30,
+            );
+        } else {
+            $db->Resize( 200, 80 );
+            $db->AddLabel(
+                -text => $self->{up_to_date_text__},
+                -left => 10,
+                -top  => 10,
+            );
+            $db->AddButton(
+                -name   => 'Cancel',
+                -text   => 'OK',
+                -default => 1,    # Default
+                -ok      => 1,    # Press 'Return' to click this button
+                -width  => 60,
+                -height => 20,
+                -left   => $db->ScaleWidth() - 70,
+                -top    => $db->ScaleHeight() - 30,
+            );
+        }
+
+        # Get the desktop window and its size:
+
+        my $desk = Win32::GUI::GetDesktopWindow();
+        my $dw = Win32::GUI::Width($desk);
+        my $dh = Win32::GUI::Height($desk);
+
+        # Calculate the top left corner position needed
+        # for our dialog to be centered on the screen
+
+        my $x = ($dw - 200) / 2;
+        my $y = ($dh - 90) / 2;
+
+        # And move the dialog to the center of the screen
+
+        $db->Move($x, $y);
+        $db->Show();
+        Win32::GUI::Dialog();
     }
 
-    # Get the desktop window and its size:
+    if ( $updated ) {
+        # Change icon
 
-    my $desk = Win32::GUI::GetDesktopWindow();
-    my $dw = Win32::GUI::Width($desk);
-    my $dh = Win32::GUI::Height($desk);
+        my $updated_icon = Win32::GUI::Icon->new(
+            $self->get_root_path_( $self->{trayicon_updated_filename__} ) );
 
-    # Calculate the top left corner position needed
-    # for our dialog to be centered on the screen
+            $self->{trayicon}->Change(
+                -balloon_tip     => 'A new version of POPFile is available.',
+                -balloon_timeout => 100,
+                -balloon_icon    => 'none',
+                -icon            => $updated_icon,
+            );
 
-    my $x = ($dw - 200) / 2;
-    my $y = ($dh - 90) / 2;
+        if ( $show_balloon ) {
+            # Show balloon
 
-    # And move the dialog to the center of the screen
-
-    $db->Move($x, $y);
-    $db->Show();
-    Win32::GUI::Dialog();
+            $self->{trayicon}->ShowBalloon(1);
+        }
+    }
 }
 
 # ----------------------------------------------------------------------------
