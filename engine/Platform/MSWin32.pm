@@ -201,8 +201,10 @@ sub service
 {
     my ( $self ) = @_;
 
-    if ( time >= $self->{next_update_check__} ) {
+    if ( $self->global_config_( 'update_check' ) &&
+         ( time >= $self->{next_update_check__} ) ) {
         $self->{next_update_check__} = time + $self->{update_check_interval__};
+        $self->global_config_( 'last_update_check', time );
 
         if ( $self->{updated__} || $self->update_check() ) {
             # Show balloon

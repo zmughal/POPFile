@@ -117,6 +117,14 @@ sub initialize
 
     $self->global_config_( 'message_cutoff', 100000 );
 
+    # Checking for updates if off by default
+
+    $self->global_config_( 'update_check', 0 );
+
+    # The last time we checked for an update using the local epoch
+
+    $self->global_config_( 'last_update_check', 0 );
+
     # Register for the TICKD message which is sent hourly by the
     # Logger module.   We use this to hourly save the configuration file
     # so that POPFile's configuration is saved in case of a hard crash.
@@ -491,6 +499,12 @@ sub upgrade_parameter__
                      'html_archive_classes',     'history_archive_classes',
                      'html_archive_dir',         'history_archive_dir',
                      'html_history_days',        'history_history_days',
+
+                     # Parameters that have moved from UI::HTML to
+                     # global to POPFile
+
+                     'html_update_check',        'GLOBAL_update_check',
+                     'html_last_update_check',   'GLOBAL_last_update_check',
 
     ); # PROFILE BLOCK STOP
 

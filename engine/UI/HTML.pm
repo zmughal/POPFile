@@ -139,10 +139,6 @@ sub initialize
 
     $self->config_( 'port', 8080 );
 
-    # Checking for updates if off by default
-
-    $self->config_( 'update_check', 0 );
-
     # Sending of statistics is off
 
     $self->config_( 'send_stats', 0 );
@@ -158,10 +154,6 @@ sub initialize
     # If no UI skin is specified use 'simplyblue' as the default
 
     $self->config_( 'skin', 'simplyblue' );
-
-    # The last time we checked for an update using the local epoch
-
-    $self->config_( 'last_update_check', 0 );
 
     # The user interface password
 
@@ -697,10 +689,10 @@ sub http_ok
     # CGI on UseTheSource.  Also send stats to the same site if that
     # is allowed
 
-    if ( $self->{today__} ne $self->config_( 'last_update_check' ) ) {
+    if ( $self->{today__} ne $self->global_config_( 'last_update_check' ) ) {
         $self->calculate_today();
 
-        if ( $self->config_( 'update_check' ) ) {
+        if ( $self->global_config_( 'update_check' ) ) {
             my ( $major_version, $minor_version, $build_version ) =
                 $self->version() =~ /^v([^.]*)\.([^.]*)\.(.*)$/;
             $templ->param( 'Common_Middle_If_UpdateCheck' => 1 );
@@ -719,7 +711,7 @@ sub http_ok
             $templ->param( 'Common_Middle_Errors'   => $self->ecount__() );
         }
 
-        $self->config_( 'last_update_check', $self->{today__}, 1 );
+        $self->global_config_( 'last_update_check', $self->{today__}, 1 );
     }
 
     # Build an HTTP header for standard HTML
@@ -985,13 +977,13 @@ sub security_page
         $self->config_( 'password', md5_hex( '__popfile__' . $self->{form_}{password} ) )
     }
     $self->config_( 'local', $self->{form_}{localui}-1 )      if ( defined($self->{form_}{localui}) );
-    $self->config_( 'update_check', $self->{form_}{update_check}-1 ) if ( defined($self->{form_}{update_check}) );
+    $self->global_config_( 'update_check', $self->{form_}{update_check}-1 ) if ( defined($self->{form_}{update_check}) );
     $self->config_( 'send_stats', $self->{form_}{send_stats}-1 )   if ( defined($self->{form_}{send_stats}) );
 
     $templ->param( 'Security_If_Local' => ( $self->config_( 'local' ) == 1 ) );
     $templ->param( 'Security_Password' => ( $self->config_( 'password' ) eq md5_hex( '__popfile__' ) )?'':$self->config_( 'password' ) );
     $templ->param( 'Security_If_Password_Updated' => ( defined($self->{form_}{password} ) ) );
-    $templ->param( 'Security_If_Update_Check' => ( $self->config_( 'update_check' ) == 1 ) );
+    $templ->param( 'Security_If_Update_Check' => ( $self->global_config_( 'update_check' ) == 1 ) );
     $templ->param( 'Security_If_Send_Stats' => ( $self->config_( 'send_stats' ) == 1 ) );
 
     my %security_templates;
