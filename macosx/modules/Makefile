@@ -37,9 +37,9 @@ DBI = DBI-1.607
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.14
+SQLITE = DBD-SQLite-1.21
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
-SQLITE_URL = http://search.cpan.org/CPAN/authors/id/M/MS/MSERGEANT/$(SQLITE_ARCHIVE)
+SQLITE_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(SQLITE_ARCHIVE)
 
 SQLITE2 = DBD-SQLite2-0.33
 SQLITE2_ARCHIVE = $(SQLITE2).tar.gz
@@ -83,7 +83,7 @@ NETSSLEAY = Net-SSLeay-1.35
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
 NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/F/FL/FLORA/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-1.18
+IOSOCKETSSL = IO-Socket-SSL-1.24
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
@@ -113,6 +113,7 @@ clean:
 	rm -rf $(KAKASI_DIC_ROOT)/*
 
 core_modules:core_modules_build $(CORE_MODULES)
+	if test ! -d $(POPFILE_ROOT); then mkdir $(POPFILE_ROOT) ; fi
 	if test ! -d $(LIB_ROOT); then mkdir $(LIB_ROOT) ; fi
 
 	cp -rf $(DBI)/blib/arch/auto $(LIB_ROOT)
@@ -134,6 +135,7 @@ core_modules:core_modules_build $(CORE_MODULES)
 	cp -rf $(TIMEDATE)/blib/lib/* $(LIB_ROOT)
 
 xmlrpc_modules: xmlrpc_modules_build
+	if test ! -d $(POPFILE_ROOT); then mkdir $(POPFILE_ROOT) ; fi
 	if test ! -d $(LIB_ROOT); then mkdir $(LIB_ROOT) ; fi
 
 	cp -rf $(SOAPLITE)/lib/* $(LIB_ROOT)
