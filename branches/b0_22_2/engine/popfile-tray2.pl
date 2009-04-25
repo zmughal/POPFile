@@ -39,7 +39,7 @@ use Win32::GUI();
 # POPFile is actually loaded by the POPFile::Loader object which does all
 # the work
 
-our $POPFile = POPFile::Loader->new();
+my $POPFile = POPFile::Loader->new();
 
 # Indicate that we should create output on STDOUT (the POPFile
 # load sequence) and initialize with the version

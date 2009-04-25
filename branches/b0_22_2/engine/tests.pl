@@ -66,11 +66,12 @@ sub rec_cp
             my $f = $_;
             my $t = $f;
             $t =~ s/^$from/$to/;
+            if ( $t !~ /.svn/ ) {
             if ( -d $f ) {
-                mkdir $t ;
+                    mkdir $t;
+                } else {
+                    copy( $f, $t ) or $ok = 0;
             }
-            else {
-                copy( $f, $t) or $ok = 0;
             }
         };
     my %optref = ( wanted => $subref, no_chdir => 1 );
@@ -79,8 +80,8 @@ sub rec_cp
     return $ok;
 }
 
-# Look for all the TST files in the tests/ subfolder and run
-# each of them by including them in this file with the use statement
+# Look for all the TST files in the tests/ subfolder and run each of
+# them by including them in this file with the use statement
 
 # This is the total number of tests executed and the total failures
 
@@ -135,7 +136,9 @@ sub test_report
             $fail_messages .= " ($context)";
         }
         $test_failures += 1;
-        print "Test fail at $file:$line ($test) ($context)\n";
+        print "Test fail at $file:$line ($test)";
+        print " ($context)" if ( defined($context) );
+        print "\n";
     } else {
 #            print "Test pass at $file:$line ($test) ($context)\n";
     }
@@ -208,6 +211,11 @@ sub test_assert_equal
     $expected =~ s/\015/0x0D/;
     $expected =~ s/\012/0x0A/;
 
+    # snip long result
+
+    $test = substr( $test, 0, 100 ) . '...' if ( length( $test ) > 100 );
+    $test = substr( $expected, 0, 100 ) . '...' if ( length( $expected ) > 100 );
+
     test_report( $result, "expecting [$expected] and got [$test]", $file, $line, $context );
 
    return $result;
@@ -235,6 +243,11 @@ sub test_assert_regexp
 {
     my ( $file, $line, $test, $expected, $context ) = @_;
     my $result = ( $test =~ /$expected/m );
+
+    # snip long result
+
+    $test = substr( $test, 0, 100 ) . '...' if ( length( $test ) > 100 );
+    $test = substr( $expected, 0, 100 ) . '...' if ( length( $expected ) > 100 );
 
     test_report( $result, "expecting to match [$expected] and got [$test]", $file, $line, $context );
 
