@@ -128,8 +128,8 @@ sub service
              $self->log_( 2, "Message $type ($flat) ready for delivery" );
 
              for my $waiter (@{$self->{waiters__}{$type}}) {
-                $self->log_( 2, "Delivering message $type ($flat) to " .
-                    $waiter->name() );
+                $self->log_( 2, "Delivering message $type ($flat) to " . # PROFILE BLOCK START
+                    $waiter->name() );                                   # PROFILE BLOCK STOP
 
                 $waiter->deliver( $type, @message );
             }

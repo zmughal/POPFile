@@ -55,7 +55,10 @@ use IO::Select;
 # called within the child process and should be used to clean up
 #
 # postfork() - called in the parent process to tell it that the fork
-# has occurred.  This is like forked but in the parent
+# has occurred.  This is like forked but in the parent.
+#
+# childexit() - called in a child process when the child is about
+# to exit.
 #
 # reaper() - called when a process has terminated to give a module a
 # chance to do whatever clean up is needed
@@ -208,7 +211,7 @@ sub start
 # stop
 #
 # Called when POPFile is closing down, this is the last method that
-# will get called before the object is destroyed.  There is not return
+# will get called before the object is destroyed.  There is no return
 # value from stop().
 #
 # ----------------------------------------------------------------------------

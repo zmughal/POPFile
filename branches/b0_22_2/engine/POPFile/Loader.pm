@@ -276,9 +276,11 @@ sub CORE_forker
 {
     my ( $self ) = @_;
 
+    my @types = sort keys %{$self->{components__}};
+
     # Tell all the modules that a fork is about to happen
 
-    foreach my $type (sort keys %{$self->{components__}}) {
+    foreach my $type ( @types ) {
         foreach my $name (sort keys %{$self->{components__}{$type}}) {
             $self->{components__}{$type}{$name}->prefork();
         }
@@ -306,7 +308,7 @@ sub CORE_forker
     # caller knows that we are in the child
 
     if ( $pid == 0 ) {
-          foreach my $type (sort keys %{$self->{components__}}) {
+          foreach my $type ( @types ) {
                foreach my $name (sort keys %{$self->{components__}{$type}}) {
                  $self->{components__}{$type}{$name}->forked( $writer );
               }
@@ -328,7 +330,7 @@ sub CORE_forker
     # writer pipe file handle and return our PID (non-zero) indicating
     # that this is the parent process
 
-    foreach my $type (sort keys %{$self->{components__}}) {
+    foreach my $type ( @types ) {
         foreach my $name (sort keys %{$self->{components__}{$type}}) {
             $self->{components__}{$type}{$name}->postfork( $pid, $reader );
         }
@@ -548,7 +550,7 @@ sub CORE_load
 
     # Create the main objects that form the core of POPFile.  Consists
     # of the configuration modules, the classifier, the UI (currently
-    # HTML based), and the POP3 proxy.
+    # HTML based), and the proxies.
 
     print "\n    Loading... " if $self->{debug__};
 
@@ -646,18 +648,19 @@ sub CORE_initialize
             print " $name" if $self->{debug__};
             flush STDOUT;
 
-            my $code = $self->{components__}{$type}{$name}->initialize();
+            my $mod = $self->{components__}{$type}{$name};
+
+            my $code = $mod->initialize();
 
             if ( $code == 0 ) {
                 die "Failed to start while initializing the $name module";
             }
 
             if ( $code == 1 ) {
-                 $self->{components__}{$type}{$name}->alive(     1 );
-
-                 $self->{components__}{$type}{$name}->forker(    $self->{forker__} );
-                 $self->{components__}{$type}{$name}->setchildexit( $self->{childexit__} );
-                 $self->{components__}{$type}{$name}->pipeready( $self->{pipeready__} );
+                 $mod->alive(     1 );
+                 $mod->forker(    $self->{forker__} );
+                 $mod->setchildexit( $self->{childexit__} );
+                 $mod->pipeready( $self->{pipeready__} );
 	    }
         }
         print '} ' if $self->{debug__};
@@ -817,6 +820,7 @@ sub CORE_stop
         foreach my $name (sort keys %{$self->{components__}{$type}}) {
             print " $name" if $self->{debug__};
             flush STDOUT;
+
             next if ( $name eq 'mq' );
             next if ( $name eq 'history' );
             $self->{components__}{$type}{$name}->alive(0);
