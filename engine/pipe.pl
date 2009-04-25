@@ -1,7 +1,8 @@
 #!/usr/bin/perl
 # ----------------------------------------------------------------------------
 #
-# pipe.pl --- Read a message in on STDIN and write out the modified version on STDOUT
+# pipe.pl --- Read a message in on STDIN and write out the modified
+# version on STDOUT
 #
 # Copyright (c) 2001-2009 John Graham-Cumming
 #
@@ -59,6 +60,7 @@ if ( $#ARGV == -1 ) {
 
         # Prevent the tool from finding another copy of POPFile running
 
+        my $current_piddir = $c->config_( 'piddir' );
         $c->config_( 'piddir', $c->config_( 'piddir' ) . 'pipe.pl.' );
 
         # TODO: interface violation
@@ -70,6 +72,8 @@ if ( $#ARGV == -1 ) {
         my $session = $b->get_session_key( 'admin', '' );
 
         $b->classify_and_modify( $session, \*STDIN, \*STDOUT, 1, '', 0, 1, "\n" );
+
+        $c->config_( 'piddir', $current_piddir );
         $b->release_session_key( $session );
         $POPFile->CORE_stop();
     }
