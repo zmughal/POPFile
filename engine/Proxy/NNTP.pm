@@ -156,7 +156,8 @@ sub start
                         "NNTP POPFile ($self->{version_}) server ready" ); # PROFILE BLOCK STOP
     }
 
-    return $self->SUPER::start();; }
+    return $self->SUPER::start();;
+}
 
 # ----------------------------------------------------------------------------
 #
@@ -268,8 +269,8 @@ sub child__
                         last;
                     }
                 } else {
-                    $self->tee_( $client,
-                        "482 Authentication rejected server name not specified in AUTHINFO USER command$eol" );
+                    $self->tee_( $client,                                                                       # PROFILE BLOCK START
+                        "482 Authentication rejected server name not specified in AUTHINFO USER command$eol" ); # PROFILE BLOCK STOP
                     last;
                 }
 
@@ -286,7 +287,7 @@ sub child__
         if ( $connection_state eq "password needed" ) {
             if ( $command =~ /^ *AUTHINFO PASS (.*)/i ) {
                 ( $response, $ok ) =                                 # PROFILE BLOCK START
-                    $self->get_response_( $news, $client, $command); # PROFILE BLOCK STOP
+                    $self->get_response_( $news, $client, $command ); # PROFILE BLOCK STOP
 
                 if ( $response =~ /^281 .*/ ) {
                     $connection_state = "connected";
@@ -302,7 +303,7 @@ sub child__
 
         if ( $connection_state eq "ignore password" ) {
             if ( $command =~ /^ *AUTHINFO PASS (.*)/i ) {
-                $self->tee_($client, "281 authentication accepted$eol");
+                $self->tee_( $client, "281 authentication accepted$eol" );
                 $connection_state = "connected";
             } else {
 
