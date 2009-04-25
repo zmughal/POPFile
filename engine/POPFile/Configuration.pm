@@ -153,10 +153,10 @@ sub start
 
     $self->{started__} = 1;
 
-    # Check to see if the PID file is present, if it is then another POPFile
-    # may be running, warn the user and terminate, note the 0 at the end
-    # means that we allow the piddir to be absolute and outside the user
-    # sandbox
+    # Check to see if the PID file is present, if it is then another
+    # POPFile may be running, warn the user and terminate, note the 0
+    # at the end means that we allow the piddir to be absolute and
+    # outside the user sandbox
 
     $self->{pid_file__} = $self->get_user_path( $self->config_( 'piddir' ) . 'popfile.pid', 0 );
 
@@ -173,11 +173,14 @@ sub start
 #
 # service
 #
-# service() is a called periodically to give the module a chance to do housekeeping work.
+# service() is a called periodically to give the module a chance to do
+# housekeeping work.
 #
-# If any problem occurs that requires POPFile to shutdown service() should return 0 and
-# the top level process will gracefully terminate POPFile including calling all stop()
-# methods.  In normal operation return 1.#
+# If any problem occurs that requires POPFile to shutdown service()
+# should return 0 and the top level process will gracefully terminate
+# POPFile including calling all stop() methods.  In normal operation
+# return 1.
+#
 # ----------------------------------------------------------------------------
 sub service
 {
@@ -247,18 +250,19 @@ sub live_check_
     if ( $self->check_pid_() ) {
 
         my $oldpid = $self->get_pid_();
+        my $wait_time = $self->config_( 'pidcheck_interval' ) * 2;
 
-        my $error = "\n\nA copy of POPFile appears to be running.\n Attempting to signal the previous copy.\n Waiting " . ($self->config_( 'pidcheck_interval' ) * 2) . " seconds for a reply.\n";
+        my $error = "\n\nA copy of POPFile appears to be running.\n Attempting to signal the previous copy.\n Waiting $wait_time seconds for a reply.\n";
 
         $self->delete_pid_();
 
         print STDERR $error;
 
-        select(undef, undef, undef, ($self->config_( 'pidcheck_interval' ) * 2));
+        select( undef, undef, undef, $wait_time );
 
         my $pid = $self->get_pid_();
 
-        if (defined($pid)) {
+        if ( defined($pid) ) {
             $error = "\n A copy of POPFile is running.\n It has signaled that it is alive with process ID: $pid\n";
             print STDERR $error;
             return $pid;
@@ -287,7 +291,8 @@ sub check_pid_
 #
 # get_pid_
 #
-# returns the pidfile proccess ID if a pid file is present, undef otherwise (0 might be a valid PID)
+# returns the pidfile proccess ID if a pid file is present, undef
+# otherwise (0 might be a valid PID)
 #
 # ----------------------------------------------------------------------------
 sub get_pid_
@@ -360,8 +365,8 @@ sub parse_command_line
     #
     # So its possible to do
     #
-    # --set bayes_param=value --set=-bayes_param=value --set
-    # -bayes_param=value -- -bayes_param value
+    # --set bayes_param=value --set=-bayes_param=value
+    # --set -bayes_param=value -- -bayes_param value
 
     if ( !GetOptions( "set=s" => \@set_options ) ) {
         return 0;
@@ -447,8 +452,7 @@ sub upgrade_parameter__
                      # Parameters that are now handled by Classifier::Bayes
 
                      'corpus',                   'bayes_corpus',
-                     'unclassified_probability',
-                         'bayes_unclassified_probability',
+                     'unclassified_probability', 'bayes_unclassified_probability',
 
                      # Parameters that are now handled by
                      # POPFile::Configuration
@@ -488,7 +492,7 @@ sub upgrade_parameter__
                      'update_check',             'html_update_check',
                      'ui_port',                  'html_port',
 
-                     # Parameters the have moved from the UI::HTML to
+                     # Parameters that have moved from the UI::HTML to
                      # POPFile::History
 
                      'archive',                  'history_archive',
@@ -587,8 +591,8 @@ sub save_configuration
 
         close CONFIG;
 
-        rename $self->get_user_path( 'popfile.cfg.tmp' ),
-               $self->get_user_path( 'popfile.cfg' );
+        rename $self->get_user_path( 'popfile.cfg.tmp' ), # PROFILE BLOCK START
+               $self->get_user_path( 'popfile.cfg' );     # PROFILE BLOCK STOP
     }
 }
 
@@ -635,9 +639,9 @@ sub path_join__
 
     $sandbox = 1 if ( !defined( $sandbox ) );
 
-    if ( ( $right =~ /^\// ) ||
+    if ( ( $right =~ /^\// ) ||               # PROFILE BLOCK START
          ( $right =~ /^[A-Za-z]:[\/\\]/ ) ||
-         ( $right =~ /\\\\/ ) ) {
+         ( $right =~ /\\\\/ ) ) {             # PROFILE BLOCK STOP
         if ( $sandbox ) {
             $self->log_( 0, "Attempt to access path $right outside sandbox" );
             return undef;
@@ -726,4 +730,3 @@ sub deprecated_parameter
 }
 
 1;
-

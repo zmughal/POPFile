@@ -35,8 +35,9 @@ use locale;
 use Date::Parse;
 use Digest::MD5 qw( md5_hex );
 
-my $fields_slot = 'history.id, hdr_from, hdr_to, hdr_cc, hdr_subject,
-hdr_date, hash, inserted, buckets.name, usedtobe, history.bucketid, magnets.val, size';
+my $fields_slot =                                              # PROFILE BLOCK START
+'history.id, hdr_from, hdr_to, hdr_cc, hdr_subject, hdr_date, hash, inserted,
+ buckets.name, usedtobe, history.bucketid, magnets.val, size'; # PROFILE BLOCK STOP
 
 #----------------------------------------------------------------------------
 # new
@@ -280,9 +281,9 @@ sub reserve_slot
     my $self = shift;
     my $inserted_time = shift || time;
 
-    my $insert_sth = $self->db__()->prepare(
-            "insert into history ( userid, committed, inserted )
-                         values  (      ?,         ?,        ? );" );
+    my $insert_sth = $self->db__()->prepare(                          # PROFILE BLOCK START
+            'insert into history ( userid, committed, inserted )
+                         values  (      ?,         ?,        ? );' ); # PROFILE BLOCK STOP
     my $is_sqlite2 = ( $self->db__()->{Driver}->{Name} =~ /SQLite2?/ ) &&
                      ( $self->db__()->{sqlite_version} =~ /^2\./ );
 
@@ -331,27 +332,34 @@ sub release_slot
     # Remove the entry from the database and delete the file
     # if present
 
-    my $delete = "delete from history where history.id = $slot;";
+    my $delete = 'delete from history where history.id = ?;';
 
-    $self->db__()->do( $delete );
+    my $h = $self->db__()->prepare( $delete );
+    $h->execute( $slot );
 
     my $file = $self->get_slot_file( $slot );
 
     unlink $file;
 
     # It's now possible that the directory for the slot file is empty
-    # and we want to delete it so that things get cleaned up automatically
+    # and we want to delete it so that things get cleaned up
+    # automatically
 
-    $file =~ s/popfile[a-f0-9]{2}\.msg$//i;
+    my $directory = $file;
+    $directory =~ s/popfile[a-f0-9]{2}\.msg$//i;
 
     my $depth = 3;
 
     while ( $depth > 0 ) {
-        if ( !( rmdir( $file ) ) ) {
+        if ( rmdir( $directory ) ) {
+            $directory =~ s![a-f0-9]{2}/$!!i;
+            $depth--;
+        }
+        else {
+            # We either aren't allowed to delete the
+            # directory or it wasn't empty
             last;
         }
-        $file =~ s![a-f0-9]{2}/$!!i;
-        $depth--;
     }
 }
 
@@ -401,8 +409,8 @@ sub change_slot_classification
     # then retrieve the current classification for this slot
     # and update the database
 
-    my $bucketid = $self->{classifier__}->get_bucket_id(
-                           $session, $class );
+    my $bucketid = $self->{classifier__}->get_bucket_id(  # PROFILE BLOCK START
+                           $session, $class );            # PROFILE BLOCK STOP
 
     my $oldbucketid = 0;
     if ( !$undo ) {
@@ -410,9 +418,11 @@ sub change_slot_classification
         $oldbucketid = $fields[10];
     }
 
-    $self->db__()->do( "update history set bucketid = $bucketid,
-                                           usedtobe = $oldbucketid
-                                       where id = $slot;" );
+    my $h = $self->db__()->prepare(  # PROFILE BLOCK START
+        'update history set bucketid = ?,
+                            usedtobe = ?
+                where id = ?;' );    # PROFILE BLOCK STOP
+    $h->execute( $bucketid, $oldbucketid, $slot );
     $self->force_requery();
 }
 
@@ -433,9 +443,11 @@ sub revert_slot_classification
     my @fields = $self->get_slot_fields( $slot );
     my $oldbucketid = $fields[9];
 
-    $self->db__()->do( "update history set bucketid = $oldbucketid,
-                                           usedtobe = 0
-                                       where id = $slot;" );
+    my $h = $self->db__()->prepare(  # PROFILE BLOCK START
+        'update history set bucketid = ?,
+                            usedtobe = ?
+                where id = ?;' );    # PROFILE BLOCK STOP
+    $h->execute( $oldbucketid, 0, $slot );
     $self->force_requery();
 }
 
@@ -455,12 +467,15 @@ sub get_slot_fields
 
     return undef if ( !defined( $slot ) || $slot !~ /^\d+$/ );
 
-    return $self->db__()->selectrow_array(
+    my $h = $self->db__()->prepare(           # PROFILE BLOCK START
         "select $fields_slot from history, buckets, magnets
-             where history.id        = $slot and
+             where history.id        = ? and
                    buckets.id        = history.bucketid and
                    magnets.id        = magnetid and
-                   history.committed = 1;" );
+                   history.committed = 1;" ); # PROFILE BLOCK STOP
+    $h->execute( $slot );
+    my @result = $h->fetchrow_array;
+    return @result;
 }
 
 #---------------------------------------------------------------------------
@@ -478,10 +493,12 @@ sub is_valid_slot
 
     return undef if ( !defined( $slot ) || $slot !~ /^\d+$/ );
 
-    my @row = $self->db__()->selectrow_array(
-        "select id from history
-             where history.id        = $slot and
-                   history.committed = 1;" );
+    my $h = $self->db__()->prepare(           # PROFILE BLOCK START
+        'select id from history
+             where history.id        = ? and
+                   history.committed = 1;' ); # PROFILE BLOCK STOP
+    $h->execute( $slot );
+    my @row = $h->fetchrow_array;
 
     return ( ( @row ) && ( $row[0] == $slot ) );
 }
@@ -502,8 +519,8 @@ sub commit_history__
         return;
     }
 
-    my $update_history = $self->db__()->prepare(
-                "update history set hdr_from    = ?,
+    my $update_history = $self->db__()->prepare(         # PROFILE BLOCK START
+                'update history set hdr_from    = ?,
                                     hdr_to      = ?,
                                     hdr_date    = ?,
                                     hdr_cc      = ?,
@@ -517,7 +534,7 @@ sub commit_history__
                                     magnetid    = ?,
                                     hash        = ?,
                                     size        = ?
-                                    where id    = ?;" );
+                                    where id    = ?;' ); # PROFILE BLOCK STOP
 
     $self->db__()->begin_work;
     foreach my $entry (@{$self->{commit_list__}}) {
@@ -576,9 +593,9 @@ sub commit_history__
         my %sort_headers;
 
         foreach my $h (@sortable) {
-            $sort_headers{$h} =
+            $sort_headers{$h} =           # PROFILE BLOCK START
                  $self->{classifier__}->{parser__}->decode_string(
-                     ${$header{$h}}[0] );
+                     ${$header{$h}}[0] ); # PROFILE BLOCK STOP
             $sort_headers{$h} = lc($sort_headers{$h} || '');
             $sort_headers{$h} =~ s/[\"<>]//g;
             $sort_headers{$h} =~ s/^[ \t]+//g;
@@ -591,10 +608,9 @@ sub commit_history__
         my @required = ( 'from', 'to', 'cc', 'subject' );
 
         foreach my $h (@required) {
-
-            ${$header{$h}}[0] =
+            ${$header{$h}}[0] =           # PROFILE BLOCK START
                  $self->{classifier__}->{parser__}->decode_string(
-                     ${$header{$h}}[0] );
+                     ${$header{$h}}[0] ); # PROFILE BLOCK STOP
 
             if ( !defined ${$header{$h}}[0] || ${$header{$h}}[0] =~ /^\s*$/ ) {
                 if ( $h ne 'cc' ) {
@@ -622,8 +638,8 @@ sub commit_history__
         # classified into (and the same for the magnet if it is
         # defined)
 
-        my $bucketid = $self->{classifier__}->get_bucket_id(
-                           $session, $bucket );
+        my $bucketid = $self->{classifier__}->get_bucket_id(  # PROFILE BLOCK START
+                           $session, $bucket );               # PROFILE BLOCK STOP
 
         my $msg_size = -s $file;
 
@@ -633,7 +649,7 @@ sub commit_history__
         # history and log the failure
 
         if ( defined( $bucketid ) ) {
-            my $result = $update_history->execute(
+            my $result = $update_history->execute(  # PROFILE BLOCK START
                     ${$header{from}}[0],    # hdr_from
                     ${$header{to}}[0],      # hdr_to
                     ${$header{date}}[0],    # hdr_date
@@ -648,7 +664,8 @@ sub commit_history__
                     $magnet,                # magnetid
                     $hash,                  # hash
                     $msg_size,              # size
-                    $slot );                # id
+                    $slot                   # id
+            );                                      # PROFILE BLOCK STOP
         } else {
             $self->log_( 0, "Couldn't find bucket ID for bucket $bucket when committing $slot" );
             $self->release_slot( $slot );
@@ -684,15 +701,15 @@ sub delete_slot
 
         $self->make_directory__( $path );
 
-        my @b = $self->db__()->selectrow_array(
+        my $b = $self->db__()->selectrow_arrayref(
             "select buckets.name from history, buckets
                  where history.bucketid = buckets.id and
                        history.id = $slot;" );
 
-        my $bucket = $b[0];
+        my $bucket = $b->[0];
 
-        if ( ( $bucket ne 'unclassified' ) &&
-             ( $bucket ne 'unknown class' ) ) {
+        if ( ( $bucket ne 'unclassified' ) &&   # PROFILE BLOCK START
+             ( $bucket ne 'unknown class' ) ) { # PROFILE BLOCK STOP
             $path .= "\/" . $bucket;
             $self->make_directory__( $path );
 
@@ -700,8 +717,8 @@ sub delete_slot
 
                 # Archive to a random sub-directory of the bucket archive
 
-                my $subdirectory = int( rand(
-                    $self->config_( 'archive_classes' ) ) );
+                my $subdirectory = int( rand(                # PROFILE BLOCK START
+                    $self->config_( 'archive_classes' ) ) ); # PROFILE BLOCK STOP
                 $path .= "\/" . $subdirectory;
                 $self->make_directory__( $path );
             }
@@ -782,9 +799,9 @@ sub get_slot_file
     # Hence each directory can have up to 256 entries
 
     my $hex_slot = sprintf( '%8.8x', $slot );
-    my $path = $self->get_user_path_(
+    my $path = $self->get_user_path_(                        # PROFILE BLOCK START
                    $self->global_config_( 'msgdir' ) .
-                       substr( $hex_slot, 0, 2 ) . '/', 0 );
+                       substr( $hex_slot, 0, 2 ) . '/', 0 ); # PROFILE BLOCK STOP
 
     $self->make_directory__( $path );
     $path .= substr( $hex_slot, 2, 2 ) . '/';
@@ -792,8 +809,8 @@ sub get_slot_file
     $path .= substr( $hex_slot, 4, 2 ) . '/';
     $self->make_directory__( $path );
 
-    my $file = 'popfile' .
-               substr( $hex_slot, 6, 2 ) . '.msg';
+    my $file = 'popfile' .                         # PROFILE BLOCK START
+               substr( $hex_slot, 6, 2 ) . '.msg'; # PROFILE BLOCK STOP
 
     return $path . $file;
 }
@@ -844,9 +861,10 @@ sub get_slot_from_hash
 {
     my ( $self, $hash ) = @_;
 
-    $hash = $self->db__()->quote( $hash );
-    my $result = $self->db__()->selectrow_arrayref(
-        "select id from history where hash = $hash limit 1;" );
+    my $h = $self->db__()->prepare(                         # PROFILE BLOCK START
+        'select id from history where hash = ? limit 1;' ); # PROFILE BLOCK STOP
+    $h->execute( $hash );
+    my $result = $h->fetchrow_arrayref;
 
     return defined( $result )?$result->[0]:'';
 }
@@ -946,12 +964,15 @@ sub set_query
 {
     my ( $self, $id, $filter, $search, $sort, $not ) = @_;
 
+    $search =~ s/\0//g;
+    $sort = '' if ( $sort !~ /^(\-)?(inserted|from|to|cc|subject|bucket|date|size)$/ );
+
     # If this query has already been done and is in the cache
     # then do no work here
 
-    if ( defined( $self->{queries__}{$id}{fields} ) &&
+    if ( defined( $self->{queries__}{$id}{fields} ) &&  # PROFILE BLOCK START
          ( $self->{queries__}{$id}{fields} eq
-             "$filter:$search:$sort:$not" ) ) {
+             "$filter:$search:$sort:$not" ) ) {         # PROFILE BLOCK STOP
         return;
     }
 
@@ -962,8 +983,9 @@ sub set_query
     # so that we know the size of the resulting data without having
     # to retrieve it all
 
-    $self->{queries__}{$id}{base} = 'select XXX from
-        history, buckets, magnets where history.userid = 1 and committed = 1';
+    $self->{queries__}{$id}{base} =
+        'select XXX from history, buckets, magnets
+                where history.userid = 1 and committed = 1';
 
     $self->{queries__}{$id}{base} .= ' and history.bucketid = buckets.id';
     $self->{queries__}{$id}{base} .= ' and magnets.id = magnetid';
@@ -971,9 +993,9 @@ sub set_query
     # If there's a search portion then add the appropriate clause
     # to find the from/subject header
 
-    my $not_word  = $not?'not':'';
-    my $not_equal = $not?'!=':'=';
-    my $equal     = $not?'=':'!=';
+    my $not_word  = $not ? 'not' : '';
+    my $not_equal = $not ? '!='  : '=';
+    my $equal     = $not ? '='   : '!=';
 
     if ( $search ne '' ) {
         $search = $self->db__()->quote( '%' . $search . '%' );
@@ -985,20 +1007,22 @@ sub set_query
 
     if ( $filter ne '' ) {
         if ( $filter eq '__filter__magnet' ) {
-            $self->{queries__}{$id}{base} .=
-                " and history.magnetid $equal 0";
+            $self->{queries__}{$id}{base} .=      # PROFILE BLOCK START
+                " and history.magnetid $equal 0"; # PROFILE BLOCK STOP
         } else {
             if ( $filter eq '__filter__reclassified' ) {
                 $self->{queries__}{$id}{base} .=
                     " and history.usedtobe $equal 0";
             } else {
-                my $session = $self->{classifier__}->get_session_key(
-                                  'admin', '' );
-                my $bucketid = $self->{classifier__}->get_bucket_id(
-                                   $session, $filter );
+                my $session = $self->{classifier__}->get_session_key(  # PROFILE BLOCK START
+                                  'admin', '' );                       # PROFILE BLOCK STOP
+                my $bucketid = $self->{classifier__}->get_bucket_id(  # PROFILE BLOCK START
+                                   $session, $filter );               # PROFILE BLOCK STOP
                 $self->{classifier__}->release_session_key( $session );
-                $self->{queries__}{$id}{base} .=
-                    " and history.bucketid $not_equal $bucketid";
+                if ( defined( $bucketid ) ) {
+                    $self->{queries__}{$id}{base} .=                  # PROFILE BLOCK START
+                        " and history.bucketid $not_equal $bucketid"; # PROFILE BLOCK STOP
+                }
             }
         }
     }
@@ -1028,8 +1052,10 @@ sub set_query
     $self->log_( 2, "Base query is $count" );
     $count =~ s/XXX/COUNT(*)/;
 
-    $self->{queries__}{$id}{count} =
-        $self->db__()->selectrow_arrayref( $count )->[0];
+    my $h = $self->db__()->prepare( $count );
+    $h->execute;
+    $self->{queries__}{$id}{count} = $h->fetchrow_arrayref->[0];
+    $h->finish;
 
     my $select = $self->{queries__}{$id}{base};
     $select =~ s/XXX/$fields_slot/;
@@ -1056,10 +1082,12 @@ sub delete_query
     $delete =~ s/XXX/history.id/;
     my $d = $self->db__()->prepare( $delete );
     $d->execute;
+    my $history_id;
     my @row;
     my @ids;
-    while ( @row = $d->fetchrow_array ) {
-        push ( @ids, $row[0] );
+    $d->bind_columns( \$history_id );
+    while ( $d->fetchrow_arrayref ) {
+        push ( @ids, $history_id );
     }
     foreach my $id (@ids) {
         $self->delete_slot( $id, 1 );
@@ -1118,9 +1146,9 @@ sub get_query_rows
         my $rows = $start + $count - $size;
         $self->log_( 2, "Getting $rows rows from database" );
         $self->{queries__}{$id}{query}->execute;
-        $self->{queries__}{$id}{cache} =
+        $self->{queries__}{$id}{cache} =      # PROFILE BLOCK START
             $self->{queries__}{$id}{query}->fetchall_arrayref(
-                undef, $start + $count - 1 );
+                undef, $start + $count - 1 ); # PROFILE BLOCK STOP
         $self->{queries__}{$id}{query}->finish;
     }
 
@@ -1189,8 +1217,8 @@ sub upgrade_history_files__
     # See if there are any .MSG files in the msgdir, and if there are
     # upgrade them by placing them in the database
 
-    my @msgs = sort compare_mf__ glob $self->get_user_path_(
-        $self->global_config_( 'msgdir' ) . 'popfile*.msg', 0 );
+    my @msgs = sort compare_mf__ glob $self->get_user_path_(     # PROFILE BLOCK START
+        $self->global_config_( 'msgdir' ) . 'popfile*.msg', 0 ); # PROFILE BLOCK STOP
 
     if ( $#msgs != -1 ) {
         my $session = $self->{classifier__}->get_session_key( 'admin', '' );
@@ -1210,8 +1238,8 @@ sub upgrade_history_files__
             # in upgraded history.  Also the $magnet is ignored so
             # upgraded history will have no magnet information.
 
-            my ( $reclassified, $bucket, $usedtobe, $magnet ) =
-                $self->history_read_class__( $msg );
+            my ( $reclassified, $bucket, $usedtobe, $magnet ) =  # PROFILE BLOCK START
+                $self->history_read_class__( $msg );             # PROFILE BLOCK STOP
 
             if ( $bucket ne 'unknown_class' ) {
                 my ( $slot, $file ) = $self->reserve_slot();
@@ -1227,8 +1255,8 @@ sub upgrade_history_files__
         $self->commit_history__();
         $self->{classifier__}->release_session_key( $session );
 
-        unlink $self->get_user_path_(
-            $self->global_config_( 'msgdir' ) . 'history_cache', 0 );
+        unlink $self->get_user_path_(                                 # PROFILE BLOCK START
+            $self->global_config_( 'msgdir' ) . 'history_cache', 0 ); # PROFILE BLOCK STOP
     }
 }
 
@@ -1261,8 +1289,8 @@ sub history_read_class__
 
     if ( open CLASS, "<$filename" ) {
         $bucket = <CLASS>;
-        if ( defined( $bucket ) &&
-           ( $bucket =~ /([^ ]+) MAGNET ([^\r\n]+)/ ) ) {
+        if ( defined( $bucket ) &&                        # PROFILE BLOCK START
+           ( $bucket =~ /([^ ]+) MAGNET ([^\r\n]+)/ ) ) { # PROFILE BLOCK STOP
             $bucket = $1;
             $magnet = $2;
         }
@@ -1300,14 +1328,17 @@ sub cleanup_history
 
     my $seconds_per_day = 24 * 60 * 60;
     my $old = time - $self->config_( 'history_days' ) * $seconds_per_day;
-    my $d = $self->db__()->prepare( "select id from history
-                                         where inserted < $old;" );
-    $d->execute;
-    my @row;
     my @ids;
-    while ( @row = $d->fetchrow_array ) {
-        push ( @ids, $row[0] );
+    my $d = $self->db__()->prepare(     # PROFILE BLOCK START
+        'select id from history
+                where inserted < ?;' ); # PROFILE BLOCK STOP
+    $d->execute( $old );
+    my $id;
+    $d->bind_columns( \$id );
+    while ( $d->fetchrow_arrayref ) {
+        push ( @ids, $id );
     }
+    $d->finish;
     foreach my $id (@ids) {
         $self->delete_slot( $id, 1 );
     }

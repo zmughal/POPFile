@@ -211,8 +211,8 @@ sub calculate_today__
     # Note that 0 parameter than allows the logdir to be outside the user
     # sandbox
 
-    $self->{debug_filename__} = $self->get_user_path_(
-        $self->config_( 'logdir' ) . "popfile$self->{today__}.log", 0 );
+    $self->{debug_filename__} = $self->get_user_path_(                   # PROFILE BLOCK START
+        $self->config_( 'logdir' ) . "popfile$self->{today__}.log", 0 ); # PROFILE BLOCK STOP
 }
 
 # ---------------------------------------------------------------------------
@@ -257,7 +257,8 @@ sub debug
         return;
     }
 
-    if ( $level > $self->config_( 'level' ) ) {
+    if ( ( !defined( $self->config_( 'level' ) ) ) ||   # PROFILE BLOCK START
+         ( $level > $self->config_( 'level' ) ) ) {     # PROFILE BLOCK STOP
         return;
     }
 
@@ -276,8 +277,8 @@ sub debug
 
         $message =~ s/([\x00-\x1f])/sprintf("[%2.2x]", ord($1))/eg;
 
-        my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
-            localtime;
+        my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =   # PROFILE BLOCK START
+            localtime;                                                         # PROFILE BLOCK STOP
         $year += 1900;
         $mon  += 1;
 
