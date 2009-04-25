@@ -145,7 +145,8 @@ sub start
 #
 # child__
 #
-# The worker method that is called when we get a good connection from a client
+# The worker method that is called when we get a good connection from
+# a client
 #
 # $client   - an open stream to a SMTP client
 # $session        - API session key
@@ -156,16 +157,21 @@ sub child__
     my ( $self, $client, $session ) = @_;
 
     # Number of messages downloaded in this session
+
     my $count = 0;
 
     # The handle to the real mail server gets stored here
+
     my $mail;
 
-    # Tell the client that we are ready for commands and identify our version number
+    # Tell the client that we are ready for commands and identify our
+    # version number
+
     $self->tee_( $client, "220 " . $self->config_( 'welcome_string' ) . "$eol" );
 
-    # Retrieve commands from the client and process them until the client disconnects or
-    # we get a specific QUIT command
+    # Retrieve commands from the client and process them until the
+    # client disconnects or we get a specific QUIT command
+
     while  ( <$client> ) {
         my $command;
 
@@ -228,13 +234,13 @@ sub child__
             next;
         }
 
-        if ( ( $command =~ /MAIL FROM:/i )    ||
+        if ( ( $command =~ /MAIL FROM:/i )    ||   # PROFILE BLOCK START
              ( $command =~ /RCPT TO:/i )      ||
              ( $command =~ /VRFY/i )          ||
              ( $command =~ /EXPN/i )          ||
              ( $command =~ /NOOP/i )          ||
              ( $command =~ /HELP/i )          ||
-             ( $command =~ /RSET/i ) ) {
+             ( $command =~ /RSET/i ) ) {           # PROFILE BLOCK STOP
             $self->smtp_echo_response_( $mail, $client, $command );
             next;
         }
@@ -414,5 +420,3 @@ sub validate_item
 }
 
 1;
-
-

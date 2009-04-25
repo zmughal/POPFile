@@ -82,7 +82,7 @@ sub initialize
     my ( $self ) = @_;
 
     # Enabled by default
-    $self->config_( 'enabled', 1);
+    $self->config_( 'enabled', 1 );
 
     # By default we don't fork on Windows
     $self->config_( 'force_fork', ($^O eq 'MSWin32')?0:1 );
@@ -104,8 +104,8 @@ sub initialize
     $self->config_( 'separator', ':' );
 
     # The welcome string from the proxy is configurable
-    $self->config_( 'welcome_string',
-        "POP3 POPFile ($self->{version_}) server ready" );
+    $self->config_( 'welcome_string',                      # PROFILE BLOCK START
+        "POP3 POPFile ($self->{version_}) server ready" ); # PROFILE BLOCK STOP
 
     return $self->SUPER::initialize();
 }
@@ -143,8 +143,10 @@ sub start
                                          'pop3-chain-panel.thtml',
                                          $self );                      # PROFILE BLOCK STOP
 
-    if ( $self->config_( 'welcome_string' ) =~ /^POP3 POPFile \(v\d+\.\d+\.\d+\) server ready$/ ) { # PROFILE BLOCK START
-        $self->config_( 'welcome_string', "POP3 POPFile ($self->{version_}) server ready" );        # PROFILE BLOCK STOP
+    if ( $self->config_( 'welcome_string' ) =~                # PROFILE BLOCK START
+         /^POP3 POPFile \(v\d+\.\d+\.\d+\) server ready$/ ) { # PROFILE BLOCK STOP
+        $self->config_( 'welcome_string',                                  # PROFILE BLOCK START
+                        "POP3 POPFile ($self->{version_}) server ready" ); # PROFILE BLOCK STOP
     }
 
     return $self->SUPER::start();
@@ -154,7 +156,8 @@ sub start
 #
 # child__
 #
-# The worker method that is called when we get a good connection from a client
+# The worker method that is called when we get a good connection from
+# a client
 #
 # $client         - an open stream to a POP3 client
 # $session        - API session key
@@ -180,7 +183,8 @@ sub child__
     # Tell the client that we are ready for commands and identify our
     # version number
 
-    $self->tee_( $client, "+OK " . $self->config_( 'welcome_string' ) . "$eol" );
+    $self->tee_( $client, "+OK " . $self->config_( 'welcome_string' ) . # PROFILE BLOCK START
+               "$eol" );                                                # PROFILE BLOCK STOP
 
     # Compile some configurable regexp's once
 
@@ -229,7 +233,9 @@ sub child__
 
         if ( $command =~ /$transparent/i ) {
             if ( $self->config_( 'secure_server' ) ne '' )  {
-                if ( $mail = $self->verify_connected_( $mail, $client,  $self->config_( 'secure_server' ), $self->config_( 'secure_port' ) ) )  {
+                if ( $mail = $self->verify_connected_( $mail, $client,  # PROFILE BLOCK START
+                        $self->config_( 'secure_server' ),
+                        $self->config_( 'secure_port' ) ) )  {          # PROFILE BLOCK STOP
                     last if ($self->echo_response_($mail, $client, $command) == 2 );
                 } else {
                     next;
@@ -261,8 +267,8 @@ sub child__
 
                 $port = $ssl?995:110 if ( !defined( $port ) );
 
-                if ( $mail = $self->verify_connected_( $mail, $client,
-                                 $host, $port, $ssl ) )  {
+                if ( $mail = $self->verify_connected_( $mail, $client, # PROFILE BLOCK START
+                                 $host, $port, $ssl ) )  {             # PROFILE BLOCK STOP
 
                     if ( defined( $options ) && ( $options =~ /apop/i ) ) {
 
@@ -335,18 +341,18 @@ sub child__
                 my $md5hex = $md5->hexdigest;
                 $self->log_( 2, "digest='$md5hex'" );
 
-                my ($response, $ok) =
+                my ( $response, $ok ) =                              # PROFILE BLOCK START
                     $self->get_response_( $mail, $client,
-                        "APOP $self->{apop_user__} $md5hex", 0, 1 );
-                if ( ( $ok == 1 ) &&
-                     ( $response =~ /$self->{good_response_}/ ) ) {
+                        "APOP $self->{apop_user__} $md5hex", 0, 1 ); # PROFILE BLOCK STOP
+                if ( ( $ok == 1 ) &&                                # PROFILE BLOCK START
+                     ( $response =~ /$self->{good_response_}/ ) ) { # PROFILE BLOCK STOP
 
                     # authentication OK, toss the hello response and
                     # return password ok
 
                     $self->tee_( $client, "+OK password ok$eol" );
                 } else {
-                    $self->tee_( $client, "$response" );
+                    $self->tee_( $client, $response );
                 }
              } else {
                last if ($self->echo_response_($mail, $client, $command) == 2 );
@@ -355,12 +361,12 @@ sub child__
         }
 
         # User is issuing the APOP command to start a session with the
-        # remote server We'd need a copy of the plaintext password to
+        # remote server. We'd need a copy of the plaintext password to
         # support this.
 
         if ( $command =~ /$apop_command/io ) {
-            $self->tee_( $client,
-              "-ERR APOP not supported between mail client and POPFile.$eol" );
+            $self->tee_( $client,                                               # PROFILE BLOCK START
+              "-ERR APOP not supported between mail client and POPFile.$eol" ); # PROFILE BLOCK STOP
 
             # TODO: Consider implementing a host:port:username:secret
             # hash syntax for proxying the APOP command
@@ -372,7 +378,9 @@ sub child__
 
         if ( $command =~ /AUTH ([^ ]+)/i ) {
             if ( $self->config_( 'secure_server' ) ne '' )  {
-                if ( $mail = $self->verify_connected_( $mail, $client,  $self->config_( 'secure_server' ), $self->config_( 'secure_port' ) ) )  {
+                if ( $mail = $self->verify_connected_( $mail, $client,  # PROFILE BLOCK START
+                        $self->config_( 'secure_server' ),
+                        $self->config_( 'secure_port' ) ) )  {          # PROFILE BLOCK STOP
 
                     # Loop until we get -ERR or +OK
 
@@ -396,7 +404,9 @@ sub child__
 
         if ( $command =~ /AUTH/i ) {
             if ( $self->config_( 'secure_server' ) ne '' )  {
-                if ( $mail = $self->verify_connected_( $mail, $client,  $self->config_( 'secure_server' ), $self->config_( 'secure_port' ) ) )  {
+                if ( $mail = $self->verify_connected_( $mail, $client,  # PROFILE BLOCK START
+                        $self->config_( 'secure_server' ),
+                        $self->config_( 'secure_port' ) ) )  {          # PROFILE BLOCK STOP
                     my $response = $self->echo_response_($mail, $client, "AUTH" );
                     last if ( $response == 2 );
                     if ( $response == 0 ) {
@@ -476,17 +486,17 @@ sub child__
 
             if ( $2 ne '99999999' )  {
                 if ( $self->config_( 'toptoo' ) == 1 ) {
-                    my $response =
-                        $self->echo_response_( $mail, $client, "RETR $count" );
+                    my $response =                                              # PROFILE BLOCK START
+                        $self->echo_response_( $mail, $client, "RETR $count" ); # PROFILE BLOCK STOP
                     last if ( $response == 2 );
                     if ( $response == 0 ) {
 
                         # Classify without echoing to client, saving
                         # file for later RETR's
 
-                        my ( $class, $slot ) =
+                        my ( $class, $slot ) =                           # PROFILE BLOCK START
                             $self->{classifier__}->classify_and_modify(
-                                $session, $mail, $client, 0, '', 0, 0 );
+                                $session, $mail, $client, 0, '', 0, 0 ); # PROFILE BLOCK STOP
 
                         $downloaded{$count}{slot}  = $slot;
                         $downloaded{$count}{class} = $class;
@@ -496,22 +506,22 @@ sub child__
                         # the client.  The +OK has already been sent
                         # by the RETR
 
-                        $response =
+                        $response =                                # PROFILE BLOCK START
                             $self->echo_response_( $mail, $client,
-                                $command, 1 );
+                                $command, 1 );                     # PROFILE BLOCK STOP
                         last if ( $response == 2 );
                         if ( $response == 0 ) {
 
                             # Classify with pre-defined class, without
                             # saving, echoing to client
 
-                            $self->{classifier__}->classify_and_modify(
-                                $session, $mail, $client, 1, $class, $slot, 1 );
+                            $self->{classifier__}->classify_and_modify(          # PROFILE BLOCK START
+                                $session, $mail, $client, 1, $class, $slot, 1 ); # PROFILE BLOCK STOP
                         }
                     }
                 } else {
-                    my $response =
-                        $self->echo_response_( $mail, $client, $command );
+                    my $response =                                         # PROFILE BLOCK START
+                        $self->echo_response_( $mail, $client, $command ); # PROFILE BLOCK STOP
                     last if ( $response == 2 );
                     if ( $response == 0 ) {
                         $self->echo_to_dot_( $mail, $client );
@@ -529,7 +539,9 @@ sub child__
 
         if ( $command =~ /CAPA/i ) {
             if ( $mail || $self->config_( 'secure_server' ) ne '' )  {
-                if ( $mail || ( $mail = $self->verify_connected_( $mail, $client, $self->config_( 'secure_server' ), $self->config_( 'secure_port' ) ) ) )  {
+                if ( $mail || ( $mail = $self->verify_connected_( $mail, $client, # PROFILE BLOCK START
+                                   $self->config_( 'secure_server' ),
+                                   $self->config_( 'secure_port' ) ) ) )  {       # PROFILE BLOCK STOP
                     my $response = $self->echo_response_($mail, $client, "CAPA" );
                     last if ( $response == 2 );
                     if ( $response == 0 ) {
@@ -576,9 +588,10 @@ sub child__
             my $class;
             my $file;
 
-            if ( defined($downloaded{$count}) &&
-                 ( $file = $self->{history__}->get_slot_file( $downloaded{$count}{slot} ) ) &&
-                 (open RETRFILE, "<$file") ) {
+            if ( defined($downloaded{$count}) &&             # PROFILE BLOCK START
+                 ( $file = $self->{history__}->get_slot_file(
+                        $downloaded{$count}{slot} ) ) &&
+                 ( open RETRFILE, "<$file" ) ) {             # PROFILE BLOCK STOP
 
                 # act like a network stream
 
@@ -595,10 +608,10 @@ sub child__
                 # echo file, inserting known classification,
                 # without saving
 
-                ( $class, undef ) = $self->{classifier__}->classify_and_modify(
+                ( $class, undef ) = $self->{classifier__}->classify_and_modify(  # PROFILE BLOCK START
                         $session, \*RETRFILE, $client, 1, 
                         $downloaded{$count}{class},
-                        $downloaded{$count}{slot} );
+                        $downloaded{$count}{slot} );                             # PROFILE BLOCK STOP
                 print $client ".$eol";
 
                 close RETRFILE;
@@ -616,7 +629,9 @@ sub child__
                 last if ( $response == 2 );
                 if ( $response == 0 ) {
                     my $slot;
-                    ( $class, $slot ) = $self->{classifier__}->classify_and_modify( $session, $mail, $client, 0, '', 0 );
+                    ( $class, $slot ) =                             # PROFILE BLOCK START
+                        $self->{classifier__}->classify_and_modify(
+                            $session, $mail, $client, 0, '', 0 );   # PROFILE BLOCK STOP
 
                     # Note locally that file has been retrieved if the
                     # full thing has been saved to disk
@@ -777,3 +792,4 @@ sub validate_item
     $self->SUPER::validate_item( $name, $templ, $language, $form );
 }
 
+1;

@@ -172,8 +172,9 @@ EOM
 #
 # stop
 #
-# Called when POPFile is closing down, this is the last method that will get called before
-# the object is destroyed.  There is no return value from stop().
+# Called when POPFile is closing down, this is the last method that
+# will get called before the object is destroyed.  There is no return
+# value from stop().
 #
 # ----------------------------------------------------------------------------
 sub stop
@@ -184,8 +185,9 @@ sub stop
         $self->{classifier__}->release_session_key( $self->{api_session__} );
     }
 
-    # Need to close all the duplicated file handles, this include the POP3 listener
-    # and all the reading ends of pipes to active children
+    # Need to close all the duplicated file handles, this include the
+    # POP3 listener and all the reading ends of pipes to active
+    # children
 
     close $self->{server__} if ( defined( $self->{server__} ) );
 }
@@ -194,11 +196,13 @@ sub stop
 #
 # service
 #
-# service() is a called periodically to give the module a chance to do housekeeping work.
+# service() is a called periodically to give the module a chance to do
+# housekeeping work.
 #
-# If any problem occurs that requires POPFile to shutdown service() should return 0 and
-# the top level process will gracefully terminate POPFile including calling all stop()
-# methods.  In normal operation return 1.
+# If any problem occurs that requires POPFile to shutdown service()
+# should return 0 and the top level process will gracefully terminate
+# POPFile including calling all stop() methods.  In normal operation
+# return 1.
 #
 # ----------------------------------------------------------------------------
 sub service
@@ -213,8 +217,8 @@ sub service
     # of handles with data to read, if the handle is the server then
     # we're off.
 
-    if ( ( defined( $self->{selector__}->can_read(0) ) ) &&
-         ( $self->{alive_} ) ) {
+    if ( ( defined( $self->{selector__}->can_read(0) ) ) && # PROFILE BLOCK START
+         ( $self->{alive_} ) ) {                            # PROFILE BLOCK STOP
         if ( my $client = $self->{server__}->accept() ) {
 
             # Check to see if we have obtained a session key yet
@@ -229,11 +233,11 @@ sub service
             # further processing.  We don't want to act as a proxy for
             # just anyone's email
 
-            my ( $remote_port, $remote_host ) = sockaddr_in(
-                                                    $client->peername() );
+            my ( $remote_port, $remote_host ) = sockaddr_in(                # PROFILE BLOCK START
+                                                    $client->peername() );  # PROFILE BLOCK STOP
 
-            if  ( ( ( $self->config_( 'local' ) || 0 ) == 0 ) ||
-                    ( $remote_host eq inet_aton( "127.0.0.1" ) ) ) {
+            if  ( ( ( $self->config_( 'local' ) || 0 ) == 0 ) ||        # PROFILE BLOCK START
+                    ( $remote_host eq inet_aton( "127.0.0.1" ) ) ) {    # PROFILE BLOCK STOP
 
                 # If we have force_fork turned on then we will do a
                 # fork, otherwise we will handle this inline, in the
@@ -249,8 +253,8 @@ sub service
                     # then process this request
 
                     if ( !defined( $pid ) || ( $pid == 0 ) ) {
-                        $self->{child_}( $self, $client,
-                            $self->{api_session__} );
+                        $self->{child_}( $self, $client,        # PROFILE BLOCK START
+                            $self->{api_session__} );           # PROFILE BLOCK STOP
                         if ( defined( $pid ) ) {
                             &{$self->{childexit_}}( 0 );
                         }
@@ -274,8 +278,9 @@ sub service
 #
 # forked
 #
-# This is called when some module forks POPFile and is within the context of the child
-# process so that this module can close any duplicated file handles that are not needed.
+# This is called when some module forks POPFile and is within the
+# context of the child process so that this module can close any
+# duplicated file handles that are not needed.
 #
 # There is no return value from this method
 #
@@ -478,10 +483,11 @@ sub echo_response_
 # $client      The handle to the mail client
 # $hostname    The host name of the remote server
 # $port        The port
-# $ssl         If set to 1 then the connection to the remote is established using SSL
+# $ssl         If set to 1 then the connection to the remote is established 
+#              using SSL
 #
-# Check that we are connected to $hostname on port $port putting the open handle in $mail.
-# Any messages need to be sent to $client
+# Check that we are connected to $hostname on port $port putting the
+# open handle in $mail.  Any messages need to be sent to $client
 #
 # ----------------------------------------------------------------------------
 sub verify_connected_
@@ -498,9 +504,9 @@ sub verify_connected_
 
     if ( $self->config_( 'socks_server' ) ne '' ) {
         require IO::Socket::Socks;
-        $self->log_( 0, "Attempting to connect to socks server at "
+        $self->log_( 0, "Attempting to connect to socks server at " # PROFILE BLOCK START
                     . $self->config_( 'socks_server' ) . ":"
-                    . ProxyPort => $self->config_( 'socks_port' ) );
+                    . ProxyPort => $self->config_( 'socks_port' ) ); # PROFILE BLOCK STOP
 
         $mail = IO::Socket::Socks->new( # PROFILE BLOCK START
                     ProxyAddr => $self->config_( 'socks_server' ),
@@ -519,8 +525,8 @@ sub verify_connected_
                 return undef;
             }
 
-            $self->log_( 0, "Attempting to connect to SSL server at "
-                        . "$hostname:$port" );
+            $self->log_( 0, "Attempting to connect to SSL server at " # PROFILE BLOCK START
+                        . "$hostname:$port" );                        # PROFILE BLOCK STOP
 
             if ( $^O eq 'MSWin32' ) {
 
@@ -599,8 +605,8 @@ sub verify_connected_
             }
 
         } else {
-            $self->log_( 0, "Attempting to connect to POP server at "
-                        . "$hostname:$port" );
+            $self->log_( 0, "Attempting to connect to POP server at " # PROFILE BLOCK START
+                        . "$hostname:$port" ); # PROFILE BLOCK STOP
 
             $mail = IO::Socket::INET->new( # PROFILE BLOCK START
                         Proto    => "tcp",
@@ -696,7 +702,8 @@ sub verify_connected_
 #
 # configure_item
 #
-#    $name            The name of the item being configured, was passed in by the call
+#    $name            The name of the item being configured, was passed in by
+#                     the call
 #                     to register_configuration_item
 #    $templ           The loaded template
 #
