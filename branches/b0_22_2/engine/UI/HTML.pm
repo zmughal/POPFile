@@ -137,6 +137,8 @@ sub initialize
 {
     my ( $self ) = @_;
 
+    # The default listen port for the UI
+
     $self->config_( 'port', 8080 );
 
     # Sending of statistics is off
@@ -186,8 +188,8 @@ sub initialize
     $self->config_( 'cache_templates', 0 );
 
     # Controls whether or not we die if a template variable is missing
-    # when we try to set it.  Setting it to 1 can be useful for debugging
-    # purposes
+    # when we try to set it.  Setting it to 1 can be useful for
+    # debugging purposes
 
     $self->config_( 'strict_templates', 0 );
 
@@ -272,16 +274,16 @@ sub start
 
     # Ensure that the messages subdirectory exists
 
-    if ( !$self->{history__}->make_directory__(
-        $self->get_user_path_( $self->global_config_( 'msgdir' ) ) ) ) {
+    if ( !$self->{history__}->make_directory__(                          # POPFILE BLOCK START
+        $self->get_user_path_( $self->global_config_( 'msgdir' ) ) ) ) { # PROFILE BLOCK STOP
         print STDERR "Failed to create the messages subdirectory\n";
         return 0;
     }
 
     # Load the current configuration from disk and then load up the
-    # appropriate language, note that we always load English first
-    # so that any extensions to the user interface that have not yet
-    # been translated will still appear
+    # appropriate language, note that we always load English first so
+    # that any extensions to the user interface that have not yet been
+    # translated will still appear
 
     $self->load_language( 'English' );
     if ( $self->config_( 'language' ) ne 'English' ) {
@@ -411,8 +413,8 @@ sub url_handler__
     }
 
     if ( $url =~ /\/(.+\.ico)/ ) {
-        $self->http_file_( $client, $self->get_root_path_( $1 ),
-             'image/x-icon' );
+        $self->http_file_( $client, $self->get_root_path_( $1 ),  # PROFILE BLOCK START
+             'image/x-icon' );                                    # PROFILE BLOCK STOP
         return 1;
     }
 
@@ -429,8 +431,8 @@ sub url_handler__
     # Check the password
 
     if ( $url eq '/password' )  {
-        if ( md5_hex( '__popfile__' . $self->{form_}{password} ) eq
-             $self->config_( 'password' ) )  {
+        if ( md5_hex( '__popfile__' . $self->{form_}{password} ) eq  # PROFILE BLOCK START
+             $self->config_( 'password' ) )  {                       # PROFILE BLOCK STOP
             $self->change_session_key__( $self );
             delete $self->{form_}{password};
             $self->{form_}{session} = $self->{session_key__};
@@ -450,10 +452,10 @@ sub url_handler__
     # already knows the session key, if they don't then drop to the
     # password screen
 
-    if ( ( (!defined($self->{form_}{session})) ||
+    if ( ( (!defined($self->{form_}{session})) ||                           # PROFILE BLOCK START
            ($self->{form_}{session} eq '' ) ||
            ( $self->{form_}{session} ne $self->{session_key__} ) ) &&
-           ( $self->config_( 'password' ) ne md5_hex( '__popfile__' ) ) ) {
+           ( $self->config_( 'password' ) ne md5_hex( '__popfile__' ) ) ) { # PROFILE BLOCK STOP
 
         # Since the URL that has caused us to hit the password page
         # might have information stored in the form hash we need to
@@ -502,10 +504,10 @@ sub url_handler__
 
         my $slot = $self->{form_}{view};
 
-        if ( ( $slot =~ /^\d+$/ ) &&
-             ( $self->{history__}->is_valid_slot( $slot ) ) ) {
-            $self->http_redirect_( $client,
-                 "/view?session=$self->{session_key__}&view=$slot" );
+        if ( ( $slot =~ /^\d+$/ ) &&                            # PROFILE BLOCK START
+             ( $self->{history__}->is_valid_slot( $slot ) ) ) { # PROFILE BLOCK STOP
+            $self->http_redirect_( $client,                           # PROFILE BLOCK START
+                 "/view?session=$self->{session_key__}&view=$slot" ); # PROFILE BLOCK STOP
         } else {
             $self->http_redirect_( $client, "/history" );
         }
@@ -514,13 +516,13 @@ sub url_handler__
     }
 
     if ( $url =~ /(popfile.*\.log)/ ) {
-        $self->http_file_( $client, $self->logger()->debug_filename(),
-            'text/plain' );
+        $self->http_file_( $client, $self->logger()->debug_filename(),  # PROFILE BLOCK START
+            'text/plain' );                                             # PROFILE BLOCK STOP
         return 1;
     }
 
-    if ( ( defined($self->{form_}{session}) ) &&
-         ( $self->{form_}{session} ne $self->{session_key__} ) ) {
+    if ( ( defined($self->{form_}{session}) ) &&                   # PROFILE BLOCK START
+         ( $self->{form_}{session} ne $self->{session_key__} ) ) { # PROFILE BLOCK STOP
         $self->session_page( $client, 0, $url );
         return 1;
     }
@@ -536,7 +538,8 @@ sub url_handler__
         $http_header .= "Expires: 0\r\n";
         $http_header .= "Cache-Control: no-cache\r\n";
         $http_header .= "Content-Type: text/html";
-        $http_header .= "; charset=$self->{language__}{LanguageCharset}\r\n";
+        my $charset = $self->{language__}{LanguageCharset};
+        $http_header .= "; charset=$charset\r\n";
         $http_header .= "Content-Length: ";
 
         my $text = $self->shutdown_page__();
@@ -555,14 +558,14 @@ sub url_handler__
     # the training help item. And if this one is clicked away, both
     # will no longer be shown.
 
-    if ( exists $self->{form_}{nomore_bucket_help} &&
-         $self->{form_}{nomore_bucket_help} ) {
+    if ( exists $self->{form_}{nomore_bucket_help} &&  # PROFILE BLOCK START
+         $self->{form_}{nomore_bucket_help} ) {        # PROFILE BLOCK STOP
         $self->config_( 'show_bucket_help', 0 );
         $self->config_( 'show_training_help', 1 );
     }
 
-    if ( exists $self->{form_}{nomore_training_help} &&
-         $self->{form_}{nomore_training_help} ) {
+    if ( exists $self->{form_}{nomore_training_help} &&  # PROFILE BLOCK START
+         $self->{form_}{nomore_training_help} ) {        # PROFILE BLOCK STOP
         $self->config_( 'show_training_help', 0 );
     }
 
@@ -570,13 +573,21 @@ sub url_handler__
     # display, the page table maps the pages to the functions that
     # handle them and the related template
 
-    my %page_table = ( 'security'      => [ \&security_page,      'security-page.thtml'      ],       # PROFILE BLOCK START
-                       'configuration' => [ \&configuration_page, 'configuration-page.thtml' ],
-                       'buckets'       => [ \&corpus_page,        'corpus-page.thtml'        ],
-                       'magnets'       => [ \&magnet_page,        'magnet-page.thtml'        ],
-                       'advanced'      => [ \&advanced_page,      'advanced-page.thtml'      ],
-                       'history'       => [ \&history_page,       'history-page.thtml'       ],
-                       'view'          => [ \&view_page,          'view-page.thtml'          ] );     # PROFILE BLOCK STOP
+    my %page_table = (                                              # PROFILE BLOCK START
+        'security'      =>
+            [ \&security_page,      'security-page.thtml'      ],
+        'configuration' =>
+            [ \&configuration_page, 'configuration-page.thtml' ],
+        'buckets'       =>
+            [ \&corpus_page,        'corpus-page.thtml'        ],
+        'magnets'       =>
+            [ \&magnet_page,        'magnet-page.thtml'        ],
+        'advanced'      =>
+            [ \&advanced_page,      'advanced-page.thtml'      ],
+        'history'       =>
+            [ \&history_page,       'history-page.thtml'       ],
+        'view'          =>
+            [ \&view_page,          'view-page.thtml'          ] ); # PROFILE BLOCK STOP
 
     my %url_table = ( '/security'      => 'security',       # PROFILE BLOCK START
                       '/configuration' => 'configuration',
@@ -620,7 +631,8 @@ sub bmp_file__
 
     $color = lc($color);
 
-    # TODO: this is dirty something higher up (HTTP) should be decoding the URL
+    # TODO: this is dirty something higher up (HTTP) should be
+    # decoding the URL
 
     $color =~ s/^%23//; # if we have an prefixed hex color value,
                         # just dump the encoded hash-mark (#)
@@ -632,7 +644,6 @@ sub bmp_file__
     if ( $color !~ /^[0-9a-f]{6}$/ ) {
         $color = $self->{c__}->{parser__}->map_color( $color );
     }
-
 
     if ( $color =~ /^([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/ ) {
         my $bmp = '424d3a0000000000000036000000280000000100000001000000010018000000000004000000eb0a0000eb0a00000000000000000000' . "$3$2$1" . '00';
@@ -676,7 +687,8 @@ sub http_ok
     $selected = -1 if ( !defined( $selected ) );
 
     my @tab = ( 'menuStandard', 'menuStandard', 'menuStandard', 'menuStandard', 'menuStandard', 'menuStandard' );
-    $tab[$selected] = 'menuSelected' if ( ( $selected <= $#tab ) && ( $selected >= 0 ) );
+    $tab[$selected] = 'menuSelected' if ( ( $selected <= $#tab ) &&  # PROFILE BLOCK START
+                                          ( $selected >= 0 ) );      # PROFILE BLOCK STOP
 
     for my $i (0..$#tab) {
         $templ->param( "Common_Middle_Tab$i" => $tab[$i] );
@@ -686,15 +698,14 @@ sub http_ok
 
     # Check to see if we've checked for updates today.  If we have not
     # then insert a reference to an image that is generated through a
-    # CGI on UseTheSource.  Also send stats to the same site if that
-    # is allowed
+    # CGI.  Also send stats to the same site if that is allowed.
 
     if ( $self->{today__} ne $self->global_config_( 'last_update_check' ) ) {
         $self->calculate_today();
 
         if ( $self->global_config_( 'update_check' ) ) {
-            my ( $major_version, $minor_version, $build_version ) =
-                $self->version() =~ /^v([^.]*)\.([^.]*)\.(.*)$/;
+            my ( $major_version, $minor_version, $build_version ) =  # PROFILE BLOCK START
+                $self->version() =~ /^v([^.]*)\.([^.]*)\.(.*)$/;     # PROFILE BLOCK STOP
             $templ->param( 'Common_Middle_If_UpdateCheck' => 1 );
             $templ->param( 'Common_Middle_Major_Version' => $major_version );
             $templ->param( 'Common_Middle_Minor_Version' => $minor_version );
@@ -703,8 +714,8 @@ sub http_ok
 
         if ( $self->config_( 'send_stats' ) ) {
             $templ->param( 'Common_Middle_If_SendStats' => 1 );
-            my @buckets = $self->{c__}->get_buckets(
-                $self->{api_session__} );
+            my @buckets = $self->{c__}->get_buckets(  # PROFILE BLOCK START
+                $self->{api_session__} );             # PROFILE BLOCK STOP
             my $bc      = $#buckets + 1;
             $templ->param( 'Common_Middle_Buckets'  => $bc );
             $templ->param( 'Common_Middle_Messages' => $self->mcount__() );
@@ -722,7 +733,8 @@ sub http_ok
     $http_header .= "Expires: 0\r\n";
     $http_header .= "Cache-Control: no-cache\r\n";
     $http_header .= "Content-Type: text/html";
-    $http_header .= "; charset=$self->{language__}{LanguageCharset}\r\n";
+    my $charset = $self->{language__}{LanguageCharset};
+    $http_header .= "; charset=$charset\r\n";
     $http_header .= "Content-Length: ";
 
     my $text = $templ->output;
@@ -989,36 +1001,44 @@ sub security_page
     my %security_templates;
 
     for my $name (keys %{$self->{dynamic_ui__}{security}}) {
-        $security_templates{$name} = $self->load_template__( $self->{dynamic_ui__}{security}{$name}{template} );
-        $self->{dynamic_ui__}{security}{$name}{object}->validate_item( $name,
-                                                                       $security_templates{$name},
-                                                                       \%{$self->{language__}},
-                                                                       \%{$self->{form_}} );
+        $security_templates{$name} = $self->load_template__(    # PROFILE BLOCK START
+            $self->{dynamic_ui__}{security}{$name}{template} ); # PROFILE BLOCK STOP
+        $self->{dynamic_ui__}{security}{$name}{object}->validate_item(  # PROFILE BLOCK START
+            $name,
+            $security_templates{$name},
+            \%{$self->{language__}},
+            \%{$self->{form_}} );                                       # PROFILE BLOCK STOP
     }
 
     my %chain_templates;
 
     for my $name (keys %{$self->{dynamic_ui__}{chain}}) {
-        $chain_templates{$name} = $self->load_template__( $self->{dynamic_ui__}{chain}{$name}{template} );
-        $self->{dynamic_ui__}{chain}{$name}{object}->validate_item( $name,
-                                                                    $chain_templates{$name},
-                                                                    \%{$self->{language__}},
-                                                                    \%{$self->{form_}} );
+        $chain_templates{$name} = $self->load_template__(    # PROFILE BLOCK START
+            $self->{dynamic_ui__}{chain}{$name}{template} ); # PROFILE BLOCK STOP
+        $self->{dynamic_ui__}{chain}{$name}{object}->validate_item(  # PROFILE BLOCK START
+            $name,
+            $chain_templates{$name},
+            \%{$self->{language__}},
+            \%{$self->{form_}} );                                    # PROFILE BLOCK STOP
     }
 
     my $security_html = '';
 
     for my $name (sort keys %{$self->{dynamic_ui__}{security}}) {
-        $self->{dynamic_ui__}{security}{$name}{object}->configure_item(
-            $name, $security_templates{$name}, \%{$self->{language__}} );
+        $self->{dynamic_ui__}{security}{$name}{object}->configure_item(  # PROFILE BLOCK START
+            $name,
+            $security_templates{$name},
+            \%{$self->{language__}} );                                   # PROFILE BLOCK STOP
         $security_html .= $security_templates{$name}->output;
     }
 
     my $chain_html = '';
 
     for my $name (sort keys %{$self->{dynamic_ui__}{chain}}) {
-        $self->{dynamic_ui__}{chain}{$name}{object}->configure_item(
-            $name, $chain_templates{$name}, \%{$self->{language__}} );
+        $self->{dynamic_ui__}{chain}{$name}{object}->configure_item( # PROFILE BLOCK START
+            $name,
+            $chain_templates{$name},
+            \%{$self->{language__}} );                               # PROFILE BLOCK STOP
         $chain_html .= $chain_templates{$name}->output;
     }
 
@@ -1101,31 +1121,34 @@ sub advanced_page
     if ( defined( $self->{form_}{update_params} ) ) {
         foreach my $param (sort keys %{$self->{form_}}) {
             if ( $param =~ /parameter_(.*)/ ) {
-                $self->{configuration__}->parameter( $1,
-                    $self->{form_}{$param} );
+                $self->{configuration__}->parameter( $1,  # PROFILE BLOCK START
+                    $self->{form_}{$param} );             # PROFILE BLOCK STOP
             }
         }
 
         $self->{configuration__}->save_configuration();
     }
 
+    # Handle adding/removing words to/from stopwords
+
     if ( defined($self->{form_}{newword}) ) {
-        my $result = $self->{c__}->add_stopword( $self->{api_session__},
-                         $self->{form_}{newword} );
+        my $result = $self->{c__}->add_stopword( $self->{api_session__},  # PROFILE BLOCK START
+                         $self->{form_}{newword} );                       # PROFILE BLOCK STOP
         if ( $result == 0 ) {
             $templ->param( 'Advanced_If_Add_Message' => 1 );
         }
     }
 
     if ( defined($self->{form_}{word}) ) {
-        my $result = $self->{c__}->remove_stopword( $self->{api_session__},
-                         $self->{form_}{word} );
+        my $result = $self->{c__}->remove_stopword( $self->{api_session__},  # PROFILE BLOCK START
+                         $self->{form_}{word} );                             # PROFILE BLOCK STOP
         if ( $result == 0 ) {
             $templ->param( 'Advanced_If_Delete_Message' => 1 );
         }
     }
 
-    # the word census
+    # the word census ( stopwords )
+
     my $last = '';
     my $need_comma = 0;
     my $groupCounter = 0;
@@ -1185,10 +1208,12 @@ sub advanced_page
         }
     }
 
+    # POPFile global parameters
+
     $templ->param( 'Advanced_Loop_Word' => \@word_loop );
 
-    $templ->param( 'Advanced_POPFILE_CFG' =>
-        $self->get_user_path_( 'popfile.cfg' ) );
+    $templ->param( 'Advanced_POPFILE_CFG' =>      # PROFILE BLOCK START
+        $self->get_user_path_( 'popfile.cfg' ) ); # PROFILE BLOCK STOP
 
     my $last_module = '';
 
@@ -1209,10 +1234,10 @@ sub advanced_page
 
         $row_data{Advanced_Parameter}   = $param;
         $row_data{Advanced_Value}       = $value;
-        $row_data{Advanced_If_Changed}  =
-            !$self->{configuration__}->is_default( $param );
-        $row_data{Advanced_If_Password} =
-            ( $param =~ /_password/ ) ? 1 : 0;
+        $row_data{Advanced_If_Changed}  =                    # PROFILE BLOCK START
+            !$self->{configuration__}->is_default( $param ); # PROFILE BLOCK STOP
+        $row_data{Advanced_If_Password} =                    # PROFILE BLOCK START
+            ( $param =~ /_password/ ) ? 1 : 0;               # PROFILE BLOCK STOP
 
 
         push ( @param_loop, \%row_data);
@@ -1245,8 +1270,8 @@ sub magnet_page
 
     if ( defined( $self->{form_}{delete} ) ) {
         for my $i ( 1 .. $self->{form_}{count} ) {
-            if ( defined( $self->{form_}{"remove$i"} ) &&
-               ( $self->{form_}{"remove$i"} ) ) {
+            if ( defined( $self->{form_}{"remove$i"} ) &&  # PROFILE BLOCK START
+               ( $self->{form_}{"remove$i"} ) ) {          # PROFILE BLOCK STOP
                 my $mtype   = $self->{form_}{"type$i"};
                 my $mtext   = $self->{form_}{"text$i"};
                 my $mbucket = $self->{form_}{"bucket$i"};
@@ -1256,9 +1281,9 @@ sub magnet_page
         }
     }
 
-    if ( defined( $self->{form_}{count} ) &&
+    if ( defined( $self->{form_}{count} ) &&     # PROFILE BLOCK START
        ( defined( $self->{form_}{update} ) ||
-         defined( $self->{form_}{create} ) ) ) {
+         defined( $self->{form_}{create} ) ) ) { # PROFILE BLOCK STOP
         for my $i ( 0 .. $self->{form_}{count} ) {
             my $mtype   = $self->{form_}{"type$i"};
             my $mtext   = $self->{form_}{"text$i"};
@@ -1270,14 +1295,14 @@ sub magnet_page
                 my $obucket = $self->{form_}{"obucket$i"};
 
                 if ( defined( $otype ) ) {
-                    $self->{c__}->delete_magnet( $self->{api_session__},
-                        $obucket, $otype, $otext );
+                    $self->{c__}->delete_magnet( $self->{api_session__},  # PROFILE BLOCK START
+                        $obucket, $otype, $otext );                       # PROFILE BLOCK STOP
                 }
             }
 
-            if ( ( defined($mbucket) ) &&
+            if ( ( defined($mbucket) ) &&  # PROFILE BLOCK START
                  ( $mbucket ne '' ) &&
-                 ( $mtext ne '' ) ) {
+                 ( $mtext ne '' ) ) {      # PROFILE BLOCK STOP
 
                 # Support for feature request 77646 - import function.
                 # goal is a method of creating multiple magnets all
@@ -1305,16 +1330,20 @@ sub magnet_page
                 my $found = 0;
 
                 foreach my $current_mtext (@mtexts) {
-                    for my $bucket ($self->{c__}->get_buckets_with_magnets(
-                                        $self->{api_session__} )) {
+                    for my $bucket ($self->{c__}->get_buckets_with_magnets(   # PROFILE BLOCK START
+                                        $self->{api_session__} )) {           # PROFILE BLOCK STOP
                         my %magnets;
-                        @magnets{ $self->{c__}->get_magnets(
+                        @magnets{ $self->{c__}->get_magnets(  # PROFILE BLOCK START
                                       $self->{api_session__},
-                                          $bucket, $mtype )} = ();
+                                      $bucket,
+                                      $mtype )} = ();         # PROFILE BLOCK STOP
 
                         if ( exists( $magnets{$current_mtext} ) ) {
                             $found  = 1;
-                            $magnet_message .= sprintf( $self->{language__}{Magnet_Error1}, "$mtype: $current_mtext", $bucket ) . '<br>';
+                            $magnet_message .=                               # PROFILE BLOCK START
+                                sprintf( $self->{language__}{Magnet_Error1},
+                                         "$mtype: $current_mtext",
+                                         $bucket ) . '<br>';                 # PROFILE BLOCK STOP
                             last;
                         }
                     }
@@ -1327,7 +1356,11 @@ sub magnet_page
                             for my $from (keys %magnets)  {
                                 if ( ( $mtext =~ /\Q$from\E/ ) || ( $from =~ /\Q$mtext\E/ ) )  {
                                     $found = 1;
-                                    $magnet_message .= sprintf( $self->{language__}{Magnet_Error2}, "$mtype: $current_mtext", "$mtype: $from", $bucket ) . '<br>';
+                                    $magnet_message .=               # PROFILE BLOCK START
+                                        sprintf( $self->{language__}{Magnet_Error2},
+                                                 "$mtype: $current_mtext",
+                                                 "$mtype: $from",
+                                                 $bucket ) . '<br>'; # PROFILE BLOCK STOP
                                     last;
                                 }
                             }
@@ -1338,7 +1371,8 @@ sub magnet_page
                 if ( $found == 0 ) {
                     foreach my $current_mtext (@mtexts) {
 
-                        # Skip mangnet definition if it consists only of white spaces
+                        # Skip magnet definition if it consists only of
+                        # white spaces
 
                         if ( $current_mtext =~ /^[ \t]*$/ ) {
                             next;
@@ -1358,7 +1392,10 @@ sub magnet_page
 
                         $self->{c__}->create_magnet( $self->{api_session__}, $mbucket, $mtype, $current_mtext );
                         if ( !defined( $self->{form_}{update} ) ) {
-                            $magnet_message .= sprintf( $self->{language__}{Magnet_Error3}, "$mtype: $current_mtext", $mbucket )  . '<br>';
+                            $magnet_message .=                               # PROFILE BLOCK START
+                                sprintf( $self->{language__}{Magnet_Error3},
+                                         "$mtype: $current_mtext",
+                                         $mbucket )  . '<br>';               # PROFILE BLOCK STOP
                         }
                     }
                 }
@@ -1387,8 +1424,8 @@ sub magnet_page
     }
 
     if ( $self->config_( 'page_size' ) < $magnet_count ) {
-        $self->set_magnet_navigator__( $templ, $start_magnet,
-            $stop_magnet, $magnet_count );
+        $self->set_magnet_navigator__( $templ, $start_magnet,  # PROFILE BLOCK START
+            $stop_magnet, $magnet_count );                     # PROFILE BLOCK STOP
     }
 
     $templ->param( 'Magnet_Start_Magnet' => $start_magnet );
@@ -1538,14 +1575,16 @@ sub bucket_page
             my $letter = $self->{form_}{showletter};
 
             $templ->param( 'Bucket_If_Show_Letter'   => 1 );
-            $templ->param( 'Bucket_Word_Table_Title' => sprintf( $self->{language__}{SingleBucket_WordTable}, $bucket ) );
+            $templ->param( 'Bucket_Word_Table_Title' =>               # PROFILE BLOCK START
+                sprintf( $self->{language__}{SingleBucket_WordTable},
+                         $bucket ) );                                 # PROFILE BLOCK STOP
             $templ->param( 'Bucket_Letter'           => $letter );
 
             my %word_count;
 
             for my $j ( $self->{c__}->get_bucket_word_list( $self->{api_session__}, $bucket, $letter ) ) {
                 $word_count{$j} = $self->{c__}->get_count_for_word( $self->{api_session__}, $bucket, $j );
-                }
+            }
 
             my @words = sort { $word_count{$b} <=> $word_count{$a} || $a cmp $b } keys %word_count;
 
@@ -1610,7 +1649,6 @@ sub bar_chart_100
         $bucket_row_data{bar_bucket_color} = $self->{c__}->get_bucket_color( $self->{api_session__}, $bucket );
         $bucket_row_data{bar_bucket_name}  = $bucket;
 
-
         my @series_data;
         for my $s (@series) {
             my %series_row_data;
@@ -1628,8 +1666,8 @@ sub bar_chart_100
                 }
             }
 
-            if ( ( $s == 2 ) &&
-                 ( $self->{c__}->is_pseudo_bucket( $self->{api_session__}, $bucket ) ) ) {
+            if ( ( $s == 2 ) &&                                                            # PROFILE BLOCK START
+                 ( $self->{c__}->is_pseudo_bucket( $self->{api_session__}, $bucket ) ) ) { # PROFILE BLOCK STOP
                 $count = '';
                 $percent = '';
             }
@@ -1650,6 +1688,7 @@ sub bar_chart_100
     if ( $total_count != 0 ) {
         $templ->param( 'bar_if_total_count' => 1 );
         @bucket_data = ();
+
         foreach my $bucket (@xaxis) {
             my %bucket_row_data;
             my $percent = sprintf "%.2f", ( $values{$bucket}{0} * 10000 / $total_count ) / 100;
@@ -1684,12 +1723,15 @@ sub corpus_page
 {
     my ( $self, $client, $templ ) = @_;
 
+    my $session = $self->{api_session__};
+
     if ( defined( $self->{form_}{clearbucket} ) ) {
-        $self->{c__}->clear_bucket( $self->{api_session__}, $self->{form_}{showbucket} );
+        $self->{c__}->clear_bucket( $session,                     # PROFILE BLOCK START
+                                    $self->{form_}{showbucket} ); # PROFILE BLOCK STOP
     }
 
     if ( defined($self->{form_}{reset_stats}) ) {
-        foreach my $bucket ($self->{c__}->get_all_buckets( $self->{api_session__} )) {
+        foreach my $bucket ($self->{c__}->get_all_buckets( $session )) {
             $self->set_bucket_parameter__( $bucket, 'count', 0 );
             $self->set_bucket_parameter__( $bucket, 'fpcount', 0 );
             $self->set_bucket_parameter__( $bucket, 'fncount', 0 );
@@ -1713,36 +1755,45 @@ sub corpus_page
         if ( $self->{form_}{cname} =~ /$invalid_bucket_chars/ )  {
             $templ->param( 'Corpus_If_Create_Error' => 1 );
         } else {
-            if ( $self->{c__}->is_bucket( $self->{api_session__}, $self->{form_}{cname} ) ||
-                $self->{c__}->is_pseudo_bucket( $self->{api_session__}, $self->{form_}{cname} ) ) {
+            if ( $self->{c__}->is_bucket( $session, $self->{form_}{cname} ) ||
+                $self->{c__}->is_pseudo_bucket( $session, $self->{form_}{cname} ) ) {
                 $templ->param( 'Corpus_If_Create_Message' => 1 );
-                $templ->param( 'Corpus_Create_Message' => sprintf( $self->{language__}{Bucket_Error2}, $self->{form_}{cname} ) );
+                $templ->param( 'Corpus_Create_Message' =>        # PROFILE BLOCK START
+                    sprintf( $self->{language__}{Bucket_Error2},
+                             $self->{form_}{cname} ) );          # PROFILE BLOCK STOP
             } else {
-                $self->{c__}->create_bucket( $self->{api_session__}, $self->{form_}{cname} );
+                $self->{c__}->create_bucket( $session, $self->{form_}{cname} );
                 $templ->param( 'Corpus_If_Create_Message' => 1 );
-                $templ->param( 'Corpus_Create_Message' => sprintf( $self->{language__}{Bucket_Error3}, $self->{form_}{cname} ) );
+                $templ->param( 'Corpus_Create_Message' =>        # PROFILE BLOCK START
+                    sprintf( $self->{language__}{Bucket_Error3},
+                             $self->{form_}{cname} ) );          # PROFILE BLOCK STOP
             }
        }
     }
 
     if ( ( defined($self->{form_}{delete}) ) && ( $self->{form_}{name} ne '' ) ) {
         $self->{form_}{name} = lc($self->{form_}{name});
-        $self->{c__}->delete_bucket( $self->{api_session__}, $self->{form_}{name} );
+        $self->{c__}->delete_bucket( $session, $self->{form_}{name} );
         $templ->param( 'Corpus_If_Delete_Message' => 1 );
-        $templ->param( 'Corpus_Delete_Message' => sprintf( $self->{language__}{Bucket_Error6}, $self->{form_}{name} ) );
+        $templ->param( 'Corpus_Delete_Message' =>        # PROFILE BLOCK START
+            sprintf( $self->{language__}{Bucket_Error6},
+                     $self->{form_}{name} ) );           # PROFILE BLOCK STOP
     }
 
-    if ( ( defined($self->{form_}{newname}) ) &&
-         ( $self->{form_}{oname} ne '' ) ) {
-        if ( ( $self->{form_}{newname} eq '' ) ||
-             ( $self->{form_}{newname} =~ /$invalid_bucket_chars/ ) )  {
+    if ( ( defined($self->{form_}{newname}) ) &&  # PROFILE BLOCK START
+         ( $self->{form_}{oname} ne '' ) ) {      # PROFILE BLOCK STOP
+        if ( ( $self->{form_}{newname} eq '' ) ||                       # PROFILE BLOCK START
+             ( $self->{form_}{newname} =~ /$invalid_bucket_chars/ ) ) { # PROFILE BLOCK STOP
             $templ->param( 'Corpus_If_Rename_Error' => 1 );
         } else {
             $self->{form_}{oname} = lc($self->{form_}{oname});
             $self->{form_}{newname} = lc($self->{form_}{newname});
-            if ( $self->{c__}->rename_bucket( $self->{api_session__}, $self->{form_}{oname}, $self->{form_}{newname} ) == 1 ) {
+            if ( $self->{c__}->rename_bucket( $session, $self->{form_}{oname}, $self->{form_}{newname} ) == 1 ) {
                 $templ->param( 'Corpus_If_Rename_Message' => 1 );
-                $templ->param( 'Corpus_Rename_Message' => sprintf( $self->{language__}{Bucket_Error5}, $self->{form_}{oname}, $self->{form_}{newname} ) );
+                $templ->param( 'Corpus_Rename_Message' =>        # PROFILE BLOCK START
+                    sprintf( $self->{language__}{Bucket_Error5},
+                             $self->{form_}{oname},
+                             $self->{form_}{newname} ) );        # PROFILE BLOCK STOP
             } else {
                 $templ->param( 'Corpus_If_Rename_Message' => 1 );
                 $templ->param( 'Corpus_Rename_Message' => 'Internal error: rename failed' );
@@ -1750,7 +1801,7 @@ sub corpus_page
         }
     }
 
-    my @buckets = $self->{c__}->get_buckets( $self->{api_session__} );
+    my @buckets = $self->{c__}->get_buckets( $session );
 
     my $total_count = 0;
     my @delete_data;
@@ -1769,10 +1820,11 @@ sub corpus_page
     $templ->param( 'Corpus_Loop_Delete_Buckets' => \@delete_data );
     $templ->param( 'Corpus_Loop_Rename_Buckets' => \@rename_data );
 
-    my @pseudos = $self->{c__}->get_pseudo_buckets( $self->{api_session__} );
+    my @pseudos = $self->{c__}->get_pseudo_buckets( $session );
     push @buckets, @pseudos;
 
     # Check whether the user requested any changes to the per-bucket settings
+
     if ( defined($self->{form_}{bucket_settings}) ) {
         my @parameters = qw/subject xtc xpl quarantine/;
         foreach my $bucket ( @buckets ) {
@@ -1788,19 +1840,17 @@ sub corpus_page
             # Since color isn't coded binary and only used for
             # non-pseudo buckets, we have to handle it separately
 
-            unless ( $self->{c__}->is_pseudo_bucket( $self->{api_session__}, $bucket ) ) {
+            unless ( $self->{c__}->is_pseudo_bucket( $session, $bucket ) ) {
                 my $bucket_color = $self->get_bucket_parameter__( $bucket, 'color' );
                 my $form_color = $self->{form_}{"${bucket}_color"};
 
-                if ( $form_color && $form_color ne $bucket_color ) {
+                if ( defined($form_color) && ( $form_color ne $bucket_color ) ) {
                     $self->set_bucket_parameter__( $bucket, 'color', $form_color );
                 }
             }
         }
     }
 
-
-    my $session = $self->{api_session__};
     my @corpus_data;
     foreach my $bucket ( @buckets ) {
         my %row_data;
@@ -1835,12 +1885,12 @@ sub corpus_page
 
     $templ->param( 'Corpus_Bar_Chart_Classification' => $self->bar_chart_100( %bar_values ) );
 
-    @buckets = $self->{c__}->get_buckets( $self->{api_session__} );
+    @buckets = $self->{c__}->get_buckets( $session );
 
     delete $bar_values{unclassified};
 
     for my $bucket (@buckets)  {
-        $bar_values{$bucket}{0} = $self->{c__}->get_bucket_word_count( $self->{api_session__}, $bucket );
+        $bar_values{$bucket}{0} = $self->{c__}->get_bucket_word_count( $session, $bucket );
         delete $bar_values{$bucket}{1};
         delete $bar_values{$bucket}{2};
     }
@@ -1879,15 +1929,15 @@ sub corpus_page
 
         if ( !$word ) {
             $templ->param( 'Corpus_Lookup_Message' =>
-                           sprintf(
+                           sprintf
                                 $self->{language__}{Bucket_InIgnoredWords},
-                                $self->{form_}{word} ) );
+                                $self->{form_}{word} );
         } else {
             my $max = 0;
             my $max_bucket = '';
             my $total = 0;
             foreach my $bucket (@buckets) {
-                my $val = $self->{c__}->get_value_( $self->{api_session__}, $bucket, $word );
+                my $val = $self->{c__}->get_value_( $session, $bucket, $word );
                 if ( $val != 0 ) {
                     my $prob = exp( $val );
                     $total += $prob;
@@ -1901,19 +1951,19 @@ sub corpus_page
                     # calculation applies for the buckets in which the
                     # word is not found.
 
-                    $total += exp( $self->{c__}->get_not_likely_( $self->{api_session__} ) );
+                    $total += exp( $self->{c__}->get_not_likely_( $session ) );
                 }
             }
 
             my @lookup_data;
             foreach my $bucket (@buckets) {
-                my $val = $self->{c__}->get_value_( $self->{api_session__}, $bucket, $word );
+                my $val = $self->{c__}->get_value_( $session, $bucket, $word );
 
                 if ( $val != 0 ) {
                     my %row_data;
                     my $prob    = exp( $val );
                       my $n       = ($total > 0)?$prob / $total:0;
-                    my $score   = ($#buckets >= 0)?($val - $self->{c__}->get_not_likely_( $self->{api_session__} ) )/log(10.0):0;
+                    my $score   = ($#buckets >= 0)?($val - $self->{c__}->get_not_likely_( $session ) )/log(10.0):0;
                     my $d = $self->{language__}{Locale_Decimal};
                     my $normal  = sprintf("%.10f", $n);
                     $normal =~ s/\./$d/;
@@ -1938,9 +1988,15 @@ sub corpus_page
             $templ->param( 'Corpus_Loop_Lookup' => \@lookup_data );
 
             if ( $max_bucket ne '' ) {
-                $templ->param( 'Corpus_Lookup_Message' => sprintf( $self->{language__}{Bucket_LookupMostLikely}, $word, $self->{c__}->get_bucket_color( $self->{api_session__}, $max_bucket ), $max_bucket ) );
+                $templ->param( 'Corpus_Lookup_Message' =>  # PROFILE BLOCK START
+                               sprintf( $self->{language__}{Bucket_LookupMostLikely},
+                                        $word,
+                                        $self->{c__}->get_bucket_color( $session, $max_bucket ),
+                                        $max_bucket ) );   # PROFILE BLOCK STOP
             } else {
-                $templ->param( 'Corpus_Lookup_Message' => sprintf( $self->{language__}{Bucket_DoesNotAppear}, $word ) );
+                $templ->param( 'Corpus_Lookup_Message' =>  # PROFILE BLOCK START
+                               sprintf( $self->{language__}{Bucket_DoesNotAppear},
+                                        $word ) );         # PROFILE BLOCK STOP
             }
         }
     }
@@ -1985,9 +2041,12 @@ sub set_history_navigator__
 
     $templ->param( 'History_Navigator_Fields' => $self->print_form_fields_(0,1,('session','filter','search','sort','negate' ) ) );
 
+    my $page_size  = $self->config_( 'page_size' );
+    my $query_size = $self->{history__}->get_query_size( $self->{q__} );
+
     if ( $start_message != 0 )  {
         $templ->param( 'History_Navigator_If_Previous' => 1 );
-        $templ->param( 'History_Navigator_Previous'    => $start_message - $self->config_( 'page_size' ) );
+        $templ->param( 'History_Navigator_Previous'    => $start_message - $page_size );
     }
 
     # Only show two pages either side of the current page, the first
@@ -1999,12 +2058,12 @@ sub set_history_navigator__
     my $p = 1;
     my $dots = 0;
     my @nav_data;
-    while ( $i < $self->{history__}->get_query_size( $self->{q__} ) ) {
+    while ( $i < $query_size ) {
         my %row_data;
-        if ( ( $i == 0 ) ||
-             ( ( $i + $self->config_( 'page_size' ) ) >= $self->{history__}->get_query_size( $self->{q__} ) ) ||
-             ( ( ( $i - 2 * $self->config_( 'page_size' ) ) <= $start_message ) &&
-               ( ( $i + 2 * $self->config_( 'page_size' ) ) >= $start_message ) ) ) {
+        if ( ( $i == 0 ) ||                                        # PROFILE BLOCK START
+             ( ( $i + $page_size ) >= $query_size ) ||
+             ( ( ( $i - 2 * $page_size ) <= $start_message ) &&
+               ( ( $i + 2 * $page_size ) >= $start_message ) ) ) { # PROFILE BLOCK STOP
             $row_data{History_Navigator_Page} = $p;
             $row_data{History_Navigator_I} = $i;
             if ( $i == $start_message ) {
@@ -2022,15 +2081,15 @@ sub set_history_navigator__
             $dots = 0;
         }
 
-        $i += $self->config_( 'page_size' );
+        $i += $page_size;
         $p++;
         push ( @nav_data, \%row_data );
     }
     $templ->param( 'History_Navigator_Loop' => \@nav_data );
 
-    if ( $start_message < ( $self->{history__}->get_query_size( $self->{q__} ) - $self->config_( 'page_size' ) ) )  {
+    if ( $start_message < ( $query_size - $page_size ) )  {
         $templ->param( 'History_Navigator_If_Next' => 1 );
-        $templ->param( 'History_Navigator_Next'    => $start_message + $self->config_( 'page_size' ) );
+        $templ->param( 'History_Navigator_Next'    => $start_message + $page_size );
     }
 }
 
@@ -2050,9 +2109,11 @@ sub set_magnet_navigator__
 {
     my ( $self, $templ, $start_magnet, $stop_magnet, $magnet_count ) = @_;
 
+    my $page_size = $self->config_( 'page_size' );
+
     if ( $start_magnet != 0 )  {
         $templ->param( 'Magnet_Navigator_If_Previous' => 1 );
-        $templ->param( 'Magnet_Navigator_Previous'    => $start_magnet - $self->config_( 'page_size' ) );
+        $templ->param( 'Magnet_Navigator_Previous'    => $start_magnet - $page_size );
     }
 
     my $i = 0;
@@ -2071,14 +2132,14 @@ sub set_magnet_navigator__
             $row_data{Magnet_Navigator_Start_Magnet} = $i;
         }
 
-        $i += $self->config_( 'page_size' );
+        $i += $page_size;
         push ( @page_loop, \%row_data );
     }
     $templ->param( 'Magnet_Navigator_Loop_Pages' => \@page_loop );
 
-    if ( $start_magnet < ( $magnet_count - $self->config_( 'page_size' ) ) )  {
+    if ( $start_magnet < ( $magnet_count - $page_size ) )  {
         $templ->param( 'Magnet_Navigator_If_Next' => 1 );
-        $templ->param( 'Magnet_Navigator_Next'    => $start_magnet + $self->config_( 'page_size' ) );
+        $templ->param( 'Magnet_Navigator_Next'    => $start_magnet + $page_size );
     }
 }
 
@@ -2095,19 +2156,18 @@ sub history_reclassify
 
     if ( defined( $self->{form_}{change} ) ) {
 
-        # Look for all entries in the form of the form
-        # reclassify_X and see if they have values, those
-        # that have values indicate a reclassification
+        # Look for all entries in the form of the form reclassify_X
+        # and see if they have values, those that have values indicate
+        # a reclassification
 
-        # Set up %messages to map a slot ID to the new
-        # bucket
+        # Set up %messages to map a slot ID to the new bucket
 
         my %messages;
 
         foreach my $key (keys %{$self->{form_}}) {
             if ( $key =~ /^reclassify_([0-9]+)$/ ) {
-                if ( defined( $self->{form_}{$key} ) &&
-                     ( $self->{form_}{$key} ne '' ) ) {
+                if ( defined( $self->{form_}{$key} ) &&  # PROFILE BLOCK START
+                     ( $self->{form_}{$key} ne '' ) ) {  # PROFILE BLOCK STOP
                     $messages{$1} = $self->{form_}{$key};
                 }
             }
@@ -2124,10 +2184,10 @@ sub history_reclassify
                 $self->{api_session__}, $bucket, $newbucket, 0 );
             $self->{history__}->change_slot_classification(
                  $slot, $newbucket, $self->{api_session__}, 0);
-            $self->{feedback}{$slot} = sprintf(
+            $self->{feedback}{$slot} = sprintf(                          # PROFILE BLOCK START
                  $self->{language__}{History_ChangedTo},
                  $self->{c__}->get_bucket_color(
-                     $self->{api_session__}, $newbucket ), $newbucket );
+                     $self->{api_session__}, $newbucket ), $newbucket ); # PROFILE BLOCK STOP
         }
 
         # At this point the work hash maps the buckets to lists of
@@ -2150,25 +2210,25 @@ sub history_undo
 {
     my( $self ) = @_;
 
-    # Look for all entries in the form of the form
-    # undo_X and see if they have values, those
-    # that have values indicate a reclassification
+    # Look for all entries in the form of the form undo_X and see if
+    # they have values, those that have values indicate a
+    # reclassification
 
     foreach my $key (keys %{$self->{form_}}) {
         if ( $key =~ /^undo_([0-9]+)$/ ) {
             my $slot = $1;
             my @fields = $self->{history__}->get_slot_fields( $slot );
             my $bucket = $fields[8];
-            my $newbucket = $self->{c__}->get_bucket_name(
+            my $newbucket = $self->{c__}->get_bucket_name(  # PROFILE BLOCK START
                                 $self->{api_session__},
-                                $fields[9] );
-            $self->{c__}->reclassified(
-                $self->{api_session__}, $newbucket, $bucket, 1 );
-            $self->{history__}->change_slot_classification(
-                 $slot, $newbucket, $self->{api_session__}, 1 );
-            $self->{c__}->remove_message_from_bucket(
+                                $fields[9] );               # PROFILE BLOCK STOP
+            $self->{c__}->reclassified(                           # PROFILE BLOCK START
+                $self->{api_session__}, $newbucket, $bucket, 1 ); # PROFILE BLOCK STOP
+            $self->{history__}->change_slot_classification(       # PROFILE BLOCK START
+                 $slot, $newbucket, $self->{api_session__}, 1 );  # PROFILE BLOCK STOP
+            $self->{c__}->remove_message_from_bucket(             # PROFILE BLOCK START
                 $self->{api_session__}, $bucket,
-                $self->{history__}->get_slot_file( $slot ) );
+                $self->{history__}->get_slot_file( $slot ) );     # PROFILE BLOCK STOP
         }
     }
 }
@@ -2184,9 +2244,9 @@ sub history_page
 {
     my ( $self, $client, $templ ) = @_;
 
-    # Set up default values for various form elements that have been passed
-    # in or not so that we don't have to worry about undefined values later
-    # on in the function
+    # Set up default values for various form elements that have been
+    # passed in or not so that we don't have to worry about undefined
+    # values later on in the function
 
     $self->{form_}{sort}   = $self->{old_sort__} || '-inserted' if ( !defined( $self->{form_}{sort}   ) );
     $self->{form_}{search} = (!defined($self->{form_}{setsearch})?$self->{old_search__}:'') || '' if ( !defined( $self->{form_}{search} ) );
@@ -2216,10 +2276,9 @@ sub history_page
 
     $self->{old_sort__} = $self->{form_}{sort};
 
-    # We are using a checkbox for negate, so we have to
-    # use an empty hidden input of the same name and
-    # check for multiple occurences or any of the name
-    # being defined
+    # We are using a checkbox for negate, so we have to use an empty
+    # hidden input of the same name and check for multiple occurences
+    # or any of the name being defined
 
     if ( !defined( $self->{form_}{negate} ) ) {
 
@@ -2237,23 +2296,24 @@ sub history_page
             }
         }
     } else {
-        # We have a negate form, but no array.. this is likely
-        # the hidden input, so this is not a "clean" visit
+
+        # We have a negate form, but no array.. this is likely the
+        # hidden input, so this is not a "clean" visit
+
         $self->{old_negate__} = $self->{form_}{negate};
     }
-
-
-
 
     # Information from submit buttons isn't always preserved if the
     # buttons aren't pressed. This compares values in some fields and
     # sets the button-values as though they had been pressed
 
     # Set setsearch if search changed and setsearch is undefined
+
     $self->{form_}{setsearch} = 'on' if ( ( ( !defined($self->{old_search__}) && ($self->{form_}{search} ne '') ) || ( defined($self->{old_search__}) && ( $self->{old_search__} ne $self->{form_}{search} ) ) ) && !defined($self->{form_}{setsearch} ) );
     $self->{old_search__} = $self->{form_}{search};
 
     # Set setfilter if filter changed and setfilter is undefined
+
     $self->{form_}{setfilter} = 'Filter' if ( ( ( !defined($self->{old_filter__}) && ($self->{form_}{filter} ne '') ) || ( defined($self->{old_filter__}) && ( $self->{old_filter__} ne $self->{form_}{filter} ) ) ) && !defined($self->{form_}{setfilter} ) );
     $self->{old_filter__} = $self->{form_}{filter};
 
@@ -2272,21 +2332,20 @@ sub history_page
     # important possibilities:
     #
     # clearpage is defined: this will delete everything on the page
-    # which means we will call delete_slot in the history with the
-    # ID of ever message displayed.   The IDs are encoded in the
-    # hidden rowid_* form elements.
+    # which means we will call delete_slot in the history with the ID
+    # of ever message displayed.  The IDs are encoded in the hidden
+    # rowid_* form elements.
     #
     # clearchecked is defined: this will delete the messages that are
-    # checked (i.e. the check box has been clicked).  The check box
-    # is called remove_* in the form_ hash once we get here.
+    # checked (i.e. the check box has been clicked).  The check box is
+    # called remove_* in the form_ hash once we get here.
     #
     # The third possibility is clearall which is handled below and
     # uses the delete_query API of History.
 
     if ( defined( $self->{form_}{clearpage} ) ) {
 
-        # Remove the list of marked messages using the array of
-        # "remove" checkboxes
+        # Remove the list of messages on the current page
 
         $self->{history__}->start_deleting();
         for my $i ( keys %{$self->{form_}} ) {
@@ -2323,11 +2382,11 @@ sub history_page
         $self->{history__}->delete_query( $self->{q__} );
     }
 
-    $self->{history__}->set_query( $self->{q__},
+    $self->{history__}->set_query( $self->{q__},                       # PROFILE BLOCK START
                                    $self->{form_}{filter},
                                    $self->{form_}{search},
                                    $self->{form_}{sort},
-                                   ( $self->{form_}{negate} ne '' ) );
+                                   ( $self->{form_}{negate} ne '' ) ); # PROFILE BLOCK STOP
 
     # Redirect somewhere safe if non-idempotent action has been taken
 
@@ -2337,22 +2396,27 @@ sub history_page
         return $self->http_redirect_( $client, "/history?" . $self->print_form_fields_(1,0,('start_message','filter','search','sort','session','negate') ) );
     }
 
+    my $session    = $self->{api_session__};
+    my $page_size  = $self->config_( 'page_size' );
+    my $query_size = $self->{history__}->get_query_size( $self->{q__} );
+
     $templ->param( 'History_Field_Search'  => $self->{form_}{search} );
     $templ->param( 'History_Field_Not'     => $self->{form_}{negate} );
     $templ->param( 'History_If_Search'     => defined( $self->{form_}{search} ) );
     $templ->param( 'History_Field_Sort'    => $self->{form_}{sort} );
     $templ->param( 'History_Field_Filter'  => $self->{form_}{filter} );
-    $templ->param( 'History_If_MultiPage'  => $self->config_( 'page_size' ) <= $self->{history__}->get_query_size( $self->{q__} ) );
+    $templ->param( 'History_If_MultiPage'  => $page_size <= $query_size );
 
-    my @buckets = $self->{c__}->get_buckets( $self->{api_session__} );
+    my @buckets = $self->{c__}->get_buckets( $session );
 
     my @bucket_data;
     foreach my $bucket (@buckets) {
         my %row_data;
         $row_data{History_Bucket} = $bucket;
-        $row_data{History_Bucket_Color}  = $self->{c__}->get_bucket_parameter( $self->{api_session__},
-                                                                      $bucket,
-                                                                      'color' );
+        $row_data{History_Bucket_Color} =                  # PROFILE BLOCK START
+            $self->{c__}->get_bucket_parameter( $session,
+                                                $bucket,
+                                                'color' ); # PROFILE BLOCK STOP
         push ( @bucket_data, \%row_data );
     }
 
@@ -2361,9 +2425,10 @@ sub history_page
         my %row_data;
         $row_data{History_Bucket} = $bucket;
         $row_data{History_Selected} = ( defined( $self->{form_}{filter} ) && ( $self->{form_}{filter} eq $bucket ) )?'selected':'';
-        $row_data{History_Bucket_Color}  = $self->{c__}->get_bucket_parameter( $self->{api_session__},
-                                                                      $bucket,
-                                                                      'color' );
+        $row_data{History_Bucket_Color}  =                 # PROFILE BLOCK START
+            $self->{c__}->get_bucket_parameter( $session,
+                                                $bucket,
+                                                'color' ); # PROFILE BLOCK STOP
         push ( @sf_bucket_data, \%row_data );
     }
     $templ->param( 'History_Loop_SF_Buckets' => \@sf_bucket_data );
@@ -2373,15 +2438,14 @@ sub history_page
     $templ->param( 'History_Filter_Reclassified' => ($self->{form_}{filter} eq '__filter__reclassified')?'selected':'' );
     $templ->param( 'History_Field_Not' => ($self->{form_}{negate} ne '')?'checked':'' );
 
-    my $c = $self->{history__}->get_query_size( $self->{q__} );
-    if ( $c > 0 ) {
+    if ( $query_size > 0 ) {
         $templ->param( 'History_If_Some_Messages' => 1 );
-        $templ->param( 'History_Count' => $self->pretty_number( $c ) );
+        $templ->param( 'History_Count' => $self->pretty_number( $query_size ) );
 
         my $start_message = 0;
         $start_message = $self->{form_}{start_message} if ( ( defined($self->{form_}{start_message}) ) && ($self->{form_}{start_message} > 0 ) );
-        if ( $start_message >= $c ) {
-            $start_message -= $self->config_( 'page_size' );
+        if ( $start_message >= $query_size ) {
+            $start_message -= $page_size;
         }
         if ( $start_message < 0 ) {
             $start_message = 0;
@@ -2389,8 +2453,8 @@ sub history_page
         $self->{form_}{start_message} = $start_message;
         $templ->param( 'History_Start_Message' => $start_message );
 
-        my $stop_message  = $start_message + $self->config_( 'page_size' ) - 1;
-        $stop_message = $self->{history__}->get_query_size( $self->{q__} ) - 1 if ( $stop_message >= $self->{history__}->get_query_size( $self->{q__} ) );
+        my $stop_message  = $start_message + $page_size - 1;
+        $stop_message = $query_size - 1 if ( $stop_message >= $query_size );
 
         $self->set_history_navigator__( $templ, $start_message, $stop_message );
 
@@ -2402,17 +2466,18 @@ sub history_page
         my @header_data;
         my $colspan = 1;
         my $length = 90;
+
         foreach my $header (@columns) {
             my %row_data;
             $header =~ /^(.)/;
             next if ( $1 eq '-' );
-            $colspan++;
             $header =~ s/^.//;
-            $row_data{History_Fields} =
+            $colspan++;
+            $row_data{History_Fields} =                      # PROFILE BLOCK START
                 $self->print_form_fields_(1,1,
-                    ('filter','session','search','negate'));
-            $row_data{History_Sort}   =
-                ( $self->{form_}{sort} eq $header )?'-':'';
+                    ('filter','session','search','negate')); # PROFILE BLOCK STOP
+            $row_data{History_Sort}   =                      # PROFILE BLOCK START
+                ( $self->{form_}{sort} eq $header )?'-':'';  # PROFILE BLOCK STOP
             $row_data{History_Header} = $header;
 
             my $label = '';
@@ -2422,19 +2487,19 @@ sub history_page
                 $label = $headers_table{$header};
             }
             $row_data{History_Label} = $label;
-            $row_data{History_If_Sorted} =
-                ( $self->{form_}{sort} =~ /^\-?\Q$header\E$/ );
-            $row_data{History_If_Sorted_Ascending} =
-                ( $self->{form_}{sort} !~ /^-/ );
+            $row_data{History_If_Sorted} =                      # PROFILE BLOCK START
+                ( $self->{form_}{sort} =~ /^\-?\Q$header\E$/ ); # PROFILE BLOCK STOP
+            $row_data{History_If_Sorted_Ascending} =            # PROFILE BLOCK START
+                ( $self->{form_}{sort} !~ /^-/ );               # PROFILE BLOCK STOP
             push ( @header_data, \%row_data );
             $length -= 10;
         }
         $templ->param( 'History_Loop_Headers' => \@header_data );
         $templ->param( 'History_Colspan' => $colspan );
 
-        my @rows = $self->{history__}->get_query_rows(
+        my @rows = $self->{history__}->get_query_rows( # PROFILE BLOCK START
             $self->{q__}, $start_message+1,
-            $stop_message - $start_message + 1 );
+            $stop_message - $start_message + 1 );      # PROFILE BLOCK STOP
 
         my @history_data;
         my $i = $start_message;
@@ -2522,8 +2587,11 @@ sub history_page
             }
             $row_data{Session_Key} = $self->{session_key__};
 
-            if ( ( $last != -1 ) && ( $self->{form_}{sort} =~ /inserted/ ) && ( $self->config_( 'session_dividers' ) ) ) {
-                $row_data{History_If_Session} = ( abs( $$row[7] - $last ) > 300 );
+            if ( ( $last != -1 ) &&                           # PROFILE BLOCK START
+                 ( $self->{form_}{sort} =~ /inserted/ ) &&
+                 ( $self->config_( 'session_dividers' ) ) ) { # PROFILE BLOCK STOP
+                $row_data{History_If_Session} =        # PROFILE BLOCK START
+                    ( abs( $$row[7] - $last ) > 300 ); # PROFILE BLOCK STOP
             }
             # we set this here so feedback lines will also
             # get the correct colspan:
@@ -2531,7 +2599,8 @@ sub history_page
 
             $last = $$row[7];
 
-            $row_data{Localize_History_Reclassified} = $self->{language__}{History_Reclassified};
+            $row_data{Localize_History_Reclassified} =     # PROFILE BLOCK START
+                $self->{language__}{History_Reclassified}; # PROFILE BLOCK STOP
             $row_data{Localize_Undo} = $self->{language__}{Undo};
             push ( @history_data, \%row_data );
         }
@@ -2577,8 +2646,9 @@ sub view_page
         $bucket, $reclassified, $bucketid, $magnet ) =
         $self->{history__}->get_slot_fields( $self->{form_}{view} );
 
-    my $color = $self->{c__}->get_bucket_color(
-                    $self->{api_session__}, $bucket );
+    my $session   = $self->{api_session__};
+    my $color = $self->{c__}->get_bucket_color(  # PROFILE BLOCK START
+                    $session, $bucket );         # PROFILE BLOCK STOP
     my $page_size = $self->config_( 'page_size' );
 
     $self->{form_}{sort}   = '' if ( !defined( $self->{form_}{sort}   ) );
@@ -2595,8 +2665,8 @@ sub view_page
         return 1;
     }
 
-    # If a format change was requested for the word matrix, record it in the
-    # configuration and in the classifier options.
+    # If a format change was requested for the word matrix, record it
+    # in the configuration and in the classifier options.
 
     $self->{c__}->wmformat( $self->{form_}{format} );
 
@@ -2618,7 +2688,7 @@ sub view_page
 
     $templ->param( 'View_Index'            => $index );
     $templ->param( 'View_This'             => $index );
-    $templ->param( 'View_This_Page'        => (( $index ) >= $start_message )?$start_message:($start_message - $self->config_( 'page_size' ))); # TODO
+    $templ->param( 'View_This_Page'        => (( $index ) >= $start_message )?$start_message:($start_message - $page_size)); # TODO
 
     $templ->param( 'View_If_Reclassified'  => $reclassified );
     if ( $reclassified ) {
@@ -2627,9 +2697,9 @@ sub view_page
         $templ->param( 'View_If_Magnetized' => ( $magnet ne '' ) );
         if ( $magnet eq '' ) {
             my @bucket_data;
-            foreach my $abucket ($self->{c__}->get_buckets( $self->{api_session__} )) {
+            foreach my $abucket ($self->{c__}->get_buckets( $session )) {
                 my %row_data;
-                $row_data{View_Bucket_Color} = $self->{c__}->get_bucket_color( $self->{api_session__}, $abucket );
+                $row_data{View_Bucket_Color} = $self->{c__}->get_bucket_color( $session, $abucket );
                 $row_data{View_Bucket} = $abucket;
                 push ( @bucket_data, \%row_data );
             }
@@ -2652,15 +2722,15 @@ sub view_page
         # not need to parse it again and hence we pass in undef for
         # the filename
 
-        my $current_class = $self->{c__}->classify(
-            $self->{api_session__}, $mail_file, $templ, \%matrix, \%idmap );
+        my $current_class = $self->{c__}->classify(            # PROFILE BLOCK START
+            $session, $mail_file, $templ, \%matrix, \%idmap ); # PROFILE BLOCK STOP
 
         # Check whether the original classfication is still valid.  If
         # not, add a note at the top of the page:
 
         if ( $current_class ne $bucket ) {
-            my $new_color = $self->{c__}->get_bucket_color(
-                $self->{api_session__}, $current_class );
+            my $new_color = $self->{c__}->get_bucket_color(  # PROFILE BLOCK START
+                $session, $current_class );                  # PROFILE BLOCK STOP
             $templ->param( 'View_If_Class_Changed' => 1 );
             $templ->param( 'View_Class_Changed' => $current_class );
             $templ->param( 'View_Class_Changed_Color' => $new_color );
@@ -2670,9 +2740,9 @@ sub view_page
 
         $self->{c__}->wordscores( 0 );
 
-        $templ->param( 'View_Message' =>
+        $templ->param( 'View_Message' =>                     # PROFILE BLOCK START
             $self->{c__}->fast_get_html_colored_message(
-                $self->{api_session__}, $mail_file, \%matrix, \%idmap ) );
+                $session, $mail_file, \%matrix, \%idmap ) ); # PROFILE BLOCK STOP
 
         # We want to insert a link to change the output format at the
         # start of the word matrix.  The classifier puts a comment in
@@ -2750,10 +2820,10 @@ sub view_page
         $templ->param( 'View_Message' => $body );
     }
 
-    if ($magnet ne '') {
+    if ( $magnet ne '' ) {
         $templ->param( 'View_Magnet_Reason' => sprintf( $self->{language__}{History_MagnetBecause},  # PROFILE BLOCK START
                           $color, $bucket,
-                          Classifier::MailParse->splitline($magnet,0)
+                          Classifier::MailParse->splitline( $magnet, 0 )
             ) );                                                                                     # PROFILE BLOCK STOP
     }
 
@@ -2838,7 +2908,7 @@ sub load_template__
         $root = 'skins/default/';
     }
 
-    my $templ = HTML::Template->new(
+    my $templ = HTML::Template->new(  # PROFILE BLOCK START
         filename          => $file,
         case_sensitive    => 1,
         loop_context_vars => 1,
@@ -2847,19 +2917,20 @@ sub load_template__
         search_path_on_include => 1,
         path => [$self->get_root_path_( "$root" ),
                  $self->get_root_path_( 'skins/default' ) ]
-                                   );
+                                   ); # PROFILE BLOCK STOP
 
     # Set a variety of common elements that are used repeatedly
     # throughout POPFile's pages
 
     my $now = time;
-    my %fixups = ( 'Skin_Root'               => $root,
+    my %fixups = ( 'Skin_Root'               => $root,  # PROFILE BLOCK START
                    'Session_Key'             => $self->{session_key__},
                    'Common_Bottom_Date'      => $self->pretty_date__( $now ),
                    'Common_Bottom_LastLogin' => $self->{last_login__},
                    'Common_Bottom_Version'   => $self->version(),
                    'If_Show_Bucket_Help'     => $self->config_( 'show_bucket_help' ),
-                   'If_Show_Training_Help'   => $self->config_( 'show_training_help' ) );
+                   'If_Show_Training_Help'   => $self->config_( 'show_training_help' )
+                 );                                     # PROFILE BLOCK STOP
 
     foreach my $fixup (keys %fixups) {
         if ( $templ->query( name => $fixup ) ) {
@@ -2886,14 +2957,15 @@ sub localize_template__
 
     # Localize the template in use.
     #
-    # Templates are automatically localized.  Any TMPL_VAR that begins with
-    # Localize_ will be fixed up automatically with the appropriate string
-    # for the language in use.  For example if you write
+    # Templates are automatically localized.  Any TMPL_VAR that begins
+    # with Localize_ will be fixed up automatically with the
+    # appropriate string for the language in use.  For example if you
+    # write
     #
     #     <TMPL_VAR name="Localize_Foo_Bar">
     #
-    # this will automatically be converted to the string associated with
-    # Foo_Bar in the current language file.
+    # this will automatically be converted to the string associated
+    # with Foo_Bar in the current language file.
 
     my @vars = $templ->param();
 
@@ -3025,7 +3097,7 @@ sub calculate_today
 {
     my ( $self ) = @_;
 
-    $self->{today__} = int( time / $seconds_per_day ) * $seconds_per_day;
+    $self->{today__} = int( time / $seconds_per_day ) * $seconds_per_day; # A slash / for eclipse
 }
 
 #----------------------------------------------------------------------------
@@ -3128,8 +3200,8 @@ sub print_form_fields_
 #
 #    configure_item( 'foo', loaded foo-bar.thtml, language hash )
 #
-# and needs to fill the template variables.  Then it will receive
-# a call to its
+# and needs to fill the template variables.  Then it will receive a
+# call to its
 #
 #    validate_item( 'foo', loaded foo-bar.thtml, language hash, form hash )
 #
@@ -3202,11 +3274,13 @@ sub get_bucket_parameter__
     # rest we leave untouched in @_ and pass to the real API
 
     my $self = shift;
+
     return $self->{c__}->get_bucket_parameter( $self->{api_session__}, @_ );
 }
 sub set_bucket_parameter__
 {
     my $self = shift;
+
     return $self->{c__}->set_bucket_parameter( $self->{api_session__}, @_ );
 }
 
@@ -3237,18 +3311,20 @@ sub session_key
     return $self->{session_key__};
 }
 
-
 #----------------------------------------------------------------------------
+#
 # shutdown_page__
 #
-#   Determines the text to send in response to a click on the
-#   shutdown link.
+#   Determines the text to send in response to a click on the shutdown
+#   link.
+#
 #----------------------------------------------------------------------------
 sub shutdown_page__
 {
     my ( $self ) = @_;
 
     # Figure out what style sheet we are using
+
     my $root = 'skins/' . $self->config_( 'skin' ) . '/';
     my $css_file = $self->get_root_path_( $root . 'style.css' );
     if ( !( -e $css_file ) ) {
@@ -3266,21 +3342,22 @@ sub shutdown_page__
     close CSS;
     $css .= "</style>";
 
-    # Load the template, set the class of the menu tabs, and send the output to $text
+    # Load the template, set the class of the menu tabs, and send the
+    # output to $text
 
     my $templ = $self->load_template__( 'shutdown-page.thtml' );
 
-    for my $i (0..5) {
+    for my $i ( 0..5 ) {
         $templ->param( "Common_Middle_Tab$i" => "menuStandard" );
     }
 
     my $text = $templ->output();
 
-    # Replace the reference to the favicon, we won't be able
-    # to handle that request
+    # Replace the reference to the favicon, we won't be able to handle
+    # that request
     $text =~ s/<link rel="icon" href="favicon\.ico">//;
 
-    # Replace the link to the style sheet with the style sheet itself
+    # Replace the link to the style sheets with the style sheet itself
     $text =~ s/\Q<link rel="stylesheet" type="text\/css" href="${root}style.css" title="POPFile-Style">\E/$css/;
 
     # Remove the session key from the menu links:

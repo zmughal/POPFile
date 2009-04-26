@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #
 # Tests for bayes.pl
 #
@@ -19,9 +19,10 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 my $bayes = 'perl -I ../ ../bayes.pl';
+
 my @stdout;
 
 # One or no command line arguments
@@ -50,6 +51,10 @@ close TEMP;
 unlink 'temp.tmp';
 
 test_assert_regexp( $line, 'Error: File `doesnotexist\' does not exist, classification aborted' );
+
+# Restore STDERR
+
+open STDERR, ">&", $old_stderr;
 
 # Check the output
 
@@ -86,10 +91,5 @@ foreach my $word (keys %words) {
 foreach my $word (keys %output) {
     test_assert_equal( $words{$word}, $output{$word}, $word );
 }
-
-# Restore STDERR
-
-open STDERR, ">&", $old_stderr;
-
 
 1;
