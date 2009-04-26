@@ -7,7 +7,7 @@
 #                 to run POPFile for the first time. Some simple "repair work" can also
 #                 be done using this wizard.
 #
-# Copyright (c) 2004-2008 John Graham-Cumming
+# Copyright (c) 2004-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -953,6 +953,7 @@ save_HKLM_root_sfn:
   WriteRegStr HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" 0 update_HKCU_data
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" 0 update_HKCU_data
   IfFileExists "$G_ROOTDIR\uninstall.exe" 0 update_HKCU_data
   ClearErrors
   ReadRegStr ${L_TEMP} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
@@ -962,8 +963,9 @@ save_HKLM_root_sfn:
 
 update_AllUsers_uninstall:
   SetShellVarContext all
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" \
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk"
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" NORMAL
+  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" \
                  "$G_ROOTDIR\uninstall.exe"
   SetShellVarContext current
 
