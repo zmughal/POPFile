@@ -20,7 +20,7 @@
 #                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
 #                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2008 John Graham-Cumming
+# Copyright (c) 2002-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -290,8 +290,8 @@
   ;----------------------------------------------------------------------
 
   !define C_PERL_DIR      "C:\Perl"
-  !define C_PERL_VERSION  "5.8.8"
-  !define C_PERL_BUILD    "822"
+  !define C_PERL_VERSION  "5.8.9"
+  !define C_PERL_BUILD    "825"
 
   ;----------------------------------------------------------------------
   ; Recently there have been some significant changes to the structure and
@@ -1502,7 +1502,7 @@ Section /o "XMLRPC" SecXMLRPC
   File "${C_PERL_DIR}\lib\Net\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\SOAP"
-  File /r "${C_PERL_DIR}\lib\SOAP\*"
+  File /r "${C_PERL_DIR}\site\lib\SOAP\*"
 
   SetOutPath "$G_MPLIBDIR\Time"
   File /r "${C_PERL_DIR}\lib\Time\*"

@@ -3,7 +3,7 @@
 # installer-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the main
 #                             NSIS 'installer.nsi' script used to create the POPFile installer.
 #
-# Copyright (c) 2005-2008 John Graham-Cumming
+# Copyright (c) 2005-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -740,7 +740,7 @@ Section "-un.Start Menu Entries" UnSecStartMenu
       "$G_ROOTDIR\runpopfile.exe"
 
   !insertmacro CHECK_SHORTCUT_TARGET \
-      "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" \
+      "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" \
       "$G_ROOTDIR\uninstall.exe"
 
   !insertmacro CHECK_SHORTCUT_TARGET \
@@ -773,7 +773,7 @@ skip_site_entries:
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk"
 
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}"
 
 exit:
@@ -856,6 +856,7 @@ continue:
   Delete "$G_ROOTDIR\pipe.pl"
   Delete "$G_ROOTDIR\favicon.ico"
   Delete "$G_ROOTDIR\trayicon.ico"
+  Delete "$G_ROOTDIR\trayicon_up.ico"
   Delete "$G_ROOTDIR\popfile.exe"
   Delete "$G_ROOTDIR\popfilef.exe"
   Delete "$G_ROOTDIR\popfileb.exe"

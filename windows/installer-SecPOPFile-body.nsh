@@ -7,7 +7,7 @@
 #                                   The non-library functions used in this file are contained
 #                                   in a separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005-2008 John Graham-Cumming
+# Copyright (c) 2005-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -253,6 +253,7 @@ app_paths:
 
   File "..\engine\favicon.ico"
   File "..\engine\trayicon.ico"
+  File "..\engine\trayicon_up.ico"
 
   File "..\engine\pix.gif"
   File "..\engine\otto.png"
@@ -342,11 +343,12 @@ install_schema:
       Delete "$SMSTARTUP\Run POPFile in background.lnk"
 
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Manual.url"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\QuickStart Guide.url"
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile in background.lnk"
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url"
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
-      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
+      Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk"
 
       Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Manual.url"
 
@@ -381,8 +383,8 @@ install_schema:
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk" \
                  "$G_ROOTDIR\runpopfile.exe"
 
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" \
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" NORMAL
+  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" \
                  "$G_ROOTDIR\uninstall.exe"
 
   SetOutPath "$G_ROOTDIR"
