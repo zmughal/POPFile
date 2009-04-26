@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #
 # Tests for pipe.pl
 #
@@ -19,7 +19,8 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+
 
 my $pipe = 'perl -I ../ ../pipe.pl';
 
@@ -55,10 +56,13 @@ while ( <TEMP> ) {
     $cam_line =~ s/[\r\n]+/\n/g; # This tests that the network EOL has been removed
     next if ( $output_line =~ /X\-POPFile\-TimeoutPrevention/ );
     $output_line =~ s/view=\d+/view=popfile0=0.msg/;
+    $output_line =~ s/[\r\n]+/\n/g if ( $^O eq 'MSWin32' );
     test_assert_equal( $output_line, $cam_line, $modify_file );
 }
 
 close CAM;
 close TEMP;
+
+unlink 'temp.tmp';
 
 1;
