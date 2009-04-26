@@ -270,7 +270,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.3.6"
+  !define C_PFI_VERSION  "0.3.7"
 
   ; Mention the wizard's version number in the window title
 
