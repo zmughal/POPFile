@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #
 # Tests for Bayes.pm
 #
@@ -19,7 +19,7 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 use Classifier::Bayes;
 use POPFile::Configuration;
@@ -97,6 +97,7 @@ $session = $b->get_session_key( 'baduser', 'badpassword' );
 test_assert( !defined( $session ) );
 $session = $b->get_session_key( 'admin', 'badpassword' );
 test_assert( !defined( $session ) );
+
 $session = $b->get_session_key( 'admin', '' );
 test_assert( defined( $session ) );
 test_assert( $session ne '' );
@@ -106,7 +107,7 @@ test_assert( $session ne '' );
 
 # get_all_buckets
 
-my @all_buckets = $b->get_all_buckets( $session );
+my @all_buckets = sort $b->get_all_buckets( $session );
 test_assert_equal( $#all_buckets, 3 );
 test_assert_equal( $all_buckets[0], 'other' );
 test_assert_equal( $all_buckets[1], 'personal' );
@@ -115,10 +116,9 @@ test_assert_equal( $all_buckets[3], 'unclassified' );
 
 # is_bucket
 
-test_assert_equal( $b->is_bucket( $session, 'personal' ),     1 );
-test_assert_equal( $b->is_bucket( $session, 'impersonal' ),   0 );
-test_assert_equal( $b->is_bucket( $session, 'impersonal' ),   0 );
-test_assert_equal( $b->is_bucket( $session, 'unclassified' ), 0 );
+test_assert(  $b->is_bucket( $session, 'personal'     ) );
+test_assert( !$b->is_bucket( $session, 'impersonal'   ) );
+test_assert( !$b->is_bucket( $session, 'unclassified' ) );
 
 # get_pseudo_buckets
 
@@ -128,20 +128,29 @@ test_assert_equal( $pseudo_buckets[0], 'unclassified' );
 
 # is_pseudo_bucket
 
-test_assert_equal( $b->is_pseudo_bucket( $session, 'personal' ),     0 );
-test_assert_equal( $b->is_pseudo_bucket( $session, 'unclassified' ), 1 );
-test_assert_equal( $b->is_pseudo_bucket( $session, 'impersonal2' ),   0 );
-test_assert_equal( $b->is_pseudo_bucket( $session, 'impersonal2' ),   0 );
-test_assert_equal( $b->is_bucket( $session, 'impersonal2' ),   0 );
+test_assert( !$b->is_pseudo_bucket( $session, 'personal' ) );
+test_assert(  $b->is_pseudo_bucket( $session, 'unclassified' ) );
+test_assert( !$b->is_pseudo_bucket( $session, 'impersonal2' ) );
+
+test_assert( !$b->is_bucket( $session, 'impersonal2' ) );
 
 # get_buckets
 
-my @buckets = $b->get_buckets( $session );
+my @buckets = sort $b->get_buckets( $session );
 test_assert_equal( $#buckets, 2 );
-test_assert_equal( $buckets[0], 'other' );
+test_assert_equal( $buckets[0], 'other'    );
 test_assert_equal( $buckets[1], 'personal' );
-test_assert_equal( $buckets[2], 'spam' );
-test_assert_equal( defined($buckets[3]), defined(undef)  );
+test_assert_equal( $buckets[2], 'spam'     );
+test_assert( !defined($buckets[3]) );
+
+# get_bucket_id, get_bucket_name
+
+my $spam_id = $b->get_bucket_id( $session, 'spam' );
+test_assert( defined( $spam_id ) );
+test_assert_equal( $b->get_bucket_name( $session, $spam_id ), 'spam' );
+
+test_assert( !defined($b->get_bucket_id( $session, 'badbucket' )) );
+test_assert_equal( $b->get_bucket_name( $session, -1 ), '' );
 
 # get_bucket_word_count
 
@@ -206,14 +215,14 @@ test_assert_equal( $b->get_bucket_unique_count( $session, $buckets[2]), 3353 );
 
 # get_bucket_color
 
-test_assert_equal( $b->get_bucket_color( $session, $buckets[0]), 'red' );
-test_assert_equal( $b->get_bucket_color( $session, $buckets[1]), 'green' );
-test_assert_equal( $b->get_bucket_color( $session, $buckets[2]), 'blue' );
-test_assert_equal( $b->get_bucket_color( $session, 'notabucket'), '');
+test_assert_equal( $b->get_bucket_color( $session, $buckets[0] ), 'red'   );
+test_assert_equal( $b->get_bucket_color( $session, $buckets[1] ), 'green' );
+test_assert_equal( $b->get_bucket_color( $session, $buckets[2] ), 'blue'  );
+test_assert_equal( $b->get_bucket_color( $session, 'notabucket'), ''      );
 
 # get_buckets
 
-my @buckets = $b->get_buckets( $session );
+@buckets = $b->get_buckets( $session );
 test_assert_equal( $#buckets, 2 );
 test_assert_equal( $buckets[0], 'other' );
 test_assert_equal( $buckets[1], 'personal' );
@@ -240,13 +249,15 @@ test_assert( $b->set_bucket_parameter( $session, $buckets[0], 'quarantine', 1 ) 
 test_assert_equal( $b->get_bucket_parameter( $session, $buckets[0], 'quarantine' ), 1 );
 test_assert( $b->set_bucket_parameter( $session, $buckets[0], 'quarantine', 0 ) );
 
+test_assert( !$b->set_bucket_parameter( $session, 'badbucket', 'quarantine', 0 ) );
+
 # get_html_colored_message
 
 my $html = $b->get_html_colored_message(  $session, 'TestMails/TestMailParse019.msg' );
 open FILE, "<TestMails/TestMailParse019.clr";
 my $check = <FILE>;
 close FILE;
-# TODO test_assert_equal( $html, $check );
+test_assert_equal( $html, $check );
 
 if ( $html ne $check ) {
     my $color_test = 'get_html_colored_message';
@@ -298,6 +309,9 @@ test_assert_equal( $b->get_bucket_word_count( $session, 'zeotrope' ), 0 );
 test_assert_equal( $b->get_bucket_unique_count( $session, 'zeotrope' ), 0 );
 
 test_assert_equal( $b->get_word_count( $session ), 14002 );
+
+test_assert( !$b->rename_bucket( $session, 'badbucket', 'badbucket2' ) );
+test_assert( !$b->rename_bucket( $session, 'spam',      'zeotrope'   ) );
 
 # add_message_to_bucket
 
@@ -499,6 +513,8 @@ test_assert_equal( $buckets[2], 'spam' );
 test_assert( !$b->is_bucket( $session, 'zeotrope' ) );
 test_assert( !$b->is_pseudo_bucket( $session, 'zeotrope' ) );
 
+test_assert( !$b->delete_bucket( $session, 'badbucket' ) );
+
 # getting and setting values
 
 test_assert_equal( $b->get_value_( $session, 'personal', 'foo' ), log(1/103) );
@@ -516,7 +532,7 @@ test_assert_equal( $b->get_value_( $session, 'personal', 'foo' ), log(100/202) )
 test_assert_equal( $b->get_sort_value_( $session, 'personal', 'foo' ), log(100/202) );
 
 # glob the tests directory for files called TestMails/TestMailParse\d+.msg which consist of messages
-# to be parsed with the resulting classification in TestMailParse.cls
+# to be parsed with the resulting classification in TestMails/TestMailParse.cls
 
 my @class_tests = sort glob 'TestMails/TestMailParse*.msg';
 
@@ -564,7 +580,8 @@ for my $modify_file (@modify_tests) {
         open OUTPUT, "<temp.out";
         while ( <OUTPUT> ) {
             my $output_line = $_;
-            my $cam_line    = <CAM>;
+            next if ( $output_line =~ /^X-POPFile-TimeoutPrevention:/ );
+            my $cam_line    = <CAM> || '';
             $output_line =~ s/[\r\n]//g;
             $cam_line =~ s/[\r\n]//g;
             if ( ( $output_line ne '.' ) || ( $cam_line ne '' ) ) {
@@ -714,6 +731,7 @@ close TEMP2;
 
 # to a file with before string
 
+unlink( 'temp.tmp' );
 open MAIL, "<messages/one.msg";
 test_assert( $b->echo_to_dot_( \*MAIL, undef, '>temp.tmp', "before\n" ) );
 test_assert( eof( MAIL ) );
@@ -888,7 +906,7 @@ unlink( 'messages/popfile0=0.cls' );
 unlink( 'messages/popfile0=0.msg' );
 open CLIENT, ">temp.tmp";
 open MAIL, "<messages/one.msg";
-my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 1, '', 0, 1 );
+( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 1, '', 0, 1 );
 close CLIENT;
 close MAIL;
 
@@ -899,7 +917,7 @@ test_assert( !(-e $h->get_slot_file( $slot ) ) );
 
 open CLIENT, ">temp.tmp";
 open MAIL, "<messages/one.msg";
-my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 0 );
+( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 0 );
 close CLIENT;
 close MAIL;
 
@@ -912,7 +930,7 @@ test_assert_equal( ( -s 'temp.tmp' ), 0 );
 
 open CLIENT, ">temp.tmp";
 open MAIL, "<messages/one.msg";
-my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, 'other', 0, 1 );
+( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, 'other', 0, 1 );
 close CLIENT;
 close MAIL;
 
@@ -1012,10 +1030,11 @@ if ( $have_text_kakasi ) {
         $quarantined_message =~ s/\.msg$/.qrn/;
         open MAIL, "<$quarantined_message";
         while ( !eof( MAIL ) && !eof( TEMP ) ) {
+            my $mail = <MAIL>;
+            next if ( $mail =~ /X-POPFile-TimeoutPrevention/ );
+            $mail =~ s/[\r\n]//g;
             my $temp = <TEMP>;
             $temp =~ s/[\r\n]//g;
-            my $mail = <MAIL>;
-            $mail =~ s/[\r\n]//g;
             test_assert_equal( $temp, $mail );
         }
         close MAIL;
@@ -1033,8 +1052,7 @@ if ( $have_text_kakasi ) {
 
 $b->stop();
 
-unlink( 'temp.tmp' );
-unlink( 'temp2.tmp' );
+unlink 'temp.tmp';
+unlink 'temp2.tmp';
 
 1;
-

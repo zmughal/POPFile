@@ -21,6 +21,7 @@
 #
 # ---------------------------------------------------------------------------
 
+use strict;
 
 use Classifier::Bayes;
 use POPFile::Configuration;

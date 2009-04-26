@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #
 # Tests for HTML.pm
 #
@@ -19,15 +19,18 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ---------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+
+use strict;
+use warnings;
 
 use POSIX qw(locale_h);
-
-# Set up the test corpus and use the Test msg and cls files
-# to create a current history set
-
-#`rm -f __db.*`;  # todo: make tool independent
 use POSIX ":sys_wait_h";
+use HTML::Form;
+use LWP::Simple;
+use LWP::UserAgent;
+use URI::URL;
+use String::Interpolate;
 
 if ( $^O eq 'MSWin32' && setlocale(LC_COLLATE) eq 'Japanese_Japan.932' ) {
     setlocale(LC_COLLATE,'C');
@@ -38,83 +41,10 @@ foreach my $err_html (@err_html_list) {
     unlink $err_html;
 }
 
-use HTML::Form;
 my @forms;
-
 my $hidden = 0;
 
-# Helper function that finds a form in @forms with the
-# named input element, returns the form object and input
-# element if found or undef
-
-sub find_form
-{
-    my ( $name, $nth ) = @_;
-
-    foreach my $form (@forms) {
-#        print "Checking form ", $form->dump, "\n";
-        my $input = $form->find_input( $name, undef, $nth );
-
-        if ( defined( $input ) &&
-           ( ( $input->type ne 'hidden' ) || $hidden ) ) {
-            return ( $form, $input );
-        }
-    }
-
-    test_assert( 0, "Unable to find form element '$name'" );
-
-    return ( undef, undef );
-}
-
-# Helper function that finds the form with a specific input
-# by name and returns an HTTP::Request to submit the form
-
-sub form_submit
-{
-    my ( $name ) = @_;
-
-    my ( $form ) = find_form( $name );
-
-    if ( defined( $form ) ) {
-        return $form->click;
-    } else {
-        return undef;
-    }
-}
-
-# Helper function that finds an input with a specific name
-# in the @forms collection and returns or sets its value
-
-sub form_input
-{
-    my ( $name, $value, $nth ) = @_;
-    my ( $form, $input ) = find_form( $name, $nth );
-
-    if ( defined( $form ) ) {
-        $input->value( $value ) if defined( $value );
-        return $input->value();
-    }
-
-    return undef;
-}
-
-sub pipeready
-{
-    my ( $pipe ) = @_;
-
-    if ( !defined( $pipe ) ) {
-        return 0;
-    }
-
-    if ( $^O eq 'MSWin32' ) {
-        return ( ( -s $pipe ) > 0 );
-    } else {
-        my $rin = '';
-        vec( $rin, fileno( $pipe ), 1 ) = 1;
-        my $ready = select( $rin, undef, undef, 0.01 );
-        return ( $ready > 0 );
-    }
-}
+unit_tests();
 
 use Classifier::Bayes;
 use Classifier::WordMangle;
@@ -212,7 +142,10 @@ test_assert( $sk ne '' );
 my $session = $b->get_session_key( 'admin', '' );
 my $inserted_time = time - 100;
 
-my @messages = glob 'TestMails/TestMailParse*.msg';
+# Use the Test msg and cls files
+# to create a current history set
+
+my @messages = sort glob 'TestMails/TestMailParse*.msg';
 foreach my $msg (@messages) {
     next if ( $msg =~ /TestMailParse026/ );
     my $cls = $msg;
@@ -245,16 +178,6 @@ $hi->service();
 #    $b->release_session_key( $session );
 #    $b->stop();
 #exit 0;
-test_assert_equal( $h->url_encode_( ']' ), '%5d' );
-test_assert_equal( $h->url_encode_( '[' ), '%5b' );
-test_assert_equal( $h->url_encode_( '[]' ), '%5b%5d' );
-test_assert_equal( $h->url_encode_( '[foo]' ), '%5bfoo%5d' );
-
-$h->{language__}{Locale_Thousands} = ',';
-test_assert_equal( $h->pretty_number( 1234 ), '1,234' );
-$h->{language__}{Locale_Thousands} = '&nbsp;';
-test_assert_equal( $h->pretty_number( 1234 ), '1&nbsp;234' );
-$h->{language__}{Locale_Thousands} = '';
 
 sub forker
 {
@@ -318,7 +241,7 @@ if ( $pid == 0 ) {
         $h->service();
 
         if ( pipeready( $dreader ) ) {
-            my $command = <$dreader>;
+            my $command = <$dreader> || '';
 
             if ( $command =~ /^__QUIT/ ) {
                 $h->stop();
@@ -403,6 +326,7 @@ EOM
                 next;
             }
         }
+        select( undef, undef, undef, 0.05 );
     }
 
     close $dreader;
@@ -419,11 +343,6 @@ EOM
     close $dreader;
     close $uwriter;
     $dwriter->autoflush(1);
-
-    use LWP::Simple;
-    use LWP::UserAgent;
-    use URI::URL;
-    use String::Interpolate;
 
     my $ua = new LWP::UserAgent;
     my $line_number = 0;
@@ -479,13 +398,15 @@ EOM
             $request = $form->click( $name ) if ( defined( $form ) );
             if ( defined( $request ) ) {
                 my $response = $ua->request( $request );
-                @forms = HTML::Form->parse( $response );
                 if ( $response->code == 302 ) {
-                    $content = get(url("http://127.0.0.1:$port" . $response->headers->header('Location')));
-                    @forms = HTML::Form->parse( $content, "http://127.0.0.1:$port" );
+                    $request = HTTP::Request->new( 'GET', "http://127.0.0.1:$port" . $response->headers->header('Location') );
+                    $response = $ua->request( $request );
+                    $content = $response->content;
+                    @forms = HTML::Form->parse( $response );
                 } else {
                     test_assert_equal( $response->code, 200, "From script line $line_number" );
                     $content = $response->content;
+                    @forms = HTML::Form->parse( $response );
                 }
                 $content =~ s/^[\t ]+//gm;
                 $content =~ s/[\t ]+$//gm;
@@ -583,12 +504,20 @@ EOM
             my $request = form_submit( $2 );
             if ( defined( $request ) ) {
                 my $response = $ua->request( $request );
+                if ( $response->code == 302 ) {
+                    $request = HTTP::Request->new( 'GET', "http://127.0.0.1:$port" . $response->headers->header('Location') );
+                    $response = $ua->request( $request );
+                    $content = $response->content;
+                    @forms = HTML::Form->parse( $response );
+                } else {
+                    test_assert_equal( $response->code, 200, "From script line $line_number" );
                 $content = $response->content;
+                    @forms = HTML::Form->parse( $response );
+                }
                 $content =~ s/^[\t ]+//gm;
                 $content =~ s/[\t ]+$//gm;
                 while ( ( $content =~ s/\n\n/\n/gs ) > 0 ) {
                 }
-                @forms   = HTML::Form->parse( $response );
             }
             next;
         }
@@ -616,7 +545,7 @@ EOM
         }
 
         if ( $line =~ /^MATCH$/ ) {
-            my $block;
+            my $block = '';
 
             while ( $line = <SCRIPT> ) {
                 $line_number += 1;
@@ -722,6 +651,95 @@ skip:
     $hi->stop();
     $b->release_session_key( $session );
     $b->stop();
+}
+
+# Helper function that finds a form in @forms with the
+# named input element, returns the form object and input
+# element if found or undef
+
+sub find_form
+{
+    my ( $name, $nth ) = @_;
+
+    foreach my $form (@forms) {
+#        print "Checking form ", $form->dump, "\n";
+        my $input = $form->find_input( $name, undef, $nth );
+
+        if ( defined( $input ) &&
+           ( ( $input->type ne 'hidden' ) || $hidden ) ) {
+            return ( $form, $input );
+        }
+    }
+
+    test_assert( 0, "Unable to find form element '$name'" );
+
+    return ( undef, undef );
+}
+
+# Helper function that finds the form with a specific input
+# by name and returns an HTTP::Request to submit the form
+
+sub form_submit
+{
+    my ( $name ) = @_;
+
+    my ( $form ) = find_form( $name );
+
+    if ( defined( $form ) ) {
+        return $form->click;
+    } else {
+        return undef;
+    }
+}
+
+# Helper function that finds an input with a specific name
+# in the @forms collection and returns or sets its value
+
+sub form_input
+{
+    my ( $name, $value, $nth ) = @_;
+    my ( $form, $input ) = find_form( $name, $nth );
+
+    if ( defined( $form ) ) {
+        $input->value( $value ) if defined( $value );
+        return $input->value();
+    }
+
+    return undef;
+}
+
+sub pipeready
+{
+    my ( $pipe ) = @_;
+
+    if ( !defined( $pipe ) ) {
+        return 0;
+    }
+
+    if ( $^O eq 'MSWin32' ) {
+        return ( ( -s $pipe ) > 0 );
+    } else {
+        my $rin = '';
+        vec( $rin, fileno( $pipe ), 1 ) = 1;
+        my $ready = select( $rin, undef, undef, 0.01 );
+        return ( $ready > 0 );
+    }
+}
+
+sub unit_tests {
+    my $h = new UI::HTML;
+
+    test_assert_equal( $h->url_encode_( ']' ), '%5d' );
+    test_assert_equal( $h->url_encode_( '[' ), '%5b' );
+    test_assert_equal( $h->url_encode_( '[]' ), '%5b%5d' );
+    test_assert_equal( $h->url_encode_( '[foo]' ), '%5bfoo%5d' );
+
+    $h->{language__}{Locale_Thousands} = ',';
+    test_assert_equal( $h->pretty_number( 1234 ), '1,234' );
+
+    $h->{language__}{Locale_Thousands} = '&nbsp;';
+    test_assert_equal( $h->pretty_number( 1234 ), '1&nbsp;234' );
+    $h->{language__}{Locale_Thousands} = '';
 }
 
 1;

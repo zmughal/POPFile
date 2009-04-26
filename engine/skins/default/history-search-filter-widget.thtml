@@ -17,7 +17,7 @@
     <input type="hidden" name="sort" value="<TMPL_VAR NAME="History_Field_Sort">" />
     <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
     <select name="filter" id="historyFilter">
-        <option value=""></option>
+        <option value="">&nbsp;</option>
 
         <TMPL_LOOP NAME="History_Loop_SF_Buckets">
 
@@ -39,7 +39,9 @@
     </select>
     <input type="submit" class="submit" name="setfilter" value="<TMPL_VAR NAME="Localize_Filter">" />
     <input type="hidden" name="negate" value="" />
-    <input type="checkbox" name="negate" class="checkbox" <TMPL_VAR NAME="History_Field_Not"> />
-    <TMPL_VAR NAME="Localize_History_Negate_Search">
+    <input type="checkbox" name="negate" id="negate" class="checkbox" <TMPL_VAR NAME="History_Field_Not"> />
+    <label class="historyLabel" for="negate">
+        <TMPL_VAR NAME="Localize_History_Negate_Search">
+    </label>
     <input type="submit" class="submit" name="reset_filter_search" value="<TMPL_VAR NAME="Localize_History_ResetSearch">" />
 </form>
