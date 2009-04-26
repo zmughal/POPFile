@@ -94,7 +94,6 @@
 <table cellspacing="0" summary="">
     <tr>
         <td>
-            <b>
                 <TMPL_VAR NAME="Localize_Magnet_Explanation">
         </td>
     </tr>
@@ -132,7 +131,7 @@
         </label>
         <br />
         <select name="bucket0" id="magnetsAddBucket">
-            <option value=""></option>
+            <option value="">&nbsp;</option>
 
             <TMPL_LOOP NAME="Magnet_Loop_Buckets">
 

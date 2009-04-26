@@ -5,11 +5,12 @@
     <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
     <input type="hidden" name="count" value="<TMPL_VAR NAME="View_QuickMagnets_Count">" />
     <hr />
-    <a name="quick_magnet">
     <b>
-        <TMPL_VAR NAME="Localize_QuickMagnets">
+        <a name="quick_magnets">
+            <TMPL_VAR NAME="Localize_QuickMagnets">
+        </a>
     </b>
-    </a>
+
     <table class="top20Words">
         <tr>
             <th scope="col">
@@ -40,7 +41,7 @@
             <td>
                 <input type="hidden" name="type<TMPL_VAR NAME="View_QuickMagnets_I">" class="magnetsAddType" value="<TMPL_VAR NAME="View_QuickMagnets_Type">" />
                 <select name="bucket<TMPL_VAR NAME="View_QuickMagnets_I">" class="magnetsAddBucket">
-                    <option value=""></option>
+                    <option value="">&nbsp;</option>
                     
                     <TMPL_LOOP NAME="View_QuickMagnets_Loop_Buckets">
                     

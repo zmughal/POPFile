@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #
 # Tests for Configuration.pm
 #
@@ -19,7 +19,7 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 use locale;
 use POSIX qw( locale_h );
@@ -74,10 +74,13 @@ open my $old_stderr, ">&STDERR";
 # contains the correct process ID
 
 $c->config_( 'piddir', '../tests/' );
+$c->{pid_delay__} = 1;
+open (STDERR, ">stdout.tmp");
+
 test_assert_equal( $c->start(), 1 );
 test_assert( $c->check_pid_() );
 test_assert_equal( $c->get_pid_(), $$ );
-open (STDERR, ">stdout.tmp");
+
 test_assert_equal( $c->start(), 1 );
 $c->stop();
 test_assert( !$c->check_pid_() );
@@ -123,32 +126,27 @@ $c->stop();
 
 # Check that the popfile.cfg was written
 
+my @expected_config = (
+ 'GLOBAL_debug 0',
+ 'GLOBAL_last_update_check 0',
+ 'GLOBAL_message_cutoff 100000',
+ 'GLOBAL_msgdir messages/',
+ 'GLOBAL_timeout 60',
+ 'GLOBAL_update_check 0',
+ 'config_pidcheck_interval 5',
+ 'config_piddir ../tests/',
+ 'logger_format default',
+ 'logger_level 0',
+ 'logger_logdir ./',
+ 'testparam testvalue',
+);
+
 open FILE, "<popfile.cfg";
-my $line = <FILE>;
-test_assert_regexp( $line, 'GLOBAL_debug 0' );
-$line = <FILE>;
-test_assert_regexp( $line, 'GLOBAL_last_update_check 0' );
-$line = <FILE>;
-test_assert_regexp( $line, 'GLOBAL_message_cutoff 100000' );
-$line = <FILE>;
-test_assert_regexp( $line, 'GLOBAL_msgdir messages/' );
-$line = <FILE>;
-test_assert_regexp( $line, 'GLOBAL_timeout 60' );
-$line = <FILE>;
-test_assert_regexp( $line, 'GLOBAL_update_check 0' );
-$line = <FILE>;
-test_assert_regexp( $line, 'config_pidcheck_interval 5' );
-$line = <FILE>;
-test_assert_regexp( $line, 'config_piddir ../tests/' );
-$line = <FILE>;
-test_assert_regexp( $line, 'logger_format default' );
-$line = <FILE>;
-test_assert_regexp( $line, 'logger_level 0' );
-$line = <FILE>;
-test_assert_regexp( $line, 'logger_logdir ./' );
-$line = <FILE>;
-test_assert_regexp( $line, 'testparam testvalue' );
-$line = <FILE>;
+foreach ( @expected_config ) {
+    my $line = <FILE>;
+    chomp $line;
+    test_assert_equal( $line, $_ );
+}
 close FILE;
 
 # Now add a parameter and reload the configuration

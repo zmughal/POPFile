@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 #
 # Test script for the HTML interface, loaded by TestHTML.tst
 #
@@ -19,7 +19,7 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ---------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 # To simplify testing the POPFile HTML UI this file contains a script
 # that is read by TestHTML.tst and executed.  The script consists of instructions
@@ -69,6 +69,8 @@ MATCH <title>POPFile Control Center</title>
 MATCH <html lang="en">
 MATCH <link rel="stylesheet" type="text/css" href="skins/simplyblue/style.css" title="POPFile">
 MATCH <link rel="icon" href="favicon.ico">
+
+MATCH <a class="shutdownLink" href="/shutdown">Shutdown POPFile</a>
 
 # Common MIDDLE parts (i.e. the tabs)
 
@@ -396,7 +398,6 @@ Jump to page:
 [<a href="/history?start_message=20&amp;session=$sk&amp;filter=spam&amp;sort=-inserted">Next &gt;</a>]
 ENDMATCH
 
-
 GET /history?start_message=20&amp;session=$sk&amp;filter=spam
 NOTMATCH Testing Refresh
 SETINPUT filter other
@@ -441,6 +442,7 @@ MATCH
 Bucket
 </a>
 ENDMATCH
+
 GET /history?session=$sk&amp;setsort=bucket
 MATCH
 <td>
@@ -460,6 +462,7 @@ MATCH
 </a>
 </th>
 ENDMATCH
+
 GET /history?session=$sk&amp;setsort=-bucket
 MATCH
 <th class="historyLabel" scope="col" align="left">
@@ -470,6 +473,7 @@ MATCH
 </a>
 </th>
 ENDMATCH
+
 GET /history?session=$sk&amp;setsort=
 
 # Check reclassification
@@ -532,8 +536,12 @@ spam
 </a>
 </td>
 ENDMATCH
+
+# bucket page
+
 GET /buckets?session=$sk&showbucket=spam
 MATCH Detail for <font color="blue">spam</font>
+
 GET /history
 
 # Single message view for accuracy
@@ -545,6 +553,7 @@ Testing Refresh
 </a>
 </td>
 ENDMATCH
+
 GET /view?view=31&amp;start_message=0&amp;session=$sk
 MATCH Single Message View
 MATCH Testing Refresh
@@ -569,23 +578,19 @@ ENDMATCH
 MATCH
 <a class="messageLink" href="#message_header">Message Header</a>
 | <a class="messageLink" href="#message_body">Message Body</a>
-| <a class="messageLink" href="#quick_magnet">QuickMagnets</a>
+| <a class="messageLink" href="#quick_magnets">QuickMagnets</a>
 | <a class="messageLink" href="#scores">Scores</a>
 ENDMATCH
 MATCH <a name="message_header" />
 MATCH <a name="message_body" />
 MATCH
-<a name="quick_magnet">
-<b>
+<a name="quick_magnets">
 QuickMagnets
-</b>
 </a>
 ENDMATCH
 MATCH
 <a name="scores">
-<b>
 Scores
-</b>
 </a>
 ENDMATCH
 
@@ -599,18 +604,26 @@ NOTMATCH 0.6697
 MATCH <font color="black">John</font>
 MATCH <font color="red">here</font>
 MATCH Body would
+
 GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=prob
 MATCH showing word probabilities
 MATCH 0.7692
 MATCH 0.2308
+
 GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=freq
 MATCH showing word frequencies
 MATCH 0.00165
 MATCH 0.00336
+
 GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=score
 MATCH showing word scores
 MATCH 2.3639
 MATCH 2.6727
+
+GET   /view?view=31&amp;start_message=0&amp;session=$sk&amp;text=1
+MATCH From: John
+MATCH Subject: Testing Refresh
+MATCH Body would go here
 
 # Jump to message
 
@@ -849,6 +862,7 @@ INPUTIS type4 to
 
 GET /configuration
 SETSUBMIT page_size 3
+
 GET /magnets
 MATCH
 Jump to magnet page:
@@ -856,6 +870,7 @@ Jump to magnet page:
 [<a href="/magnets?start_magnet=3&amp;session=$sk">2</a>]
 [<a href="/magnets?start_magnet=3&amp;session=$sk">Next</a>]
 ENDMATCH
+
 GET /magnets?start_magnet=3&amp;session=$sk
 MATCH
 Jump to magnet page:
@@ -863,6 +878,7 @@ Jump to magnet page:
 [<a href="/magnets?start_magnet=0&amp;session=$sk">1</a>]
 <b>2</b>
 ENDMATCH
+
 GET /configuration
 SETSUBMIT page_size 20
 
@@ -1292,7 +1308,7 @@ MATCH spam
 MATCH personal
 MATCH other
 
-# TODO Check bucket delete
+# Check bucket delete
 
 SETSUBMIT name sensible
 MATCH Deleted bucket sensible
@@ -1416,8 +1432,11 @@ GET /temp.png
 MATCH 10 GOTO 10
 
 CODE
-unlink 'temp.png';
+unlink '../temp.png';
 ENDCODE
+
+GET /popfile_current_log.log
+MATCH Attempting to connect to dbi:SQLite:dbname=../tests/popfile.db
 
 CODE
 mkdir '../manual';
@@ -1430,7 +1449,7 @@ GET /manual/temp.html
 MATCH 10 GOTO 10
 
 CODE
-rmtree( 'manual' );
+rmtree( '../manual' );
 ENDCODE
 
 GET /skins/default/style.css
@@ -1439,6 +1458,7 @@ MATCH .menuSelected
 # Get a page that does not exist
 
 GET /foo
+MATCH POPFile Web Server Error 404
 
 # Check update checking
 

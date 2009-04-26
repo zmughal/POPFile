@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #
 # Tests for XMLRPC.pm
 #
@@ -21,8 +21,7 @@
 #
 #   Modified by Sam Schinke (sschinke@users.sourceforge.net)
 #
-# ---------------------------------------------------------------------------------------------
-
+# ----------------------------------------------------------------------------
 
 use POSIX ":sys_wait_h";
 
@@ -96,7 +95,7 @@ if ($pid == 0) {
 
         my $count = 50;
         while ( $mq->service() && $x->service() && $b->alive()) {
-            select(undef,undef,undef, 0.1);
+            select( undef, undef, undef, 0.1 );
             last if ( $count-- <= 0 );
         }
     } else {
@@ -116,40 +115,40 @@ if ($pid == 0) {
     use XMLRPC::Lite;
 
     my $session = XMLRPC::Lite
-    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-    -> call('POPFile/API.get_session_key','admin', '')
-    -> result;
+        -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+        -> call('POPFile/API.get_session_key','admin', '')
+        -> result;
 
     test_assert( $session ne '' );
 
     my $set_bucket_color = XMLRPC::Lite
-    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-    -> call('POPFile/API.set_bucket_color', $session, 'personal', 'somecolour')
-    -> result;
+        -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+        -> call('POPFile/API.set_bucket_color', $session, 'personal', 'somecolour')
+        -> result;
 
     test_assert_equal( $set_bucket_color, 1 );
 
-    select(undef,undef,undef,.2);
+    select( undef, undef, undef, .2 );
 
     my $bucket_color = XMLRPC::Lite
-    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-    -> call('POPFile/API.get_bucket_color', $session, 'personal')
-    -> result;
+        -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+        -> call('POPFile/API.get_bucket_color', $session, 'personal')
+        -> result;
 
     test_assert_equal( $bucket_color, 'somecolour' );
 
-    select(undef,undef,undef,.2);
+    select( undef, undef, undef, .2 );
 
     my $buckets = XMLRPC::Lite
-    -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
-    -> call('POPFile/API.get_buckets', $session )
-    -> result;
+        -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
+        -> call('POPFile/API.get_buckets', $session )
+        -> result;
 
     test_assert_equal( @$buckets[0], 'other' );
     test_assert_equal( @$buckets[1], 'personal' );
     test_assert_equal( @$buckets[2], 'spam' );
 
-    select(undef,undef,undef,.2);
+    select( undef, undef, undef, .2 );
 
     XMLRPC::Lite
     -> proxy("http://127.0.0.1:" . $xport . "/RPC2")
@@ -164,4 +163,4 @@ if ($pid == 0) {
     }
 }
 
-
+1;

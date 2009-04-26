@@ -28,7 +28,7 @@
             </TMPL_IF>
 
             <TMPL_IF NAME="View_QuickMagnets_If">
-            | <a class="messageLink" href="#quick_magnet"><TMPL_VAR NAME="Localize_QuickMagnets"></a>
+            | <a class="messageLink" href="#quick_magnets"><TMPL_VAR NAME="Localize_QuickMagnets"></a>
             </TMPL_IF>
 
             <TMPL_IF NAME="View_If_Magnetized">
@@ -47,7 +47,7 @@
                 <input type="hidden" name="start_message" value="<TMPL_VAR NAME="View_This_Page">" />
                 <input type="hidden" name="filter" value="<TMPL_VAR NAME="View_Field_Filter">" />
 
-                <table align="left">
+                <table align="left" summary="">
                     <tr valign="top">
                         <td>
                             <font size="+1">

@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #
 # Tests for HTTP.pm
 #
@@ -19,7 +19,7 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 
 sub my_handler
@@ -205,7 +205,6 @@ $line = <FILE>;
 test_assert_equal( $line, "Expires: $expires$eol" );
 $line = <FILE>;
 test_assert_equal( $line, "Content-Length: " . ( -s 'send.tmp' ) . "$eol" );
-unlink 'send.tmp';
 $line = <FILE>;
 test_assert( defined( $line ) );
 test_assert( $line =~ /^$eol$/ );
@@ -242,7 +241,9 @@ close TEMP;
 
 $h2->stop();
 
+unlink 'temp.tmp';
 unlink 'stdout.tmp';
+unlink 'send.tmp';
 
 # Fork into a subprocess that keeps calling service() on the HTTP
 # module to handle requests and a top level process that sends down
@@ -283,7 +284,7 @@ if ( $pid == 0 ) {
     print $client "GET / HTTP/1.0$eol" . "Header: Mine$eol" . "~~~~~~: ~~~~~~~$eol$eol";
     select( undef, undef, undef, 0.1 );
     $line = <$client>;
-    test_assert_equal( $line, "HTTP/1.0 / GET  Error$eol" );
+    test_assert_equal( $line, "HTTP/1.0 500 Error$eol" );
     close $client;
 
     # Get a protocol error
@@ -319,7 +320,7 @@ if ( $pid == 0 ) {
     print $client "POST /body HTTP/1.0$eol" . "Content-Length: 12$eol$eol" . "1234567890$eol$eol";
     select( undef, undef, undef, 0.1 );
     $line = <$client>;
-    test_assert_equal( $line, "HTTP/1.0 /body POST 1234567890$eol" );
+    test_assert_equal( $line, "HTTP/1.0 500 Error$eol" );
     close $client;
 
     # kill child
@@ -339,7 +340,7 @@ if ( $pid == 0 ) {
     print $client "GET /stop HTTP/1.0$eol$eol";
     select( undef, undef, undef, 0.1 );
     $line = <$client>;
-    test_assert_equal( $line, "HTTP/1.0 /stop GET  Error$eol" );
+    test_assert_equal( $line, "HTTP/1.0 500 Error$eol" );
     close $client;
 
     while ( waitpid( -1, &WNOHANG ) > 0 ) {

@@ -331,18 +331,22 @@ sub http_error_
 
     $self->log_( 0, "HTTP error $error returned" );
 
-    my $text="<html><head><title>POPFile Web Server Error $error</title></head>
+    my $text =      # PROFILE BLOCK START
+            "<html><head><title>POPFile Web Server Error $error</title></head>
 <body>
 <h1>POPFile Web Server Error $error</h1>
 An error has occurred which has caused POPFile to return the error $error.
 <p>
 Click <a href=\"/\">here</a> to continue.
 </body>
-</html>$eol";
+</html>$eol";       # PROFILE BLOCK STOP
 
     $self->log_( 1, $text );
 
-    print $client "HTTP/1.0 $error Error$eol";
+    my $error_code = 500;
+    $error_code = $error if ( $error eq '404' );
+
+    print $client "HTTP/1.0 $error_code Error$eol";
     print $client "Content-Type: text/html$eol";
     print $client "Content-Length: ";
     print $client length( $text );
@@ -358,8 +362,8 @@ Click <a href=\"/\">here</a> to continue.
 # $file       The file to read (always assumed to be a GIF right now)
 # $type       Set this to the HTTP return type (e.g. text/html or image/gif)
 #
-# Returns the contents of a file formatted into an HTTP 200 message or an HTTP 404 if the
-# file does not exist
+# Returns the contents of a file formatted into an HTTP 200 message or
+# an HTTP 404 if the file does not exist
 #
 # ----------------------------------------------------------------------------
 sub http_file_
