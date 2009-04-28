@@ -1513,8 +1513,11 @@ Section /o "XMLRPC" SecXMLRPC
   SetOutPath "$G_MPLIBDIR\XML"
   File /r "${C_PERL_DIR}\lib\XML\*"
 
+  SetOutPath "$G_MPLIBDIR\XML\Parser"
+  File "${C_PERL_DIR}\site\lib\XML\Parser\Lite.pm"
+
   SetOutPath "$G_MPLIBDIR\XMLRPC"
-  File /r "${C_PERL_DIR}\lib\XMLRPC\*"
+  File /r "${C_PERL_DIR}\site\lib\XMLRPC\*"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
