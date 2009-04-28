@@ -400,7 +400,7 @@ sub update_check_result
                     Win32::GUI::Constants::MB_ICONASTERISK
             );
 
-            if ( $result eq 1 ) {
+            if ( $result eq Win32::GUI::Constants::IDOK ) {
                 Win32::GUI::ShellExecute(
                     0, '', $self->{popfile_download_page__}, '', '', 1 );
             }
