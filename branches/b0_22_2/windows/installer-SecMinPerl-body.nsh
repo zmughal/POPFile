@@ -180,7 +180,14 @@
   File "${C_PERL_DIR}\site\lib\Win32\GUI\*.pm"
         SetOutPath "$G_MPLIBDIR\auto\Win32\GUI"
         File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\GUI*"
-  
+
+  SetOutPath "$G_MPLIBDIR\Win32\GUI\Constants"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\Constants\Tags.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Win32\GUI\Constants"
+        File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Constants.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Tags\autosplit.ix"
+        File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Tags\tag_compatibility_win32_gui.al"
+
   ; Install Perl modules and library files for BerkeleyDB support. Although POPFile now uses
   ; SQLite (or another SQL database) to store the corpus and other essential data, it retains
   ; the ability to automatically convert old BerkeleyDB format corpus files to the SQL database
