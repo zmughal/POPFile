@@ -68,7 +68,7 @@ macosx: ; @$(MAKE) -C ../macosx
 
 # Builds the 6 popfile*.exe Windows applications
 
-winexe: popfile.exe popfileb.exe popfilef.exe popfileib.exe popfileif.exe trayicon.ico ../windows/POPFileIcon/popfile.ico popfile-service.exe
+winexe: popfile.exe popfileb.exe popfilef.exe popfileib.exe popfileif.exe ../windows/POPFileIcon/popfile.ico popfile-service.exe
 
 COMMON_EXE_OPTIONS = --exe $@ --force --clean --dependent --xclude --icon ../windows/POPFileIcon/popfile.ico --script $< --info CompanyName="The POPFile Project" --info LegalCopyright="Copyright (c) $(POPFILE_BUILD_YEAR) John Graham-Cumming" --info LegalTrademarks="POPFile is a registered trademark of John Graham-Cumming" --info ProductName=POPFile --info ProductVersion=$(POPFILE_VERSION).0 --info FileDescription=POPFile --info FileVersion=$(POPFILE_VERSION).0
 ifeq ($(EXE_DEBUG),1)
