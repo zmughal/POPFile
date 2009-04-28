@@ -185,6 +185,7 @@
   File "${C_PERL_DIR}\site\lib\Win32\GUI\Constants\Tags.pm"
         SetOutPath "$G_MPLIBDIR\auto\Win32\GUI\Constants"
         File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Constants.dll"
+        SetOutPath "$G_MPLIBDIR\auto\Win32\GUI\Constants\Tags"
         File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Tags\autosplit.ix"
         File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Tags\tag_compatibility_win32_gui.al"
 
