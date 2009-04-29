@@ -33,6 +33,8 @@ package PerlSvc;
 use strict;
 use locale;
 
+use Win32::GUI::Constants qw(MB_OK MB_OKCANCEL MB_ICONASTERISK IDOK);
+
 use POPFile::Loader;
 
 # This hash is used by PerlSvc for various parameters that we need
