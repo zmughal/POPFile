@@ -32,6 +32,8 @@
 use strict;
 use locale;
 
+use Win32::GUI::Constants qw(MB_OK MB_OKCANCEL MB_ICONASTERISK IDOK);
+
 use POPFile::Configuration;
 use POPFile::MQ;
 use Platform::MSWin32;
