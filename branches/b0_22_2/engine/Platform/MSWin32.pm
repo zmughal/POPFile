@@ -31,6 +31,8 @@ use strict;
 use warnings;
 use locale;
 
+use Win32::GUI qw(MB_OKCANCEL MB_OK MB_ICONASTERISK IDOK);
+
 #----------------------------------------------------------------------------
 # new
 #
@@ -401,8 +403,7 @@ sub update_check_result
             );
 
             if ( $result eq Win32::GUI::Constants::IDOK ) {
-                Win32::GUI::ShellExecute(
-                    0, '', $self->{popfile_download_page__}, '', '', 1 );
+                $self->open_url( $self->{popfile_download_page__} );
             }
         } else {
 
@@ -435,6 +436,23 @@ sub update_check_result
             $self->{trayicon}->ShowBalloon(1);
         }
     }
+}
+
+# ----------------------------------------------------------------------------
+#
+# open_url
+#
+# Open specified URL with the default browser
+#
+#    $url             URL to open
+#
+# ----------------------------------------------------------------------------
+
+sub open_url
+{
+    my ( $self, $url ) = @_;
+
+    Win32::GUI::ShellExecute( 0, '', $url, '', '', 1 );
 }
 
 # ----------------------------------------------------------------------------

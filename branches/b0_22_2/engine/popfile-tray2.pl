@@ -34,8 +34,6 @@ use locale;
 use lib defined( $ENV{POPFILE_ROOT} ) ? $ENV{POPFILE_ROOT} : '.';
 use POPFile::Loader;
 
-use Win32::GUI qw(MB_OK MB_OKCANCEL MB_ICONASTERISK IDOK);
-
 # POPFile is actually loaded by the POPFile::Loader object which does all
 # the work
 
@@ -171,7 +169,7 @@ sub Poll_Timer {
 sub Menu_Open_UI_Click {
     # Open POPFile UI url using Win32::GUI::ShellExecute
 
-    Win32::GUI::ShellExecute( 0, '', $ui_url, '', '', 1 );
+    $w->open_url( $ui_url );
     return 1;
 }
 
@@ -201,8 +199,7 @@ sub Menu_Quit_Click {
 sub Menu_Open_PFHP_Click {
     # Open POPFile Official webpage url using Win32::GUI::ShellExecute
 
-    Win32::GUI::ShellExecute(
-        0, '', $w->{popfile_official_site__}, '', '', 1 );
+    $w->open_url( $w->{popfile_official_site__} );
     return 1;
 }
 
@@ -235,8 +232,7 @@ sub Menu_Update_Check_Click {
 sub Menu_Download_Page_Click {
     # Open POPFile Download page url using Win32::GUI::ShellExecute
 
-    Win32::GUI::ShellExecute(
-        0, '', $w->{popfile_download_page__}, '', '', 1 );
+    $w->open_url( $w->{popfile_download_page__} );
     return 1;
 }
 
