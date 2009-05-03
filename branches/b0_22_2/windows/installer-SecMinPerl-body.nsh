@@ -134,6 +134,9 @@
   File "${C_PERL_DIR}\lib\HTML\Tagset.pm"
   File "${C_PERL_DIR}\lib\HTML\Template.pm"
 
+  SetOutPath "$G_MPLIBDIR\HTTP"
+  File "${C_PERL_DIR}\lib\HTTP\Status.pm"
+
   SetOutPath "$G_MPLIBDIR\IO"
   File "${C_PERL_DIR}\lib\IO\*"
         SetOutPath "$G_MPLIBDIR\auto\IO"
@@ -146,6 +149,9 @@
   File "${C_PERL_DIR}\lib\List\Util.pm"
         SetOutPath "$G_MPLIBDIR\auto\List\Util"
         File "${C_PERL_DIR}\lib\auto\List\Util\*"
+
+  SetOutPath "$G_MPLIBDIR\LWP"
+  File "${C_PERL_DIR}\lib\LWP\Simple.pm"
 
   SetOutPath "$G_MPLIBDIR\MIME"
   File "${C_PERL_DIR}\lib\MIME\*"
