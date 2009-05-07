@@ -876,29 +876,41 @@ close TEMP;
 
 # test quarantining of a message
 
-$b->set_bucket_parameter( $session, 'spam', 'quarantine', 1 );
+foreach my $xpl ( 0..1 ) {
+    $b->set_bucket_parameter( $session, 'spam', 'quarantine', 1 );
+    $b->set_bucket_parameter( $session, 'spam', 'xpl_insertion', $xpl );
 
-open CLIENT, ">temp.tmp";
-open MAIL, "<messages/one.msg";
-my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 1 );
-close CLIENT;
-close MAIL;
+    open CLIENT, ">temp.tmp";
+    open MAIL, "<messages/one.msg";
+    my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 1 );
+    close CLIENT;
+    close MAIL;
 
-test_assert_equal( $class, 'spam' );
-test_assert( -e $h->get_slot_file( $slot ) );
+    test_assert_equal( $class, 'spam' );
+    test_assert( -e $h->get_slot_file( $slot ) );
 
-my @lookfor = ( "--$slot", 'Quarantined Message Detail', ' This is the body', "--$slot", "--$slot"."--", '.' );
-open CLIENT, "<temp.tmp";
-while ( $#lookfor > -1 ) {
-    test_assert( !eof( CLIENT ) );
-    my $search = shift @lookfor;
-    while ( <CLIENT> ) {
-        if ( /^\Q$search\E/ ) {
-            last;
+    my @lookfor = ( "--$slot",
+                    'Quarantined Message Detail',
+                    'Original From: test@test.com',
+                    'Original To:',
+                    'Original Subject: Your attention please',
+                    "To examine the email open the attachment. To change this mail\'s classification go to http://127.0.0.1:8080/jump_to_message?view=$slot",
+                    ' This is the body',
+                    "--$slot",
+                    "--$slot"."--",
+                    '.' );
+    open CLIENT, "<temp.tmp";
+    while ( $#lookfor > -1 ) {
+        test_assert( !eof( CLIENT ) );
+        my $search = shift @lookfor;
+        while ( <CLIENT> ) {
+            if ( /^\Q$search\E/ ) {
+                last;
+            }
         }
     }
+    close CLIENT;
 }
-close CLIENT;
 
 # test no save option
 
@@ -906,7 +918,7 @@ unlink( 'messages/popfile0=0.cls' );
 unlink( 'messages/popfile0=0.msg' );
 open CLIENT, ">temp.tmp";
 open MAIL, "<messages/one.msg";
-( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 1, '', 0, 1 );
+my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 1, '', 0, 1 );
 close CLIENT;
 close MAIL;
 
@@ -1021,10 +1033,10 @@ if ( $have_text_kakasi ) {
         my ( $class, $slot ) = $b->classify_and_modify( $session, \*MAIL, \*CLIENT, 0, '', 0, 1 );
         close CLIENT;
         close MAIL;
-    
+
         test_assert_equal( $class, 'gomi' );
         test_assert( -e $h->get_slot_file( $slot ) );
-    
+
         open TEMP, "<temp.tmp";
         my $quarantined_message = $test_message;
         $quarantined_message =~ s/\.msg$/.qrn/;
@@ -1033,6 +1045,7 @@ if ( $have_text_kakasi ) {
             my $mail = <MAIL>;
             next if ( $mail =~ /X-POPFile-TimeoutPrevention/ );
             $mail =~ s/[\r\n]//g;
+            $mail =~ s/popfile0=0\.msg/$slot/;
             my $temp = <TEMP>;
             $temp =~ s/[\r\n]//g;
             test_assert_equal( $temp, $mail );
