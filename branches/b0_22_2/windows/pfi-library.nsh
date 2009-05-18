@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2008 John Graham-Cumming
+# Copyright (c) 2003-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -59,7 +59,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.17"
+  !define C_PFI_LIBRARY_VERSION     "0.3.18"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -3852,31 +3852,31 @@
 !macro PFI_ServiceActive UN
 
   Function ${UN}PFI_ServiceActive
-  
+
     !define L_PLUGINSTATUS    $R9   ; success (0) or failure (<> 0) of the plugin
     !define L_RESULT          $R8   ; returned by plugin after a successful call
     !define L_SERVICENAME     $R7   ; name of the service
-  
-    Push ${L_RESULT}                ; used to return the result from this function
+
     Push ${L_PLUGINSTATUS}
     Push ${L_SERVICENAME}
+    Push ${L_RESULT}                ; used to return the result from this function
     Exch 3
     Pop ${L_SERVICENAME}
-    
+
     ; The SimpleSC plugin (and popfile-service.exe) cannot be used on Win9x systems
-    
+
     Call ${UN}PFI_IsNT
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} 0 error_exit
-      
+
     ; Check if the service exists
-    
+
     SimpleSC::ExistsService "${L_SERVICENAME}"
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "0" 0 error_exit
 
     ; Check if the service is running
-      
+
     SimpleSC::ServiceIsRunning "${L_SERVICENAME}"
     Pop ${L_PLUGINSTATUS}
     IntCmp ${L_PLUGINSTATUS} 0 check_if_running
@@ -3887,13 +3887,13 @@
         ${MB_NL}${MB_NL}\
         (Code: ${L_PLUGINSTATUS} Error: ${L_RESULT})"
     Goto error_exit
-   
+
   check_if_running:
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "1" success_exit
- 
+
     ; Check if the service is paused
-    
+
     SimpleSC::ServiceIsPaused "${L_SERVICENAME}"
     Pop ${L_PLUGINSTATUS}
     IntCmp ${L_PLUGINSTATUS} 0 check_if_paused
@@ -3904,27 +3904,27 @@
         ${MB_NL}${MB_NL}\
         (Code: ${L_PLUGINSTATUS} Error: ${L_RESULT})"
     Goto error_exit
-      
+
   check_if_paused:
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "0" error_exit
-  
+
   success_exit:
     StrCpy ${L_RESULT} "true"
     Goto exit
- 
+
   error_exit:
     StrCpy ${L_RESULT} "false"
-    
+
   exit:
     Pop ${L_SERVICENAME}
     Pop ${L_PLUGINSTATUS}
     Exch ${L_RESULT}           ; stack = result code string
-    
+
   !undef L_PLUGINSTATUS
   !undef L_RESULT
   !undef L_SERVICENAME
-  
+
   FunctionEnd
 !macroend
 
