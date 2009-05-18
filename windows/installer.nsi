@@ -895,6 +895,7 @@
   ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
   ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
   ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
+  ReserveFile "${NSISDIR}\Plugins\nsUnzip.dll"
   ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
   ReserveFile "${NSISDIR}\Plugins\SimpleSC.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
@@ -902,7 +903,6 @@
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
-  ReserveFile "${NSISDIR}\Plugins\ZipDLL.dll"
   ReserveFile "ioG.ini"
   ReserveFile "ioP.ini"
   ReserveFile "ioUM.ini"
@@ -1394,6 +1394,17 @@ SectionEnd
 #--------------------------------------------------------------------------
 
   !insertmacro FUNCTION_VERIFY_MECAB_INSTALL ""
+
+#--------------------------------------------------------------------------
+# Installer Function: UnpackDictionaries
+#
+# Inputs:
+#         (top of stack)     - full path to the top-level POPFile program folder
+# Outputs:
+#         (top of stack)     - result ("OK" or "fail")
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_UNPACK_DICTIONARIES ""
 
 #--------------------------------------------------------------------------
 # Installer Function: GetMeCabFile

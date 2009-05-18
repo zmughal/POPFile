@@ -684,6 +684,17 @@ SectionEnd
   !insertmacro FUNCTION_VERIFY_MECAB_INSTALL "un."
 
 #--------------------------------------------------------------------------
+# Uninstaller Function: un.UnpackDictionaries
+#
+# Inputs:
+#         (top of stack)     - full path to the top-level POPFile program folder
+# Outputs:
+#         (top of stack)     - result ("OK" or "fail")
+#--------------------------------------------------------------------------
+
+  !insertmacro FUNCTION_UNPACK_DICTIONARIES "un."
+
+#--------------------------------------------------------------------------
 # Uninstaller Function: un.GetMeCabFile
 #
 # Inputs:
