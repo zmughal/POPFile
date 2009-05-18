@@ -19,7 +19,7 @@
 #                   INCLUDE file contains macro-based SECTION and FUNCTION definitions
 #                   to make future maintenance easier.
 #
-# Copyright (c) 2007-2008 John Graham-Cumming
+# Copyright (c) 2007-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -73,6 +73,21 @@
   ; Tested with version 0.4 of the 'md5dll' plugin.
 
   ;------------------------------------------------
+  ; This script requires the 'nsUnzip' NSIS plugin
+  ;------------------------------------------------
+
+  ; This script uses a special NSIS plugin (nsUnzip) to extract the MeCab dictionary files.
+  ;
+  ; The 'NSIS Wiki' page for the 'nsUnzip' plugin (description and download links):
+  ; http://nsis.sourceforge.net/NsUnzip_plugin
+  ;
+  ; To compile this script, copy the 'nsUnzip.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'nsUnzip'  documentation, example & source files can be unzipped
+  ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with version 1.0 of the 'nsUnzip' plugin.
+
+  ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
   ;------------------------------------------------
 
@@ -90,7 +105,6 @@
   ;
   ; Tested with versions 1.0.5, 1.0.6, 1.0.7 and 1.0.8 of the 'untgz' plugin.
 
-
 #--------------------------------------------------------------------------
 # URLs used to download the 'MeCab' parser support files from the POPFile
 # website (the Perl package, Windows binaries and the large dictionary files
@@ -105,11 +119,14 @@
     !define C_MECAB_MD5       "mecab.md5"
   !endif
 
+  !define C_MECAB_PERL_TGZ    "MeCab.tar.gz"
+  !define C_MECAB_DICT_ZIP    "mecab-ipadic.zip"
+
   !define C_NPD_MD5SUMS       "http://getpopfile.org/installer/nihongo/mecab/${C_MD5SUMS_FILE}"
   !define C_NPD_MECAB_MD5     "http://getpopfile.org/installer/nihongo/mecab/${C_MECAB_MD5}"
 
-  !define C_NPD_MECAB_PERL    "http://getpopfile.org/installer/nihongo/mecab/MeCab.tar.gz"
-  !define C_NPD_MECAB_DICT    "http://getpopfile.org/installer/nihongo/mecab/mecab-ipadic.zip"
+  !define C_NPD_MECAB_PERL    "http://getpopfile.org/installer/nihongo/mecab/${C_MECAB_PERL_TGZ}"
+  !define C_NPD_MECAB_DICT    "http://getpopfile.org/installer/nihongo/mecab/${C_MECAB_DICT_ZIP}"
 
 #--------------------------------------------------------------------------
 # User Registers (Global)
@@ -365,6 +382,26 @@
 # shown on the COMPONENTS page.
 #--------------------------------------------------------------------------
 
+!macro CODEBLOCK_CHECK_MD5SUM_FOR_FILE FILENAME
+
+  !insertmacro PFI_UNIQUE_ID
+
+    md5dll::GetMD5File "$PLUGINSDIR\${FILENAME}"
+    Pop ${L_RESULT}
+    DetailPrint ""
+    DetailPrint "Calculated MD5 sum for ${FILENAME}: ${L_RESULT}"
+    Push "${FILENAME}"
+    Call ${UN}ExtractMD5sum
+    Pop $G_PLS_FIELD_1
+    DetailPrint "Downloaded MD5 sum for ${FILENAME}: $G_PLS_FIELD_1"
+    StrCmp $G_PLS_FIELD_1 ${L_RESULT} continue_${PFI_UNIQUE_ID}
+    DetailPrint "MD5 sums differ!"
+    MessageBox MB_OK|MB_ICONEXCLAMATION "'${FILENAME}' file has bad checksum!"
+    Goto installer_error_exit
+
+  continue_${PFI_UNIQUE_ID}:
+!macroend
+
 !macro SECTION_MECAB UN
   Section "-${UN}MeCab" ${UN}SecMeCab
     !if '${UN}' == 'un.'
@@ -410,39 +447,30 @@
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "OK" 0 installer_error_exit
 
-    md5dll::GetMD5File "$PLUGINSDIR\${C_MECAB_MD5}"
-    Pop ${L_RESULT}
-    DetailPrint ""
-    DetailPrint "Calculated MD5 sum for ${C_MECAB_MD5}: ${L_RESULT}"
-    Push "${C_MECAB_MD5}"
-    Call ${UN}ExtractMD5sum
-    Pop $G_PLS_FIELD_1
-    DetailPrint "Downloaded MD5 sum for ${C_MECAB_MD5}: $G_PLS_FIELD_1"
-    StrCmp $G_PLS_FIELD_1 ${L_RESULT} check_if_installed
-    DetailPrint "MD5 sums differ!"
-    MessageBox MB_OK|MB_ICONEXCLAMATION "'${C_MECAB_MD5}' file has bad checksum!"
-    Goto installer_error_exit
+    !insertmacro CODEBLOCK_CHECK_MD5SUM_FOR_FILE "${C_MECAB_MD5}"
 
-  check_if_installed:
     IfFileExists "$G_ROOTDIR\mecab\etc\mecabrc" 0 download_mecab
     Push "$G_ROOTDIR\mecab"
     Call ${UN}VerifyMeCabInstall
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "OK" set_environment
 
-  download_mecab:
-
     ; Download the MeCab archives
 
+  download_mecab:
     Push "${C_NPD_MECAB_PERL}"
     Call ${UN}GetMeCabFile
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "OK" 0 installer_error_exit
 
+    !insertmacro CODEBLOCK_CHECK_MD5SUM_FOR_FILE "${C_MECAB_PERL_TGZ}"
+
     Push "${C_NPD_MECAB_DICT}"
     Call ${UN}GetMeCabFile
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "OK" 0 installer_error_exit
+
+    !insertmacro CODEBLOCK_CHECK_MD5SUM_FOR_FILE "${C_MECAB_DICT_ZIP}"
 
     ; Now install the files required for the MeCab parser
 
@@ -456,7 +484,6 @@
     untgz::extractFile -j -d "$G_PLS_FIELD_1" "$PLUGINSDIR\MeCab.tar.gz" "MeCab.pm"
     StrCmp ${L_RESULT} "success" 0 error_exit
 
-    DetailPrint ""
     StrCpy $G_PLS_FIELD_1 "$G_ROOTDIR\lib\auto\MeCab"
     DetailPrint ""
     CreateDirectory $G_PLS_FIELD_1
@@ -490,11 +517,9 @@
     File "/oname=$G_PLS_FIELD_1\MeCab.bs" "zerobyte.file"
 
   unpack_dictionaries:
-    DetailPrint ""
-    ZipDLL::extractall "$PLUGINSDIR\mecab-ipadic.zip" "$G_ROOTDIR"
+    Push "$G_ROOTDIR"
+    Call ${UN}UnpackDictionaries
     Pop ${L_RESULT}
-    DetailPrint ""
-    DetailPrint "Unzip result = ${L_RESULT}"
 
   set_environment:
 
@@ -615,6 +640,10 @@
 #    Installer Function:   VerifyMeCabInstall
 #    Uninstaller Function: un.VerifyMeCabInstall
 #
+#    Macro:                FUNCTION_UNPACK_DICTIONARIES
+#    Installer Function:   UnpackDictionaries
+#    Uninstaller Function: un.UnpackDictionaries
+#
 #    Macro:                FUNCTION_GETMECABFILE
 #    Installer Function:   GetMeCabFile
 #    Uninstaller Function: un.GetMeCabFile
@@ -672,7 +701,7 @@
 #
 # Usage (after macro has been 'inserted'):
 #
-#         Push "C:\Program Filea\POPFile\mecab"
+#         Push "C:\Program Files\POPFile\mecab"
 #         Call VerifyMeCabInstall
 #         Pop $0
 #
@@ -779,6 +808,164 @@
 
     !undef L_DATA
     !undef L_EXPECTED_MD5
+    !undef L_FILEPATH
+    !undef L_HANDLE
+    !undef L_MECABROOT
+    !undef L_RESULT
+    !undef L_TEMP
+
+  FunctionEnd
+!macroend
+
+
+#--------------------------------------------------------------------------
+# Macro: FUNCTION_UNPACK_DICTIONARIES
+#
+# The installation process and the uninstall process may both need a function
+# which extracts the dictionary files from the large MeCab ZIP file. This macro
+# makes maintenance easier by ensuring that both processes use identical
+# functions, with the only difference being their names.
+#
+# Instead of blindly unzipping 'mecab-ipadic.zip' in one operation, the files
+# are extracted one at a time using the path and filename information in the
+# 'mecab.md5' file downloaded from the POPFile web site. This is safer than
+# simply unzipping the entire file as it make it easy to ensure that no files
+# are written outside of the POPFile installation folder. 'mecab.md5' contains
+# an entry for each file in the Mecab zip file, as shown in this extract:
+#
+#      dafe94718a85a63809ec1ed2f6652694 *doc/en/bindings.html
+#      511cbced26190010bfd8038593d00bf0 *doc/Makefile
+#      143a77233074c7b86f7f5328fe81603a *etc/mecabrc
+#      4162fab178e43c764adee2da1987964d *AUTHORS
+#
+# Lines starting with '#' or ';' in 'mecab.md5' are ignored, as are empty lines.
+#
+# Lines in 'mecab.md5' which contain MD5 sums are assumed to be in this format:
+# (a) positions 1 to 32 contain a 32 character hexadecimal number (line starts in column 1)
+# (b) column 33 is a space character (' ')
+# (c) column 34 is the text/binary flag (' ' = text, '*' = binary)
+# (d) column 35 is the first character of the filename (filename terminates with end-of-line)
+#
+# NOTE: The MeCab zip file contains several folders nested inside a top-level 'mecab' folder
+#       which means that the pathnames in the 'mecab.md5' file are relative to this 'mecab'
+#       folder (e.g. the 'doc/en/bindings.html' entry in 'mecab.md5' refers to the file which
+#       gets installed at '$G_ROOTDIR\mecab\doc\en\bindings.html' where $G_ROOTDIR is the
+#       main POPFile program folder)
+#
+# Inputs:
+#         (top of stack)     - full path to the top-level POPFile program folder
+#
+# Outputs:
+#         (top of stack)     - result ("OK" or "fail")
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "C:\Program Files\POPFile"
+#         Call UnpackDictionaries
+#         Pop $0
+#
+#         ($R0 at this point is "OK" if all of the expected files were
+#         successfully extracted from the downloaded MeCab zip file)
+#
+#--------------------------------------------------------------------------
+
+!macro FUNCTION_UNPACK_DICTIONARIES UN
+  Function ${UN}UnpackDictionaries
+
+    !define L_DATA          $R9   ; relative path and expected MD5 sum for a file
+    !define L_FILEPATH      $R8   ; relative path to the file to be extracted
+    !define L_HANDLE        $R7   ; handle used to access the MD5 sums file (mecab.md5)
+    !define L_MECABROOT     $R6   ; the top-level POPFile program folder (e.g. C:\Program Files\POPFile)
+    !define L_RESULT        $R5   ; result to be returned by this function ("OK" or "fail")
+    !define L_TEMP          $R4
+
+    Exch ${L_MECABROOT}
+
+    Push ${L_DATA}
+    Push ${L_FILEPATH}
+    Push ${L_HANDLE}
+    Push ${L_RESULT}
+    Push ${L_TEMP}
+
+    SetPluginUnload alwaysoff
+
+    StrCpy $G_PLS_FIELD_1 "${L_MECABROOT}"
+    DetailPrint ""
+    SetDetailsPrint both
+    DetailPrint "${C_NPLS_UNPACKING_MECAB}"
+    SetDetailsPrint listonly
+    DetailPrint ""
+
+    StrCpy ${L_RESULT} "OK"
+
+    FileOpen ${L_HANDLE} "$PLUGINSDIR\${C_MECAB_MD5}" r
+
+  read_next_line:
+    FileRead ${L_HANDLE} ${L_DATA}
+    StrCmp ${L_DATA} "" end_of_file
+    StrCpy ${L_TEMP} ${L_DATA} 1
+    StrCmp ${L_TEMP} '#' read_next_line
+    StrCmp ${L_TEMP} ';' read_next_line
+    Push ${L_DATA}
+    Call ${UN}PFI_TrimNewlines
+    Pop ${L_DATA}
+    StrCmp ${L_DATA} "" read_next_line
+    StrCpy ${L_FILEPATH} ${L_DATA} "" 34        ; NSIS strings start at position 0 not 1
+    Push ${L_FILEPATH}
+    Call ${UN}PFI_StrBackSlash                  ; ensure relative path uses backslashes
+    Pop ${L_FILEPATH}
+    StrCpy ${L_FILEPATH} "mecab\${L_FILEPATH}"  ; make path relative to ${L_MECABROOT}
+    Push "${L_FILEPATH}"
+    Push ".."
+    Call ${UN}PFI_StrStr
+    Pop ${L_TEMP}
+    StrCmp ${L_TEMP} "" unpack_file
+    StrCpy ${L_TEMP} "- invalid target path"
+    Goto unpack_error
+
+  unpack_file:
+    StrCpy $G_PLS_FIELD_1 "${L_FILEPATH} :"
+    nsUnzip::Extract "/d=${L_MECABROOT}" "$PLUGINSDIR\${C_MECAB_DICT_ZIP}" "${L_FILEPATH}" /END
+    Pop ${L_TEMP}
+    StrCmp ${L_TEMP} "0" 0 unpack_error
+    StrCpy ${L_TEMP} "OK"
+    Goto print_result
+
+  unpack_error:
+    StrCpy ${L_RESULT} "fail"
+    StrCpy ${L_TEMP} "UnZip error ${L_TEMP}"
+
+  print_result:
+    DetailPrint "$G_PLS_FIELD_1 ${L_TEMP}"
+    Goto read_next_line
+
+  end_of_file:
+    FileClose ${L_HANDLE}
+    StrCpy $G_PLS_FIELD_1 "${L_RESULT}"
+    Detailprint ""
+    SetDetailsPrint both
+    DetailPrint "${C_NPLS_MECAB_UNPACK_RESULT}"
+    SetDetailsPrint listonly
+
+    SetPluginUnload manual
+
+    ; Now unload the nsUnzip plugin to allow the $PLUGINSDIR to be removed automatically
+    ; (the plugin will return an error code because the 'dummy.zip' file does not exist)
+
+    nsUnzip::Extract "/t" "$PLUGINSDIR\dummy.zip" /END
+    Pop ${L_TEMP}
+
+    StrCpy ${L_MECABROOT} ${L_RESULT}
+
+    Pop ${L_TEMP}
+    Pop ${L_RESULT}
+    Pop ${L_HANDLE}
+    Pop ${L_FILEPATH}
+    Pop ${L_DATA}
+
+    Exch ${L_MECABROOT}
+
+    !undef L_DATA
     !undef L_FILEPATH
     !undef L_HANDLE
     !undef L_MECABROOT
