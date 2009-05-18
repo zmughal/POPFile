@@ -7,7 +7,7 @@
 # is only installed when the "Nihongo" (Japanese) language is selected, this
 # file defines some constants instead of using LanguageString commands.
 #
-# Copyright (c) 2007-2008 John Graham-Cumming
+# Copyright (c) 2007-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -87,6 +87,14 @@
 ; Message shown above the progress bar with the result of the 'mecab.md5' MD5 checks
 
 !define C_NPLS_MECAB_MD5_RESULT    "MeCab ÇÃåüèÿåãâ : $G_PLS_FIELD_1"
+
+; Message shown above the progress bar while extracting the MeCab dictionary files
+
+!define C_NPLS_UNPACKING_MECAB     "Unpacking MeCab dictionary files into the '$G_PLS_FIELD_1' folder..."
+
+; Message shown above the progress bar with the result of the dictionary file extraction
+
+!define C_NPLS_MECAB_UNPACK_RESULT "MeCab unpacking result: $G_PLS_FIELD_1"
 
 ; Message shown if internet connection does not appear to be working
 
