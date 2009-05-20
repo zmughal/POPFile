@@ -90,11 +90,11 @@
 
 ; Message shown above the progress bar while extracting the MeCab dictionary files
 
-!define C_NPLS_UNPACKING_MECAB     "Unpacking MeCab dictionary files into the '$G_PLS_FIELD_1' folder..."
+!define C_NPLS_UNPACKING_MECAB     "MeCab の辞書ファイルを '$G_PLS_FIELD_1' フォルダに展開しています..."
 
 ; Message shown above the progress bar with the result of the dictionary file extraction
 
-!define C_NPLS_MECAB_UNPACK_RESULT "MeCab unpacking result: $G_PLS_FIELD_1"
+!define C_NPLS_MECAB_UNPACK_RESULT "MeCab の展開結果: $G_PLS_FIELD_1"
 
 ; Message shown if internet connection does not appear to be working
 
