@@ -33,6 +33,12 @@ use locale;
 
 use Win32::GUI qw(MB_OKCANCEL MB_OK MB_ICONASTERISK IDOK);
 
+# Make Win32::GUI thread-safe
+
+sub Win32::GUI::CLONE_SKIP {1};
+sub Win32::GUI::Timer::CLONE_SKIP {1};
+sub Win32::GUI::NotifyIcon::CLONE_SKIP {1};
+
 #----------------------------------------------------------------------------
 # new
 #
@@ -146,54 +152,6 @@ sub start
     }
 
     return $self->SUPER::start();
-}
-
-# ----------------------------------------------------------------------------
-#
-# prefork
-#
-# This is called when this module is about to fork POPFile
-#
-# There is no return value from this method
-#
-# ----------------------------------------------------------------------------
-sub prefork
-{
-    my ( $self ) = @_;
-
-    # If the trayicon is on, temporarily disable trayicon to avoid crash
-
-    if ( $self->{use_tray_icon__} ) {
-        $self->dispose_trayicon();
-    }
-}
-
-# ----------------------------------------------------------------------------
-#
-# postfork
-#
-# This is called when this module has just forked POPFile.  It is
-# called in the parent process.
-#
-# $pid The process ID of the new child process $reader The reading end
-#      of a pipe that can be used to read messages from the child
-#
-# There is no return value from this method
-#
-# ----------------------------------------------------------------------------
-sub postfork
-{
-    my ( $self, $pid, $reader ) = @_;
-
-    # If the trayicon is on, recreate the trayicon
-
-    # When the forked (pseudo-)child process exits, the Win32::GUI objects
-    # (Windows, Menus, etc.) seem to be purged. So we have to recreate the
-    # trayicon.
-
-    if ( $self->{use_tray_icon__} ) {
-        $self->prepare_trayicon();
-    }
 }
 
 #----------------------------------------------------------------------------
