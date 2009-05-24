@@ -1496,9 +1496,13 @@ Section /o "XMLRPC" SecXMLRPC
   ; Perl modules required to support the POPFile XMLRPC component
 
   SetOutPath "$G_MPLIBDIR"
+  File "${C_PERL_DIR}\lib\bytes.pm"
+  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
   File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\re.pm"
   File "${C_PERL_DIR}\lib\URI.pm"
+  File "${C_PERL_DIR}\lib\utf8.pm"
+  File "${C_PERL_DIR}\lib\utf8_heavy.pl"
 
   SetOutPath "$G_MPLIBDIR\HTTP"
   File /r "${C_PERL_DIR}\lib\HTTP\*"
@@ -1518,11 +1522,26 @@ Section /o "XMLRPC" SecXMLRPC
   SetOutPath "$G_MPLIBDIR\Time"
   File /r "${C_PERL_DIR}\lib\Time\*"
 
+  SetOutPath "$G_MPLIBDIR\unicore"
+  File "${C_PERL_DIR}\lib\unicore\Canonical.pl"
+  File "${C_PERL_DIR}\lib\unicore\Exact.pl"
+  File "${C_PERL_DIR}\lib\unicore\PVA.pl"
+
+  SetOutPath "$G_MPLIBDIR\unicore\lib\gc_sc"
+  File "${C_PERL_DIR}\lib\unicore\lib\gc_sc\Digit.pl"
+  File "${C_PERL_DIR}\lib\unicore\lib\gc_sc\SpacePer.pl"
+  File "${C_PERL_DIR}\lib\unicore\lib\gc_sc\Word.pl"
+
+  SetOutPath "$G_MPLIBDIR\unicore\To"
+  File "${C_PERL_DIR}\lib\unicore\To\Fold.pl"
+
   SetOutPath "$G_MPLIBDIR\URI"
   File /r "${C_PERL_DIR}\lib\URI\*"
 
   SetOutPath "$G_MPLIBDIR\XML"
   File /r "${C_PERL_DIR}\lib\XML\*"
+  SetOutPath "$G_MPLIBDIR\auto\XML\Parser\Expat"
+  File "${C_PERL_DIR}\lib\auto\XML\Parser\Expat\Expat.dll"
 
   SetOutPath "$G_MPLIBDIR\XML\Parser"
   File "${C_PERL_DIR}\site\lib\XML\Parser\Lite.pm"
