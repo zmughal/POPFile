@@ -1134,6 +1134,7 @@ Section "-un.Minimal Perl" UnSecMinPerl
   RMDir /r "$G_MPLIBDIR\LWP"
   RMDir /r "$G_MPLIBDIR\Net"
   RMDir /r "$G_MPLIBDIR\SOAP"
+  RMDir /r "$G_MPLIBDIR\unicore"
   RMDir /r "$G_MPLIBDIR\URI"
   RMDir /r "$G_MPLIBDIR\XML"
   RMDir /r "$G_MPLIBDIR\XMLRPC"
