@@ -23,6 +23,10 @@
 #
 # ----------------------------------------------------------------------------
 
+use strict;
+use warnings;
+no warnings qw(redefine);
+
 use POPFile::Configuration;
 use POPFile::MQ;
 use POPFile::Logger;
@@ -84,13 +88,14 @@ sub server
         $command =~ s/($cr|$lf)//g;
 
         if ( $command =~ /^USER (.*)/i ) {
-            if ( $1 =~ /(gooduser|goslow|hang|slowlf)/ ) {
-                 print $client "+OK Welcome $1$eol";
-                 $goslow = ( $1 =~ /goslow/ );
-                 $hang   = ( $1 =~ /hang/   );
-                 $slowlf = ( $1 =~ /slowlf/ );
+            my $user = $1;
+            if ( $user =~ /(gooduser|goslow|hang|slowlf)/ ) {
+                print $client "+OK Welcome $user$eol";
+                $goslow = ( $user =~ /goslow/ );
+                $hang   = ( $user =~ /hang/   );
+                $slowlf = ( $user =~ /slowlf/ );
             } else {
-                 print $client "-ERR Unknown user $1$eol";
+                print $client "-ERR Unknown user $user$eol";
             }
             next;
         }
@@ -249,7 +254,7 @@ sub server
         if ( $command =~ /TOP (.*) (.*)/i ) {
             my $index = $1 - 1;
             my $countdown = $2;
-            if ( $messages[$index] ne '' ) {
+            if ( defined( $messages[$index] ) && ( $messages[$index] ne '' ) ) {
                  print $client "+OK " . ( -s $messages[$index] ) . "$eol";
 
                  open FILE, "<$messages[$index]";
@@ -263,7 +268,7 @@ sub server
                          last;
                      }
                  }
-                 while ( ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
+                 while ( defined ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
                      $line =~ s/\r|\n//g;
                      print $client "$line$eol";
                      $countdown -= 1;
@@ -578,20 +583,12 @@ if ( $pid == 0 ) {
 
         select(undef,undef,undef,5);
 
-        my $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => '127.0.0.1',
-                        PeerPort => $port );
+        my $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         # Make sure that POPFile sends an appropriate banner
 
@@ -632,12 +629,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Now logged in$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         # Test that the catch all code works for connected servers
 
@@ -733,12 +725,8 @@ if ( $pid == 0 ) {
         # the files to disk
 
         my $slot_file = $h->get_slot_file( 1 );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -746,7 +734,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined ( my $fl = <FILE> ) && defined ( my $ml = <HIST> ) ) {
             $fl =~ s/[\r\n]//g;
             $ml =~ s/[\r\n]//g;
             test_assert_equal( $fl, $ml );
@@ -793,13 +781,9 @@ if ( $pid == 0 ) {
 
         select( undef, undef, undef, 0.1 );
 
-        my $slot_file = $h->get_slot_file( 2 );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( 2 );
+
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -807,7 +791,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined ( my $fl = <FILE> ) && defined ( my $ml = <HIST> ) ) {
             $fl =~ s/[\r\n]//g;
             $ml =~ s/[\r\n]//g;
             test_assert_equal( $fl, $ml );
@@ -819,7 +803,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 2 );
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 2 );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
         test_assert_equal( $magnet, 0 );
@@ -866,7 +850,7 @@ if ( $pid == 0 ) {
         test_assert( open FILE, "<$messages[4]" );
         binmode FILE;
         my $headers   = 1;
-        while ( ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
+        while ( defined ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
             $result = <$client>;
             test_assert( $result =~ /$cr/ );
             $result =~ s/[$cr$lf]//g;
@@ -923,13 +907,9 @@ if ( $pid == 0 ) {
 
         select( undef, undef, undef, 0.1 );
 
-        my $slot_file = $h->get_slot_file( 3 );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( 3 );
+
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -937,7 +917,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined ( my $fl = <FILE> ) && defined ( my $ml = <HIST> ) ) {
             $fl =~ s/[\r\n]//g;
             $ml =~ s/[\r\n]//g;
             test_assert_equal( $fl, $ml );
@@ -947,7 +927,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 3 );
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 3 );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
         test_assert_equal( $magnet, 0 );
@@ -958,12 +938,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
@@ -973,10 +948,7 @@ if ( $pid == 0 ) {
         my $line = <$ureader>;
         test_assert_equal( $line, "OK\n" );
 
-        my $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -989,12 +961,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Welcome gooduser$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         $countdown = 2;
         print $client "TOP 8 $countdown$eol";
@@ -1006,7 +973,7 @@ if ( $pid == 0 ) {
         test_assert( open FILE, "<$cam" );
         binmode FILE;
         $headers   = 1;
-        while ( ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
+        while ( defined ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
             $result = <$client>;
             $result =~ s/view=4/view=popfile0=0.msg/;
             test_assert( $result =~ /$cr/ );
@@ -1025,13 +992,9 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
-        my $slot_file = $h->get_slot_file( 4 );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( 4 );
+
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1039,7 +1002,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined ( my $fl = <FILE> ) && defined ( my $ml = <HIST> ) ) {
             $fl =~ s/[\r\n]//g;
             $ml =~ s/[\r\n]//g;
             test_assert_equal( $fl, $ml );
@@ -1049,7 +1012,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 4 );
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 4 );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
         test_assert_equal( $magnet, 0 );
@@ -1104,13 +1067,9 @@ if ( $pid == 0 ) {
 
         select( undef, undef, undef, 0.1 );
 
-        my $slot_file = $h->get_slot_file( 5 );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( 5 );
+
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1118,7 +1077,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined ( my $fl = <FILE> ) && defined ( my $ml = <HIST> ) ) {
             $fl =~ s/[\r\n]//g;
             $ml =~ s/[\r\n]//g;
             test_assert_equal( $fl, $ml );
@@ -1128,7 +1087,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 5 );
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 5 );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
         test_assert_equal( $magnet, 0 );
@@ -1189,7 +1148,7 @@ if ( $pid == 0 ) {
         test_assert( open FILE, "<$cam" );
         binmode FILE;
         $headers   = 1;
-        while ( ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
+        while ( defined ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
             $result = <$client>;
             $result =~ s/view=6/view=popfile0=0.msg/;
             test_assert( $result =~ /$cr/ );
@@ -1208,13 +1167,9 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
-        my $slot_file = $h->get_slot_file( 6 );
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        $slot_file = $h->get_slot_file( 6 );
+
+        wait_proxy();
 
         test_assert( -e $slot_file );
 
@@ -1222,7 +1177,7 @@ if ( $pid == 0 ) {
         binmode FILE;
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
-        while ( ( my $fl = <FILE> ) && ( my $ml = <HIST> ) ) {
+        while ( defined ( my $fl = <FILE> ) && defined ( my $ml = <HIST> ) ) {
             $fl =~ s/[\r\n]//g;
             $ml =~ s/[\r\n]//g;
             test_assert_equal( $fl, $ml );
@@ -1231,7 +1186,7 @@ if ( $pid == 0 ) {
         close FILE;
         close HIST;
 
-        my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 6 );
+        ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) = $h->get_slot_fields( 6 );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
         test_assert_equal( $magnet, 0 );
@@ -1266,21 +1221,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Check insertion of the X-POPFile-Timeout headers
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1293,12 +1240,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Welcome goslow$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         print $client "RETR 1$eol";
         $result = <$client>;
@@ -1337,21 +1279,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Test slow LF's on a CRLF
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1364,12 +1298,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Welcome slowlf$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         print $client "RETR 1$eol";
         $result = <$client>;
@@ -1392,21 +1321,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Check server hang
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1419,12 +1340,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Welcome hang$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         print $client "RETR 1$eol";
         $result = <$client>;
@@ -1456,21 +1372,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "-ERR no response from mail server$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Test QUIT straight after connect
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1483,21 +1391,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK goodbye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Test odd command straight after connect gives error
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1514,21 +1414,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK goodbye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Test the APOP command
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1556,19 +1448,11 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK goodbye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1596,12 +1480,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK goodbye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
@@ -1614,10 +1493,7 @@ if ( $pid == 0 ) {
         $line = <$userverreader>;
         test_assert_equal( $line, "OK\n" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1636,12 +1512,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
@@ -1651,10 +1522,7 @@ if ( $pid == 0 ) {
         $line = <$userverreader>;
         test_assert_equal( $line, "OK\n" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1667,12 +1535,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK hello gooduser$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         print $client "PASS secret$eol";
         $result = <$client>;
@@ -1682,21 +1545,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Bad user
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1719,21 +1574,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Good user, bad pass
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1756,21 +1603,13 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
        # Test SPA/AUTH commands with no secure server specified
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1795,12 +1634,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK goodbye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
@@ -1817,10 +1651,7 @@ if ( $pid == 0 ) {
         $line = <$ureader>;
         test_assert_equal( $line, "OK\n" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1848,12 +1679,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK goodbye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
@@ -1863,10 +1689,7 @@ if ( $pid == 0 ) {
         $line = <$ureader>;
         test_assert_equal( $line, "OK\n" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1891,19 +1714,11 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1929,22 +1744,14 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         # Test successful transparent proxying, we have a test
         # for the failure case above
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1961,12 +1768,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
@@ -1974,13 +1776,10 @@ if ( $pid == 0 ) {
         # anything
 
         print $dwriter "__SEPCHANGE Q\n";
-        my $line = <$ureader>;
+        $line = <$ureader>;
         test_assert_equal( $line, "OK\n" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -1997,12 +1796,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Bye$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
@@ -2010,10 +1804,7 @@ if ( $pid == 0 ) {
         $line = <$ureader>;
         test_assert_equal( $line, "OK\n" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -2026,23 +1817,15 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Welcome gooduser$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
         print $dwriter "__SEPCHANGE \$\n";
-        my $line = <$ureader>;
+        $line = <$ureader>;
         test_assert_equal( $line, "OK\n" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -2055,25 +1838,17 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Welcome gooduser$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         close $client;
 
 
         # Send the remote server a special message that makes it die
         print $dwriter "__SEPCHANGE :\n";
-        my $line = <$ureader>;
+        $line = <$ureader>;
         test_assert_equal( $line, "OK\n" );
 
-        $client = IO::Socket::INET->new(
-                        Proto    => "tcp",
-                        PeerAddr => 'localhost',
-                        PeerPort => $port );
+        $client = connect_proxy();
 
         test_assert( defined( $client ) );
         test_assert( $client->connected );
@@ -2086,12 +1861,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "+OK Welcome gooduser$eol" );
 
-        my $cd = 10;
-        while ( $cd-- ) {
-            select( undef, undef, undef, 0.1 );
-            $mq->service();
-            $h->service();
-        }
+        wait_proxy();
 
         print $client "__QUIT__$eol";
         $result = <$client>;
@@ -2107,13 +1877,32 @@ if ( $pid == 0 ) {
         close $dwriter;
         close $ureader;
 
-        while ( waitpid( -1, &WNOHANG ) > 0 ) {
-            sleep 1;
-        }
+        while ( waitpid( -1, 0 ) != -1 ) { }
 
         $mq->reaper();
         $p->stop();
+        $h->stop();
         $b->stop();
+    }
+}
+
+sub connect_proxy
+{
+    my $client = IO::Socket::INET->new(
+                    Proto    => "tcp",
+                    PeerAddr => 'localhost',
+                    PeerPort => $port );
+
+    return $client;
+}
+
+sub wait_proxy
+{
+    my $cd = 10;
+    while ( $cd-- ) {
+        select( undef, undef, undef, 0.1 );
+        $mq->service();
+        $h->service();
     }
 }
 
