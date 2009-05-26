@@ -139,6 +139,11 @@ sub stop
     # added to the queue and before service() is called
 
     $self->commit_history__();
+
+    if ( defined( $self->{db__} ) ) {
+        $self->{db__}->disconnect;
+        $self->{db__} = undef;
+    }
 }
 
 #----------------------------------------------------------------------------
