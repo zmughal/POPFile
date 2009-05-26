@@ -23,6 +23,7 @@
 
 use strict;
 use warnings;
+no warnings qw(redefine);
 
 use POPFile::Configuration;
 use POPFile::MQ;
