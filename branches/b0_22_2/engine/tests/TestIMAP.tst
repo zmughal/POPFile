@@ -80,7 +80,7 @@ else {
     $c->stop();
     rmtree( 'imap.spool' );
 }
-
+while ( waitpid( -1, 0 ) != -1 ) { }
 
 #################################################################################
 # Tests for Services::IMAP
