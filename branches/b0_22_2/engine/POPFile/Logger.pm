@@ -226,8 +226,8 @@ sub remove_debug_files
 {
     my ( $self ) = @_;
 
-    my @debug_files = glob( $self->get_user_path_(
-                          $self->config_( 'logdir' ) . 'popfile*.log', 0 ) );
+    my @debug_files = glob( $self->get_user_path_(                            # PROFILE BLOCK START
+                          $self->config_( 'logdir' ) . 'popfile*.log', 0 ) ); # PROFILE BLOCK STOP
 
     foreach my $debug_file (@debug_files) {
         # Extract the epoch information from the popfile log file name
@@ -290,8 +290,8 @@ sub debug
         $delim = "\t" if ( $self->config_( 'format' ) eq 'tabbed' );
         $delim = ',' if ( $self->config_( 'format' ) eq 'csv' );
 
-        my $msg =
-            "$year/$mon/$mday$delim$hour:$min:$sec$delim$$:$delim$message\n";
+        my $msg =                                                             # PROFILE BLOCK START
+            "$year/$mon/$mday$delim$hour:$min:$sec$delim$$:$delim$message\n"; # PROFILE BLOCK STOP
 
         if ( $self->global_config_( 'debug' ) & 1 )  {
             if ( open DEBUG, ">>$self->{debug_filename__}" ) {

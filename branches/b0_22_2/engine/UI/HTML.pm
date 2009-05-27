@@ -197,8 +197,8 @@ sub initialize
     # is important, as is the presence of a + (show this column) or -
     # (hide this column) in the value.  By default we show everything
 
-    $self->config_( 'columns',
-        '+inserted,+from,+to,-cc,+subject,-date,-size,+bucket' );
+    $self->config_( 'columns',                                    # PROFILE BLOCK START
+        '+inserted,+from,+to,-cc,+subject,-date,-size,+bucket' ); # PROFILE BLOCK STOP
 
     # An overriden date format set by the user, if empty then the
     # Locale_Date from the language file is used (see pretty_date__)
@@ -274,7 +274,7 @@ sub start
 
     # Ensure that the messages subdirectory exists
 
-    if ( !$self->{history__}->make_directory__(                          # POPFILE BLOCK START
+    if ( !$self->{history__}->make_directory__(                          # PROFILE BLOCK START
         $self->get_user_path_( $self->global_config_( 'msgdir' ) ) ) ) { # PROFILE BLOCK STOP
         print STDERR "Failed to create the messages subdirectory\n";
         return 0;
@@ -363,8 +363,8 @@ sub url_handler__
 
     # Check to see if we obtained the session key yet
     if ( $self->{api_session__} eq '' ) {
-        $self->{api_session__} = $self->{c__}->get_session_key(
-            'admin', '' );
+        $self->{api_session__} = $self->{c__}->get_session_key(  # PROFILE BLOCK START
+            'admin', '' );                                       # PROFILE BLOCK STOP
     }
 
     # See if there are any form parameters and if there are parse them
@@ -763,9 +763,9 @@ sub configuration_page
         $templ = $self->load_template__( 'configuration-page.thtml' );
     }
 
-   if ( ( defined($self->{form_}{debug}) ) &&
+   if ( ( defined($self->{form_}{debug}) ) &&  # PROFILE BLOCK START
         ( ( $self->{form_}{debug} >= 1 ) &&
-        ( $self->{form_}{debug} <= 4 ) ) ) {
+        ( $self->{form_}{debug} <= 4 ) ) ) {   # PROFILE BLOCK STOP
        $self->global_config_( 'debug', $self->{form_}{debug}-1 );
    }
 
@@ -792,20 +792,20 @@ sub configuration_page
     my %dynamic_templates;
 
     for my $name (keys %{$self->{dynamic_ui__}{configuration}}) {
-        $dynamic_templates{$name} = $self->load_template__(
-            $self->{dynamic_ui__}{configuration}{$name}{template} );
-        $self->{dynamic_ui__}{configuration}{$name}{object}->validate_item(
+        $dynamic_templates{$name} = $self->load_template__(          # PROFILE BLOCK START
+            $self->{dynamic_ui__}{configuration}{$name}{template} ); # PROFILE BLOCK STOP
+        $self->{dynamic_ui__}{configuration}{$name}{object}->validate_item(  # PROFILE BLOCK START
             $name,
             $dynamic_templates{$name},
             \%{$self->{language__}},
-            \%{$self->{form_}} );
+            \%{$self->{form_}} );                                            # PROFILE BLOCK STOP
     }
 
     if ( defined($self->{form_}{ui_port}) ) {
-        if ( ( $self->{form_}{ui_port} >= 1 ) &&
+        if ( ( $self->{form_}{ui_port} >= 1 ) &&  # PROFILE BLOCK START
              ( $self->{form_}{ui_port} < 65536 ) &&
              ( $self->module_config_( 'pop3', 'port' ) ne $self->{form_}{ui_port} )
-            ) {
+            ) {                                   # PROFILE BLOCK STOP
             $self->config_( 'port', $self->{form_}{ui_port} );
         } else {
             if ( ( $self->module_config_( 'pop3', 'port' ) ne $self->{form_}{ui_port} ) ) {
@@ -818,15 +818,15 @@ sub configuration_page
     }
 
     if ( defined($self->{form_}{ui_port} ) ) {
-        $templ->param( 'Configuration_UI_Port_Updated' =>
+        $templ->param( 'Configuration_UI_Port_Updated' =>  # PROFILE BLOCK START
             sprintf( $self->{language__}{Configuration_UIUpdate},
-                $self->config_( 'port' ) ) );
+                $self->config_( 'port' ) ) );              # PROFILE BLOCK STOP
     }
     $templ->param( 'Configuration_UI_Port' => $self->config_( 'port' ) );
 
     if ( defined($self->{form_}{page_size}) ) {
-        if ( ( $self->{form_}{page_size} >= 1 ) &&
-             ( $self->{form_}{page_size} <= 1000 ) ) {
+        if ( ( $self->{form_}{page_size} >= 1 ) &&     # PROFILE BLOCK START
+             ( $self->{form_}{page_size} <= 1000 ) ) { # PROFILE BLOCK STOP
             $self->config_( 'page_size', $self->{form_}{page_size} );
         } else {
             $templ->param( 'Configuration_If_Page_Size_Error' => 1 );
@@ -835,18 +835,18 @@ sub configuration_page
     }
 
     if ( defined($self->{form_}{page_size} ) ) {
-        $templ->param( 'Configuration_Page_Size_Updated' =>
+        $templ->param( 'Configuration_Page_Size_Updated' =>  # PROFILE BLOCK START
             sprintf( $self->{language__}{Configuration_HistoryUpdate},
-                $self->config_( 'page_size' ) ) )
+                $self->config_( 'page_size' ) ) )            # PROFILE BLOCK STOP
     }
     $templ->param( 'Configuration_Page_Size' =>
         $self->config_( 'page_size' ) );
 
     if ( defined($self->{form_}{history_days}) ) {
-        if ( ( $self->{form_}{history_days} >= 1 ) &&
-             ( $self->{form_}{history_days} <= 366 ) ) {
-            $self->module_config_( 'history', 'history_days',
-                $self->{form_}{history_days} );
+        if ( ( $self->{form_}{history_days} >= 1 ) &&    # PROFILE BLOCK START
+             ( $self->{form_}{history_days} <= 366 ) ) { # PROFILE BLOCK STOP
+            $self->module_config_( 'history', 'history_days',  # PROFILE BLOCK START
+                $self->{form_}{history_days} );                # PROFILE BLOCK STOP
         } else {
             $templ->param( 'Configuration_If_History_Days_Error' => 1 );
             delete $self->{form_}{history_days};
@@ -934,8 +934,8 @@ sub configuration_page
         my $selected = ($1 eq '+')?'checked':'';
         $column =~ s/^.//;
         $row{Configuration_Field_Name} = $column;
-        $row{Configuration_Localized_Field_Name} =
-            $self->{language__}{$headers_table{$column}};
+        $row{Configuration_Localized_Field_Name} =        # PROFILE BLOCK START
+            $self->{language__}{$headers_table{$column}}; # PROFILE BLOCK STOP
         $row{Configuration_Field_Value} = $selected;
         push ( @column_data, \%row );
     }
@@ -984,8 +984,8 @@ sub security_page
     my $server_error = '';
     my $port_error   = '';
 
-    if ( ( defined($self->{form_}{password}) ) &&
-         ( $self->{form_}{password} ne $self->config_( 'password' ) ) ) {
+    if ( ( defined($self->{form_}{password}) ) &&                         # PROFILE BLOCK START
+         ( $self->{form_}{password} ne $self->config_( 'password' ) ) ) { # PROFILE BLOCK STOP
         $self->config_( 'password', md5_hex( '__popfile__' . $self->{form_}{password} ) )
     }
     $self->config_( 'local', $self->{form_}{localui}-1 )      if ( defined($self->{form_}{localui}) );
@@ -1090,8 +1090,8 @@ sub pretty_date__
     }
 
     if ( $format =~ /[\t ]*(.+)[\t ]*\|[\t ]*(.+)/ ) {
-        if ( ( $date < time ) &&
-             ( $date > ( time - ( 7 * 24 * 60 * 60 ) ) ) ) {
+        if ( ( $date < time ) &&                             # PROFILE BLOCK START
+             ( $date > ( time - ( 7 * 24 * 60 * 60 ) ) ) ) { # PROFILE BLOCK STOP
             if ( $long ) {
                 return time2str( $2, $date );
             } else {
@@ -1755,8 +1755,8 @@ sub corpus_page
         if ( $self->{form_}{cname} =~ /$invalid_bucket_chars/ )  {
             $templ->param( 'Corpus_If_Create_Error' => 1 );
         } else {
-            if ( $self->{c__}->is_bucket( $session, $self->{form_}{cname} ) ||
-                $self->{c__}->is_pseudo_bucket( $session, $self->{form_}{cname} ) ) {
+            if ( $self->{c__}->is_bucket( $session, $self->{form_}{cname} ) ||        # PROFILE BLOCK START
+                $self->{c__}->is_pseudo_bucket( $session, $self->{form_}{cname} ) ) { # PROFILE BLOCK STOP
                 $templ->param( 'Corpus_If_Create_Message' => 1 );
                 $templ->param( 'Corpus_Create_Message' =>        # PROFILE BLOCK START
                     sprintf( $self->{language__}{Bucket_Error2},
@@ -1916,9 +1916,9 @@ sub corpus_page
     $templ->param( 'Corpus_If_Last_Reset' => 1 );
     $templ->param( 'Corpus_Last_Reset' => $self->config_( 'last_reset' ) );
 
-    if ( ( defined($self->{form_}{lookup}) ) ||
+    if ( ( defined($self->{form_}{lookup}) ) ||  # PROFILE BLOCK START
          ( defined($self->{form_}{word}) &&
-           ( $self->{form_}{word} ne '' ) ) ) {
+           ( $self->{form_}{word} ne '' ) ) ) {  # PROFILE BLOCK STOP
         $templ->param( 'Corpus_If_Looked_Up' => 1 );
         $templ->param( 'Corpus_Word' => $self->{form_}{word} );
         my $word = $self->{form_}{word};
@@ -1928,10 +1928,10 @@ sub corpus_page
         }
 
         if ( !$word ) {
-            $templ->param( 'Corpus_Lookup_Message' =>
+            $templ->param( 'Corpus_Lookup_Message' =>   # PROFILE BLOCK START
                            sprintf
                                 $self->{language__}{Bucket_InIgnoredWords},
-                                $self->{form_}{word} );
+                                $self->{form_}{word} ); # PROFILE BLOCK STOP
         } else {
             my $max = 0;
             my $max_bucket = '';
@@ -2176,14 +2176,14 @@ sub history_reclassify
         my %work;
 
         while ( my ( $slot, $newbucket ) = each %messages ) {
-            push @{$work{$newbucket}},
-                $self->{history__}->get_slot_file( $slot );
+            push @{$work{$newbucket}},                      # PROFILE BLOCK START
+                $self->{history__}->get_slot_file( $slot ); # PROFILE BLOCK STOP
             my @fields = $self->{history__}->get_slot_fields( $slot );
             my $bucket = $fields[8];
-            $self->{c__}->reclassified(
-                $self->{api_session__}, $bucket, $newbucket, 0 );
-            $self->{history__}->change_slot_classification(
-                 $slot, $newbucket, $self->{api_session__}, 0);
+            $self->{c__}->reclassified(                           # PROFILE BLOCK START
+                $self->{api_session__}, $bucket, $newbucket, 0 ); # PROFILE BLOCK STOP
+            $self->{history__}->change_slot_classification(       # PROFILE BLOCK START
+                 $slot, $newbucket, $self->{api_session__}, 0);   # PROFILE BLOCK STOP
             $self->{feedback}{$slot} = sprintf(                          # PROFILE BLOCK START
                  $self->{language__}{History_ChangedTo},
                  $self->{c__}->get_bucket_color(
@@ -2552,15 +2552,15 @@ sub history_page
             $row_data{History_Short_Cc}      = $self->shorten__( $$row[3], $length );
             $row_data{History_Short_Subject} = $self->shorten__( $$row[4], $length );
             my $bucket = $row_data{History_Bucket} = $$row[8];
-            $row_data{History_Bucket_Color}  = $self->{c__}->get_bucket_parameter( $self->{api_session__},
+            $row_data{History_Bucket_Color}  = $self->{c__}->get_bucket_parameter( $self->{api_session__},  # PROFILE BLOCK START
                                                                           $bucket,
-                                                                          'color' );
+                                                                          'color' );                        # PROFILE BLOCK STOP
             $row_data{History_If_Reclassified} = ( $$row[9] != 0 );
             $row_data{History_I}             = $$row[0];
             $row_data{History_I1}            = $$row[0];
             $row_data{History_Fields}        = $self->print_form_fields_(0,1,('start_message','session','filter','search','sort','negate' ) );
-            $row_data{History_If_Not_Pseudo} = !$self->{c__}->is_pseudo_bucket( $self->{api_session__},
-                                                                           $bucket );
+            $row_data{History_If_Not_Pseudo} = !$self->{c__}->is_pseudo_bucket( $self->{api_session__},  # PROFILE BLOCK START
+                                                                           $bucket );                    # PROFILE BLOCK STOP
             $row_data{History_If_Magnetized} = ($$row[11] ne '');
             $row_data{History_MagnetUsed}    = $self->{language__}{History_MagnetUsed} if $$row[11] ne '';
             $row_data{History_Magnet}        = $$row[11];
@@ -2642,9 +2642,9 @@ sub view_page
     my $mail_file = $self->{history__}->get_slot_file( $self->{form_}{view} );
     my $start_message = $self->{form_}{start_message} || 0;
 
-    my ( $id, $from, $to, $cc, $subject, $date, $hash, $inserted,
+    my ( $id, $from, $to, $cc, $subject, $date, $hash, $inserted,    # PROFILE BLOCK START
         $bucket, $reclassified, $bucketid, $magnet ) =
-        $self->{history__}->get_slot_fields( $self->{form_}{view} );
+        $self->{history__}->get_slot_fields( $self->{form_}{view} ); # PROFILE BLOCK STOP
 
     my $session   = $self->{api_session__};
     my $color = $self->{c__}->get_bucket_color(  # PROFILE BLOCK START

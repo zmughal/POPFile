@@ -389,19 +389,19 @@ sub start
         # control of a Mutex to avoid a crash if we are running on
         # Windows and using the fork.
 
-        if ( ( $nihongo_parser eq 'kakasi' ) && ( $^O eq 'MSWin32' ) &&
+        if ( ( $nihongo_parser eq 'kakasi' ) && ( $^O eq 'MSWin32' ) &&    # PROFILE BLOCK START
              ( ( ( $self->module_config_( 'pop3', 'enabled' ) ) &&
                  ( $self->module_config_( 'pop3', 'force_fork' ) ) ) ||
                ( ( $self->module_config_( 'nntp', 'enabled' ) ) &&
                  ( $self->module_config_( 'nntp', 'force_fork' ) ) ) ||
                ( ( $self->module_config_( 'smtp', 'enabled' ) ) &&
-                 ( $self->module_config_( 'smtp', 'force_fork' ) ) ) ) ) {
-            $self->{parser__}->{need_kakasi_mutex__} = 1;
+                 ( $self->module_config_( 'smtp', 'force_fork' ) ) ) ) ) { # PROFILE BLOCK STOP
+            $self->{parser__}->{need_kakasi_mutex__} = 1; # PROFILE PLATFORM START MSWin32
 
             # Prepare the Mutex.
             require POPFile::Mutex;
             $self->{parser__}->{kakasi_mutex__} = new POPFile::Mutex( 'mailparse_kakasi' );
-            $self->log_( 2, "Create mutex for Kakasi." );
+            $self->log_( 2, "Create mutex for Kakasi." ); # PROFILE PLATFORM STOP MSWin32
         }
     }
 
@@ -457,10 +457,10 @@ sub backup_database__
     # If database backup is turned on and we are using SQLite then
     # backup the database by copying it
 
-    if ( ( $self->config_( 'sqlite_tweaks' ) & 2 ) &&
-         $self->{db_is_sqlite__} ) {
+    if ( ( $self->config_( 'sqlite_tweaks' ) & 2 ) &&  # PROFILE BLOCK START
+         $self->{db_is_sqlite__} ) {                   # PROFILE BLOCK STOP
         if ( !copy( $self->{db_name__}, $self->{db_name__} . ".backup" ) ) {
-	    $self->log_( 0, "Failed to backup database ".$self->{db_name__} );
+            $self->log_( 0, "Failed to backup database ".$self->{db_name__} );
         }
     }
 }
@@ -904,8 +904,8 @@ sub db_connect__
 
     foreach my $table (@tables) {
         if ( $table =~ /\.?popfile$/ ) {
-            my @row = $self->{db__}->selectrow_array(
-               'select version from popfile;' );
+            my @row = $self->{db__}->selectrow_array(  # PROFILE BLOCK START
+               'select version from popfile;' );       # PROFILE BLOCK STOP
 
             if ( $#row == 0 ) {
                 $need_upgrade = ( $row[0] != $version );
@@ -3522,17 +3522,19 @@ sub get_bucket_parameter
 
     # If there is a non-default value for this parameter then return it.
 
-    $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_parameter__},
+    $self->validate_sql_prepare_and_execute(     # PROFILE BLOCK START
+        $self->{db_get_bucket_parameter__},
         $self->{db_bucketid__}{$userid}{$bucket}{id},
-        $self->{db_parameterid__}{$parameter} );
+        $self->{db_parameterid__}{$parameter} ); # PROFILE BLOCK STOP
     my $result = $self->{db_get_bucket_parameter__}->fetchrow_arrayref;
 
     # If this parameter has not been defined for this specific bucket then
     # get the default value
 
     if ( !defined( $result ) ) {
-        $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_parameter_default__},  # PROFILE BLOCK START
-            $self->{db_parameterid__}{$parameter} );          # PROFILE BLOCK STOP
+        $self->validate_sql_prepare_and_execute(     # PROFILE BLOCK START
+            $self->{db_get_bucket_parameter_default__},
+            $self->{db_parameterid__}{$parameter} ); # PROFILE BLOCK STOP
         $result = $self->{db_get_bucket_parameter_default__}->fetchrow_arrayref;
     }
 
@@ -4159,12 +4161,12 @@ sub magnet_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    my $result = $self->validate_sql_prepare_and_execute(
+    my $result = $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
         'select count(*) from magnets, buckets
                 where buckets.userid   = ? and
                       magnets.id      != 0 and
                       magnets.bucketid = buckets.id;',
-        $userid )->fetchrow_arrayref;
+        $userid )->fetchrow_arrayref;                      # PROFILE BLOCK STOP
 
     if ( defined( $result ) ) {
         return $result->[0];

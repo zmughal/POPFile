@@ -148,8 +148,8 @@ sub service
 
                 $client->autoflush(1);
 
-                if ( ( defined( $client ) ) &&
-                     ( my $request = $self->slurp_( $client ) ) ) {
+                if ( ( defined( $client ) ) &&                      # PROFILE BLOCK START
+                     ( my $request = $self->slurp_( $client ) ) ) { # PROFILE BLOCK STOP
                     my $content_length = 0;
                     my $content;
 
@@ -173,15 +173,15 @@ sub service
                     }
 
                     if ( $content_length > 0 ) {
-                        $content = $self->slurp_buffer_( $client,
-                            $content_length );
+                        $content = $self->slurp_buffer_( $client,  # PROFILE BLOCK START
+                            $content_length );                     # PROFILE BLOCK STOP
                         $self->log_( 2, $content );
                     }
 
                     if ( $request =~ /^(GET|POST) (.*) HTTP\/1\./i ) {
                         $code = $self->handle_url( $client, $2, $1, $content );
-                        $self->log_( 2,
-                            "HTTP handle_url returned code $code\n" );
+                        $self->log_( 2,                                # PROFILE BLOCK START
+                            "HTTP handle_url returned code $code\n" ); # PROFILE BLOCK STOP
                     } else {
                         $self->http_error_( $client, 500 );
                     }

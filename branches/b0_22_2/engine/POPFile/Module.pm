@@ -354,8 +354,7 @@ sub log_
     my ( $self, $level, $message ) = @_;
 
     my ( $package, $file, $line ) = caller;
-    $self->{logger__}->debug( $level, $self->{name__} . ": $line: " .
-        $message );
+    $self->{logger__}->debug( $level, "$self->{name__}: $line: $message" );
 }
 
 # ----------------------------------------------------------------------------
@@ -609,8 +608,8 @@ sub slurp_buffer_
         $slurp_data__{"$handle"}{data} = '';
     } else {
         $result = substr( $slurp_data__{"$handle"}{data}, 0, $length );
-        $slurp_data__{"$handle"}{data} =
-            substr( $slurp_data__{"$handle"}{data}, $length );
+        $slurp_data__{"$handle"}{data} =                       # PROFILE BLOCK START
+            substr( $slurp_data__{"$handle"}{data}, $length ); # PROFILE BLOCK STOP
     }
 
     return ($result ne '')?$result:undef;
