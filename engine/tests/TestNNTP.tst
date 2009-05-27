@@ -1864,9 +1864,7 @@ if ( $pid == 0 ) {
         close $dwriter;
         close $ureader;
 
-        while ( waitpid( -1, &WNOHANG ) > 0 ) {
-            sleep 1;
-        }
+        while ( waitpid( -1, 0 ) != -1 ) { }
 
         $mq->reaper();
         $n->stop();

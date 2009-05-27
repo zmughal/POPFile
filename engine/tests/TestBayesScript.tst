@@ -68,9 +68,11 @@ while ( <WORDS> ) {
 }
 close WORDS;
 
+local $SIG{CHLD} = '';
+
 @stdout = `$bayes TestMails/TestMailParse021.msg`;# 2> temp.tmp 1> temp2.tmp" );
-unlink 'temp.tmp';
-unlink 'temp2.tmp';
+#unlink 'temp.tmp';
+#unlink 'temp2.tmp';
 
 $code = ($? >> 8);
 test_assert_equal( $code, 0 );
