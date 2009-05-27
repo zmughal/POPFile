@@ -295,8 +295,8 @@ sub read_pipe_
 
         # pop the oldest message;
 
-        $message = $1 if (defined($self->{pipe_cache__}) &&
-                          ( $self->{pipe_cache__} =~ s/(.*?\n)// ) );
+        $message = $1 if (defined($self->{pipe_cache__}) &&           # PROFILE BLOCK START
+                          ( $self->{pipe_cache__} =~ s/(.*?\n)// ) ); # PROFILE BLOCK STOP
 
         return $message;        # PROFILE PLATFORM STOP
     } else {

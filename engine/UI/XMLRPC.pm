@@ -109,15 +109,15 @@ sub start
     # Tell the user interface module that we having a configuration
     # item that needs a UI component
 
-    $self->register_configuration_item_( 'configuration',
+    $self->register_configuration_item_( 'configuration',  # PROFILE BLOCK START
                                          'xmlrpc_port',
                                          'xmlrpc-port.thtml',
-                                         $self );
+                                         $self );          # PROFILE BLOCK STOP
 
-    $self->register_configuration_item_( 'security',
+    $self->register_configuration_item_( 'security',  # PROFILE BLOCK START
                                          'xmlrpc_local',
                                          'xmlrpc-local.thtml',
-                                         $self );
+                                         $self );     # PROFILE BLOCK STOP
 
     # We use a single XMLRPC::Lite object to handle requests for access to the
     # Classifier::Bayes object
@@ -133,7 +133,7 @@ sub start
         my $port = $self->config_( 'port' );
         my $name = $self->name();
 
-        print <<EOM;
+        print <<EOM; # PROFILE BLOCK START
 
 \nCouldn't start the $name HTTP interface because POPFile could not bind to the
 HTTP port $port. This could be because there is another service
@@ -142,7 +142,8 @@ your system (On Unix systems this can happen if you are not root
 and the port you specified is less than 1024).
 
 EOM
-                    #' # fix some syntax highlighting editors
+                     #' # fix some syntax highlighting editors
+                     # PROFILE BLOCK STOP
         return 0;
     }
 

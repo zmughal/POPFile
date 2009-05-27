@@ -550,10 +550,10 @@ sub load_configuration
                 # so that the Japanese users can use insert.pl
                 # etc. which rely on knowing the language
 
-                if (defined($self->{configuration_parameters__}{$parameter}) ||
-                    ( $parameter eq 'html_language' ) ) {
-                    $self->{configuration_parameters__}{$parameter}{value} =
-                        $value;
+                if (defined($self->{configuration_parameters__}{$parameter}) ||  # PROFILE BLOCK START
+                    ( $parameter eq 'html_language' ) ) {                        # PROFILE BLOCK STOP
+                    $self->{configuration_parameters__}{$parameter}{value} =   # PROFILE BLOCK START
+                        $value;                                                # PROFILE BLOCK STOP
                 } else {
                     $self->{deprecated_parameters__}{$parameter} = $value;
                 }
@@ -709,8 +709,8 @@ sub is_default
 {
     my ( $self, $name ) = @_;
 
-    return ( $self->{configuration_parameters__}{$name}{value} eq
-             $self->{configuration_parameters__}{$name}{default} );
+    return ( $self->{configuration_parameters__}{$name}{value} eq   # PROFILE BLOCK START
+             $self->{configuration_parameters__}{$name}{default} ); # PROFILE BLOCK STOP
 }
 
 # GETTERS

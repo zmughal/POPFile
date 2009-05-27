@@ -289,8 +289,8 @@ sub reserve_slot
     my $insert_sth = $self->db__()->prepare(                          # PROFILE BLOCK START
             'insert into history ( userid, committed, inserted )
                          values  (      ?,         ?,        ? );' ); # PROFILE BLOCK STOP
-    my $is_sqlite2 = ( $self->db__()->{Driver}->{Name} =~ /SQLite2?/ ) &&
-                     ( $self->db__()->{sqlite_version} =~ /^2\./ );
+    my $is_sqlite2 = ( $self->db__()->{Driver}->{Name} =~ /SQLite2?/ ) &&  # PROFILE BLOCK START
+                     ( $self->db__()->{sqlite_version} =~ /^2\./ );        # PROFILE BLOCK STOP
 
     my $slot;
 
@@ -941,8 +941,8 @@ sub stop_query
     my $q = $self->{queries__}{$id}{query};
 
     if ( ( defined $q ) && ( $q != 0 ) ) {
-        if ( $#{$self->{queries__}{$id}{cache}} !=
-             $self->{queries__}{$id}{count} ) {
+        if ( $#{$self->{queries__}{$id}{cache}} !=  # PROFILE BLOCK START
+             $self->{queries__}{$id}{count} ) {     # PROFILE BLOCK STOP
             $q->finish;
             undef $self->{queries__}{$id}{query};
         }
@@ -988,9 +988,9 @@ sub set_query
     # so that we know the size of the resulting data without having
     # to retrieve it all
 
-    $self->{queries__}{$id}{base} =
+    $self->{queries__}{$id}{base} =                          # PROFILE BLOCK START
         'select XXX from history, buckets, magnets
-                where history.userid = 1 and committed = 1';
+                where history.userid = 1 and committed = 1'; # PROFILE BLOCK STOP
 
     $self->{queries__}{$id}{base} .= ' and history.bucketid = buckets.id';
     $self->{queries__}{$id}{base} .= ' and magnets.id = magnetid';
@@ -1016,8 +1016,8 @@ sub set_query
                 " and history.magnetid $equal 0"; # PROFILE BLOCK STOP
         } else {
             if ( $filter eq '__filter__reclassified' ) {
-                $self->{queries__}{$id}{base} .=
-                    " and history.usedtobe $equal 0";
+                $self->{queries__}{$id}{base} .=      # PROFILE BLOCK START
+                    " and history.usedtobe $equal 0"; # PROFILE BLOCK STOP
             } else {
                 my $session = $self->{classifier__}->get_session_key(  # PROFILE BLOCK START
                                   'admin', '' );                       # PROFILE BLOCK STOP

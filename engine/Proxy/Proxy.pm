@@ -224,8 +224,8 @@ sub service
             # Check to see if we have obtained a session key yet
 
             if ( $self->{api_session__} eq '' ) {
-                $self->{api_session__} =
-                    $self->{classifier__}->get_session_key( 'admin', '' );
+                $self->{api_session__} =                                   # PROFILE BLOCK START
+                    $self->{classifier__}->get_session_key( 'admin', '' ); # PROFILE BLOCK STOP
             }
 
             # Check that this is a connection from the local machine,
@@ -408,8 +408,8 @@ sub get_response_
     }
     if ( !$can_read ) {
         my $selector = new IO::Select( $mail );
-        my ( $ready ) = $selector->can_read(
-            ( !$null_resp ? $self->global_config_( 'timeout' ) : .5 ) );
+        my ( $ready ) = $selector->can_read(                             # PROFILE BLOCK START
+            ( !$null_resp ? $self->global_config_( 'timeout' ) : .5 ) ); # PROFILE BLOCK STOP
         $can_read = defined( $ready ) && ( $ready == $mail );
     }
 
@@ -528,7 +528,7 @@ sub verify_connected_
             $self->log_( 0, "Attempting to connect to SSL server at " # PROFILE BLOCK START
                         . "$hostname:$port" );                        # PROFILE BLOCK STOP
 
-            if ( $^O eq 'MSWin32' ) {
+            if ( $^O eq 'MSWin32' ) { # PROFILE PLATFORM START MSWin32
 
                 # Workaround for avoiding intermittent password problem when
                 # using SSL. The problem occurs because IO::Socket->blocking
@@ -593,8 +593,8 @@ sub verify_connected_
                         ioctl( $mail, 0x8004667e, pack( 'L!', $non_blocking ) );
                     }
                 }
-
-            } else {
+            } # PROFILE PLATFORM BLOCK STOP MSWin32
+            else {
                 $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
                             Proto    => "tcp",
                             PeerAddr => $hostname,
