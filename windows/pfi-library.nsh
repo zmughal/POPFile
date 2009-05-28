@@ -40,12 +40,13 @@
 #  (8) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
 #  (9) ONDEMAND         defined in add-ons\OnDemand.nsi (starts POPFile & email client together)
 # (10) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-# (11) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-# (12) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-# (13) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (14) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (15) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (16) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+# (11) PORTABLE         defined in add-ons\POPFilePortable.nsi (PortableApps format launcher)
+# (12) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+# (13) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (14) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (15) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (16) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (17) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -59,7 +60,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.18"
+  !define C_PFI_LIBRARY_VERSION     "0.3.19"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -528,7 +529,7 @@
 !endif
 
 
-!ifdef ADDUSER | INSTALLER | RESTORE
+!ifdef ADDUSER | INSTALLER | PORTABLE | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetRoot
     #
@@ -687,7 +688,7 @@
 !endif
 
 
-!ifdef ADDUSER | INSTALLER | RESTORE
+!ifdef ADDUSER | INSTALLER | PORTABLE | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetSFNStatus
     #
@@ -904,6 +905,10 @@
 #
 # Macro-based Functions which may be used by the installer and uninstaller (in alphabetic order)
 #
+#    Macro:                PFI_AtLeastWin2K
+#    Installer Function:   PFI_AtLeastWin2K
+#    Uninstaller Function: un.PFI_AtLeastWin2K
+#
 #    Macro:                PFI_AtLeastWinNT4
 #    Installer Function:   PFI_AtLeastWinNT4
 #    Uninstaller Function: un.PFI_AtLeastWinNT4
@@ -1037,6 +1042,82 @@
 #    Uninstaller Function: un.PFI_WaitUntilUnlocked
 #
 #==============================================================================================
+
+#--------------------------------------------------------------------------
+# Macro: PFI_AtLeastWin2K
+#
+# The installation process and the uninstall process may both need a function which
+# detects if we are running on Windows 2000 or later. This macro makes maintenance easier
+# by ensuring that both processes use identical functions, with the only difference being
+# their names.
+#
+# NOTE:
+# The !insertmacro PFI_AtLeastWin2K "" and !insertmacro PFI_AtLeastWin2K "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_AtLeastWin2K'
+# and 'Call un.PFI_AtLeastWin2K' without additional preparation.
+#
+# Inputs:
+#         (none)
+#
+# Outputs:
+#         (top of stack)   - 0 if Win9x, WinME, Win NT or 1 if higher
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Call PFI_AtLeastWin2K
+#         Pop $R0
+#
+#         ($R0 at this point is "0" if running on Win95, Win98, WinME, NT3.x or NT 4.x)
+#--------------------------------------------------------------------------
+
+!macro PFI_AtLeastWin2K UN
+  Function ${UN}PFI_AtLeastWin2K
+
+    !define L_RESULT  $R9
+    !define L_TEMP    $R8
+
+    Push ${L_RESULT}
+    Push ${L_TEMP}
+
+    ClearErrors
+    ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+    IfErrors preWin2Ksystem
+    StrCpy ${L_TEMP} ${L_RESULT} 1
+    IntCmp ${L_TEMP} 4 preWin2Ksystem preWin2Ksystem 0
+    StrCpy ${L_RESULT} "1"
+    Goto exit
+
+  preWin2Ksystem:
+    StrCpy ${L_RESULT} "0"
+
+  exit:
+    Pop ${L_TEMP}
+    Exch ${L_RESULT}
+
+    !undef L_RESULT
+    !undef L_TEMP
+
+  FunctionEnd
+!macroend
+
+!ifdef INSTALLER
+      #--------------------------------------------------------------------------
+      # Installer Function: PFI_AtLeastWin2K
+      #
+      # This function is used during the installation process
+      #--------------------------------------------------------------------------
+
+      !insertmacro PFI_AtLeastWin2K ""
+!endif
+
+;#--------------------------------------------------------------------------
+;# Uninstaller Function: un.PFI_AtLeastWin2K
+;#
+;# This function is used during the uninstall process
+;#--------------------------------------------------------------------------
+;
+;!insertmacro PFI_AtLeastWin2K "un."
+
 
 #--------------------------------------------------------------------------
 # Macro: PFI_AtLeastWinNT4
@@ -1707,7 +1788,7 @@
     FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | PORTABLE | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetCompleteFPN
     #
@@ -2439,7 +2520,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & ONDEMAND & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDateTimeStamp
     #
@@ -2636,7 +2717,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & ONDEMAND & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetLocalTime
     #
@@ -2877,7 +2958,7 @@
     FunctionEnd
 !macroend
 
-!ifndef ONDEMAND
+!ifndef ONDEMAND & PORTABLE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParameters
     #
@@ -2955,7 +3036,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | PORTABLE | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParent
     #
@@ -4563,7 +4644,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & PFIDIAG & RUNPOPFILE & RUNSQLITE & TRANSLATOR
+!ifndef MONITORCC & PFIDIAG & PORTABLE & RUNPOPFILE & RUNSQLITE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckDecimal
     #
