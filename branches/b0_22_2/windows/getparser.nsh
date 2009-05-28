@@ -344,6 +344,20 @@
     DetailPrint ""
     DetailPrint "'NihongoParser' setting in registry (HKLM) updated to '$G_PARSER'"
 
+    !if '${UN}' == 'un.'
+        ReadINIStr ${L_RESERVED} "$G_COMMS_FILE" "RealUser" "Parser"
+        StrCmp ${L_RESERVED} $G_PARSER no_change
+        SetDetailsPrint none
+        UAC::StackPush "$G_PARSER"
+        GetFunctionAddress ${L_RESERVED} un.SetNihongoConfig
+        UAC::ExecCodeSegment ${L_RESERVED}
+        SetDetailsPrint listonly
+        DetailPrint ""
+        DetailPrint "'bayes_nihongo_parser' setting in 'popfile.cfg' updated to '$G_PARSER'"
+
+      no_change:
+    !endif
+
     SetDetailsPrint textonly
     DetailPrint ""
     DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
@@ -559,6 +573,20 @@
     DetailPrint ""
     DetailPrint "'NihongoParser' setting in registry (HKLM) updated to '$G_PARSER'"
 
+    !if '${UN}' == 'un.'
+        ReadINIStr ${L_RESERVED} "$G_COMMS_FILE" "RealUser" "Parser"
+        StrCmp ${L_RESERVED} $G_PARSER no_change
+        SetDetailsPrint none
+        UAC::StackPush "$G_PARSER"
+        GetFunctionAddress ${L_RESERVED} un.SetNihongoConfig
+        UAC::ExecCodeSegment ${L_RESERVED}
+        SetDetailsPrint listonly
+        DetailPrint ""
+        DetailPrint "'bayes_nihongo_parser' setting in 'popfile.cfg' updated to '$G_PARSER'"
+
+      no_change:
+    !endif
+
   exit:
     SetDetailsPrint textonly
     DetailPrint ""
@@ -616,6 +644,22 @@
     WriteRegStr HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser" "$G_PARSER"
     DetailPrint ""
     DetailPrint "'NihongoParser' setting in registry (HKLM) updated to '$G_PARSER'"
+
+    !if '${UN}' == 'un.'
+        Push $G_PLS_FIELD_1
+        ReadINIStr $G_PLS_FIELD_1 "$G_COMMS_FILE" "RealUser" "Parser"
+        StrCmp $G_PLS_FIELD_1 $G_PARSER no_change
+        SetDetailsPrint none
+        UAC::StackPush "$G_PARSER"
+        GetFunctionAddress $G_PLS_FIELD_1 un.SetNihongoConfig
+        UAC::ExecCodeSegment $G_PLS_FIELD_1
+        SetDetailsPrint listonly
+        DetailPrint ""
+        DetailPrint "'bayes_nihongo_parser' setting in 'popfile.cfg' updated to '$G_PARSER'"
+        Pop $G_PLS_FIELD_1
+
+      no_change:
+    !endif
 
     SetDetailsPrint textonly
     DetailPrint ""
@@ -783,7 +827,7 @@
   end_of_file:
     FileClose ${L_HANDLE}
     StrCpy $G_PLS_FIELD_1 "${L_RESULT}"
-    Detailprint ""
+    DetailPrint ""
     SetDetailsPrint both
     DetailPrint "${C_NPLS_MECAB_MD5_RESULT}"
     SetDetailsPrint listonly
@@ -942,7 +986,7 @@
   end_of_file:
     FileClose ${L_HANDLE}
     StrCpy $G_PLS_FIELD_1 "${L_RESULT}"
-    Detailprint ""
+    DetailPrint ""
     SetDetailsPrint both
     DetailPrint "${C_NPLS_MECAB_UNPACK_RESULT}"
     SetDetailsPrint listonly
@@ -1090,9 +1134,14 @@
       select_default_parser:
     !endif
 
-    ; Use the most recently installed Nihongo parser as the default selection (if possible)
+    ; If we are upgrading then use the "real" user's current setting as the default
+    ; Nihingo parser if available, otherwise use the most recently installed parser
 
+    ReadINIStr $G_PARSER "$G_COMMS_FILE" "RealUser" "Parser"
+    StrCmp $G_PARSER "" 0 select_parser_section
     ReadRegStr $G_PARSER HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
+
+  select_parser_section:
     StrCmp $G_PARSER "mecab" mecab
     StrCmp $G_PARSER "internal" internal
 

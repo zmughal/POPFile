@@ -105,6 +105,21 @@
 #--------------------------------------------------------------------------
 
   ;------------------------------------------------
+  ; This script requires the 'GetVersion' NSIS plugin
+  ;------------------------------------------------
+  ;
+  ; This script uses a special NSIS plugin (GetVersion) to identify the Windows version
+  ;
+  ; The 'NSIS Wiki' page for the 'GetVersion' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/GetVersion_(Windows)_plug-in
+  ;
+  ; To compile this script, copy the 'GetVersion.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'GetVersion' source and example files can be unzipped to the
+  ; appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
+  ;
+  ; This script requires v0.9 (or later) of the GetVersion plugin
+
+  ;------------------------------------------------
   ; This script requires the 'UAC' NSIS plugin
   ;------------------------------------------------
 
@@ -122,6 +137,26 @@
   ;
   ; Tested with version v0.0.9 (20080721) of the 'UAC' plugin,
   ; timestamped 21 July 2008 23:56:04.
+
+  ;----------------------------------------------------------
+  ; This script requires the 'AccessControl' NSIS plugin
+  ;----------------------------------------------------------
+
+  ; The UAC plugin works by running an 'outer' installer at the 'standard user' level and
+  ; an 'inner' installer at the 'admin' level. To support two-communication between these
+  ; two installer instances the 'inner' one creates a temporary file in the 'All Users' data
+  ; folder and uses the 'AccessControl' plugin to grant the 'outer' installer Read/Write
+  ; access to this temporary file.
+  ;
+  ; The 'NSIS Wiki' page for the 'AccessControl' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/AccessControl_plug-in
+  ;
+  ; To compile this script, copy the 'AccessControl.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'AccessControl' source and example files can be unzipped to the
+  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with the "23rd January 2008" version of the 'AccessControl' plugin,
+  ; timestamped 17 February 2008 17:28:44 (sic).
 
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
@@ -368,6 +403,8 @@
 
   ; This script uses 'User Variables' (with names starting with 'G_') to hold GLOBAL data.
 
+  Var G_COMMS_FILE         ; full path to the file used for communicated between elevated/non-elevated copies
+
   Var G_ROOTDIR            ; full path to the folder used for the POPFile PROGRAM files
   Var G_USERDIR            ; full path to the folder containing the 'popfile.cfg' file
   Var G_MPLIBDIR           ; full path to the folder used for the rest of the minimal Perl files
@@ -568,6 +605,16 @@
 
   !define MUI_CUSTOMFUNCTION_UNGUIINIT        "un.PFIGUIInit"
 
+  ; Use a custom '.onUserAbort' function to tidy up the UAC plugin and the comms file
+  ; if the user cancels the installation
+
+  !define MUI_CUSTOMFUNCTION_ABORT            "PFIUserAbort"
+
+  ; Use a custom 'un.onUserAbort' function to tidy up the UAC plugin and the comms file
+  ; if the user cancels the installation
+
+  !define MUI_CUSTOMFUNCTION_UNABORT          "un.PFIUserAbort"
+
   ;----------------------------------------------------------------
   ; Language Settings for MUI pages
   ;----------------------------------------------------------------
@@ -639,8 +686,9 @@
   ;---------------------------------------------------
 
   ; Use a "pre" function to check if only the SSL Support files are to be installed
+  ; and if not then check if upgrading and pre-select appropriate components.
 
-  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "CheckSSLOnlyFlag"
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "CheckIfSSLOnlyOrUpgrade"
 
   !insertmacro MUI_PAGE_COMPONENTS
 
@@ -889,8 +937,10 @@
 
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
+  ReserveFile "${NSISDIR}\Plugins\AccessControl.dll"
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
   ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
+  ReserveFile "${NSISDIR}\Plugins\GetVersion.dll"
   ReserveFile "${NSISDIR}\Plugins\inetc.dll"
   ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
   ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
@@ -1059,12 +1109,30 @@ close_files:
 
 FunctionEnd
 
+#--------------------------------------------------------------------------
+# Installer Function: PFIUserAbort                (required by UAC plugin)
+# (custom .onUserAbort function)
+#
+# Used to ensure UAC plugin and the "comms" file get removed if the user
+# cancels the installation. This avoids leaving files and folders around
+# after 'Cancel' is selected.
+#--------------------------------------------------------------------------
+
+Function PFIUserAbort
+
+  Delete $G_COMMS_FILE
+
+  UAC::Unload     ; Must call unload!
+
+FunctionEnd
 
 #--------------------------------------------------------------------------
 # Installer Function: .OnInstFailed               (required by UAC plugin)
 #--------------------------------------------------------------------------
 
 Function .OnInstFailed
+
+  Delete $G_COMMS_FILE
 
   UAC::Unload     ; Must call unload!
 
@@ -1075,6 +1143,8 @@ FunctionEnd
 #--------------------------------------------------------------------------
 
 Function .OnInstSuccess
+
+  Delete $G_COMMS_FILE
 
   UAC::Unload     ; Must call unload!
 
@@ -1136,31 +1206,273 @@ notes_ignored:
   Call ShowPleaseWaitBanner
 
 continue:
-
-  ; If 'Nihongo' (Japanese) language has been selected for the installer, ensure the
-  ; 'Nihongo Parser' entry is shown on the COMPONENTS page to confirm that a parser will
-  ; be installed. The "Nihongo Parser Selection" page appears immediately before the
-  ; COMPONENTS page.
-
-  Call ShowOrHideNihongoParser
-
   StrCpy $G_SSL_ONLY "0"    ; assume a full installation is required
   Call PFI_GetParameters    ; The UAC plugin may modify the command-line
   Push "/SSL"               ; so we need to check for "/SSL" anywhere on
   Call PFI_StrStr           ; the command-line (instead of assuming the
   Pop ${L_RESERVED}         ; command-line is either /SSL or empty)
-  StrCmp ${L_RESERVED} "" exit
+  StrCmp ${L_RESERVED} "" create_comms_file
   StrCpy ${L_RESERVED} ${L_RESERVED} 5
   StrCmp ${L_RESERVED} "/SSL" sslonly
-  StrCmp ${L_RESERVED} "/SSL " 0 exit
+  StrCmp ${L_RESERVED} "/SSL " 0 create_comms_file
 
 sslonly:
   StrCpy $G_SSL_ONLY "1"    ; just download and install the SSL support files
 
-exit:
+create_comms_file:
+  SetShellVarContext all
+  GetTempFileName $G_COMMS_FILE $APPDATA
+  SetShellVarContext current
+  AccessControl::GrantOnFile "$G_COMMS_FILE" "(BU)" "GenericRead + GenericWrite"
+
+  ; The "comms" file provides two-way communication between the 'inner' (elevated)
+  ; and 'outer' (the "real" user) instances of the installer. The "real" user is
+  ; the user who first started the installer.
+
+  WriteINIStr "$G_COMMS_FILE" "POPFile" "Installer" "${C_PFI_VERSION}"
+  Call PFI_GetDateTimeStamp
+  Pop ${L_RESERVED}
+  WriteINIStr "$G_COMMS_FILE" "POPFile" "StartTime" "${L_RESERVED}"
+
+  WriteINIStr "$G_COMMS_FILE" "Elevated" "UserName" "$G_WINUSERNAME ($G_WINUSERTYPE)"
+
+  ; Pass the full path to the "comms" file to the 'outer' instance
+  ; and call the 'GetRealUserSettings' function in the 'outer' instance
+  ; to fill the "comms" file with the "real" user's POPFile settings
+
+  UAC::StackPush $G_COMMS_FILE
+  GetFunctionAddress ${L_RESERVED} GetRealUserSettings
+  UAC::ExecCodeSegment ${L_RESERVED}
+
+  ; If 'Nihongo' (Japanese) language has been selected for the installer, ensure the
+  ; 'Nihongo Parser' entry is shown on the COMPONENTS page to confirm that a parser will
+  ; be installed. The "Nihongo Parser Selection" page appears immediately before the
+  ; COMPONENTS page. If we are upgrading an existing installation, preselect the
+  ; same Nihongo parser as defined in the "real" user's 'popfile.cfg' file.
+
+  Call ShowOrHideNihongoParser
+
+
   Pop ${L_RESERVED}
 
   !undef L_RESERVED
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Installer Function: GetRealUserSettings
+#
+# Called via UAC::ExecCodeSegment from the inner/elevated installer
+#
+# The inner/elevated installer places the full path to the comms file
+# on the stack before calling this function.
+#--------------------------------------------------------------------------
+
+Function GetRealUserSettings
+
+  !define L_EXISTING_ROOT   $R9     ; path to POPFile program for "real" user
+  !define L_EXISTING_USER   $R8     ; path to POPFile User Data for "real" user
+  !define L_TEMP            $R7
+
+  Pop $G_COMMS_FILE
+
+  Push ${L_EXISTING_ROOT}
+  Push ${L_EXISTING_USER}
+  Push ${L_TEMP}
+
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "UserName" "$G_WINUSERNAME ($G_WINUSERTYPE)"
+
+  ReadEnvStr ${L_TEMP} "POPFILE_ROOT"
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "POPFILE_ROOT" "${L_TEMP}"
+  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "RootDir_LFN" "${L_TEMP}"
+  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN"
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "RootDir_SFN" "${L_TEMP}"
+
+### Save some debug information (start)
+### Save some debug information (start)
+### Save some debug information (start)
+
+  ReadEnvStr ${L_TEMP} "POPFILE_USER"
+  WriteINIStr "$G_COMMS_FILE" "Debug" "POPFILE_USER" "${L_TEMP}"
+  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
+  WriteINIStr "$G_COMMS_FILE" "Debug" "UserDir_LFN" "${L_TEMP}"
+  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_SFN"
+  WriteINIStr "$G_COMMS_FILE" "Debug" "UserDir_SFN" "${L_TEMP}"
+
+### Save some debug information (end)
+### Save some debug information (end)
+### Save some debug information (end)
+### Save some debug information (end)
+
+  ; If an existing POPFile installation is found, report which optional POPFile
+  ; components have been installed (so we can pre-select the same options when
+  ; upgrading POPFile)
+
+  ReadEnvStr ${L_EXISTING_ROOT} "POPFILE_ROOT"
+  StrCmp ${L_EXISTING_ROOT} "" try_root_HKCU_LFN
+  IfFileExists "${L_EXISTING_ROOT}\*.*" check_optional_components
+
+try_root_HKCU_LFN:
+  ReadRegStr ${L_EXISTING_ROOT} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
+  StrCmp ${L_EXISTING_ROOT} "" try_root_HKCU_SFN
+  IfFileExists "${L_EXISTING_ROOT}\*.*" check_optional_components
+
+try_root_HKCU_SFN:
+  ReadRegStr ${L_EXISTING_ROOT} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN"
+  StrCmp ${L_EXISTING_ROOT} "" try_root_HKLM_LFN
+  IfFileExists "${L_EXISTING_ROOT}\*.*" check_optional_components
+
+try_root_HKLM_LFN:
+  ReadRegStr ${L_EXISTING_ROOT} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
+  StrCmp ${L_EXISTING_ROOT} "" try_root_HKLM_SFN
+  IfFileExists "${L_EXISTING_ROOT}\*.*" check_optional_components
+
+try_root_HKLM_SFN:
+  ReadRegStr ${L_EXISTING_ROOT} HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN"
+  StrCmp ${L_EXISTING_ROOT} "" program_missing
+  IfFileExists "${L_EXISTING_ROOT}\*.*" check_optional_components
+
+program_missing:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "POPFile" "missing"
+  Goto find_config
+
+check_optional_components:
+  StrCpy ${L_TEMP} "found"
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "POPFile" "${L_TEMP}"
+  IfFileExists "${L_EXISTING_ROOT}\Services\IMAP.pm" report_imap_status
+  IfFileExists "${L_EXISTING_ROOT}\Server\IMAP.pm" report_imap_status
+  IfFileExists "${L_EXISTING_ROOT}\POPFile\IMAP.pm" report_imap_status
+  StrCpy ${L_TEMP} "missing"
+
+report_imap_status:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "IMAP" "${L_TEMP}"
+
+  StrCpy ${L_TEMP} "found"
+  IfFileExists "${L_EXISTING_ROOT}\Proxy\NNTP.pm" report_nntp_status
+  StrCpy ${L_TEMP} "missing"
+
+report_nntp_status:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "NNTP" "${L_TEMP}"
+
+  StrCpy ${L_TEMP} "found"
+  IfFileExists "${L_EXISTING_ROOT}\Proxy\SMTP.pm" report_smtp_status
+  StrCpy ${L_TEMP} "missing"
+
+report_smtp_status:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "SMTP" "${L_TEMP}"
+
+  StrCpy ${L_TEMP} "found"
+  IfFileExists "${L_EXISTING_ROOT}\lib\IO\Socket\Socks.pm" report_socks_status
+  StrCpy ${L_TEMP} "missing"
+
+report_socks_status:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "Socks" "${L_TEMP}"
+
+  StrCpy ${L_TEMP} "found"
+  IfFileExists "${L_EXISTING_ROOT}\lib\Net\SSLeay.pm" report_ssl_status
+  StrCpy ${L_TEMP} "missing"
+
+report_ssl_status:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "SSL" "${L_TEMP}"
+
+  StrCpy ${L_TEMP} "found"
+  IfFileExists "${L_EXISTING_ROOT}\UI\XMLRPC.pm" report_xmlrpc_status
+  StrCpy ${L_TEMP} "missing"
+
+report_xmlrpc_status:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "XMLRPC" "${L_TEMP}"
+
+find_config:
+
+  ; If an existing POPFile configuration file (popfile.cfg) is found, report
+  ; the current Nihongo parser selection so it can be pre-selected if relevant
+
+  ReadEnvStr ${L_EXISTING_USER} "POPFILE_USER"
+  StrCmp ${L_EXISTING_USER} "" try_user_HKCU_LFN
+  IfFileExists "${L_EXISTING_USER}\popfile.cfg" check_parser_setting
+
+try_user_HKCU_LFN:
+  ReadRegStr ${L_EXISTING_USER} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
+  StrCmp ${L_EXISTING_USER} "" try_user_HKCU_SFN
+  IfFileExists "${L_EXISTING_USER}\popfile.cfg" check_parser_setting
+
+try_user_HKCU_SFN:
+  ReadRegStr ${L_EXISTING_USER} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_SFN"
+  StrCmp ${L_EXISTING_USER} "" config_missing
+  IfFileExists "${L_EXISTING_USER}\popfile.cfg" check_parser_setting
+
+config_missing:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "popfile.cfg" "missing"
+  Goto exit
+
+check_parser_setting:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "popfile.cfg" "found"
+
+  !define L_CFG       $R9     ; handle for "popfile.cfg"
+  !define L_CMPRE     $R8     ; config param name
+  !define L_LNE       $R7     ; a line from popfile.cfg
+  !define L_PARSER    $R6     ; current Nihongo parser setting (introduced in 1.0.0 release)
+  !define L_TEXTEND   $R5     ; used to ensure correct handling of lines longer than 1023 chars
+
+  Push ${L_CFG}
+  Push ${L_CMPRE}
+  Push ${L_LNE}
+  Push ${L_PARSER}
+  Push ${L_TEXTEND}
+
+  StrCpy ${L_PARSER} ""
+
+  FileOpen  ${L_CFG} "${L_EXISTING_USER}\popfile.cfg" r
+
+found_eol:
+  StrCpy ${L_TEXTEND} "<eol>"
+
+loop:
+  FileRead ${L_CFG} ${L_LNE}
+  StrCmp ${L_LNE} "" done
+  StrCmp ${L_TEXTEND} "<eol>" 0 next_lne
+  StrCmp ${L_LNE} "$\n" next_lne
+
+  StrCpy ${L_CMPRE} ${L_LNE} 21
+  StrCmp ${L_CMPRE} "bayes_nihongo_parser " 0 next_lne
+  StrCpy ${L_PARSER} ${L_LNE} "" 21
+  Goto done
+
+next_lne:
+
+  ; Now read file until we get to end of the current line
+  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
+
+  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
+  StrCmp ${L_TEXTEND} "$\n" found_eol
+  StrCmp ${L_TEXTEND} "$\r" found_eol loop
+
+done:
+  FileClose ${L_CFG}
+
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "Parser" "${L_PARSER}"
+
+  Pop ${L_TEXTEND}
+  Pop ${L_PARSER}
+  Pop ${L_LNE}
+  Pop ${L_CMPRE}
+  Pop ${L_CFG}
+
+  !undef L_CFG
+  !undef L_CMPRE
+  !undef L_LNE
+  !undef L_PARSER
+  !undef L_TEXTEND
+
+exit:
+  Pop ${L_TEMP}
+  Pop ${L_EXISTING_USER}
+  Pop ${L_EXISTING_ROOT}
+
+  !undef L_EXISTING_ROOT
+  !undef L_EXISTING_USER
+  !undef L_TEMP
 
 FunctionEnd
 
@@ -1178,7 +1490,9 @@ Section "-StartLog"
   DetailPrint "$(^Name) v${C_PFI_VERSION} Installer Log"
   DetailPrint "------------------------------------------------------------"
   DetailPrint "Command-line: $CMDLINE"
-  DetailPrint "User Details: $G_WINUSERNAME ($G_WINUSERTYPE)"
+  ReadINIStr $G_PLS_FIELD_1 "$G_COMMS_FILE" "RealUser" "UserName"
+  DetailPrint "Installed by: $G_PLS_FIELD_1"
+  DetailPrint "UAC Username: $G_WINUSERNAME ($G_WINUSERTYPE)"
   DetailPrint "PFI Language: $(^Language) ($LANGUAGE)"
   DetailPrint "------------------------------------------------------------"
   Call PFI_GetDateTimeStamp
@@ -1721,6 +2035,10 @@ SectionEnd
 #--------------------------------------------------------------------------
 # Installer Function: CheckPerlRequirementsPage
 #
+# Starting with the 1.1.1 release the minimal Perl no longer officially supports older
+# systems such as Windows 9x, Windows Millennium or Windows NT. If anything earlier than
+# Windows 2000 is detected we display a warning message.
+#
 # The minimal Perl we install requires some Microsoft components which are included in the
 # current versions of Windows. Older systems will have suitable versions of these components
 # provided Internet Explorer 5.5 or later has been installed. If we find an earlier version
@@ -1736,6 +2054,44 @@ Function CheckPerlRequirementsPage
 
   Push ${L_TEMP}
 
+  Call PFI_AtLeastWin2K
+  Pop $G_PLS_FIELD_1
+  StrCmp $G_PLS_FIELD_1 "1" check_ie_version
+
+  GetVersion::WindowsName
+  Pop $G_PLS_FIELD_1
+  GetVersion::WindowsType
+  Pop ${L_TEMP}
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1 ${L_TEMP}"
+
+  ; Ensure custom page matches the selected language (left-to-right or right-to-left order)
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Settings" "RTL" "$(^RTL)"
+
+  ; Enable the "hidden" field containing the link to the POPFile website
+  ; for advice on installing POPFile on Windows 9x, Millennium and NT systems
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Settings" "NumFields" "3"
+
+  ; Adjust the lower label size to make room for the web site link
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Field 2"  "Bottom"  "110"
+
+  !insertmacro PFI_IO_TEXT "ioG.ini" "1" \
+      "$(PFI_LANG_PERLREQ_IO_TXT_OS_1)\
+       $(PFI_LANG_PERLREQ_IO_TXT_OS_2)\
+       $(PFI_LANG_PERLREQ_IO_TXT_OS_3)"
+
+  !insertmacro PFI_IO_TEXT "ioG.ini" "2" \
+      "$(PFI_LANG_PERLREQ_IO_TXT_OS_4)\
+       $(PFI_LANG_PERLREQ_IO_TXT_OS_5)"
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Field 3" "Text"  "$(PFI_LANG_PERLREQ_IO_TXT_OS_6)"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Field 3" "State" "$(PFI_LANG_PERLREQ_IO_TXT_OS_7)"
+
+  Goto set_page_header
+
+check_ie_version:
   Call PFI_GetIEVersion
   Pop $G_PLS_FIELD_1
 
@@ -1749,17 +2105,27 @@ not_good:
 
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Settings" "RTL" "$(^RTL)"
 
+  ; Disable the extra field containing the link to the POPFile website
+  ; for advice on installing POPFile on Windows 9x, Millennium and NT systems
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Settings" "NumFields" "2"
+
+  ; Reset the lower label size to fill the page
+
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioG.ini" "Field 2"  "Bottom"  "139"
+
   !insertmacro PFI_IO_TEXT "ioG.ini" "1" \
-      "$(PFI_LANG_PERLREQ_IO_TEXT_A)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_B)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_C)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_D)"
+      "$(PFI_LANG_PERLREQ_IO_TXT_IE_1)\
+       $(PFI_LANG_PERLREQ_IO_TXT_IE_2)\
+       $(PFI_LANG_PERLREQ_IO_TXT_IE_3)\
+       $(PFI_LANG_PERLREQ_IO_TXT_IE_4)"
 
   !insertmacro PFI_IO_TEXT "ioG.ini" "2" \
-      "$(PFI_LANG_PERLREQ_IO_TEXT_E)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_F)\
-       $(PFI_LANG_PERLREQ_IO_TEXT_G)"
+      "$(PFI_LANG_PERLREQ_IO_TXT_IE_5)\
+       $(PFI_LANG_PERLREQ_IO_TXT_IE_6)\
+       $(PFI_LANG_PERLREQ_IO_TXT_IE_7)"
 
+set_page_header:
   !insertmacro MUI_HEADER_TEXT "$(PFI_LANG_PERLREQ_TITLE)" " "
 
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "ioG.ini"
@@ -1966,16 +2332,20 @@ FunctionEnd
   !insertmacro FUNCTION_HANDLE_PARSER_SELECTION ""
 
 #--------------------------------------------------------------------------
-# Installer Function: CheckSSLOnlyFlag
+# Installer Function: CheckIfSSLOnlyOrUpgrade
 # (the "pre" function for the COMPONENTS selection page)
 #
 # If only the SSL Support files are to be installed, disable the other
 # POPFile-component sections and skip the COMPONENTS page
+#
+# Otherwise pre-select the same optional components as the existing
+# installation (assuming we are upgrading POPFile). The user is free
+# to change the selection, pre-selection just helps save time etc.
 #--------------------------------------------------------------------------
 
-Function CheckSSLOnlyFlag
+Function CheckIfSSLOnlyOrUpgrade
 
-  StrCmp $G_SSL_ONLY "0" exit
+  StrCmp $G_SSL_ONLY "0" check_existing_selections
 
   !insertmacro UnselectSection ${SecPOPFile}
   !insertmacro UnselectSection ${SecMinPerl}
@@ -1996,7 +2366,44 @@ Function CheckSSLOnlyFlag
 
   Abort
 
+check_existing_selections:
+  !define L_TEMP  $R9
+
+  Push ${L_TEMP}
+
+  ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "IMAP"
+  StrCmp ${L_TEMP} "found" 0 check_nntp
+  !insertmacro SelectSection ${SecIMAP}
+
+check_nntp:
+  ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "NNTP"
+  StrCmp ${L_TEMP} "found" 0 check_smtp
+  !insertmacro SelectSection ${SecNNTP}
+
+check_smtp:
+  ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "SMTP"
+  StrCmp ${L_TEMP} "found" 0 check_socks
+  !insertmacro SelectSection ${SecSMTP}
+
+check_socks:
+  ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "Socks"
+  StrCmp ${L_TEMP} "found" 0 check_ssl
+  !insertmacro SelectSection ${SecSOCKS}
+
+check_ssl:
+  ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "SSL"
+  StrCmp ${L_TEMP} "found" 0 check_xmlrpc
+  !insertmacro SelectSection ${SecSSL}
+
+check_xmlrpc:
+  ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "XMLRPC"
+  StrCmp ${L_TEMP} "found" 0 exit
+  !insertmacro SelectSection ${SecXMLRPC}
+
 exit:
+  Pop ${L_TEMP}
+
+  !undef L_TEMP
 
   ; Display the COMPONENTS page
 
@@ -2006,12 +2413,29 @@ FunctionEnd
 # Installer Function: CheckForExistingLocation
 # (the "pre" function for the POPFile PROGRAM DIRECTORY selection page)
 #
-# Set the initial value used by the POPFile PROGRAM DIRECTORY page to the location used by
-# the most recent 0.21.0 (or later version) or the location of any pre-0.21.0 installation.
+# Set the initial value used by the POPFile PROGRAM DIRECTORY page to the location
+# currently used by the "real" user if we are upgrading, or that currently used by
+# the 'admin user, or the most recent 0.21.0 (or later version), or the location of
+# any pre-0.21.0 installation.
 #--------------------------------------------------------------------------
 
 Function CheckForExistingLocation
 
+  ReadINIStr $INSTDIR "$G_COMMS_FILE" "RealUser" "POPFILE_ROOT"
+  StrCmp $INSTDIR "" try_real_lfn
+  IfFileExists "$INSTDIR\*.*" exit
+
+try_real_lfn:
+  ReadINIStr $INSTDIR "$G_COMMS_FILE" "RealUser" "RootDir_LFN"
+  StrCmp $INSTDIR "" try_real_sfn
+  IfFileExists "$INSTDIR\*.*" exit
+
+try_real_sfn:
+  ReadINIStr $INSTDIR "$G_COMMS_FILE" "RealUser" "RootDir_SFN"
+  StrCmp $INSTDIR "" try_admin_user
+  IfFileExists "$INSTDIR\*.*" exit
+
+try_admin_user:
   ReadRegStr $INSTDIR HKCU "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "InstallPath"
   StrCmp $INSTDIR "" try_HKLM
   IfFileExists "$INSTDIR\*.*" exit

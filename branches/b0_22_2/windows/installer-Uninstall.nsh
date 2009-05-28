@@ -204,6 +204,8 @@ FunctionEnd
 
 Function un.OnUninstFailed
 
+  Delete $G_COMMS_FILE
+
   UAC::Unload     ; Must call unload!
 
 FunctionEnd
@@ -213,6 +215,8 @@ FunctionEnd
 #--------------------------------------------------------------------------
 
 Function un.OnUninstSuccess
+
+  Delete $G_COMMS_FILE
 
   UAC::Unload     ; Must call unload!
 
@@ -247,6 +251,29 @@ Function un.PFIGUIInit
   Abort
 
 mutex_ok:
+  SetShellVarContext all
+  GetTempFileName $G_COMMS_FILE $APPDATA
+  SetShellVarContext current
+  AccessControl::GrantOnFile "$G_COMMS_FILE" "(BU)" "GenericRead + GenericWrite"
+
+  ; The "comms" file provides two-way communication between the 'inner' (elevated)
+  ; and 'outer' (the "real" user) instances of the uninstaller. The "real" user is
+  ; the user who first started the uninstaller.
+
+  WriteINIStr "$G_COMMS_FILE" "POPFile" "AddRemove" "${C_PFI_VERSION}"
+  Call un.PFI_GetDateTimeStamp
+  Pop ${L_RESERVED}
+  WriteINIStr "$G_COMMS_FILE" "POPFile" "StartTime" "${L_RESERVED}"
+
+  WriteINIStr "$G_COMMS_FILE" "Elevated" "UserName" "$G_WINUSERNAME ($G_WINUSERTYPE)"
+
+  ; Pass the full path to the "comms" file to the 'outer' instance
+  ; and call the 'un.GetRealUserSettings' function in the 'outer' instance
+  ; to fill the "comms" file with the "real" user's POPFile settings
+
+  UAC::StackPush $G_COMMS_FILE
+  GetFunctionAddress ${L_RESERVED} un.GetRealUserSettings
+  UAC::ExecCodeSegment ${L_RESERVED}
 
   ; If 'Nihongo' (Japanese) language has been selected for the installer, ensure the
   ; 'Nihongo Parser' entry is shown on the COMPONENTS page to confirm that a parser will
@@ -314,6 +341,186 @@ insert_lang_strings:
   !undef L_PARAMETER
 
   !undef L_RESERVED
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.GetRealUserSettings
+#
+# Called via UAC::ExecCodeSegment from the inner/elevated uninstaller
+#
+# The inner/elevated uninstaller places the full path to the comms file
+# on the stack before calling this function.
+#--------------------------------------------------------------------------
+
+Function un.GetRealUserSettings
+
+  !define L_EXISTING_ROOT   $R9     ; path to POPFile program for "real" user
+  !define L_EXISTING_USER   $R8     ; path to POPFile User Data for "real" user
+  !define L_TEMP            $R7
+
+  Pop $G_COMMS_FILE
+
+  Push ${L_EXISTING_ROOT}
+  Push ${L_EXISTING_USER}
+  Push ${L_TEMP}
+
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
+
+  ; Assume Win9x system, so user has 'Admin' rights
+  ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
+
+  StrCpy $G_WINUSERNAME "UnknownUser"
+  StrCpy $G_WINUSERTYPE "Admin"
+  Goto save_username
+
+got_name:
+  Pop $G_WINUSERNAME
+  StrCmp $G_WINUSERNAME "" 0 get_usertype
+  StrCpy $G_WINUSERNAME "UnknownUser"
+
+get_usertype:
+  UserInfo::GetAccountType
+  Pop $G_WINUSERTYPE
+  StrCmp $G_WINUSERTYPE "Admin" save_username
+  StrCmp $G_WINUSERTYPE "Power" save_username
+  StrCmp $G_WINUSERTYPE "User"  save_username
+  StrCmp $G_WINUSERTYPE "Guest" save_username
+  StrCpy $G_WINUSERTYPE "Unknown"
+
+save_username:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "UserName" "$G_WINUSERNAME ($G_WINUSERTYPE)"
+
+  ReadEnvStr ${L_TEMP} "POPFILE_ROOT"
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "POPFILE_ROOT" "${L_TEMP}"
+  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "RootDir_LFN" "${L_TEMP}"
+  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN"
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "RootDir_SFN" "${L_TEMP}"
+
+### Save some debug information (start)
+### Save some debug information (start)
+### Save some debug information (start)
+
+  ReadEnvStr ${L_TEMP} "POPFILE_USER"
+  WriteINIStr "$G_COMMS_FILE" "Debug" "POPFILE_USER" "${L_TEMP}"
+  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
+  WriteINIStr "$G_COMMS_FILE" "Debug" "UserDir_LFN" "${L_TEMP}"
+  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_SFN"
+  WriteINIStr "$G_COMMS_FILE" "Debug" "UserDir_SFN" "${L_TEMP}"
+
+### Save some debug information (end)
+### Save some debug information (end)
+### Save some debug information (end)
+### Save some debug information (end)
+
+  ; If an existing POPFile configuration file (popfile.cfg) is found, report
+  ; the current Nihongo parser selection so it can be pre-selected
+
+  ReadEnvStr ${L_EXISTING_USER} "POPFILE_USER"
+  StrCmp ${L_EXISTING_USER} "" try_user_HKCU_LFN
+  IfFileExists "${L_EXISTING_USER}\popfile.cfg" check_parser_setting
+
+try_user_HKCU_LFN:
+  ReadRegStr ${L_EXISTING_USER} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
+  StrCmp ${L_EXISTING_USER} "" try_user_HKCU_SFN
+  IfFileExists "${L_EXISTING_USER}\popfile.cfg" check_parser_setting
+
+try_user_HKCU_SFN:
+  ReadRegStr ${L_EXISTING_USER} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_SFN"
+  StrCmp ${L_EXISTING_USER} "" config_missing
+  IfFileExists "${L_EXISTING_USER}\popfile.cfg" check_parser_setting
+
+config_missing:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "popfile.cfg" "missing"
+  Goto exit
+
+check_parser_setting:
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "popfile.cfg" "found"
+
+  !define L_CFG       $R9     ; handle for "popfile.cfg"
+  !define L_CMPRE     $R8     ; config param name
+  !define L_LNE       $R7     ; a line from popfile.cfg
+  !define L_PARSER    $R6     ; current Nihongo parser setting (introduced in 1.0.0 release)
+  !define L_TEXTEND   $R5     ; used to ensure correct handling of lines longer than 1023 chars
+
+  Push ${L_CFG}
+  Push ${L_CMPRE}
+  Push ${L_LNE}
+  Push ${L_PARSER}
+  Push ${L_TEXTEND}
+
+  StrCpy ${L_PARSER} ""
+
+  FileOpen  ${L_CFG} "${L_EXISTING_USER}\popfile.cfg" r
+
+found_eol:
+  StrCpy ${L_TEXTEND} "<eol>"
+
+loop:
+  FileRead ${L_CFG} ${L_LNE}
+  StrCmp ${L_LNE} "" done
+  StrCmp ${L_TEXTEND} "<eol>" 0 next_lne
+  StrCmp ${L_LNE} "$\n" next_lne
+
+  StrCpy ${L_CMPRE} ${L_LNE} 21
+  StrCmp ${L_CMPRE} "bayes_nihongo_parser " 0 next_lne
+  StrCpy ${L_PARSER} ${L_LNE} "" 21
+  Goto done
+
+next_lne:
+
+  ; Now read file until we get to end of the current line
+  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
+
+  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
+  StrCmp ${L_TEXTEND} "$\n" found_eol
+  StrCmp ${L_TEXTEND} "$\r" found_eol loop
+
+done:
+  FileClose ${L_CFG}
+
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "Parser" "${L_PARSER}"
+
+  Pop ${L_TEXTEND}
+  Pop ${L_PARSER}
+  Pop ${L_LNE}
+  Pop ${L_CMPRE}
+  Pop ${L_CFG}
+
+  !undef L_CFG
+  !undef L_CMPRE
+  !undef L_LNE
+  !undef L_PARSER
+  !undef L_TEXTEND
+
+exit:
+  Pop ${L_TEMP}
+  Pop ${L_EXISTING_USER}
+  Pop ${L_EXISTING_ROOT}
+
+  !undef L_EXISTING_ROOT
+  !undef L_EXISTING_USER
+  !undef L_TEMP
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.PFIUserAbort                (required by UAC plugin)
+# (custom un.onUserAbort function)
+#
+# Used to ensure UAC plugin and the "comms" file get removed if the user
+# cancels the modify/uninstall. This avoids leaving files and folders around
+# after 'Cancel' is selected.
+#--------------------------------------------------------------------------
+
+Function un.PFIUserAbort
+
+  Delete $G_COMMS_FILE
+
+  UAC::Unload     ; Must call unload!
 
 FunctionEnd
 
@@ -490,8 +697,6 @@ Section "-un.Uninstall Begin" UnSecBegin
   ; Access the POPFile User Data for the user who started the uninstaller
   ; (use the UAC plugin in case this was a non-admin user)
 
-  DetailPrint "Use UAC plugin to get the 'real' user data"
-
   GetFunctionAddress ${L_TEMP} un.Uninstall_Begin
   UAC::ExecCodeSegment ${L_TEMP}
 
@@ -516,7 +721,9 @@ Section "-un.StartLog"
   DetailPrint "------------------------------------------------------------"
   DetailPrint "Command-line: $CMDLINE"
   DetailPrint "$$INSTDIR    : $INSTDIR"
-  DetailPrint "User Details: $G_WINUSERNAME ($G_WINUSERTYPE)"
+  ReadINIStr $G_PLS_FIELD_1 "$G_COMMS_FILE" "RealUser" "UserName"
+  DetailPrint "User Details: $G_PLS_FIELD_1"
+  DetailPrint "UAC Username: $G_WINUSERNAME ($G_WINUSERTYPE)"
   DetailPrint "PFI Language: $(^Language) ($LANGUAGE)"
   DetailPrint "------------------------------------------------------------"
   Call un.PFI_GetDateTimeStamp
@@ -605,7 +812,7 @@ Section "-un.Shutdown POPFile" UnSecShutdown
   DetailPrint "$(PFI_LANG_UN_PROG_SHUTDOWN)"
   SetDetailsPrint listonly
 
-  ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
+  ; Starting with POPFile 0.21.0 an experimental version of 'popfile-service.exe' was included
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
@@ -1546,6 +1753,89 @@ Function un.RequestManualShutdown
       $(PFI_LANG_MBMANSHUT_2)\
       ${MB_NL}${MB_NL}\
       $(PFI_LANG_MBMANSHUT_3)"
+
+FunctionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.SetNihongoConfig
+#
+# Used to set required Nihongo parser in 'popfile.cfg'
+#
+# Inputs:
+#         (top of stack)     - required Nihongo parser ('internal', 'kakasi' or 'mecab')
+#
+# Outputs:
+#         none
+#
+# Usage:
+#         Push "mecab"
+#         Call un.SetNihongoConfig
+#
+#--------------------------------------------------------------------------
+
+Function un.SetNihongoConfig
+
+  !define L_NEW_CFG     $R9   ; file handle used for clean copy
+  !define L_OLD_CFG     $R8   ; file handle for old version
+  !define L_LNE         $R7   ; a line from the popfile.cfg file
+  !define L_NIHONGO     $R6   ; new Nihongo parser setting
+  !define L_PARAM       $R5
+  !define L_TEXTEND     $R4   ; helps ensure correct handling of lines over 1023 chars long
+
+  Exch ${L_NIHONGO}
+  Push ${L_NEW_CFG}
+  Push ${L_OLD_CFG}
+  Push ${L_LNE}
+  Push ${L_PARAM}
+  Push ${L_TEXTEND}
+
+  FileOpen  ${L_OLD_CFG} "$G_USERDIR\popfile.cfg" r
+  FileOpen  ${L_NEW_CFG} "$PLUGINSDIR\new.cfg" w
+
+found_eol:
+  StrCpy ${L_TEXTEND} "<eol>"
+
+loop:
+  FileRead ${L_OLD_CFG} ${L_LNE}
+  StrCmp ${L_LNE} "" copy_done
+  StrCmp ${L_TEXTEND} "<eol>" 0 copy_lne
+  StrCmp ${L_LNE} "$\n" copy_lne
+
+  StrCpy ${L_PARAM} ${L_LNE} 21
+  StrCmp ${L_PARAM} "bayes_nihongo_parser " 0 copy_lne
+  FileWrite ${L_NEW_CFG} "bayes_nihongo_parser ${L_NIHONGO}${MB_NL}"
+  Goto loop
+
+copy_lne:
+  FileWrite ${L_NEW_CFG} ${L_LNE}
+
+; Now read file until we get to end of the current line
+; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
+
+  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
+  StrCmp ${L_TEXTEND} "$\n" found_eol
+  StrCmp ${L_TEXTEND} "$\r" found_eol loop
+
+copy_done:
+  FileClose ${L_OLD_CFG}
+  FileClose ${L_NEW_CFG}
+
+  Delete "$G_USERDIR\popfile.cfg"
+  Rename "$PLUGINSDIR\new.cfg" "$G_USERDIR\popfile.cfg"
+
+  Pop ${L_TEXTEND}
+  Pop ${L_PARAM}
+  Pop ${L_LNE}
+  Pop ${L_OLD_CFG}
+  Pop ${L_NEW_CFG}
+  Pop ${L_NIHONGO}
+
+  !undef L_NEW_CFG
+  !undef L_OLD_CFG
+  !undef L_LNE
+  !undef L_NIHONGO
+  !undef L_PARAM
+  !undef L_TEXTEND
 
 FunctionEnd
 
