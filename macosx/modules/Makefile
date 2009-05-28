@@ -33,11 +33,11 @@ FAKECONFIG = ExtUtils-FakeConfig-0.11
 FAKECONFIG_ARCHIVE = $(FAKECONFIG).zip
 FAKECONFIG_URL = http://search.cpan.org/CPAN/authors/id/M/MB/MBARBON/$(FAKECONFIG_ARCHIVE)
 
-DBI = DBI-1.607
+DBI = DBI-1.608
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.21
+SQLITE = DBD-SQLite-1.25
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
 SQLITE_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(SQLITE_ARCHIVE)
 
@@ -63,7 +63,7 @@ SOAPLITE = SOAP-Lite-0.60
 SOAPLITE_ARCHIVE = $(SOAPLITE)a.tar.gz
 SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/B/BY/BYRNE/SOAP/$(SOAPLITE_ARCHIVE)
 
-VERSION_MODULE = version-0.74
+VERSION_MODULE = version-0.76
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
 VERSION_URL = http://search.cpan.org/CPAN/authors/id/J/JP/JPEACOCK/$(VERSION_ARCHIVE)
 
