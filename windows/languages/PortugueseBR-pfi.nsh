@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2003-2007 John Graham-Cumming
+# Copyright (c) 2003-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -242,23 +242,25 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_TITLE        "Detectados Componentes do Sistema Desatualizados"
 
-; Text strings displayed on the custom page
+; Text strings displayed on the custom page when OS version is too old
 
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_A =  PFI_LANG_PERLREQ_IO_TEXT_1
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_B =  PFI_LANG_PERLREQ_IO_TEXT_2
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_C =  PFI_LANG_PERLREQ_IO_TEXT_3
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_D =  PFI_LANG_PERLREQ_IO_TEXT_4
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_E =  PFI_LANG_PERLREQ_IO_TEXT_5 + " $G_PLS_FIELD_1${IO_NL}${IO_NL}"
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_F =  PFI_LANG_PERLREQ_IO_TEXT_6
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_G =  PFI_LANG_PERLREQ_IO_TEXT_7
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_1  "A minimal version of Perl is about to be installed (POPFile is written in Perl).${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_2  "The Perl supplied with POPFile is designed for Windows 2000 or later.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_3  "The installer has detected that this system uses Windows $G_PLS_FIELD_1${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_4  "It is possible that some features of POPFile may not work properly on this system.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_5  "It is strongly recommended that you DO NOT install this version of POPFile on this system.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_6  "Click here to visit http://getpopfile.org for further help and advice."
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_7  "http://getpopfile.org/"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_A    "O browser padrão é usado para exibir a Interface de Usuário do POPFile (seu centro de controle).${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_B    "O POPFile não requer um browser específico, ele funcionará com praticamente qualquer browser.${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_C    "Uma versão mínima do Perl está para ser instalada (o POPFile é escrito em Perl).${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_D    "O Perl fornecido com o POPFile faz uso de alguns componentes do Internet Explorer e requer o Internet Explorer 5.5 (ou uma versão mais atual)."
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_E    "O instalador detectou que este sistema tem o Internet Explorer $G_PLS_FIELD_1${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_F    "É possível que algumas características do POPFile não funcionem corretamente neste sistema.${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_G    "Se você tiver algum problema com o POPFile, uma atualização para uma versão mais nova do Internet Explorer pode ajudar."
+; Text strings displayed on the custom page when IE version is too old
+
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_1  "O browser padrão é usado para exibir a Interface de Usuário do POPFile (seu centro de controle).${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_2  "O POPFile não requer um browser específico, ele funcionará com praticamente qualquer browser.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_3  "Uma versão mínima do Perl está para ser instalada (o POPFile é escrito em Perl).${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_4  "O Perl fornecido com o POPFile faz uso de alguns componentes do Internet Explorer e requer o Internet Explorer 5.5 (ou uma versão mais atual)."
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_5  "O instalador detectou que este sistema tem o Internet Explorer $G_PLS_FIELD_1${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_6  "É possível que algumas características do POPFile não funcionem corretamente neste sistema.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_7  "Se você tiver algum problema com o POPFile, uma atualização para uma versão mais nova do Internet Explorer pode ajudar."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - COMPONENTS [installer.nsi]

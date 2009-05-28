@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2004-2007 John Graham-Cumming
+# Copyright (c) 2004-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -242,23 +242,25 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_TITLE        "ÊÃœ  „ﬂÊ‰«  ‰Ÿ«„ ﬁœÌ„…"
 
-; Text strings displayed on the custom page
+; Text strings displayed on the custom page when OS version is too old
 
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_A =  PFI_LANG_PERLREQ_IO_TEXT_1
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_B =  PFI_LANG_PERLREQ_IO_TEXT_2
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_C =  PFI_LANG_PERLREQ_IO_TEXT_3
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_D =  PFI_LANG_PERLREQ_IO_TEXT_4
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_E =  PFI_LANG_PERLREQ_IO_TEXT_5 + " $G_PLS_FIELD_1${IO_NL}${IO_NL}"
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_F =  PFI_LANG_PERLREQ_IO_TEXT_6
-; TempTranslationNote: PFI_LANG_PERLREQ_IO_TEXT_G =  PFI_LANG_PERLREQ_IO_TEXT_7
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_1  "A minimal version of Perl is about to be installed (POPFile is written in Perl).${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_2  "The Perl supplied with POPFile is designed for Windows 2000 or later.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_3  "The installer has detected that this system uses Windows $G_PLS_FIELD_1${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_4  "It is possible that some features of POPFile may not work properly on this system.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_5  "It is strongly recommended that you DO NOT install this version of POPFile on this system.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_6  "Click here to visit http://getpopfile.org for further help and advice."
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_OS_7  "http://getpopfile.org/"
 
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_A    "”Ì” ⁄„· «·„ ’›Õ «·≈› —«÷Ì ·⁄—÷ Ê«ÃÂ… ≈” ⁄„«· POPFile („—ﬂ“ «· Õﬂ„).${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_B    "·« Ì ÿ·» POPFile „ ’›Õ „Õœœ° ”Ì⁄„· „⁄ «Ì „ ’›Õ.${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_C    "”Ì „  ‰’Ì» ‰”Œ… „’€—… „‰ Perl ( „ ﬂ «»… POPFile »Ê«”ÿ… Perl).${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_D    "Ì ÿ·» Perl «·„“Êœ „⁄ POPFile »⁄÷ „ﬂÊ‰«  Internet Explorer Ê·Â–« Ì ÿ·» ÊÃÊœ Internet Explorer 5.5 (√Ê „« »⁄œÂ«)."
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_E    "·ﬁœ ≈ﬂ ‘› «·„‰’¯» ÊÃÊœ Internet Explorer ›Ì Â–« «·‰Ÿ«„ $G_PLS_FIELD_1${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_F    "„‰ «·„„ﬂ‰ √‰ »⁄÷ „Ì“«  POPFile ·‰  ⁄„· »‘ﬂ· ’ÕÌÕ ⁄·Ï Â–« «·‰Ÿ«„.${IO_NL}${IO_NL}"
-!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TEXT_G    "≈–« Ê«ÃÂ  „‘«ﬂ· „⁄ POPFile° ›≈‰ «· —ﬁÌ… «·Ï ‰”Œ… ÃœÌœ… „‰ Internet Explorer „„ﬂ‰ «‰  ”«⁄œ."
+; Text strings displayed on the custom page when IE version is too old
+
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_1  "”Ì” ⁄„· «·„ ’›Õ «·≈› —«÷Ì ·⁄—÷ Ê«ÃÂ… ≈” ⁄„«· POPFile („—ﬂ“ «· Õﬂ„).${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_2  "·« Ì ÿ·» POPFile „ ’›Õ „Õœœ° ”Ì⁄„· „⁄ «Ì „ ’›Õ.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_3  "”Ì „  ‰’Ì» ‰”Œ… „’€—… „‰ Perl ( „ ﬂ «»… POPFile »Ê«”ÿ… Perl).${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_4  "Ì ÿ·» Perl «·„“Êœ „⁄ POPFile »⁄÷ „ﬂÊ‰«  Internet Explorer Ê·Â–« Ì ÿ·» ÊÃÊœ Internet Explorer 5.5 (√Ê „« »⁄œÂ«)."
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_5  "·ﬁœ ≈ﬂ ‘› «·„‰’¯» ÊÃÊœ Internet Explorer ›Ì Â–« «·‰Ÿ«„ $G_PLS_FIELD_1${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_6  "„‰ «·„„ﬂ‰ √‰ »⁄÷ „Ì“«  POPFile ·‰  ⁄„· »‘ﬂ· ’ÕÌÕ ⁄·Ï Â–« «·‰Ÿ«„.${IO_NL}${IO_NL}"
+!insertmacro PFI_LANG_STRING PFI_LANG_PERLREQ_IO_TXT_IE_7  "≈–« Ê«ÃÂ  „‘«ﬂ· „⁄ POPFile° ›≈‰ «· —ﬁÌ… «·Ï ‰”Œ… ÃœÌœ… „‰ Internet Explorer „„ﬂ‰ «‰  ”«⁄œ."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; POPFile Installer: Standard MUI Page - COMPONENTS [installer.nsi]
