@@ -114,7 +114,7 @@ sub spin
 #
 # test_report   -        Report whether a test passed or not
 #
-# $ok           Boolean indicating whether the test passed
+# $ok                   Boolean indicating whether the test passed
 # $test                 String containing the test executed
 # $file                 The name of the file invoking the test
 # $line                 The line in the $file where the test can be found
@@ -140,7 +140,7 @@ sub test_report
         print " ($context)" if ( defined($context) );
         print "\n";
     } else {
-#            print "Test pass at $file:$line ($test) ($context)\n";
+#        print "Test pass at $file:$line ($test) ($context)\n";
     }
 
     flush STDOUT;
@@ -344,6 +344,8 @@ print "\n\n";
 # Test report
 my $test_report = './test-report.txt';
 open REPORT, ">$test_report";
+
+print REPORT "$fail_messages\n\n" if ( $test_failures > 0 );
 
 print REPORT "$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
 
