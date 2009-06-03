@@ -300,7 +300,27 @@ sub initialize
 
     $self->config_( 'sqlite_tweaks', 0xFFFFFFFF );
 
+    # SQLite Journal mode.
+    # To use this option, DBD::SQLite v1.20 or later is required.
+    #
+    #   delete   : Delete journal file after committing. (default)
+    #              Slow but reliable.
+    #   truncate : Truncate journal file to zero length after committing.
+    #              Faster than 'delete' in some environment but less reliable.
+    #   persist  : Persist journal file after committing.
+    #              Faster than 'delete' in some environment but less reliable.
+    #   memory   : Store journal file in memory.
+    #              Very fast but can't rollback when process crashes.
+    #   off      : Turn off journaling.
+    #              Fastest of all but can't rollback.
+    #
+    # For more information about the journal mode, see:
+    # http://www.sqlite.org/pragma.html#pragma_journal_mode
+
+    $self->config_( 'sqlite_journal_mode', 'delete' );
+
     # Japanese wakachigaki parser ('kakasi' or 'mecab' or 'internal').
+
     $self->config_( 'nihongo_parser', 'kakasi' );
 
     $self->mq_register_( 'COMIT', $self );
@@ -878,6 +898,16 @@ sub db_connect__
 
         if ( $self->{parser__}->{lang__} eq 'Nihongo' ) {
             $self->{db__}->do( 'pragma case_sensitive_like=1;' );
+        }
+
+        if ( $self->{db__}{sqlite_version} ge '3.6.0' ) {
+            # Configure journal mode
+
+            my $journal_mode = $self->config_( 'sqlite_journal_mode' );
+
+            if ( $journal_mode =~ /^(delete|truncate|persist|memory|off)$/i ) {
+                $self->{db__}->do( "pragma journal_mode=$journal_mode;" );
+            }
         }
     }
 
