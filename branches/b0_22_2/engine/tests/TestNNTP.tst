@@ -45,392 +45,6 @@ my $lf = "\012";
 my $eol = "$cr$lf";
 my $timeout = 2;
 
-sub pipeready
-{
-    my ( $pipe ) = @_;
-
-    if ( !defined( $pipe ) ) {
-        return 0;
-    }
-
-    if ( $^O eq 'MSWin32' ) {
-        return ( defined( fileno( $pipe ) ) && ( ( -s $pipe ) > 0 ) );
-    } else {
-        my $rin = '';
-        vec( $rin, fileno( $pipe ), 1 ) = 1;
-        my $ready = select( $rin, undef, undef, 0.01 );
-        return ( $ready > 0 );
-    }
-}
-
-sub server
-{
-    my ( $client ) = @_;
-    my @messages = sort glob 'TestMails/TestMailParse*.msg';
-    my $goslow = 0;
-    my $hang   = 0;
-    my $slowlf = 0;
-    my $group  = '';
-    my $current_message = 0;
-    my %groups = ( 'test1.group'    => scalar @messages,
-                   'test2.group'    => scalar @messages,
-                   'empty.group'    => 0,
-                   'writable.group' => 0, );
-    my %descriptions = ( 'test1.group'    => 'Test group 1',
-                         'test2.group'    => 'Test group 2',
-                         'empty.group'    => 'Empty group',
-                         'writable.group' => 'Writable group' );
-
-    my $time = time;
-
-    print $client "201 Ready$eol";
-
-    while  ( <$client> ) {
-        my $command;
-
-        $command = $_;
-        $command =~ s/($cr|$lf)//g;
-
-        if ( $command =~ /^AUTHINFO USER (.*)/i ) {
-            my $user = $1;
-            if ( $user =~ /(gooduser|goslow|hang|slowlf)/ ) {
-                print $client "381 Welcome $1. Password required$eol";
-                $goslow = ( $user =~ /goslow/ );
-                $hang   = ( $user =~ /hang/   );
-                $slowlf = ( $user =~ /slowlf/ );
-            } elsif ( $user =~ /nopassword/ ) {
-                print $client "281 authentication accepted$eol";
-            } else {
-                print $client "481 Unknown user $1$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^AUTHINFO PASS (.*)/i ) {
-            if ( $1 =~ /secret/ ) {
-                 print $client "281 Now logged in$eol";
-            } else {
-                 print $client "481 Bad Password$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^QUIT/i ) {
-            $group = '';
-            print $client "205 Bye$eol";
-            last;
-        }
-
-        if ( $command =~ /__QUIT__/i ) {
-            print $client "205 Bye$eol";
-            return 0;
-        }
-
-        if ( $command =~ /^HELP/i ) {
-            print $client "100 Help text follows$eol";
-            print $client "This is some help text.$eol";
-            print $client ".$eol";
-            next;
-        }
-
-        if ( $command =~ /^LIST ACTIVE ?(.*)?/i ) {
-            # TODO : searching groups is not supported yet
-            print $client "215 list of newsgroups follows$eol";
-            foreach my $g ( sort keys %groups ) {
-                printf $client "%s %010d %010d %s$eol",
-                               $g,
-                               ( $groups{$g} > 0 ? 1 : 0 ),
-                               $groups{$g},
-                               ( $g =~ /writable/ ? 'y' : 'n' );
-            }
-            print $client ".$eol";
-            next;
-        }
-
-        if ( $command =~ /^LIST NEWSGROUPS/i ) {
-            print $client "215 information follows$eol";
-            foreach my $g ( sort keys %groups ) {
-                print $client "$g $descriptions{$g}$eol";
-            }
-            print $client ".$eol";
-            next;
-        }
-
-        if ( $command =~ /^GROUP (.*)/i ) {
-            my $parameter = $1;
-            if ( exists $groups{$parameter} ) {
-                $group = $parameter;
-                if ( $groups{$group} > 0 ) {
-                    $current_message = 0;
-                    print $client "211 $groups{$group} 1 $groups{$group} $group$eol";
-                } else {
-                    # empty group
-                    $current_message = '';
-                    print $client "211 0 0 0 $group$eol";
-                }
-            } else {
-                # group not found
-                print $client "411 No such newsgroup$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^LISTGROUP ?([^ ]*)?/i ) {
-            # TODO : range is not supported yet
-            my $parameter = $1;
-            $parameter = $group if ( $parameter eq '' );
-            if ( exists $groups{$parameter} ) {
-                if ( $groups{$parameter} > 0 ) {
-                    print $client "211 $groups{$parameter} 1 $groups{$parameter} $parameter list follows$eol";
-                    for my $i ( 1 .. $groups{$parameter} ) {
-                        print $client "$i$eol";
-                    }
-                    print $client ".$eol";
-                } else {
-                    print $client "211 0 0 0 $parameter list follows$eol";
-                    print $client ".$eol";
-                }
-            } else {
-                if ( $group eq '' ) {
-                    print $client "412 No newsgroup selected$eol";
-                } else {
-                    print $client "411 No such newsgroup$eol";
-                }
-            }
-            next;
-        }
-
-        if ( $command =~ /^ARTICLE ?(?=(\d+)|(.*))?/i ) {
-            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
-            if ( $err ne '' ) {
-                print $client $err;
-                next;
-            }
-
-            if ( ( $groups{$g} >= $index ) &&
-                 defined( $messages[$index] ) && ( $messages[$index] ne '' ) ) {
-                if ( $g eq $group ) {
-                    print $client "220 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
-                    $current_message = $index;
-                } else {
-                    print $client "220 0 <nntp$index\@$g>$eol";
-                }
-
-                my $slowlftemp = $slowlf;
-
-                open FILE, "<$messages[$index]";
-                binmode FILE;
-                while ( <FILE> ) {
-                    s/[$cr$lf]+//g;
-
-                    if ($slowlftemp) {
-                        print $client "$_$cr";
-                        flush $client;
-                        select(undef,undef,undef, 1);
-                        print $client "$lf";
-                        flush $client;
-                        $slowlftemp = 0;
-                    } else {
-                        print $client "$_$eol" ;
-                    }
-
-                    if ( $goslow ) {
-                        select( undef, undef, undef, $timeout * 0.8 );
-                    }
-                    if ( $hang ) {
-                        select( undef, undef, undef, $timeout * 5 );
-                    }
-                }
-                close FILE;
-
-                print $client ".$eol";
-            } else {
-                print $client "423 No such message $1$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^HEAD ?(?=(\d+)|(.*))?/i ) {
-            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
-            if ( $err ne '' ) {
-                print $client $err;
-                next;
-            }
-
-            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
-                if ( $g eq $group ) {
-                    print $client "221 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
-                    $current_message = $index;
-                } else {
-                    print $client "221 0 <nntp$index\@$g>$eol";
-                }
-
-                open FILE, "<$messages[$index]";
-                binmode FILE;
-                while ( <FILE> ) {
-                    my $line = $_;
-                    last if ( $line =~ /^[$cr$lf]+$/ );
-                    s/$cr|$lf//g;
-                    print $client "$_$eol";
-                }
-                close FILE;
-
-                print $client ".$eol";
-
-            } else {
-                print $client "423 No such message $1$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^BODY ?(?=(\d+)|(.*))?/i ) {
-            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
-            if ( $err ne '' ) {
-                print $client $err;
-                next;
-            }
-
-            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
-                if ( $g eq $group ) {
-                    print $client "222 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
-                    $current_message = $index;
-                } else {
-                    print $client "222 0 <nntp$index\@$g>$eol";
-                }
-
-                open FILE, "<$messages[$index]";
-                binmode FILE;
-                # skip message header
-                while ( <FILE> ) {
-                    last if ( /^[$cr$lf]+$/ );
-                }
-                # return message body
-                while ( <FILE> ) {
-                    my $line = $_;
-                    $line =~ s/[$cr$lf]+//g;
-                    print $client "$line$eol";
-                }
-                close FILE;
-
-                print $client ".$eol";
-
-            } else {
-                print $client "423 No such message $1$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^STAT ?(?=(\d+)|(.*))?/i ) {
-            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
-            if ( $err ne '' ) {
-                print $client $err;
-                next;
-            }
-
-            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
-                if ( $g eq $group ) {
-                    print $client "223 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
-                    $current_message = $index;
-                } else {
-                    print $client "223 0 <nntp$index\@$g>$eol";
-                }
-            } else {
-                print $client "423 No such message $1$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^LAST/i ) {
-            if ( $group eq '' ) {
-                print $client "412 No newsgroup selected$eol";
-            } else {
-                if ( $current_message eq '' ) {
-                    print $client "420 Current article number is invalid$eol";
-                } elsif ( $current_message <= 0 ) {
-                    print $client "422 No previous article in this group$eol";
-                } else {
-                    $current_message--;
-                    print $client "223 " . ( $current_message + 1 ) . " <nntp$current_message\@$group>$eol";
-                }
-            }
-            next;
-        }
-
-        if ( $command =~ /^NEXT/i ) {
-            if ( $group eq '' ) {
-                print $client "412 No newsgroup selected$eol";
-            } else {
-                if ( $current_message eq '' ) {
-                    print $client "420 Current article number is invalid$eol";
-                } elsif ( $current_message >= $groups{$group} - 1 ) {
-                    print $client "422 No next article in this group$eol";
-                } else {
-                    $current_message++;
-                    print $client "223 " . ( $current_message + 1 ) . " <nntp$current_message\@$group>$eol";
-                }
-            }
-            next;
-        }
-
-        if ( $command =~ /^POST/i ) {
-            print $client "340 Input article; end with <CR-LF>.<CR-LF>$eol";
-            my $g;
-            select( undef, undef, undef, 0.1 );
-            while ( 1 ) {
-                my $line = <$client>;
-                $line =~ s/[$cr$lf]+//g;
-                last if $line eq '.';
-                if ( $line =~ /^Newsgroups: (.+)/ ) {
-                    $g = $1;
-                }
-            }
-            if ( exists $groups{$g} && $g =~ /writable/ ) {
-                print $client "240 Article received OK$eol";
-            } else {
-                print $client "441 Posting failed$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^[ \t]*$/i ) {
-            next;
-        }
-
-        print $client "500 unknown command or bad syntax$eol";
-    }
-
-    return 1;
-}
-
-sub get_group_and_index
-{
-    my ( $index, $message_id, $group, $current_message, $groups ) = @_;
-
-    my $g;
-    if ( $message_id ) {
-        # message_id is specified
-        $message_id =~ m/^<nntp(\d+)\@([^>]*)/;
-        $index = $1;
-        $g = $2;
-        if ( !exists $$groups{$g} ) {
-            return "430 No article with that message-id$eol";
-        }
-    } else {
-        # message number is specified
-        if ( $group eq '' ) {
-            return "412 No newsgroup selected$eol";
-        }
-        $g = $group;
-        if ( !defined($index) ) {
-            $index = $current_message;
-        } else {
-            $index--;
-        }
-    }
-
-    return ( '', $index, $g );
-}
-
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/.svn' );
@@ -717,7 +331,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "481 Bad Password$eol" );
 
-        # Next send GROUP command
+        # Next send GROUP before authentication
 
         print $client "GROUP test1.group$eol";
         $result = <$client>;
@@ -762,6 +376,7 @@ if ( $pid == 0 ) {
             }
         }
         my $message_count = scalar @messages;
+        my $notexist = $message_count + 1;
 
         # Group list (LIST ACTIVE)
 
@@ -865,8 +480,6 @@ if ( $pid == 0 ) {
         print $client "GROUP test2.group$eol";
         $result = <$client>;
         test_assert_equal( $result, "211 $message_count 1 $message_count test2.group$eol" );
-
-        my $notexist = $count + 1;
 
         # STAT command
 
@@ -1083,14 +696,14 @@ if ( $pid == 0 ) {
         test_assert( open FILE, "<$messages[4]" );
         binmode FILE;
         while ( ( my $line = <FILE> ) ) {
-            $line   =~ s/[$cr$lf]//g;
+            $line   =~ s/[$cr$lf]+//g;
             last if ( $line eq '' );
         }
         while ( ( my $line = <FILE> ) ) {
             $result = <$client>;
             test_assert( $result =~ /$cr/ );
-            $result =~ s/[$cr$lf]//g;
-            $line   =~ s/[$cr$lf]//g;
+            $result =~ s/[$cr$lf]+//g;
+            $line   =~ s/[$cr$lf]+//g;
             test_assert_equal( $result, $line );
         }
         close FILE;
@@ -1186,6 +799,8 @@ if ( $pid == 0 ) {
         test_assert_equal( $result,
             "201 NNTP POPFile (test suite) server ready$eol" );
 
+        # AUTHINFO without username
+
         print $client "AUTHINFO USER 127.0.0.1:8119:$eol";
         $result = <$client>;
         test_assert_equal( $result, "381 password$eol" );
@@ -1271,9 +886,9 @@ if ( $pid == 0 ) {
         test_assert( open FILE, "<$cam" );
         binmode FILE;
         while ( my $line = <FILE> ) {
-            $line =~ s/[$cr$lf]//g;
+            $line =~ s/[$cr$lf]+//g;
             $result = <$client>;
-            $result =~ s/[$cr$lf]//g;
+            $result =~ s/[$cr$lf]+//g;
             $result =~ s/view=$history_count/view=popfile0=0.msg/;
             test_assert_equal( $result, $line );
         }
@@ -1395,9 +1010,9 @@ if ( $pid == 0 ) {
         }
         # read message body
         while ( my $line = <FILE> ) {
-            $line =~ s/[$cr$lf]//g;
+            $line =~ s/[$cr$lf]+//g;
             $result = <$client>;
-            $result =~ s/[$cr$lf]//g;
+            $result =~ s/[$cr$lf]+//g;
             $result =~ s/view=$history_count/view=popfile0=0.msg/;
             test_assert_equal( $result, $line );
         }
@@ -1443,8 +1058,8 @@ if ( $pid == 0 ) {
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
         while ( defined( my $fl = <FILE> ) && defined( my $ml = <HIST> ) ) {
-            $fl =~ s/[$cr$lf]//g;
-            $ml =~ s/[$cr$lf]//g;
+            $fl =~ s/[$cr$lf]+//g;
+            $ml =~ s/[$cr$lf]+//g;
             test_assert_equal( $fl, $ml );
         }
         test_assert( eof(FILE) );
@@ -1467,9 +1082,9 @@ if ( $pid == 0 ) {
         test_assert( open FILE, "<$cam" );
         binmode FILE;
         while ( my $line = <FILE> ) {
-            $line =~ s/[$cr$lf]//g;
+            $line =~ s/[$cr$lf]+//g;
             $result = <$client>;
-            $result =~ s/[$cr$lf]//g;
+            $result =~ s/[$cr$lf]+//g;
             $result =~ s/view=$history_count/view=popfile0=0.msg/;
             test_assert_equal( $result, $line );
         }
@@ -1487,9 +1102,9 @@ if ( $pid == 0 ) {
         test_assert( open FILE, "<$cam" );
         binmode FILE;
         while ( my $line = <FILE> ) {
-            $line =~ s/[$cr$lf]//g;
+            $line =~ s/[$cr$lf]+//g;
             $result = <$client>;
-            $result =~ s/[$cr$lf]//g;
+            $result =~ s/[$cr$lf]+//g;
             $result =~ s/view=$history_count/view=popfile0=0.msg/;
             test_assert_equal( $result, $line );
         }
@@ -1553,8 +1168,8 @@ if ( $pid == 0 ) {
         test_assert( open HIST, "<$slot_file" );
         binmode HIST;
         while ( defined( my $fl = <FILE> ) && defined( my $ml = <HIST> ) ) {
-            $fl =~ s/[$cr$lf]//g;
-            $ml =~ s/[$cr$lf]//g;
+            $fl =~ s/[$cr$lf]+//g;
+            $ml =~ s/[$cr$lf]+//g;
             test_assert_equal( $fl, $ml );
         }
         test_assert( eof(FILE) );
@@ -1578,9 +1193,9 @@ if ( $pid == 0 ) {
         test_assert( open FILE, "<$cam" );
         binmode FILE;
         while ( my $line = <FILE> ) {
-            $line =~ s/[$cr$lf]//g;
+            $line =~ s/[$cr$lf]+//g;
             $result = <$client>;
-            $result =~ s/[$cr$lf]//g;
+            $result =~ s/[$cr$lf]+//g;
             $result =~ s/view=$history_count/view=popfile0=0.msg/;
             test_assert_equal( $result, $line );
         }
@@ -1893,6 +1508,391 @@ sub wait_proxy
         $mq->service();
         $h->service();
     }
+}
+
+sub pipeready
+{
+    my ( $pipe ) = @_;
+
+    if ( !defined( $pipe ) ) {
+        return 0;
+    }
+
+    if ( $^O eq 'MSWin32' ) {
+        return ( defined( fileno( $pipe ) ) && ( ( -s $pipe ) > 0 ) );
+    } else {
+        my $rin = '';
+        vec( $rin, fileno( $pipe ), 1 ) = 1;
+        my $ready = select( $rin, undef, undef, 0.01 );
+        return ( $ready > 0 );
+    }
+}
+
+sub server
+{
+    my ( $client ) = @_;
+    my @messages = sort glob 'TestMails/TestMailParse*.msg';
+    my $goslow = 0;
+    my $hang   = 0;
+    my $slowlf = 0;
+    my $group  = '';
+    my $current_message = 0;
+    my %groups = ( 'test1.group'    => scalar @messages,
+                   'test2.group'    => scalar @messages,
+                   'empty.group'    => 0,
+                   'writable.group' => 0, );
+    my %descriptions = ( 'test1.group'    => 'Test group 1',
+                         'test2.group'    => 'Test group 2',
+                         'empty.group'    => 'Empty group',
+                         'writable.group' => 'Writable group' );
+
+    my $time = time;
+
+    print $client "201 Ready$eol";
+
+    while  ( <$client> ) {
+        my $command;
+
+        $command = $_;
+        $command =~ s/($cr|$lf)//g;
+
+        if ( $command =~ /^AUTHINFO USER (.*)/i ) {
+            my $user = $1;
+            if ( $user =~ /(gooduser|goslow|hang|slowlf)/ ) {
+                print $client "381 Welcome $user. Password required$eol";
+                $goslow = ( $user =~ /goslow/ );
+                $hang   = ( $user =~ /hang/   );
+                $slowlf = ( $user =~ /slowlf/ );
+            } elsif ( $user =~ /nopassword/ ) {
+                print $client "281 authentication accepted$eol";
+            } else {
+                print $client "481 Unknown user $user$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^AUTHINFO PASS (.*)/i ) {
+            if ( $1 =~ /secret/ ) {
+                 print $client "281 Now logged in$eol";
+            } else {
+                 print $client "481 Bad Password$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^QUIT/i ) {
+            $group = '';
+            print $client "205 Bye$eol";
+            last;
+        }
+
+        if ( $command =~ /__QUIT__/i ) {
+            print $client "205 Bye$eol";
+            return 0;
+        }
+
+        if ( $command =~ /^HELP/i ) {
+            print $client "100 Help text follows$eol";
+            print $client "This is some help text.$eol";
+            print $client ".$eol";
+            next;
+        }
+
+        if ( $command =~ /^LIST ACTIVE ?(.*)?/i ) {
+            # TODO : searching groups is not supported yet
+            print $client "215 list of newsgroups follows$eol";
+            foreach my $g ( sort keys %groups ) {
+                printf $client "%s %010d %010d %s$eol",
+                               $g,
+                               ( $groups{$g} > 0 ? 1 : 0 ),
+                               $groups{$g},
+                               ( $g =~ /writable/ ? 'y' : 'n' );
+            }
+            print $client ".$eol";
+            next;
+        }
+
+        if ( $command =~ /^LIST NEWSGROUPS/i ) {
+            print $client "215 information follows$eol";
+            foreach my $g ( sort keys %groups ) {
+                print $client "$g $descriptions{$g}$eol";
+            }
+            print $client ".$eol";
+            next;
+        }
+
+        if ( $command =~ /^GROUP (.*)/i ) {
+            my $parameter = $1;
+            if ( exists $groups{$parameter} ) {
+                $group = $parameter;
+                if ( $groups{$group} > 0 ) {
+                    $current_message = 0;
+                    print $client "211 $groups{$group} 1 $groups{$group} $group$eol";
+                } else {
+                    # empty group
+                    $current_message = '';
+                    print $client "211 0 0 0 $group$eol";
+                }
+            } else {
+                # group not found
+                print $client "411 No such newsgroup$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^LISTGROUP ?([^ ]*)?/i ) {
+            # TODO : range is not supported yet
+            my $parameter = $1;
+            $parameter = $group if ( $parameter eq '' );
+            if ( exists $groups{$parameter} ) {
+                if ( $groups{$parameter} > 0 ) {
+                    print $client "211 $groups{$parameter} 1 $groups{$parameter} $parameter list follows$eol";
+                    for my $i ( 1 .. $groups{$parameter} ) {
+                        print $client "$i$eol";
+                    }
+                    print $client ".$eol";
+                } else {
+                    print $client "211 0 0 0 $parameter list follows$eol";
+                    print $client ".$eol";
+                }
+            } else {
+                if ( $group eq '' ) {
+                    print $client "412 No newsgroup selected$eol";
+                } else {
+                    print $client "411 No such newsgroup$eol";
+                }
+            }
+            next;
+        }
+
+        if ( $command =~ /^ARTICLE ?(?=(\d+)|(.*))?/i ) {
+            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
+            if ( $err ne '' ) {
+                print $client $err;
+                next;
+            }
+
+            if ( ( $groups{$g} >= $index ) &&
+                 defined( $messages[$index] ) && ( $messages[$index] ne '' ) ) {
+                if ( $g eq $group ) {
+                    print $client "220 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
+                    $current_message = $index;
+                } else {
+                    print $client "220 0 <nntp$index\@$g>$eol";
+                }
+
+                my $slowlftemp = $slowlf;
+
+                open FILE, "<$messages[$index]";
+                binmode FILE;
+                while ( <FILE> ) {
+                    s/[$cr$lf]+//g;
+
+                    if ($slowlftemp) {
+                        print $client "$_$cr";
+                        flush $client;
+                        select(undef,undef,undef, 1);
+                        print $client "$lf";
+                        flush $client;
+                        $slowlftemp = 0;
+                    } else {
+                        print $client "$_$eol" ;
+                    }
+
+                    if ( $goslow ) {
+                        select( undef, undef, undef, $timeout * 0.8 );
+                    }
+                    if ( $hang ) {
+                        select( undef, undef, undef, $timeout * 5 );
+                    }
+                }
+                close FILE;
+
+                print $client ".$eol";
+            } else {
+                print $client "423 No such message $1$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^HEAD ?(?=(\d+)|(.*))?/i ) {
+            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
+            if ( $err ne '' ) {
+                print $client $err;
+                next;
+            }
+
+            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
+                if ( $g eq $group ) {
+                    print $client "221 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
+                    $current_message = $index;
+                } else {
+                    print $client "221 0 <nntp$index\@$g>$eol";
+                }
+
+                open FILE, "<$messages[$index]";
+                binmode FILE;
+                while ( <FILE> ) {
+                    last if ( /^[$cr$lf]+$/ );
+                    s/[$cr$lf]+//g;
+                    print $client "$_$eol";
+                }
+                close FILE;
+
+                print $client ".$eol";
+
+            } else {
+                print $client "423 No such message $1$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^BODY ?(?=(\d+)|(.*))?/i ) {
+            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
+            if ( $err ne '' ) {
+                print $client $err;
+                next;
+            }
+
+            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
+                if ( $g eq $group ) {
+                    print $client "222 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
+                    $current_message = $index;
+                } else {
+                    print $client "222 0 <nntp$index\@$g>$eol";
+                }
+
+                open FILE, "<$messages[$index]";
+                binmode FILE;
+                # skip message header
+                while ( <FILE> ) {
+                    last if ( /^[$cr$lf]+$/ );
+                }
+                # return message body
+                while ( <FILE> ) {
+                    my $line = $_;
+                    $line =~ s/[$cr$lf]+//g;
+                    print $client "$line$eol";
+                }
+                close FILE;
+
+                print $client ".$eol";
+
+            } else {
+                print $client "423 No such message $1$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^STAT ?(?=(\d+)|(.*))?/i ) {
+            my ( $err, $index, $g ) = get_group_and_index( $1, $2, $group, $current_message, {%groups} );
+            if ( $err ne '' ) {
+                print $client $err;
+                next;
+            }
+
+            if ( ( $groups{$g} > $index ) && defined( $messages[$index] ) ) {
+                if ( $g eq $group ) {
+                    print $client "223 " . ( $index + 1 ) . " <nntp$index\@$g>$eol";
+                    $current_message = $index;
+                } else {
+                    print $client "223 0 <nntp$index\@$g>$eol";
+                }
+            } else {
+                print $client "423 No such message $1$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^LAST/i ) {
+            if ( $group eq '' ) {
+                print $client "412 No newsgroup selected$eol";
+            } else {
+                if ( $current_message eq '' ) {
+                    print $client "420 Current article number is invalid$eol";
+                } elsif ( $current_message <= 0 ) {
+                    print $client "422 No previous article in this group$eol";
+                } else {
+                    $current_message--;
+                    print $client "223 " . ( $current_message + 1 ) . " <nntp$current_message\@$group>$eol";
+                }
+            }
+            next;
+        }
+
+        if ( $command =~ /^NEXT/i ) {
+            if ( $group eq '' ) {
+                print $client "412 No newsgroup selected$eol";
+            } else {
+                if ( $current_message eq '' ) {
+                    print $client "420 Current article number is invalid$eol";
+                } elsif ( $current_message >= $groups{$group} - 1 ) {
+                    print $client "422 No next article in this group$eol";
+                } else {
+                    $current_message++;
+                    print $client "223 " . ( $current_message + 1 ) . " <nntp$current_message\@$group>$eol";
+                }
+            }
+            next;
+        }
+
+        if ( $command =~ /^POST/i ) {
+            print $client "340 Input article; end with <CR-LF>.<CR-LF>$eol";
+            my $g;
+            select( undef, undef, undef, 0.1 );
+            while ( 1 ) {
+                my $line = <$client>;
+                $line =~ s/[$cr$lf]+//g;
+                last if $line eq '.';
+                if ( $line =~ /^Newsgroups: (.+)/ ) {
+                    $g = $1;
+                }
+            }
+            if ( exists $groups{$g} && $g =~ /writable/ ) {
+                print $client "240 Article received OK$eol";
+            } else {
+                print $client "441 Posting failed$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^[ \t]*$/i ) {
+            next;
+        }
+
+        print $client "500 unknown command or bad syntax$eol";
+    }
+
+    return 1;
+}
+
+sub get_group_and_index
+{
+    my ( $index, $message_id, $group, $current_message, $groups ) = @_;
+
+    my $g;
+    if ( $message_id ) {
+        # message_id is specified
+        $message_id =~ m/^<nntp(\d+)\@([^>]*)/;
+        $index = $1;
+        $g = $2;
+        if ( !exists $$groups{$g} ) {
+            return "430 No article with that message-id$eol";
+        }
+    } else {
+        # message number is specified
+        if ( $group eq '' ) {
+            return "412 No newsgroup selected$eol";
+        }
+        $g = $group;
+        if ( !defined($index) ) {
+            $index = $current_message;
+        } else {
+            $index--;
+        }
+    }
+
+    return ( '', $index, $g );
 }
 
 
