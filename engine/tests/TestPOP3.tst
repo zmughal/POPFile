@@ -48,269 +48,6 @@ my $eol = "$cr$lf";
 
 my $timeout = 2;
 
-sub pipeready
-{
-    my ( $pipe ) = @_;
-
-    if ( !defined( $pipe ) ) {
-        return 0;
-    }
-
-    if ( $^O eq 'MSWin32' ) {
-        return ( defined( fileno( $pipe ) ) && ( ( -s $pipe ) > 0 ) );
-    } else {
-        my $rin = '';
-        vec( $rin, fileno( $pipe ), 1 ) = 1;
-        my $ready = select( $rin, undef, undef, 0.01 );
-        return ( $ready > 0 );
-    }
-}
-
-sub server
-{
-    my ( $client, $apop ) = @_;
-    my @messages = sort glob 'TestMails/TestMailParse*.msg';
-    my $goslow = 0;
-    my $hang   = 0;
-    my $slowlf = 0;
-
-    my $time = time;
-
-    my $APOPBanner = "<$time.$$\@POPFile>";
-    my $APOPSecret = "secret";
-
-    print $client "+OK Ready" . ($apop?" $APOPBanner":'') . "$eol";
-
-    while  ( <$client> ) {
-        my $command;
-
-        $command = $_;
-        $command =~ s/($cr|$lf)//g;
-
-        if ( $command =~ /^USER (.*)/i ) {
-            my $user = $1;
-            if ( $user =~ /(gooduser|goslow|hang|slowlf)/ ) {
-                print $client "+OK Welcome $user$eol";
-                $goslow = ( $user =~ /goslow/ );
-                $hang   = ( $user =~ /hang/   );
-                $slowlf = ( $user =~ /slowlf/ );
-            } else {
-                print $client "-ERR Unknown user $user$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /^APOP ([^ ]+) (.*)/i ) {
-
-            if ($apop) {
-
-                my $user = $1;
-                my $md5_hex_client = $2;
-
-                if ( $user =~ /(gooduser|goslow|hang|slowlf)/ ) {
-
-                    $goslow = ( $1 =~ /goslow/ );
-                    $hang   = ( $1 =~ /hang/   );
-                    $slowlf = ( $1 =~ /slowlf/ );
-
-
-                    my $md5 = Digest::MD5->new;
-                    $md5->add( $APOPBanner, $APOPSecret );
-                    my $md5hexserver = $md5->hexdigest;
-
-                    if ($md5_hex_client eq $md5hexserver) {
-                        print $client "+OK $user authenticated$eol";
-                    } else {
-                        print $client "-ERR bad credentials provided$eol";
-                    }
-                    next;
-
-                } else {
-                     print $client "-ERR Unknown APOP user $1$eol";
-                     next;
-                }
-            } else {
-                print $client "-ERR what is an APOP$eol";
-                next;
-            }
-
-            next;
-        }
-
-
-        if ( $command =~ /PASS (.*)/i ) {
-            if ( $1 =~ /secret/ ) {
-                 print $client "+OK Now logged in$eol";
-            } else {
-                 print $client "-ERR Bad Password$eol";
-            }
-            next;
-        }
-
-        if ( ( $command =~ /LIST ?(.*)?/i ) ||
-             ( $command =~ /UIDL ?(.*)?/i ) ||
-             ( $command =~ /STAT/ ) ) {
-            my $count = 0;
-            my $size  = 0;
-            for my $i (0..$#messages) {
-                if ( $messages[$i] ne '' ) {
-                    $count += 1;
-                    $size  += ( -s $messages[$i] );
-                }
-            }
-
-            print $client "+OK $count $size$eol";
-
-            if ( $command =~ /STAT/ ) {
-                next;
-            }
-
-            for my $i (0..$#messages) {
-                if ( $messages[$i] ne '' ) {
-                     my $resp = ( $command =~ /LIST/ )?( -s $messages[$i] ):$messages[$i];
-                     print $client ($i+1) . " $resp$eol";
-                }
-            }
-
-            print $client ".$eol";
-
-            next;
-        }
-
-        if ( $command =~ /^QUIT/i ) {
-            print $client "+OK Bye$eol";
-            last;
-        }
-
-        if ( $command =~ /__QUIT__/i ) {
-            print $client "+OK Bye$eol";
-            return 0;
-        }
-
-        if ( $command =~ /RSET/i ) {
-            @messages = sort glob 'TestMails/TestMailParse*.msg';
-            print $client "+OK Reset$eol";
-            next;
-        }
-
-        if ( $command =~ /HELO/i ) {
-            print $client "+OK Hello$eol";
-            next;
-        }
-
-        if ( $command =~ /DELE (.*)/i ) {
-            my $index = $1 - 1;
-            if ( defined( $messages[$index] ) &&
-                 ( $messages[$index] ne '' ) ) {
-                $messages[$index] = '';
-                print $client "+OK Deleted $1$eol";
-            } else {
-                print $client "-ERR No such message $1$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /RETR (\d+)/i ) {
-            my $index = $1 - 1;
-            if ( defined( $messages[$index] ) &&
-                 ( $messages[$index] ne '' ) ) {
-                print $client "+OK " . ( -s $messages[$index] ) . "$eol";
-
-                my $slowlftemp = $slowlf;
-
-                open FILE, "<$messages[$index]";
-                binmode FILE;
-                while ( <FILE> ) {
-                    s/\r|\n//g;
-
-                    if ($slowlftemp) {
-                        print $client "$_$cr";
-                        flush $client;
-                        select(undef,undef,undef, 1);
-                        print $client "$lf";
-                        flush $client;
-                        $slowlftemp = 0;
-                    } else {
-                        print $client "$_$eol" ;
-                    }
-
-                    if ( $goslow ) {
-                        select( undef, undef, undef, $timeout * 0.8 );
-                    }
-                    if ( $hang ) {
-                        select( undef, undef, undef, $timeout * 5 );
-                        last;
-                    }
-                }
-                close FILE;
-
-                print $client ".$eol";
-            } else {
-                print $client "-ERR No such message $1$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /TOP (.*) (.*)/i ) {
-            my $index = $1 - 1;
-            my $countdown = $2;
-            if ( defined( $messages[$index] ) && ( $messages[$index] ne '' ) ) {
-                 print $client "+OK " . ( -s $messages[$index] ) . "$eol";
-
-                 open FILE, "<$messages[$index]";
-                 binmode FILE;
-                 while ( <FILE> ) {
-                     my $line = $_;
-                     s/\r|\n//g;
-                     print $client "$_$eol";
-
-                     if ( $line =~ /^[\r\n]+$/ ) {
-                         last;
-                     }
-                 }
-                 while ( defined ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
-                     $line =~ s/\r|\n//g;
-                     print $client "$line$eol";
-                     $countdown -= 1;
-                 }
-                 close FILE;
-
-                 print $client ".$eol";
-
-            } else {
-                print $client "-ERR No such message $1$eol";
-            }
-            next;
-        }
-
-        if ( $command =~ /AUTH ([^ ]+)/ ) {
-            print $client "$1$eol";
-            my $echoit = <$client>;
-            print $client "Got $echoit";
-            $echoit = <$client>;
-            print $client "Got $echoit";
-            $echoit = <$client>;
-            print $client "+OK Done$eol";
-            next;
-        }
-
-        if ( $command =~ /CAPA|AUTH/i ) {
-            print $client "+OK I can handle$eol" . "AUTH$eol" .
-                "USER$eol" . "APOP$eol.$eol";
-            next;
-        }
-
-        if ( $command =~ /JOHN/ ) {
-            print $client "+OK Hello John$eol";
-            next;
-        }
-
-        print $client "-ERR unknown command or bad syntax$eol";
-    }
-
-    return 1;
-}
-
 rmtree( 'corpus' );
 test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/.svn' );
@@ -322,42 +59,6 @@ my $l = new POPFile::Logger;
 my $b = new Classifier::Bayes;
 my $w = new Classifier::WordMangle;
 my $h = new POPFile::History;
-
-sub forker
-{
-    pipe my $reader, my $writer;
-    $l->log_( 2, "Created pipe pair $reader and $writer" );
-    $b->prefork();
-    $mq->prefork();
-    $h->prefork();
-    my $pid = fork();
-
-    if ( !defined( $pid ) ) {
-        close $reader;
-        close $writer;
-        return (undef, undef);
-    }
-
-    if ( $pid == 0 ) {
-        $b->forked( $writer );
-        $mq->forked( $writer );
-        $h->forked( $writer );
-        close $reader;
-
-        use IO::Handle;
-        $writer->autoflush(1);
-
-        return (0, $writer);
-    }
-
-    $l->log_( 2, "Child process has pid $pid" );
-
-    $b->postfork( $pid, $reader );
-    $mq->postfork( $pid, $reader );
-    $h->postfork( $pid, $reader );
-    close $writer;
-    return ($pid, $reader);
-}
 
 $c->configuration( $c );
 $c->mq( $mq );
@@ -454,7 +155,7 @@ if ( $pid == 0 ) {
     close $dserverwriter;
     close $userverreader;
 
-    $userverwriter->autoflush(1);
+    $userverwriter->autoflush( 1 );
 
     my $server = IO::Socket::INET->new( Proto     => 'tcp',
                                     LocalAddr => 'localhost',
@@ -467,9 +168,9 @@ if ( $pid == 0 ) {
     my $apop_server = 0;
 
     while ( 1 ) {
-        if ( defined( $selector->can_read(0) ) ) {
+        if ( defined( $selector->can_read( 0 ) ) ) {
             if ( my $client = $server->accept() ) {
-                last if !server($client, $apop_server);
+                last if !server( $client, $apop_server );
                 close $client;
             }
         }
@@ -581,7 +282,7 @@ if ( $pid == 0 ) {
         close $userverwriter;
         $dserverwriter->autoflush(1);
 
-        select(undef,undef,undef,5);
+        select( undef, undef, undef, 5 );
 
         my $client = connect_proxy();
 
@@ -750,7 +451,7 @@ if ( $pid == 0 ) {
         test_assert_equal( $hdr_from, 'blank' );
         test_assert_equal( $magnet, 0 );
 
-       # Now get a message that has an illegal embedded CRLF.CRLF
+        # Now get a message that has an illegal embedded CRLF.CRLF
 
         print $client "RETR 28$eol";
         $result = <$client>;
@@ -1903,6 +1604,305 @@ sub wait_proxy
         select( undef, undef, undef, 0.1 );
         $mq->service();
         $h->service();
+    }
+}
+
+sub server
+{
+    my ( $client, $apop ) = @_;
+    my @messages = sort glob 'TestMails/TestMailParse*.msg';
+    my $goslow = 0;
+    my $hang   = 0;
+    my $slowlf = 0;
+
+    my $time = time;
+
+    my $APOPBanner = "<$time.$$\@POPFile>";
+    my $APOPSecret = "secret";
+
+    print $client "+OK Ready" . ($apop?" $APOPBanner":'') . "$eol";
+
+    while  ( <$client> ) {
+        my $command;
+
+        $command = $_;
+        $command =~ s/($cr|$lf)//g;
+
+        if ( $command =~ /^USER (.*)/i ) {
+            my $user = $1;
+            if ( $user =~ /(gooduser|goslow|hang|slowlf)/ ) {
+                print $client "+OK Welcome $user$eol";
+                $goslow = ( $user =~ /goslow/ );
+                $hang   = ( $user =~ /hang/   );
+                $slowlf = ( $user =~ /slowlf/ );
+            } else {
+                print $client "-ERR Unknown user $user$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /^APOP ([^ ]+) (.*)/i ) {
+
+            if ($apop) {
+
+                my $user = $1;
+                my $md5_hex_client = $2;
+
+                if ( $user =~ /(gooduser|goslow|hang|slowlf)/ ) {
+
+                    $goslow = ( $1 =~ /goslow/ );
+                    $hang   = ( $1 =~ /hang/   );
+                    $slowlf = ( $1 =~ /slowlf/ );
+
+
+                    my $md5 = Digest::MD5->new;
+                    $md5->add( $APOPBanner, $APOPSecret );
+                    my $md5hexserver = $md5->hexdigest;
+
+                    if ( $md5_hex_client eq $md5hexserver ) {
+                        print $client "+OK $user authenticated$eol";
+                    } else {
+                        print $client "-ERR bad credentials provided$eol";
+                    }
+                    next;
+
+                } else {
+                     print $client "-ERR Unknown APOP user $1$eol";
+                     next;
+                }
+            } else {
+                print $client "-ERR what is an APOP$eol";
+                next;
+            }
+
+            next;
+        }
+
+
+        if ( $command =~ /PASS (.*)/i ) {
+            if ( $1 =~ /secret/ ) {
+                 print $client "+OK Now logged in$eol";
+            } else {
+                 print $client "-ERR Bad Password$eol";
+            }
+            next;
+        }
+
+        if ( ( $command =~ /LIST ?(.*)?/i ) ||
+             ( $command =~ /UIDL ?(.*)?/i ) ||
+             ( $command =~ /STAT/ ) ) {
+            my $count = 0;
+            my $size  = 0;
+            for my $i (0..$#messages) {
+                if ( $messages[$i] ne '' ) {
+                    $count += 1;
+                    $size  += ( -s $messages[$i] );
+                }
+            }
+
+            print $client "+OK $count $size$eol";
+
+            if ( $command =~ /STAT/ ) {
+                next;
+            }
+
+            for my $i ( 0..$#messages ) {
+                if ( $messages[$i] ne '' ) {
+                     my $resp = ( $command =~ /LIST/ )?( -s $messages[$i] ):$messages[$i];
+                     print $client ($i+1) . " $resp$eol";
+                }
+            }
+
+            print $client ".$eol";
+
+            next;
+        }
+
+        if ( $command =~ /^QUIT/i ) {
+            print $client "+OK Bye$eol";
+            last;
+        }
+
+        if ( $command =~ /__QUIT__/i ) {
+            print $client "+OK Bye$eol";
+            return 0;
+        }
+
+        if ( $command =~ /RSET/i ) {
+            @messages = sort glob 'TestMails/TestMailParse*.msg';
+            print $client "+OK Reset$eol";
+            next;
+        }
+
+        if ( $command =~ /HELO/i ) {
+            print $client "+OK Hello$eol";
+            next;
+        }
+
+        if ( $command =~ /DELE (.*)/i ) {
+            my $index = $1 - 1;
+            if ( defined( $messages[$index] ) &&
+                 ( $messages[$index] ne '' ) ) {
+                $messages[$index] = '';
+                print $client "+OK Deleted $1$eol";
+            } else {
+                print $client "-ERR No such message $1$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /RETR (\d+)/i ) {
+            my $index = $1 - 1;
+            if ( defined( $messages[$index] ) &&
+                 ( $messages[$index] ne '' ) ) {
+                print $client "+OK " . ( -s $messages[$index] ) . "$eol";
+
+                my $slowlftemp = $slowlf;
+
+                open FILE, "<$messages[$index]";
+                binmode FILE;
+                while ( <FILE> ) {
+                    s/\r|\n//g;
+
+                    if ($slowlftemp) {
+                        print $client "$_$cr";
+                        flush $client;
+                        select( undef, undef, undef, 1 );
+                        print $client "$lf";
+                        flush $client;
+                        $slowlftemp = 0;
+                    } else {
+                        print $client "$_$eol" ;
+                    }
+
+                    if ( $goslow ) {
+                        select( undef, undef, undef, $timeout * 0.8 );
+                    }
+                    if ( $hang ) {
+                        select( undef, undef, undef, $timeout * 5 );
+                        last;
+                    }
+                }
+                close FILE;
+
+                print $client ".$eol";
+            } else {
+                print $client "-ERR No such message $1$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /TOP (.*) (.*)/i ) {
+            my $index = $1 - 1;
+            my $countdown = $2;
+            if ( defined( $messages[$index] ) && ( $messages[$index] ne '' ) ) {
+                 print $client "+OK " . ( -s $messages[$index] ) . "$eol";
+
+                 open FILE, "<$messages[$index]";
+                 binmode FILE;
+                 while ( <FILE> ) {
+                     my $line = $_;
+                     s/\r|\n//g;
+                     print $client "$_$eol";
+
+                     if ( $line =~ /^[\r\n]+$/ ) {
+                         last;
+                     }
+                 }
+                 while ( defined ( my $line = <FILE> ) && ( $countdown > 0 ) ) {
+                     $line =~ s/\r|\n//g;
+                     print $client "$line$eol";
+                     $countdown -= 1;
+                 }
+                 close FILE;
+
+                 print $client ".$eol";
+
+            } else {
+                print $client "-ERR No such message $1$eol";
+            }
+            next;
+        }
+
+        if ( $command =~ /AUTH ([^ ]+)/ ) {
+            print $client "$1$eol";
+            my $echoit = <$client>;
+            print $client "Got $echoit";
+            $echoit = <$client>;
+            print $client "Got $echoit";
+            $echoit = <$client>;
+            print $client "+OK Done$eol";
+            next;
+        }
+
+        if ( $command =~ /CAPA|AUTH/i ) {
+            print $client "+OK I can handle$eol" . "AUTH$eol" .
+                "USER$eol" . "APOP$eol.$eol";
+            next;
+        }
+
+        if ( $command =~ /JOHN/ ) {
+            print $client "+OK Hello John$eol";
+            next;
+        }
+
+        print $client "-ERR unknown command or bad syntax$eol";
+    }
+
+    return 1;
+}
+
+sub forker
+{
+    pipe my $reader, my $writer;
+    $l->log_( 2, "Created pipe pair $reader and $writer" );
+    $b->prefork();
+    $mq->prefork();
+    $h->prefork();
+    my $pid = fork();
+
+    if ( !defined( $pid ) ) {
+        close $reader;
+        close $writer;
+        return ( undef, undef );
+    }
+
+    if ( $pid == 0 ) {
+        $b->forked( $writer );
+        $mq->forked( $writer );
+        $h->forked( $writer );
+        close $reader;
+
+        use IO::Handle;
+        $writer->autoflush( 1 );
+
+        return ( 0, $writer );
+    }
+
+    $l->log_( 2, "Child process has pid $pid" );
+
+    $b->postfork( $pid, $reader );
+    $mq->postfork( $pid, $reader );
+    $h->postfork( $pid, $reader );
+    close $writer;
+    return ($pid, $reader);
+}
+
+sub pipeready
+{
+    my ( $pipe ) = @_;
+
+    if ( !defined( $pipe ) ) {
+        return 0;
+    }
+
+    if ( $^O eq 'MSWin32' ) {
+        return ( defined( fileno( $pipe ) ) && ( ( -s $pipe ) > 0 ) );
+    } else {
+        my $rin = '';
+        vec( $rin, fileno( $pipe ), 1 ) = 1;
+        my $ready = select( $rin, undef, undef, 0.01 );
+        return ( $ready > 0 );
     }
 }
 
