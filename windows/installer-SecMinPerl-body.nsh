@@ -117,6 +117,7 @@
   File "${C_PERL_DIR}\lib\Exporter\*"
 
   SetOutPath "$G_MPLIBDIR\File"
+  File "${C_PERL_DIR}\lib\File\Basename.pm"
   File "${C_PERL_DIR}\lib\File\Copy.pm"
   File "${C_PERL_DIR}\lib\File\Glob.pm"
   File "${C_PERL_DIR}\lib\File\Spec.pm"
@@ -146,9 +147,9 @@
   File "${C_PERL_DIR}\lib\IO\Socket\*"
 
   SetOutPath "$G_MPLIBDIR\List"
-  File "${C_PERL_DIR}\lib\List\Util.pm"
+  File "${C_PERL_DIR}\site\lib\List\Util.pm"
         SetOutPath "$G_MPLIBDIR\auto\List\Util"
-        File "${C_PERL_DIR}\lib\auto\List\Util\*"
+        File "${C_PERL_DIR}\site\lib\auto\List\Util\*"
 
   SetOutPath "$G_MPLIBDIR\LWP"
   File "${C_PERL_DIR}\lib\LWP\Simple.pm"
@@ -159,7 +160,7 @@
         File "${C_PERL_DIR}\lib\auto\MIME\Base64\*"
 
   SetOutPath "$G_MPLIBDIR\Scalar"
-  File "${C_PERL_DIR}\lib\Scalar\Util.pm"
+  File "${C_PERL_DIR}\site\lib\Scalar\Util.pm"
 
   SetOutPath "$G_MPLIBDIR\Sys"
   File "${C_PERL_DIR}\lib\Sys\*"
@@ -219,15 +220,15 @@
   SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\base.pm"
   File "${C_PERL_DIR}\lib\overload.pm"
-  File "${C_PERL_DIR}\lib\DBI.pm"
+  File "${C_PERL_DIR}\site\lib\DBI.pm"
 
   ; Required in order to use any version of SQLite
 
   SetOutPath "$G_MPLIBDIR\auto\DBI"
-  File "${C_PERL_DIR}\lib\auto\DBI\DBI.bs"
-  File "${C_PERL_DIR}\lib\auto\DBI\DBI.dll"
-  File "${C_PERL_DIR}\lib\auto\DBI\DBI.exp"
-  File "${C_PERL_DIR}\lib\auto\DBI\DBI.lib"
+  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.bs"
+  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.dll"
+  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.exp"
+  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.lib"
 
   ; POPFile 1.1.0 was the first version of POPFile to work with SQLIte 3.x libraries.
   ; SQLite databases built using SQLite 3.x are incompatible with those built using
