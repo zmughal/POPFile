@@ -9,7 +9,7 @@
 #                   and starting the email client (to avoid problems if the email client looks
 #                   for new mail before POPFile is ready to accept commands).
 #
-# Copyright (c) 2005-2008 John Graham-Cumming
+# Copyright (c) 2005-2009 John Graham-Cumming
 #
 #   This file creates a utility for use with POPFile.
 #
@@ -27,11 +27,20 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.37" compiler,
-  ; released 3 May 2008. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.44" compiler,
+  ; released 21 February 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.44-setup.exe?download
+  ;
+  ; Programs compiled by NSIS 2.44 will trigger Program Compatibility Assistant warnings
+  ; when run on Windows 7 systems. In order to avoid these warnings the 'makensis.exe'
+  ; compiler from NSIS 2.44 should be replaced by the patched one from PortableApps.com.
+  ;
+  ; This patched compiler can be downloaded from http://portableapps.com/node/19013
+  ; (the patch makes the compiler generate a "Windows 7" compatible manifest).
+  ; See this NSIS bug report for further details:
+  ; https://sourceforge.net/tracker/?func=detail&atid=373085&aid=2725883&group_id=22049
 
-  !define C_EXPECTED_VERSION  "v2.37"
+  !define C_EXPECTED_VERSION  "v2.44-Win7-Patch-1-By-PortableApps.com"
 
   !define ${NSIS_VERSION}_found
 
@@ -139,7 +148,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.1.2"
+  !define C_VERSION   "0.1.3"
 
   ; Specify the icon file for the utility
 

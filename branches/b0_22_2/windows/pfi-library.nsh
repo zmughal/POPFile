@@ -60,7 +60,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.19"
+  !define C_PFI_LIBRARY_VERSION     "0.3.20"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -2958,7 +2958,7 @@
     FunctionEnd
 !macroend
 
-!ifndef ONDEMAND & PORTABLE
+!ifndef ONDEMAND
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParameters
     #

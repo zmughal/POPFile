@@ -4,7 +4,7 @@
 #                     used by 'installer.nsi' when installing/uninstalling the
 #                     'Kakasi' package.
 #
-# Copyright (c) 2003-2008 John Graham-Cumming
+# Copyright (c) 2003-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -40,7 +40,7 @@
   !define MB_NL     "$\r$\n"
 !endif
 
-!ifndef ADDSSL & ADDUSER
+!ifndef ADDSSL & ADDUSER & PORTABLE
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_DeleteEnvStr
     #
@@ -266,7 +266,7 @@
 
 !insertmacro PFI_IsNT ""
 
-!ifndef ADDSSL
+!ifndef ADDSSL & PORTABLE
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_IsNT
     #
@@ -276,7 +276,7 @@
     !insertmacro PFI_IsNT "un."
 !endif
 
-!ifndef ADDSSL
+!ifndef ADDSSL & PORTABLE
     #--------------------------------------------------------------------------
     # Macro: PFI_WriteEnvStr
     #
