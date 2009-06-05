@@ -49,11 +49,20 @@
 #  (7) getparser.nsh                 - macro-based sections and functions to install the Nihongo Parser
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.37" compiler,
-  ; released 3 May 2008. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.44" compiler,
+  ; released 21 February 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.44-setup.exe?download
+  ;
+  ; Programs compiled by NSIS 2.44 will trigger Program Compatibility Assistant warnings
+  ; when run on Windows 7 systems. In order to avoid these warnings the 'makensis.exe'
+  ; compiler from NSIS 2.44 should be replaced by the patched one from PortableApps.com.
+  ;
+  ; This patched compiler can be downloaded from http://portableapps.com/node/19013
+  ; (the patch makes the compiler generate a "Windows 7" compatible manifest).
+  ; See this NSIS bug report for further details:
+  ; https://sourceforge.net/tracker/?func=detail&atid=373085&aid=2725883&group_id=22049
 
-  !define C_EXPECTED_VERSION  "v2.37"
+  !define C_EXPECTED_VERSION  "v2.44-Win7-Patch-1-By-PortableApps.com"
 
   !define ${NSIS_VERSION}_found
 
@@ -326,7 +335,7 @@
 
   !define C_PERL_DIR      "C:\Perl"
   !define C_PERL_VERSION  "5.8.9"
-  !define C_PERL_BUILD    "825"
+  !define C_PERL_BUILD    "826"
 
   ;----------------------------------------------------------------------
   ; Recently there have been some significant changes to the structure and
@@ -1814,7 +1823,7 @@ Section /o "XMLRPC" SecXMLRPC
   File "${C_PERL_DIR}\lib\bytes_heavy.pl"
   File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\re.pm"
-  File "${C_PERL_DIR}\lib\URI.pm"
+  File "${C_PERL_DIR}\site\lib\URI.pm"
   File "${C_PERL_DIR}\lib\utf8.pm"
   File "${C_PERL_DIR}\lib\utf8_heavy.pl"
 
@@ -1850,7 +1859,7 @@ Section /o "XMLRPC" SecXMLRPC
   File "${C_PERL_DIR}\lib\unicore\To\Fold.pl"
 
   SetOutPath "$G_MPLIBDIR\URI"
-  File /r "${C_PERL_DIR}\lib\URI\*"
+  File /r "${C_PERL_DIR}\site\lib\URI\*"
 
   SetOutPath "$G_MPLIBDIR\XML"
   File /r "${C_PERL_DIR}\lib\XML\*"
