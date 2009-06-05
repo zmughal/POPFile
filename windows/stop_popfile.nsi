@@ -2,7 +2,7 @@
 #
 # stop_popfile.nsi --- A simple 'command-line' utility to shutdown POPFile silently.
 #
-# Copyright (c) 2003-2008 John Graham-Cumming
+# Copyright (c) 2003-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -81,11 +81,20 @@
 # The '/WAIT' parameter is important, otherwise the 'failed' case will not be detected.
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.37" compiler,
-  ; released 3 May 2008. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.37-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.44" compiler,
+  ; released 21 February 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.44-setup.exe?download
+  ;
+  ; Programs compiled by NSIS 2.44 will trigger Program Compatibility Assistant warnings
+  ; when run on Windows 7 systems. In order to avoid these warnings the 'makensis.exe'
+  ; compiler from NSIS 2.44 should be replaced by the patched one from PortableApps.com.
+  ;
+  ; This patched compiler can be downloaded from http://portableapps.com/node/19013
+  ; (the patch makes the compiler generate a "Windows 7" compatible manifest).
+  ; See this NSIS bug report for further details:
+  ; https://sourceforge.net/tracker/?func=detail&atid=373085&aid=2725883&group_id=22049
 
-  !define C_EXPECTED_VERSION  "v2.37"
+  !define C_EXPECTED_VERSION  "v2.44-Win7-Patch-1-By-PortableApps.com"
 
   !define ${NSIS_VERSION}_found
 
@@ -125,7 +134,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.6.8"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.6.9"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
