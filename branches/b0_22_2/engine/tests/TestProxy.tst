@@ -201,7 +201,7 @@ open TEMP, ">temp.tmp";
 $sp->echo_to_regexp_( $client, \*TEMP, qr/TH/ );
 close TEMP;
 open TEMP, "<temp.tmp";
-my $line = <TEMP>;
+$line = <TEMP>;
 test_assert_regexp( $line, 'before1' );
 $line = <TEMP>;
 test_assert_regexp( $line, 'before2' );
