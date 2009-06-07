@@ -82,7 +82,7 @@ $l->config_( 'level', 2 );
 pipe my $reader, my $writer;
 my $pid = fork();
 
-if ($pid == 0) {
+if ( $pid == 0 ) {
 
     close $reader;
 
@@ -111,7 +111,7 @@ if ($pid == 0) {
     $b->postfork( $pid, $reader );
     $mq->postfork( $pid, $reader );
 
-    select(undef,undef,undef,1);
+    sleep 1;
     use XMLRPC::Lite;
 
     my $session = XMLRPC::Lite

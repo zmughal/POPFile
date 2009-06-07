@@ -512,7 +512,7 @@ EOM
                     @forms = HTML::Form->parse( $response );
                 } else {
                     test_assert_equal( $response->code, 200, "From script line $line_number" );
-                $content = $response->content;
+                    $content = $response->content;
                     @forms = HTML::Form->parse( $response );
                 }
                 $content =~ s/^[\t ]+//gm;
@@ -730,13 +730,13 @@ sub pipeready
 sub unit_tests {
     my $h = new UI::HTML;
 
-    test_assert_equal( $h->url_encode_( ']' ), '%5d' );
-    test_assert_equal( $h->url_encode_( '[' ), '%5b' );
-    test_assert_equal( $h->url_encode_( '[]' ), '%5b%5d' );
+    test_assert_equal( $h->url_encode_( ']'     ), '%5d'       );
+    test_assert_equal( $h->url_encode_( '['     ), '%5b'       );
+    test_assert_equal( $h->url_encode_( '[]'    ), '%5b%5d'    );
     test_assert_equal( $h->url_encode_( '[foo]' ), '%5bfoo%5d' );
 
     $h->{language__}{Locale_Thousands} = ',';
-    test_assert_equal( $h->pretty_number( 1234 ), '1,234' );
+    test_assert_equal( $h->pretty_number( 1234 ), '1,234'      );
 
     $h->{language__}{Locale_Thousands} = '&nbsp;';
     test_assert_equal( $h->pretty_number( 1234 ), '1&nbsp;234' );
