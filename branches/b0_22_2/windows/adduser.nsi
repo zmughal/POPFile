@@ -3267,7 +3267,7 @@ FunctionEnd
 # The [Inherited] section in 'pfi-cfg.ini' has information on the system tray icon and the
 # console mode settings found in 'popfile.cfg'. Valid values are 0 (disabled), 1 (enabled)
 # and ? (undefined). If any settings are undefined, this function adds the default settings
-# to 'popfile.cfg' (i.e. console mode disabled, system tray icon disabled)
+# to 'popfile.cfg' (i.e. console mode disabled, system tray icon enabled)
 #--------------------------------------------------------------------------
 
 Function StartPOPFilePage
@@ -3292,8 +3292,8 @@ Function StartPOPFilePage
 check_trayicon:
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "pfi-cfg.ini" "Inherited" "TrayIcon"
   StrCmp ${L_TEMP} "?" 0 close_file
-  FileWrite ${L_CFG} "windows_trayicon 0${MB_NL}"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "0"
+  FileWrite ${L_CFG} "windows_trayicon 1${MB_NL}"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "1"
 
 close_file:
   FileClose ${L_CFG}
