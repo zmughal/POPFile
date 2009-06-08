@@ -400,22 +400,6 @@ save_username:
   ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN"
   WriteINIStr "$G_COMMS_FILE" "RealUser" "RootDir_SFN" "${L_TEMP}"
 
-### Save some debug information (start)
-### Save some debug information (start)
-### Save some debug information (start)
-
-  ReadEnvStr ${L_TEMP} "POPFILE_USER"
-  WriteINIStr "$G_COMMS_FILE" "Debug" "POPFILE_USER" "${L_TEMP}"
-  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
-  WriteINIStr "$G_COMMS_FILE" "Debug" "UserDir_LFN" "${L_TEMP}"
-  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_SFN"
-  WriteINIStr "$G_COMMS_FILE" "Debug" "UserDir_SFN" "${L_TEMP}"
-
-### Save some debug information (end)
-### Save some debug information (end)
-### Save some debug information (end)
-### Save some debug information (end)
-
   ; If an existing POPFile configuration file (popfile.cfg) is found, report
   ; the current Nihongo parser selection so it can be pre-selected
 
