@@ -49,20 +49,11 @@
 #  (7) getparser.nsh                 - macro-based sections and functions to install the Nihongo Parser
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.44" compiler,
-  ; released 21 February 2009. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.44-setup.exe?download
-  ;
-  ; Programs compiled by NSIS 2.44 will trigger Program Compatibility Assistant warnings
-  ; when run on Windows 7 systems. In order to avoid these warnings the 'makensis.exe'
-  ; compiler from NSIS 2.44 should be replaced by the patched one from PortableApps.com.
-  ;
-  ; This patched compiler can be downloaded from http://portableapps.com/node/19013
-  ; (the patch makes the compiler generate a "Windows 7" compatible manifest).
-  ; See this NSIS bug report for further details:
-  ; https://sourceforge.net/tracker/?func=detail&atid=373085&aid=2725883&group_id=22049
+  ; This version of the script has been tested with the "NSIS v2.45" compiler,
+  ; released 6 June 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.44-Win7-Patch-1-By-PortableApps.com"
+  !define C_EXPECTED_VERSION  "v2.45"
 
   !define ${NSIS_VERSION}_found
 
@@ -412,7 +403,7 @@
 
   ; This script uses 'User Variables' (with names starting with 'G_') to hold GLOBAL data.
 
-  Var G_COMMS_FILE         ; full path to the file used for communicated between elevated/non-elevated copies
+  Var G_COMMS_FILE         ; full path to the file used for communication between elevated/non-elevated copies
 
   Var G_ROOTDIR            ; full path to the folder used for the POPFile PROGRAM files
   Var G_USERDIR            ; full path to the folder containing the 'popfile.cfg' file
@@ -1297,22 +1288,6 @@ Function GetRealUserSettings
   WriteINIStr "$G_COMMS_FILE" "RealUser" "RootDir_LFN" "${L_TEMP}"
   ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN"
   WriteINIStr "$G_COMMS_FILE" "RealUser" "RootDir_SFN" "${L_TEMP}"
-
-### Save some debug information (start)
-### Save some debug information (start)
-### Save some debug information (start)
-
-  ReadEnvStr ${L_TEMP} "POPFILE_USER"
-  WriteINIStr "$G_COMMS_FILE" "Debug" "POPFILE_USER" "${L_TEMP}"
-  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_LFN"
-  WriteINIStr "$G_COMMS_FILE" "Debug" "UserDir_LFN" "${L_TEMP}"
-  ReadRegStr ${L_TEMP} HKCU "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "UserDir_SFN"
-  WriteINIStr "$G_COMMS_FILE" "Debug" "UserDir_SFN" "${L_TEMP}"
-
-### Save some debug information (end)
-### Save some debug information (end)
-### Save some debug information (end)
-### Save some debug information (end)
 
   ; If an existing POPFile installation is found, report which optional POPFile
   ; components have been installed (so we can pre-select the same options when
