@@ -22,7 +22,7 @@ require ExtUtils::FakeConfig;
 
 my $SDK = '/Developer/SDKs/MacOSX10.4u.sdk';
 my $MIN_VERSION = '-mmacosx-version-min=10.3';
-my $ARCH = '-arch i386 -arch ppc750';
+my $ARCH = '-arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -arch x86_64';
 
 my %params = (
     ccflags => "-g -pipe -fno-common -DPERL_DARWIN $MIN_VERSION -no-cpp-precomp $ARCH -isysroot $SDK -fno-strict-aliasing -I../kakasi-2.3.4/lib",
