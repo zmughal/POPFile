@@ -210,8 +210,8 @@ japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
 	cd $(KAKASI); \
 	if test ! -e Makefile; \
 	then \
-	  env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750" \
-	  env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -mmacosx-version-min=10.3" \
+	  env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -arch x86_64" \
+	  env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -arch x86_64 -mmacosx-version-min=10.3" \
 	  ./configure --disable-dependency-tracking --disable-shared ; \
 	fi ;\
 	make
@@ -303,7 +303,6 @@ kakasi_dictionary: $(KAKASI)/kanwadict $(KAKASI)/itaijidict
 	tail -c +73729 <kanwadict >kanwadict-body ; \
 	perl -e 'binmode STDIN; binmode STDOUT; $$a = qw(); while (<>) {$$a.=$$_}; $$a =~ s/(.)(.)(.)(.)/$$4$$3$$2$$1/sg; print $$a;' <kanwadict-head >kanwadict-head-swap ; \
 	CPU_TYPE=`/usr/bin/uname -p` ; \
-	CPU_TYPE='powerpc' ; \
 	case $$CPU_TYPE in \
 	powerpc ) \
 	  mv kanwadict-head-swap kanwadict-head_i386 ; \

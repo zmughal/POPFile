@@ -60,7 +60,7 @@ $(IMAGE): installer ssl_installer utility_scripts
 	
 	@echo "Creating disk image ..."
 	
-	hdiutil create -megabytes 6 $(IMAGE) -layout NONE
+	hdiutil create -megabytes 8 $(IMAGE) -layout NONE
 	disk=`hdid -nomount $(IMAGE)` ; \
 	newfs_hfs -v $(VOLUME_NAME) $$disk ; \
 	hdiutil eject $$disk ; \
