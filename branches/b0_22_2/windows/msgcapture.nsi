@@ -118,7 +118,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.1.13"
+  !define C_VERSION             "0.1.14"
 
   !define C_OUTFILE             "msgcapture.exe"
 
@@ -388,13 +388,16 @@ FunctionEnd
 
 Section default
 
-  !define L_PFI_ROOT      $R9   ; path to the POPFile program (popfile.pl, and other files)
-  !define L_PFI_USER      $R8   ; path to user's 'popfile.cfg' file
-  !define L_RESULT        $R7
-  !define L_TEMP          $R6
-  !define L_TRAYICON      $R5   ; system tray icon enabled ("i" ) or disabled ("") flag
-  !define L_OPTIONS       $R4   ; POPFile 2.x no longer displays startup messages by default
-                                ; so we use the --verbose option to turn them back on
+  !define L_NIHONGO_ITAIJI  $R9   ; holds path to one of the two Kakasi dictionaries
+  !define L_NIHONGO_KANWA   $R8   ; holds path to one of the two Kakasi dictionaries
+  !define L_NIHONGO_MECAB   $R7   ; holds path to the MeCab configuration file
+  !define L_OPTIONS         $R6   ; POPFile 2.x no longer displays startup messages by default
+                                  ; so we use the --verbose option to turn them back on
+  !define L_PFI_ROOT        $R5   ; path to the POPFile program (popfile.pl, and other files)
+  !define L_PFI_USER        $R4   ; path to user's 'popfile.cfg' file
+  !define L_RESULT          $R3
+  !define L_TEMP            $R2
+  !define L_TRAYICON        $R1   ; system tray icon enabled ("i" ) or disabled ("") flag
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_MSGCAP_RIGHTCLICK)"
@@ -404,6 +407,45 @@ Section default
   DetailPrint "$(^Name) v${C_VERSION}"
   DetailPrint "------------------------------------------------------------"
 
+  ; For Japanese users POPFile supports two external 'Nihongo' parsers and
+  ; if any of these are installed extra environment variables should exist
+
+  StrCpy ${L_TEMP} ""             ; assume no Nihongo variables are defined
+
+  ReadEnvStr ${L_NIHONGO_ITAIJI} "ITAIJIDICTPATH"
+  StrCmp ${L_NIHONGO_ITAIJI} "" kanwa
+  StrCpy ${L_TEMP} "nihongo"
+  IfFileExists "${L_NIHONGO_ITAIJI}" report_itaiji
+  StrCpy ${L_NIHONGO_ITAIJI} "--- file not found --- (${L_NIHONGO_ITAIJI})"
+
+report_itaiji:
+  DetailPrint "ITAIJIDICTPATH = ${L_NIHONGO_ITAIJI}"
+
+kanwa:
+  ReadEnvStr ${L_NIHONGO_KANWA}  "KANWADICTPATH"
+  StrCmp ${L_NIHONGO_KANWA} "" mecab_var
+  StrCpy ${L_TEMP} "nihongo"
+  IfFileExists "${L_NIHONGO_KANWA}" report_kanwa
+  StrCpy ${L_NIHONGO_KANWA} "--- file not found --- (${L_NIHONGO_KANWA})"
+
+report_kanwa:
+  DetailPrint "KANWADICTPATH  = ${L_NIHONGO_KANWA}"
+
+mecab_var:
+  ReadEnvStr ${L_NIHONGO_MECAB}  "MECABRC"
+  StrCmp ${L_NIHONGO_MECAB} "" finish_nihongo_report
+  StrCpy ${L_TEMP} "nihongo"
+  IfFileExists "${L_NIHONGO_MECAB}" report_mecab
+  StrCpy ${L_NIHONGO_MECAB} "--- file not found --- (${L_NIHONGO_MECAB})"
+
+report_mecab:
+  DetailPrint "MECABRC        = ${L_NIHONGO_MECAB}"
+
+finish_nihongo_report:
+  StrCmp ${L_TEMP} "" report_popfile_vars
+  DetailPrint "------------------------------------------------------------"
+
+report_popfile_vars:
   ReadEnvStr ${L_PFI_ROOT} "POPFILE_ROOT"
   ReadEnvStr ${L_PFI_USER} "POPFILE_USER"
 
@@ -448,8 +490,8 @@ found_cfg:
   Push "1"                  ; assume system tray icon is enabled (the current default setting)
   Call GetTrayIconSetting
   Pop ${L_TRAYICON}         ; "i" if system tray icon enabled, "" if it is disabled
-  DetailPrint "POPFILE_ROOT = ${L_PFI_ROOT}"
-  DetailPrint "POPFILE_USER = ${L_PFI_USER}"
+  DetailPrint "POPFILE_ROOT   = ${L_PFI_ROOT}"
+  DetailPrint "POPFILE_USER   = ${L_PFI_USER}"
 
   ; This utility is called by the "Add POPFile User" wizard (adduser.exe) with the option
   ; '/TIMEOUT=PFI' when the installer detects that an existing SQL database is to be upgraded.
@@ -534,6 +576,10 @@ display_status:
 exit:
   SetDetailsPrint none
 
+  !undef L_NIHONGO_ITAIJI
+  !undef L_NIHONGO_KANWA
+  !undef L_NIHONGO_MECAB
+  !undef L_OPTIONS
   !undef L_PFI_ROOT
   !undef L_PFI_USER
   !undef L_RESULT
