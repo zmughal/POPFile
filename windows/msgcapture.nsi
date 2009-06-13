@@ -118,7 +118,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.1.14"
+  !define C_VERSION             "0.1.15"
 
   !define C_OUTFILE             "msgcapture.exe"
 
@@ -490,8 +490,27 @@ found_cfg:
   Push "1"                  ; assume system tray icon is enabled (the current default setting)
   Call GetTrayIconSetting
   Pop ${L_TRAYICON}         ; "i" if system tray icon enabled, "" if it is disabled
+
   DetailPrint "POPFILE_ROOT   = ${L_PFI_ROOT}"
+
+  ; POPFile Portable uses relative paths for POPFILE_ROOT and POPFILE_USER
+  ; so we may need to display the absolute paths to make the report more useful
+
+  GetFullPathName ${L_RESULT} ".\"
+
+  StrCpy ${L_TEMP} ${L_PFI_ROOT} 2
+  StrCmp ${L_TEMP} ".\" 0 print_user_var
+  StrCpy ${L_TEMP} ${L_PFI_ROOT} "" 2
+  DetailPrint "                (${L_RESULT}${L_TEMP})"
+
+print_user_var:
   DetailPrint "POPFILE_USER   = ${L_PFI_USER}"
+  StrCpy ${L_TEMP} ${L_PFI_USER} 2
+  StrCmp ${L_TEMP} ".\" 0 check_if_verbose_needed
+  StrCpy ${L_TEMP} ${L_PFI_USER} "" 2
+  DetailPrint "                (${L_RESULT}${L_TEMP})"
+
+check_if_verbose_needed:
 
   ; This utility is called by the "Add POPFile User" wizard (adduser.exe) with the option
   ; '/TIMEOUT=PFI' when the installer detects that an existing SQL database is to be upgraded.
