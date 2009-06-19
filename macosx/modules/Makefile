@@ -1,3 +1,5 @@
+# ---------------------------------------------------------------------------
+#
 # Copyright (c) John Graham-Cumming
 #
 #   This file is part of POPFile
@@ -15,6 +17,7 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
+# ---------------------------------------------------------------------------
 
 .PHONY: all build clean
 
