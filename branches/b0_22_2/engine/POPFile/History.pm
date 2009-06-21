@@ -1019,15 +1019,9 @@ sub set_query
                 $self->{queries__}{$id}{base} .=      # PROFILE BLOCK START
                     " and history.usedtobe $equal 0"; # PROFILE BLOCK STOP
             } else {
-                my $session = $self->{classifier__}->get_session_key(  # PROFILE BLOCK START
-                                  'admin', '' );                       # PROFILE BLOCK STOP
-                my $bucketid = $self->{classifier__}->get_bucket_id(  # PROFILE BLOCK START
-                                   $session, $filter );               # PROFILE BLOCK STOP
-                $self->{classifier__}->release_session_key( $session );
-                if ( defined( $bucketid ) ) {
-                    $self->{queries__}{$id}{base} .=                  # PROFILE BLOCK START
-                        " and history.bucketid $not_equal $bucketid"; # PROFILE BLOCK STOP
-                }
+                my $bucket = $self->db__()->quote( $filter );
+                $self->{queries__}{$id}{base} .=
+                        " and buckets.name $not_equal $bucket";
             }
         }
     }
