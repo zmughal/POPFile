@@ -1311,25 +1311,25 @@ sub db_update_cache__
 
     my $updated = 0;
 
-    if ( defined( $update_bucket ) &&
-         defined( $self->{db_bucketid__}{$userid}{$update_bucket} ) ) {
+    if ( defined( $update_bucket ) &&                                    # PROFILE BLOCK START
+         defined( $self->{db_bucketid__}{$userid}{$update_bucket} ) ) {  # PROFILE BLOCK STOP
 
         # Update cache for specified bucket.
 
         my $bucketid = $self->{db_bucketid__}{$userid}{$update_bucket}{id};
-        $self->validate_sql_prepare_and_execute(
-            $self->{db_get_bucket_word_count__}, $bucketid );
+        $self->validate_sql_prepare_and_execute(              # PROFILE BLOCK START
+            $self->{db_get_bucket_word_count__}, $bucketid ); # PROFILE BLOCK STOP
         my $row = $self->{db_get_bucket_word_count__}->fetchrow_arrayref;
 
-        $self->{db_bucketcount__}{$userid}{$update_bucket} =
-            ( defined( $row->[0] ) ? $row->[0] : 0 );
+        $self->{db_bucketcount__}{$userid}{$update_bucket} =  # PROFILE BLOCK START
+            ( defined( $row->[0] ) ? $row->[0] : 0 );         # PROFILE BLOCK STOP
         $self->{db_bucketunique__}{$userid}{$update_bucket} = $row->[1];
 
         $updated = 1;
     }
 
-    if ( defined( $delete_bucket ) &&
-         !defined( $self->{db_bucketid__}{$userid}{$delete_bucket} ) ) {
+    if ( defined( $delete_bucket ) &&                                     # PROFILE BLOCK START
+         !defined( $self->{db_bucketid__}{$userid}{$delete_bucket} ) ) {  # PROFILE BLOCK STOP
 
         # Delete cache for specified bucket.
 
@@ -1343,7 +1343,8 @@ sub db_update_cache__
         delete $self->{db_bucketcount__}{$userid};
         delete $self->{db_bucketunique__}{$userid};
 
-        $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_word_counts__}, $userid );
+        $self->validate_sql_prepare_and_execute(             # PROFILE BLOCK START
+            $self->{db_get_bucket_word_counts__}, $userid ); # PROFILE BLOCK STOP
 
         for my $b (sort keys %{$self->{db_bucketid__}{$userid}}) {
             $self->{db_bucketcount__}{$userid}{$b} = 0;
