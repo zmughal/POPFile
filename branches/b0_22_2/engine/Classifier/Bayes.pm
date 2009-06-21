@@ -94,7 +94,6 @@ sub new
     $self->{db_get_word_count__} = 0;
     $self->{db_put_word_count__} = 0;
     $self->{db_get_bucket_unique_counts__} = 0;
-    $self->{db_get_unique_word_count__} = 0;
     $self->{db_get_bucket_word_counts__} = 0;
     $self->{db_get_full_total__} = 0;
     $self->{db_get_bucket_parameter__} = 0;
@@ -728,15 +727,15 @@ sub update_constants__
 {
     my ( $self, $session ) = @_;
 
-    my $wc = $self->get_word_count( $session ) || 0;
-
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
+
+    my $wc = $self->get_word_count( $session );
 
     if ( $wc > 0 )  {
         $self->{not_likely__}{$userid} = -log( 10 * $wc );
 
-        foreach my $bucket ($self->get_buckets( $session )) {
+        foreach my $bucket ( $self->get_buckets( $session ) ) {
             my $total = $self->get_bucket_word_count( $session, $bucket );
 
             if ( $total != 0 ) {
@@ -988,14 +987,8 @@ sub db_connect__
     $self->{db_put_word_count__} = $self->{db__}->prepare(                              # PROFILE BLOCK START
            'replace into matrix ( bucketid, wordid, times ) values ( ?, ?, ? );' );     # PROFILE BLOCK STOP
 
-    $self->{db_get_bucket_unique_counts__} = $self->{db__}->prepare(                    # PROFILE BLOCK START
-             'select count(matrix.wordid), buckets.name from matrix, buckets
-                  where buckets.userid = ?
-                    and matrix.bucketid = buckets.id
-                  group by buckets.name;' );                                            # PROFILE BLOCK STOP
-
     $self->{db_get_bucket_word_counts__} = $self->{db__}->prepare(                      # PROFILE BLOCK START
-             'select sum(matrix.times), buckets.name from matrix, buckets
+             'select sum(matrix.times), count(matrix.id), buckets.name from matrix, buckets
                   where matrix.bucketid = buckets.id
                     and buckets.userid = ?
                     group by buckets.name;' );                                          # PROFILE BLOCK STOP
@@ -1245,7 +1238,6 @@ sub db_disconnect__
     $self->{db_get_userid__}->finish;
     $self->{db_get_word_count__}->finish;
     $self->{db_put_word_count__}->finish;
-    $self->{db_get_bucket_unique_counts__}->finish;
     $self->{db_get_bucket_word_counts__}->finish;
     $self->{db_get_unique_word_count__}->finish;
     $self->{db_get_full_total__}->finish;
@@ -1262,7 +1254,6 @@ sub db_disconnect__
     undef $self->{db_get_userid__};
     undef $self->{db_get_word_count__};
     undef $self->{db_put_word_count__};
-    undef $self->{db_get_bucket_unique_counts__};
     undef $self->{db_get_bucket_word_counts__};
     undef $self->{db_get_unique_word_count__};
     undef $self->{db_get_full_total__};
@@ -1295,12 +1286,13 @@ sub db_update_cache__
     return undef if ( !defined( $userid ) );
 
     delete $self->{db_bucketid__}{$userid};
+    delete $self->{db_bucket_count__}{$userid};
+    delete $self->{db_bucket_unique__}{$userid};
 
     $self->validate_sql_prepare_and_execute( $self->{db_get_buckets__}, $userid );
     while ( my $row = $self->{db_get_buckets__}->fetchrow_arrayref ) {
         $self->{db_bucketid__}{$userid}{$row->[0]}{id} = $row->[1];
         $self->{db_bucketid__}{$userid}{$row->[0]}{pseudo} = $row->[2];
-        $self->{db_bucketcount__}{$userid}{$row->[0]} = 0;
     }
 
     $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_word_counts__}, $userid );
@@ -1311,13 +1303,8 @@ sub db_update_cache__
     }
 
     while ( my $row = $self->{db_get_bucket_word_counts__}->fetchrow_arrayref ) {
-        $self->{db_bucketcount__}{$userid}{$row->[1]} = $row->[0];
-    }
-
-    $self->validate_sql_prepare_and_execute( $self->{db_get_bucket_unique_counts__}, $userid );
-
-    while ( my $row = $self->{db_get_bucket_unique_counts__}->fetchrow_arrayref ) {
-        $self->{db_bucketunique__}{$userid}{$row->[1]} = $row->[0];
+        $self->{db_bucketcount__}{$userid}{$row->[2]} = $row->[0];
+        $self->{db_bucketunique__}{$userid}{$row->[2]} = $row->[1];
     }
 
     $self->update_constants__( $session );
@@ -3413,8 +3400,12 @@ sub get_word_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->validate_sql_prepare_and_execute( $self->{db_get_full_total__}, $userid );
-    return $self->{db_get_full_total__}->fetchrow_arrayref->[0] || 0;
+    my $word_count = 0;
+    foreach my $bucket ( keys %{$self->{db_bucketid__}{$userid}} ) {
+        $word_count += $self->{db_bucketcount__}{$userid}{$bucket};
+    }
+
+    return $word_count;
 }
 
 #----------------------------------------------------------------------------
@@ -3477,8 +3468,12 @@ sub get_unique_word_count
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    $self->validate_sql_prepare_and_execute( $self->{db_get_unique_word_count__}, $userid );
-    return $self->{db_get_unique_word_count__}->fetchrow_arrayref->[0];
+    my $unique_word_count = 0;
+    foreach my $bucket ( keys %{$self->{db_bucketid__}{$userid}} ) {
+        $unique_word_count += $self->{db_bucketunique__}{$userid}{$bucket};
+    }
+
+    return $unique_word_count;
 }
 
 #----------------------------------------------------------------------------
