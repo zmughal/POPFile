@@ -893,6 +893,10 @@ sub db_connect__
             $self->log_( 0, 'Database convert completed' );
         }
 
+        # Set the synchronous mode to normal ( default of SQLite 2.x ).
+
+        $self->tweak_sqlite( 1, 1, $self->{db__} );
+
         # For Japanese compatibility
 
         if ( $self->{parser__}->{lang__} eq 'Nihongo' ) {
