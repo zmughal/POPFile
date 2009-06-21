@@ -1897,13 +1897,13 @@ sub corpus_page
 
     $templ->param( 'Corpus_Bar_Chart_Word_Counts' => $self->bar_chart_100( %bar_values ) );
 
-    my $number = $self->pretty_number(  $self->{c__}->get_unique_word_count( $self->{api_session__} ) );
+    my $number = $self->pretty_number( $self->{c__}->get_unique_word_count( $session ) );
     $templ->param( 'Corpus_Total_Unique' => $number );
 
-    my $pmcount = $self->pretty_number(  $self->mcount__() );
+    my $pmcount = $self->pretty_number( $self->mcount__() );
     $templ->param( 'Corpus_Message_Count' => $pmcount );
 
-    my $pecount = $self->pretty_number(  $self->ecount__() );
+    my $pecount = $self->pretty_number( $self->ecount__() );
     $templ->param( 'Corpus_Error_Count' => $pecount );
 
     my $accuracy = $self->{language__}{Bucket_NotEnoughData};
