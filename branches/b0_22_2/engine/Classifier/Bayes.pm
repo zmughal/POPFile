@@ -1289,14 +1289,14 @@ sub db_disconnect__
 # Updates our local cache of user and bucket ids.
 #
 # $session           Must be a valid session
-# $update_bucket     Bucket to update cache
-# $delete_bucket     Bucket to delete cache
+# $updated_bucket    Bucket to update cache
+# $deleted_bucket    Bucket to delete cache
 #                    If none of them is specified, update whole cache.
 #
 #----------------------------------------------------------------------------
 sub db_update_cache__
 {
-    my ( $self, $session, $update_bucket, $delete_bucket ) = @_;
+    my ( $self, $session, $updated_bucket, $deleted_bucket ) = @_;
 
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
@@ -1311,30 +1311,30 @@ sub db_update_cache__
 
     my $updated = 0;
 
-    if ( defined( $update_bucket ) &&                                    # PROFILE BLOCK START
-         defined( $self->{db_bucketid__}{$userid}{$update_bucket} ) ) {  # PROFILE BLOCK STOP
+    if ( defined( $updated_bucket ) &&                                    # PROFILE BLOCK START
+         defined( $self->{db_bucketid__}{$userid}{$updated_bucket} ) ) {  # PROFILE BLOCK STOP
 
         # Update cache for specified bucket.
 
-        my $bucketid = $self->{db_bucketid__}{$userid}{$update_bucket}{id};
+        my $bucketid = $self->{db_bucketid__}{$userid}{$updated_bucket}{id};
         $self->validate_sql_prepare_and_execute(              # PROFILE BLOCK START
             $self->{db_get_bucket_word_count__}, $bucketid ); # PROFILE BLOCK STOP
         my $row = $self->{db_get_bucket_word_count__}->fetchrow_arrayref;
 
-        $self->{db_bucketcount__}{$userid}{$update_bucket} =  # PROFILE BLOCK START
-            ( defined( $row->[0] ) ? $row->[0] : 0 );         # PROFILE BLOCK STOP
-        $self->{db_bucketunique__}{$userid}{$update_bucket} = $row->[1];
+        $self->{db_bucketcount__}{$userid}{$updated_bucket} =  # PROFILE BLOCK START
+            ( defined( $row->[0] ) ? $row->[0] : 0 );          # PROFILE BLOCK STOP
+        $self->{db_bucketunique__}{$userid}{$updated_bucket} = $row->[1];
 
         $updated = 1;
     }
 
-    if ( defined( $delete_bucket ) &&                                     # PROFILE BLOCK START
-         !defined( $self->{db_bucketid__}{$userid}{$delete_bucket} ) ) {  # PROFILE BLOCK STOP
+    if ( defined( $deleted_bucket ) &&                                     # PROFILE BLOCK START
+         !defined( $self->{db_bucketid__}{$userid}{$deleted_bucket} ) ) {  # PROFILE BLOCK STOP
 
         # Delete cache for specified bucket.
 
-        delete $self->{db_bucketcount__}{$userid}{$delete_bucket};
-        delete $self->{db_bucketunique__}{$userid}{$delete_bucket};
+        delete $self->{db_bucketcount__}{$userid}{$deleted_bucket};
+        delete $self->{db_bucketunique__}{$userid}{$deleted_bucket};
 
         $updated = 1;
     }
