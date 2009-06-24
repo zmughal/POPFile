@@ -715,13 +715,13 @@ run_it:
   StrCmp ${L_TEMP} "error" start_error
   StrCmp ${L_TEMP} "timeout" start_error
 
-  ; As of 14 June 2008:
+  ; As of 15 June 2009:
   ;
   ; v2.8.17 is the most recent version of the SQLite 2.x command-line utility
-  ; and the most recent Perl SQLite module is based upon the SQLite 3.3.7 library
+  ; The current DBD::SQLite module (v1.25) is based upon the SQLite 3.6.13 library
   ;
-  ; sqlite.exe v2.8.17 returns "1" in ${L_TEMP} after a successful version check
-  ; sqlite3.exe v3.3.7 returns "0" in ${L_TEMP} after a successful version check
+  ; sqlite.exe  v2.8.17 returns "1" in ${L_TEMP} after a successful version check
+  ; sqlite3.exe v3.6.13 returns "0" in ${L_TEMP} after a successful version check
 
   IntCmp ${L_TEMP} 2 version_error 0 version_error
   IntCmp ${L_TEMP} 0 0 version_error
