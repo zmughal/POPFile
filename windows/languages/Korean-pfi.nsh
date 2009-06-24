@@ -942,6 +942,8 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_1      "POPFile을 시동 준비 중."
 !insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_2      "몇초 정도 걸릴 수 있습니다..."
+!insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_3      "POPFile is not ready yet"
+!insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_4      "POPFile is almost ready..."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Standard MUI Page - FINISH [adduser.nsi]

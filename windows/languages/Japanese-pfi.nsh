@@ -942,6 +942,8 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_1      "POPFile ‚ð‹N“®’†"
 !insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_2      "‚µ‚Î‚ç‚­‚¨‘Ò‚¿‚­‚¾‚³‚¢..."
+!insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_3      "POPFile is not ready yet"
+!insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_4      "POPFile is almost ready..."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Standard MUI Page - FINISH [adduser.nsi]

@@ -6,7 +6,7 @@
 #                         in the 'Version Information' of these two executable files.
 #--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION  "0.5.7"
+  !define C_PFI_VERSION  "0.6.0"
 
 #--------------------------------------------------------------------------
 # End of 'adduser-Version.nsh'

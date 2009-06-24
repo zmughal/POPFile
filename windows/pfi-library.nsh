@@ -33,20 +33,22 @@
 #  (1) ADDSSL           defined in add-ons\addssl.nsi (POPFile 'SSL Setup' wizard)
 #  (2) ADDUSER          defined in adduser.nsi ('Add POPFile User' wizard)
 #  (3) BACKUP           defined in backup.nsi (POPFile 'User Data' Backup utility)
-#  (4) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
-#  (5) IMAPUPDATER      defined in add-ons\updateimap.nsi (POPFile 'IMAP Updater' wizard)
-#  (6) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
-#  (7) MONITORCC        defined in MonitorCC.nsi (the corpus conversion monitor)
-#  (8) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
-#  (9) ONDEMAND         defined in add-ons\OnDemand.nsi (starts POPFile & email client together)
-# (10) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-# (11) PORTABLE         defined in add-ons\POPFilePortable.nsi (PortableApps format launcher)
-# (12) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-# (13) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-# (14) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (15) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (16) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (17) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+#  (4) CREATEUSER       defined in portable\CreateUserData.nsi (for POPFile Portable)
+#  (5) DBSTATUS         defined in test\pfidbstatus.nsi (POPFile SQLite Database Status Check)
+#  (6) IMAPUPDATER      defined in add-ons\updateimap.nsi (POPFile 'IMAP Updater' wizard)
+#  (7) INSTALLER        defined in installer.nsi (the main installer program, setup.exe)
+#  (8) LFNFIXER         defined in portable\lfnfixer.nsi (LFN fixer for POPFile Portable)
+#  (9) MONITORCC        defined in MonitorCC.nsi (the corpus conversion monitor)
+# (10) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
+# (11) ONDEMAND         defined in add-ons\OnDemand.nsi (starts POPFile & email client together)
+# (12) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
+# (13) PORTABLE         defined in portable\POPFilePortable.nsi (PortableApps format launcher)
+# (14) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+# (15) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (16) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (17) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (18) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (19) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -60,7 +62,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.20"
+  !define C_PFI_LIBRARY_VERSION     "0.3.27"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -161,7 +163,7 @@
           !define LANGFILE_${LANG}_NAME "${MENUNAME}"
       !endif
       !insertmacro MUI_LANGUAGE "${LANG}"
-      !ifdef ADDSSL | TRANSLATOR | TRANSLATOR_AUW
+      !ifdef ADDSSL | CREATEUSER | TRANSLATOR | TRANSLATOR_AUW
           !include "..\languages\${LANG}-pfi.nsh"
       !else
           !include "languages\${LANG}-pfi.nsh"
@@ -846,7 +848,7 @@
 !endif
 
 
-!ifdef ADDUSER | BACKUP | RESTORE | TRANSLATOR_AUW
+!ifdef ADDUSER | BACKUP | CREATEUSER | RESTORE | TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStripLZS
     #
@@ -2520,7 +2522,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef CREATEUSER & MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDateTimeStamp
     #
@@ -2717,7 +2719,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef CREATEUSER & MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetLocalTime
     #
@@ -2958,7 +2960,7 @@
     FunctionEnd
 !macroend
 
-!ifndef ONDEMAND
+!ifndef CREATEUSER & ONDEMAND
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParameters
     #
@@ -3036,7 +3038,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | MONITORCC | ONDEMAND | PORTABLE | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | LFNFIXER | MONITORCC | ONDEMAND | PORTABLE | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParent
     #
@@ -3460,7 +3462,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | DBSTATUS | RUNSQLITE | RESTORE
+!ifdef ADDUSER | BACKUP | DBSTATUS | PORTABLE | RUNSQLITE | RESTORE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetSQLiteFormat
     #
@@ -4413,17 +4415,21 @@
     Goto exit
 
   port_ok:
-    NSISdl::download_quiet ${C_SVU_DLTIMEOUT} http://${C_UI_URL}:${L_UIPORT}/shutdown "$PLUGINSDIR\shutdown_1.htm"
+#    NSISdl::download_quiet ${C_SVU_DLTIMEOUT} http://${C_UI_URL}:${L_UIPORT}/shutdown "$PLUGINSDIR\shutdown_1.htm"
+    inetc::get /silent ${C_SVU_DLTIMEOUT} "http://${C_UI_URL}:${L_UIPORT}/shutdown" "$PLUGINSDIR\shutdown_1.htm" /END
     Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "success" try_again
+#    StrCmp ${L_RESULT} "success" try_again
+    StrCmp ${L_RESULT} "OK" try_again
     StrCpy ${L_RESULT} "failure"
     Goto exit
 
   try_again:
     Sleep ${C_SVU_DLGAP}
-    NSISdl::download_quiet ${C_SVU_DLTIMEOUT} http://${C_UI_URL}:${L_UIPORT}/shutdown "$PLUGINSDIR\shutdown_2.htm"
+#    NSISdl::download_quiet ${C_SVU_DLTIMEOUT} http://${C_UI_URL}:${L_UIPORT}/shutdown "$PLUGINSDIR\shutdown_2.htm"
+    inetc::get /silent ${C_SVU_DLTIMEOUT} "http://${C_UI_URL}:${L_UIPORT}/shutdown" "$PLUGINSDIR\shutdown_2.htm" /END
     Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "success" 0 shutdown_ok
+#    StrCmp ${L_RESULT} "success" 0 shutdown_ok
+    StrCmp ${L_RESULT} "OK" 0 shutdown_ok
     Push "$PLUGINSDIR\shutdown_2.htm"
     Call ${UN}PFI_GetFileSize
     Pop ${L_RESULT}
@@ -4644,7 +4650,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & PFIDIAG & PORTABLE & RUNPOPFILE & RUNSQLITE & TRANSLATOR
+!ifndef LFNFIXER & MONITORCC & PFIDIAG & PORTABLE & RUNPOPFILE & RUNSQLITE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckDecimal
     #
@@ -4760,7 +4766,7 @@
     FunctionEnd
 !macroend
 
-!ifndef DBSTATUS & IMAPUPDATER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #
@@ -4831,7 +4837,7 @@
   FunctionEnd
 !macroend
 
-!ifndef MONITORCC & MSGCAPTURE & PFIDIAG & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR_AUW
+!ifndef LFNFIXER & MONITORCC & MSGCAPTURE & PFIDIAG & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_TrimNewlines
     #

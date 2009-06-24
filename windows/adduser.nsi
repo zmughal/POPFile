@@ -150,7 +150,7 @@
   ; 'Add User' wizard overview
   ;------------------------------------------------
 
-  ; This wizard is used by the main POPfile installer ('setup.exe') to perform the user-specific
+  ; This wizard is used by the main POPFile installer ('setup.exe') to perform the user-specific
   ; configuration for the user who is running the installer. The main installer is now solely
   ; concerned with installing the POPFile program files and the associated registry entries.
   ;
@@ -249,12 +249,16 @@
   !define C_MIN_BANNER_DISPLAY_TIME  250
 
   ;-------------------------------------------------------------------------------
-  ; Constant used to give POPFile time to start its web server and be able to display the UI
+  ; Constants for the timeout loop used after issuing a POPFile 'startup' request
   ;-------------------------------------------------------------------------------
 
-  ; Sleep delay (in milliseconds) used after starting POPFile (in 'CheckLaunchOptions' function)
+  ; Timeout loop counter limit (counts up from 1)
 
-  !define C_UI_STARTUP_DELAY         5000
+  !define C_STARTUP_LIMIT      50
+
+  ; Delay (in milliseconds) used inside the timeout loop and also in the countdown timer
+
+  !define C_STARTUP_DELAY    1000
 
 #--------------------------------------------------------------------------
 # User Registers (Global)
@@ -730,10 +734,11 @@
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
+  ReserveFile "${NSISDIR}\Plugins\getsize.dll"
+  ReserveFile "${NSISDIR}\Plugins\inetc.dll"
   ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
   ReserveFile "${NSISDIR}\Plugins\MoreInfo.dll"
   ReserveFile "${NSISDIR}\Plugins\nsExec.dll"
-  ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
   ReserveFile "${NSISDIR}\Plugins\SimpleSC.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
@@ -1081,7 +1086,7 @@ continue:
   StrCmp ${L_TEMP} "Not SQLite" stopwords
 
   ; Create a shortcut to make it easier to run the SQLite utility. There are two versions of
-  ; the SQLite utility (one for SQlite 2.x format files and one for SQLite 3.x format files)
+  ; the SQLite utility (one for SQLite 2.x format files and one for SQLite 3.x format files)
   ; so we use 'runsqlite.exe' which automatically selects and runs the appropriate version.
 
   Push $G_USERDIR
@@ -1092,7 +1097,7 @@ continue:
   CreateShortCut "$G_USERDIR\Run SQLite utility.lnk" \
                  "$G_ROOTDIR\runsqlite.exe" "${L_TEMP}"
 
-  ; If the 'POPFile SQlite Database Status Check' utility has been installed, create a
+  ; If the 'POPFile SQLite Database Status Check' utility has been installed, create a
   ; a shortcut to make it easy to check the integrity of the SQLite database.
 
   IfFileExists "$G_ROOTDIR\pfidbstatus.exe" 0 stopwords
@@ -1407,7 +1412,7 @@ SectionEnd
 # POPFile versions 0.21.0 to 1.0.1 inclusive defaulted to using SQLite 2.x format databases.
 # The 1.1.0 release was the first to default to using the SQLite 3.x format. These 2.x and 3.x
 # format databases are not compatible therefore POPFile 1.1.0 (or later) will automatically
-# backup and convert an existing SQlite 2.x format database into the new 3.x format.
+# backup and convert an existing SQLite 2.x format database into the new 3.x format.
 #
 # If SQL database conversion is required, we will use the 'Message Capture' utility to show
 # the conversion progress reports (instead of running POPFile in a console window).
@@ -2312,28 +2317,28 @@ Function CheckExistingConfigData
   !define L_CFG       $R9     ; handle for "popfile.cfg"
   !define L_CLEANCFG  $R8     ; handle for "clean" copy
   !define L_CMPRE     $R7     ; config param name
-  !define L_LNE       $R6     ; a line from popfile.cfg
-  !define L_OLDUI     $R5     ; used to hold old-style of GUI port
-  !define L_TRAYICON  $R4     ; a config parameter used by popfile.exe
-  !define L_CONSOLE   $R3     ; a config parameter used by popfile.exe
-  !define L_LANG_NEW  $R2     ; new style UI lang parameter
-  !define L_LANG_OLD  $R1     ; old style UI lang parameter
-  !define L_TEXTEND   $R0     ; used to ensure correct handling of lines longer than 1023 chars
-  !define L_SKIN      $9      ; current skin setting
-  !define L_PARSER    $8      ; current Nihongo parser setting (introduced in 1.0.0 release)
+  !define L_CONSOLE   $R6     ; a config parameter used by popfile.exe
+  !define L_LANG_NEW  $R5     ; new style UI lang parameter
+  !define L_LANG_OLD  $R4     ; old style UI lang parameter
+  !define L_LNE       $R3     ; a line from popfile.cfg
+  !define L_OLDUI     $R2     ; used to hold old-style of GUI port
+  !define L_PARSER    $R1      ; current Nihongo parser setting (introduced in 1.0.0 release)
+  !define L_SKIN      $R0      ; current skin setting
+  !define L_TEXTEND   $9     ; used to ensure correct handling of lines longer than 1023 chars
+  !define L_TRAYICON  $8     ; a config parameter used by popfile.exe
 
   Push ${L_CFG}
   Push ${L_CLEANCFG}
   Push ${L_CMPRE}
-  Push ${L_LNE}
-  Push ${L_OLDUI}
-  Push ${L_TRAYICON}
   Push ${L_CONSOLE}
   Push ${L_LANG_NEW}
   Push ${L_LANG_OLD}
-  Push ${L_TEXTEND}
-  Push ${L_SKIN}
+  Push ${L_LNE}
+  Push ${L_OLDUI}
   Push ${L_PARSER}
+  Push ${L_SKIN}
+  Push ${L_TEXTEND}
+  Push ${L_TRAYICON}
 
   StrCpy $G_POP3 ""
   StrCpy $G_GUI ""
@@ -2642,15 +2647,15 @@ default_gui:
   StrCpy $G_GUI "8081"
 
 ports_ok:
-  Pop ${L_PARSER}
-  Pop ${L_SKIN}
+  Pop ${L_TRAYICON}
   Pop ${L_TEXTEND}
+  Pop ${L_SKIN}
+  Pop ${L_PARSER}
+  Pop ${L_OLDUI}
+  Pop ${L_LNE}
   Pop ${L_LANG_OLD}
   Pop ${L_LANG_NEW}
   Pop ${L_CONSOLE}
-  Pop ${L_TRAYICON}
-  Pop ${L_OLDUI}
-  Pop ${L_LNE}
   Pop ${L_CMPRE}
   Pop ${L_CLEANCFG}
   Pop ${L_CFG}
@@ -2658,15 +2663,15 @@ ports_ok:
   !undef L_CFG
   !undef L_CLEANCFG
   !undef L_CMPRE
-  !undef L_LNE
-  !undef L_OLDUI
-  !undef L_TRAYICON
   !undef L_CONSOLE
   !undef L_LANG_NEW
   !undef L_LANG_OLD
-  !undef L_TEXTEND
-  !undef L_SKIN
+  !undef L_LNE
+  !undef L_OLDUI
   !undef L_PARSER
+  !undef L_SKIN
+  !undef L_TEXTEND
+  !undef L_TRAYICON
 
 FunctionEnd
 
@@ -2930,7 +2935,7 @@ Function MakeUserDirSafe
   DetailPrint "$(PFI_LANG_INST_PROG_UPGRADE)"
   SetDetailsPrint listonly
 
-  ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
+  ; Starting with POPFile 0.21.0 an experimental version of 'popfile-service.exe' was included
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
@@ -3179,7 +3184,7 @@ check_if_old_sqlite:
   StrCmp ${L_SQL_DB} "Not SQLite" check_schema
 
   ; If the existing SQLite database uses the old 2.x format then POPFile will
-  ; automatically backup this database and convert it to the SQLIte 3.x format
+  ; automatically backup this database and convert it to the SQLite 3.x format
 
   Push ${L_SQL_DB}
   Call PFI_GetSQLiteFormat
@@ -3348,18 +3353,28 @@ FunctionEnd
 
 Function CheckLaunchOptions
 
-  !define L_CFG             $R9   ; file handle
-  !define L_CONSOLE         $R8   ; set to 'b' for background mode or 'f' for foreground mode
-  !define L_EXE             $R7   ; full path of Perl EXE to be monitored
-  !define L_POPFILE_SCHEMA  $R6   ; database schema version used by newly installed POPFile
-  !define L_TEMP            $R5
-  !define L_TRAY            $R4   ; system tray icon mode: 1 = enabled, 0 = disabled
+  !define L_BANNER_1        $R9   ; text used for upper line of banner
+  !define L_BANNER_2A       $R8   ; text used for lower line of banner
+  !define L_BANNER_2B       $R7   ; ditto
+  !define L_BANNER_2C       $R6   ; ditto
+  !define L_BANNER_2D       $R5   ; ditto
+  !define L_BANNER_HANDLE   $R4   ; handle of the banner control we want to modify
+  !define L_CONSOLE         $R3   ; set to 'b' for background mode or 'f' for foreground mode
+  !define L_EXE             $R2   ; full path of Perl EXE to be monitored
+  !define L_TEMP            $R1
+  !define L_TIMEOUT         $R0   ; used to avoid infinite loop while we wait for POPFile to startup
+  !define L_TRAY            $9    ; system tray icon mode: 1 = enabled, 0 = disabled
 
-  Push ${L_CFG}
+  Push ${L_BANNER_1}
+  Push ${L_BANNER_2A}
+  Push ${L_BANNER_2B}
+  Push ${L_BANNER_2C}
+  Push ${L_BANNER_2D}
+  Push ${L_BANNER_HANDLE}
   Push ${L_CONSOLE}
   Push ${L_EXE}
-  Push ${L_POPFILE_SCHEMA}
   Push ${L_TEMP}
+  Push ${L_TIMEOUT}
   Push ${L_TRAY}
 
   StrCpy ${L_CONSOLE} "b"    ; the default is to run in the background (no console window shown)
@@ -3417,7 +3432,8 @@ start_popfile:
   ; Set ${L_EXE} to "" as we do not yet know if we are going to monitor a file in $G_ROOTDIR
 
   ; If we run POPFile in the background, we display a banner to provide some user feedback
-  ; since it can take a few seconds for POPFile to start up.
+  ; since it can take a few seconds (for large databases it could be 30 seconds or more,
+  ; depending upon the database size, system speed etc) for POPFile to start up.
 
   ; If we run POPFile in a console window, we do not display a banner because on some systems
   ; the console window might cause the banner DLL to lock up and this in turn locks up the
@@ -3457,6 +3473,12 @@ lastaction_enableicon:
 check_if_banner_needed:
   StrCmp ${L_CONSOLE} "f" do_not_show_banner
 
+  StrCpy ${L_BANNER_1}  "$(PFI_LANG_LAUNCH_BANNER_1)"
+  StrCpy ${L_BANNER_2A} "$(PFI_LANG_LAUNCH_BANNER_2)"
+  StrCpy ${L_BANNER_2B} "$(PFI_LANG_NSISDL_CONNECTING)"
+  StrCpy ${L_BANNER_2C} "$(PFI_LANG_LAUNCH_BANNER_3)"
+  StrCpy ${L_BANNER_2D} "$(PFI_LANG_LAUNCH_BANNER_4)"
+
   !ifndef ENGLISH_MODE
 
     ; The Banner plug-in uses the "MS Shell Dlg" font to display the banner text
@@ -3476,12 +3498,23 @@ check_if_banner_needed:
     Goto show_banner
 
   use_ENGLISH_banner:
-    Banner::show /NOUNLOAD /set 76 "Preparing to start POPFile." "This may take a few seconds..."
-    Goto do_not_show_banner   ; sic!
+    StrCpy ${L_BANNER_1}  "Preparing to start POPFile."
+    StrCpy ${L_BANNER_2A} "This may take a few seconds..."
+    StrCpy ${L_BANNER_2B} "Connecting ..."
+    StrCpy ${L_BANNER_2C} "POPFile is not ready yet"
+    StrCpy ${L_BANNER_2D} "POPFile is almost ready..."
 
-    show_banner:
+  show_banner:
   !endif
-  Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_LAUNCH_BANNER_1)" "$(PFI_LANG_LAUNCH_BANNER_2)"
+
+  ; Hiding the wizard's window appears to solve the infamous "banner lockup" problem
+  ; ('BringToFront' is used to re-display the wizard)
+
+  HideWindow
+  Banner::show /NOUNLOAD /set 76 "${L_BANNER_1}" "${L_BANNER_2A}"
+	Banner::getWindow /NOUNLOAD
+	Pop ${L_TEMP}
+  GetDlgItem ${L_BANNER_HANDLE} ${L_TEMP} 1030    ; 1030 is the lower line of text (76 is upper line)
 
 do_not_show_banner:
 
@@ -3512,6 +3545,7 @@ continue:
   StrCmp ${L_CONSOLE} "f" error_msg
   Sleep ${C_MIN_BANNER_DISPLAY_TIME}
   Banner::destroy
+  BringToFront
 
 error_msg:
   MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST \
@@ -3524,34 +3558,105 @@ error_msg:
 
 startup_ok:
 
-  ; A simple time delay is used to give POPFile time to get ready to display the UI. It takes
-  ; time for POPFile to start up and be able to generate the UI pages - attempts to access the
-  ; UI too quickly will result in a browser error message (which must be cancelled by the user)
-  ; and an empty browser window (which must be refreshed by the user). Earlier versions of the
-  ; installer waited until POPFile could display a UI page but on some systems this wait proved
-  ; to be endless. (The installer should have given up after a certain number of failed NSISdl
-  ; attempts to access the UI but in some cases NSISdl never returned control to the installer
-  ; so the installer stopped responding.)
+  ; Wait until POPFile is ready to display the UI (this make take a while if the database
+  ; is large and/or the system is relatively slow so we need to keep the user informed
+  ; while we wait)
 
-  Sleep ${C_UI_STARTUP_DELAY}
+  StrCpy ${L_TIMEOUT} 1             ; Timeout used to avoid an infinite loop
 
+check_if_ready:
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2B} ${L_TIMEOUT}"
+  inetc::head /silent "http://127.0.0.1:$G_GUI" "$PLUGINSDIR\hdr.txt" /END
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "OK" start_countdown
+  StrCmp ${L_TEMP} "SendRequest Error" not_ready
+  StrCpy $G_PLS_FIELD_1 ${L_TEMP} 12
+  StrCmp $G_PLS_FIELD_1 "Server Error" start_countdown report_status
+
+not_ready:
+  StrCpy ${L_TEMP} "${L_BANNER_2C}"
+
+report_status:
+	SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_TEMP}"
+  Sleep ${C_STARTUP_DELAY}
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} + 1
+  IntCmp ${L_TIMEOUT} ${C_STARTUP_LIMIT} check_if_ready check_if_ready remove_banner
+
+start_countdown:
+  Push $G_USERDIR
+  Call PFI_GetSQLdbPathName
+  Pop $G_PLS_FIELD_2
+  StrCmp $G_PLS_FIELD_2 "" use_default
+  StrCmp $G_PLS_FIELD_2 "Not SQLite" use_default
+  IfFileExists "$G_PLS_FIELD_2" 0 use_default
+  Push $G_PLS_FIELD_2
+  Call PFI_GetParent
+  Pop $G_PLS_FIELD_1
+  StrLen ${L_TEMP} $G_PLS_FIELD_1
+  IntOp ${L_TEMP} ${L_TEMP} + 1
+  StrCpy $G_PLS_FIELD_2 $G_PLS_FIELD_2 "" ${L_TEMP}
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "$G_PLS_FIELD_1" "/M=$G_PLS_FIELD_2 /G=0 /S=Mb" .r0 .r1 .r2
+  StrCpy ${L_TIMEOUT} $0
+  Pop $2
+  Pop $1
+  Pop $0
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} / 4
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} + 1
+  Goto countdown
+
+use_default:
+  StrCpy ${L_TIMEOUT} "5"
+
+countdown:
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2D} ${L_TIMEOUT}"
+  Sleep ${C_STARTUP_DELAY}
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} - 1
+  IntCmp ${L_TIMEOUT} 0 countdown get_a_page countdown
+
+get_a_page:
+
+  ; By default the FINISH page offers to display the UI. POPFile appears to take several
+  ; seconds to display the very first UI page accessed so we access a page silently here
+  ; to ensure the user does not see an empty browser window for several seconds when this
+  ; FINISH page option is used.
+
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2A}"
+  inetc::get /silent "http://127.0.0.1:$G_GUI/security" "$PLUGINSDIR\ui.htm" /END
+  Pop ${L_TEMP}
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_TEMP}"
+  Sleep 1000
+
+remove_banner:
   StrCmp ${L_CONSOLE} "f" exit_without_banner
-  Sleep ${C_MIN_BANNER_DISPLAY_TIME}
   Banner::destroy
+  BringToFront
 
 exit_without_banner:
   Pop ${L_TRAY}
+  Pop ${L_TIMEOUT}
   Pop ${L_TEMP}
-  Pop ${L_POPFILE_SCHEMA}
   Pop ${L_EXE}
   Pop ${L_CONSOLE}
-  Pop ${L_CFG}
+  Pop ${L_BANNER_HANDLE}
+  Pop ${L_BANNER_2D}
+  Pop ${L_BANNER_2C}
+  Pop ${L_BANNER_2B}
+  Pop ${L_BANNER_2A}
+  Pop ${L_BANNER_1}
 
-  !undef L_CFG
+  !undef L_BANNER_1
+  !undef L_BANNER_2A
+  !undef L_BANNER_2B
+  !undef L_BANNER_2C
+  !undef L_BANNER_2D
+  !undef L_BANNER_HANDLE
   !undef L_CONSOLE
   !undef L_EXE
-  !undef L_POPFILE_SCHEMA
   !undef L_TEMP
+  !undef L_TIMEOUT
   !undef L_TRAY
 
 FunctionEnd
@@ -3665,6 +3770,10 @@ FunctionEnd
 # If the installer is allowed to display the UI, it now displays the Buckets page
 # (instead of the default page). This makes it easier for users to check the results
 # of upgrading a pre-0.21.0 installation (the upgrade may change some bucket settings).
+#
+# It also makes it easier to check the results of an SQLite 2.x to 3.x upgrade or
+# a database schema upgrade and also shows the current statistics (some users may
+# rarely look at the UI).
 #--------------------------------------------------------------------------
 
 Function RunUI

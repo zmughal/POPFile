@@ -40,7 +40,7 @@
   !define MB_NL     "$\r$\n"
 !endif
 
-!ifndef ADDSSL & ADDUSER & PORTABLE
+!ifndef ADDSSL & ADDUSER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_DeleteEnvStr
     #
@@ -266,7 +266,7 @@
 
 !insertmacro PFI_IsNT ""
 
-!ifndef ADDSSL & PORTABLE
+!ifndef ADDSSL
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_IsNT
     #
@@ -276,7 +276,7 @@
     !insertmacro PFI_IsNT "un."
 !endif
 
-!ifndef ADDSSL & PORTABLE
+!ifndef ADDSSL
     #--------------------------------------------------------------------------
     # Macro: PFI_WriteEnvStr
     #
