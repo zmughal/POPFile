@@ -252,7 +252,7 @@
   ; Constants for the timeout loop used after issuing a POPFile 'startup' request
   ;-------------------------------------------------------------------------------
 
-  ; Timeout loop counter limit (counts up from 1)
+  ; Timeout loop counter limit (used while waiting for POPFile to start its webserver)
 
   !define C_STARTUP_LIMIT      50
 
@@ -3560,18 +3560,20 @@ startup_ok:
 
   ; Wait until POPFile is ready to display the UI (this make take a while if the database
   ; is large and/or the system is relatively slow so we need to keep the user informed
-  ; while we wait)
+  ; while we wait). We display a timeout that counts DOWN to zero instead of one that
+  ; counts UP from 1. This timeout can reach well into double figures and when counting
+  ; UP there is a risk that the user will suspect the installer has gone into a loop!
 
-  StrCpy ${L_TIMEOUT} 1             ; Timeout used to avoid an infinite loop
+  StrCpy ${L_TIMEOUT} ${C_STARTUP_LIMIT}      ; Timeout used to avoid an infinite loop
 
 check_if_ready:
   SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2B} ${L_TIMEOUT}"
   inetc::head /silent "http://127.0.0.1:$G_GUI" "$PLUGINSDIR\hdr.txt" /END
   Pop ${L_TEMP}
-  StrCmp ${L_TEMP} "OK" start_countdown
+  StrCmp ${L_TEMP} "OK" calc_page_delay
   StrCmp ${L_TEMP} "SendRequest Error" not_ready
   StrCpy $G_PLS_FIELD_1 ${L_TEMP} 12
-  StrCmp $G_PLS_FIELD_1 "Server Error" start_countdown report_status
+  StrCmp $G_PLS_FIELD_1 "Server Error" calc_page_delay report_status
 
 not_ready:
   StrCpy ${L_TEMP} "${L_BANNER_2C}"
@@ -3579,10 +3581,16 @@ not_ready:
 report_status:
 	SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_TEMP}"
   Sleep ${C_STARTUP_DELAY}
-  IntOp ${L_TIMEOUT} ${L_TIMEOUT} + 1
-  IntCmp ${L_TIMEOUT} ${C_STARTUP_LIMIT} check_if_ready check_if_ready remove_banner
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} - 1
+  IntCmp ${L_TIMEOUT} 0 check_if_ready remove_banner check_if_ready
 
-start_countdown:
+calc_page_delay:
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2D}"
+  Sleep ${C_STARTUP_DELAY}
+
+  ; Now use the size (in MB) of the SQLite database to form a rough
+  ; estimate of the expected time to silently get the first UI page
+
   Push $G_USERDIR
   Call PFI_GetSQLdbPathName
   Pop $G_PLS_FIELD_2
@@ -3603,18 +3611,12 @@ start_countdown:
   Pop $2
   Pop $1
   Pop $0
-  IntOp ${L_TIMEOUT} ${L_TIMEOUT} / 4
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} / 7
   IntOp ${L_TIMEOUT} ${L_TIMEOUT} + 1
-  Goto countdown
+  Goto get_a_page
 
 use_default:
   StrCpy ${L_TIMEOUT} "5"
-
-countdown:
-  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2D} ${L_TIMEOUT}"
-  Sleep ${C_STARTUP_DELAY}
-  IntOp ${L_TIMEOUT} ${L_TIMEOUT} - 1
-  IntCmp ${L_TIMEOUT} 0 countdown get_a_page countdown
 
 get_a_page:
 
@@ -3623,7 +3625,7 @@ get_a_page:
   ; to ensure the user does not see an empty browser window for several seconds when this
   ; FINISH page option is used.
 
-  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2A}"
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2A} (${L_TIMEOUT}s ?)"
   inetc::get /silent "http://127.0.0.1:$G_GUI/security" "$PLUGINSDIR\ui.htm" /END
   Pop ${L_TEMP}
   SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_TEMP}"
