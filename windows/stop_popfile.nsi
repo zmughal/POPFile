@@ -125,7 +125,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.6.10"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.6.11"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
@@ -146,12 +146,13 @@
   RequestExecutionLevel   user
 
   ;-------------------------------------------------------------------------------
-  ; Time delay constants used in conjunction with the NSISdl plugin
+  ; Time delay constants used in conjunction with the inetc plugin (replaces NSISdl)
   ;-------------------------------------------------------------------------------
 
-  ; Override the default timeout for NSISdl requests (specifies timeout in milliseconds)
+  ; Override the default timeout for inetc requests (specifies timeout in milliseconds)
+  ; (20 seconds is used to give the user more time to respond to any firewall prompts)
 
-  !define C_DLTIMEOUT                /TIMEOUT=10000
+  !define C_DLTIMEOUT                /TIMEOUT=20000
 
   ; Delay between the two shutdown requests (in milliseconds)
 
@@ -239,7 +240,8 @@ Section Shutdown
   Goto option_error
 
 usage:
-  MessageBox MB_OK "POPFile Silent Shutdown Utility v${C_VERSION}            \
+  MessageBox MB_OK "POPFile Silent Shutdown Utility v${C_VERSION}\
+    ${MB_NL}\
     Copyright (c)  ${C_BUILD_YEAR}  John Graham-Cumming\
     ${MB_NL}${MB_NL}\
     This command-line utility shuts POPFile down silently, without opening a browser window.\
@@ -250,9 +252,10 @@ usage:
     ${MB_NL}${MB_NL}\
     The optional <PASSWORD> is the password (no spaces allowed) for the POPFile User Interface.\
     ${MB_NL}${MB_NL}\
-    The optional <REPORT> is /SHOWERRORS (only error messages shown), /SHOWALL\
-    ${MB_NL}\
-    (success or error messages always shown), or /SHOWNONE (no messages - this is the default).\
+    The optional <REPORT> can be\
+    ${MB_NL}$\t/SHOWERRORS (only error messages shown),\
+    ${MB_NL}$\t/SHOWALL (success or error messages always shown),\
+    ${MB_NL}or$\t/SHOWNONE (no messages - this is the default).\
     ${MB_NL}${MB_NL}\
     A success/fail error code is always returned which can be checked in a batch file:\
     ${MB_NL}\
@@ -313,9 +316,9 @@ port_checks:
   ; If first attempt appears to succeed, we must try again to check if POPFile has shutdown
   ; (we cannot tell the difference between 'shutdown' and 'incorrect password' responses)
 
-  NSISdl::download_quiet ${C_DLTIMEOUT} http://${C_UI_URL}:${L_GUI}/password?password=${L_PASSWORD}&redirect=/shutdown? "$PLUGINSDIR\shutdown_1.htm"
+  inetc::get /silent ${C_DLTIMEOUT} "http://${C_UI_URL}:${L_GUI}/password?password=${L_PASSWORD}&redirect=/shutdown?" "$PLUGINSDIR\shutdown_1.htm" /END
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" try_password_again
+  StrCmp ${L_RESULT} "OK" try_password_again
   StrCmp ${L_REPORT} "none" error_exit
   MessageBox MB_OK|MB_ICONEXCLAMATION \
       "Silent shutdown with password using port '${L_GUI}' failed\
@@ -325,9 +328,9 @@ port_checks:
 
 try_password_again:
   Sleep ${C_DLGAP}
-  NSISdl::download_quiet ${C_DLTIMEOUT} http://${C_UI_URL}:${L_GUI}/password?password=${L_PASSWORD}&redirect=/shutdown? "$PLUGINSDIR\shutdown_2.htm"
+  inetc::get /silent ${C_DLTIMEOUT} "http://${C_UI_URL}:${L_GUI}/password?password=${L_PASSWORD}&redirect=/shutdown?" "$PLUGINSDIR\shutdown_2.htm" /END
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" 0 password_ok
+  StrCmp ${L_RESULT} "OK" 0 password_ok
   Push "$PLUGINSDIR\shutdown_2.htm"
   Call PFI_GetFileSize
   Pop ${L_RESULT}
@@ -354,9 +357,9 @@ no_password_supplied:
   ; If first attempt appears to succeed, we must try again to check if POPFile has shutdown
   ; (we cannot tell the difference between 'shutdown' and 'enter password' responses)
 
-  NSISdl::download_quiet ${C_DLTIMEOUT} http://${C_UI_URL}:${L_GUI}/shutdown "$PLUGINSDIR\shutdown_1.htm"
+  inetc::get /silent ${C_DLTIMEOUT} "http://${C_UI_URL}:${L_GUI}/shutdown" "$PLUGINSDIR\shutdown_1.htm" /END
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" try_again
+  StrCmp ${L_RESULT} "OK" try_again
   StrCmp ${L_REPORT} "none" error_exit
   MessageBox MB_OK|MB_ICONEXCLAMATION \
       "Silent shutdown using port '${L_GUI}' failed\
@@ -366,9 +369,9 @@ no_password_supplied:
 
 try_again:
   Sleep ${C_DLGAP}
-  NSISdl::download_quiet ${C_DLTIMEOUT} http://${C_UI_URL}:${L_GUI}/shutdown "$PLUGINSDIR\shutdown_2.htm"
+  inetc::get /silent ${C_DLTIMEOUT} "http://${C_UI_URL}:${L_GUI}/shutdown" "$PLUGINSDIR\shutdown_2.htm" /END
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" 0 shutdown_ok
+  StrCmp ${L_RESULT} "OK" 0 shutdown_ok
   Push "$PLUGINSDIR\shutdown_2.htm"
   Call PFI_GetFileSize
   Pop ${L_RESULT}
@@ -418,7 +421,6 @@ exit:
   !undef L_RESULT
   !undef L_TEMP
 SectionEnd
-
 
 #--------------------------------------------------------------------------
 # General Purpose Library Function: GetNextParam
