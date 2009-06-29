@@ -420,9 +420,9 @@
 
 ; Uninstall Log Messages
 
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_SHUTDOWN      "Shutting down POPFile using port"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_DELROOTDIR    "Removing all files from POPFile directory"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_DELROOTERR    "Note: unable to remove all files from POPFile directory"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_SHUTDOWN      "以下のポートを使用している POPFile を終了させています"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_DELROOTDIR    "POPFile ディレクトリからすべてのファイルを削除しています"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_LOG_DELROOTERR    "注意: POPFile ディレクトリのすべてのファイルを削除することができませんでした"
 
 ; Message Box text strings
 
@@ -942,8 +942,8 @@
 
 !insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_1      "POPFile を起動中"
 !insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_2      "しばらくお待ちください..."
-!insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_3      "POPFile is not ready yet"
-!insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_4      "POPFile is almost ready..."
+!insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_3      "POPFile はまだ準備できていません"
+!insertmacro PFI_LANG_STRING PFI_LANG_LAUNCH_BANNER_4      "POPFile はほとんど準備できています..."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ; Add User: Standard MUI Page - FINISH [adduser.nsi]
