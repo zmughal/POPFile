@@ -62,7 +62,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.27"
+  !define C_PFI_LIBRARY_VERSION     "0.3.28"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -4349,7 +4349,7 @@
 # This macro makes maintenance easier by ensuring that both processes use identical functions,
 # with the only difference being their names.
 #
-# To avoid the need to parse the HTML page downloaded by NSISdl, we call NSISdl again if the
+# To avoid the need to parse the HTML page downloaded by inetc, we call inetc again if the
 # first call succeeds. If the second call succeeds, we assume the UI is password protected.
 # As a debugging aid, we don't overwrite the first HTML file with the result of the second call.
 #
@@ -4386,9 +4386,10 @@
   Function ${UN}PFI_ShutdownViaUI
 
     ;--------------------------------------------------------------------------
-    ; Override the default timeout for NSISdl requests (specifies timeout in milliseconds)
+    ; Override the default timeout for inetc requests (specifies timeout in milliseconds)
+    ; (20 seconds is used to give the user more time to respond to any firewall prompts)
 
-    !define C_SVU_DLTIMEOUT       /TIMEOUT=10000
+    !define C_SVU_DLTIMEOUT       /TIMEOUT=20000
 
     ; Delay between the two shutdown requests (in milliseconds)
 
@@ -4415,20 +4416,16 @@
     Goto exit
 
   port_ok:
-#    NSISdl::download_quiet ${C_SVU_DLTIMEOUT} http://${C_UI_URL}:${L_UIPORT}/shutdown "$PLUGINSDIR\shutdown_1.htm"
     inetc::get /silent ${C_SVU_DLTIMEOUT} "http://${C_UI_URL}:${L_UIPORT}/shutdown" "$PLUGINSDIR\shutdown_1.htm" /END
     Pop ${L_RESULT}
-#    StrCmp ${L_RESULT} "success" try_again
     StrCmp ${L_RESULT} "OK" try_again
     StrCpy ${L_RESULT} "failure"
     Goto exit
 
   try_again:
     Sleep ${C_SVU_DLGAP}
-#    NSISdl::download_quiet ${C_SVU_DLTIMEOUT} http://${C_UI_URL}:${L_UIPORT}/shutdown "$PLUGINSDIR\shutdown_2.htm"
     inetc::get /silent ${C_SVU_DLTIMEOUT} "http://${C_UI_URL}:${L_UIPORT}/shutdown" "$PLUGINSDIR\shutdown_2.htm" /END
     Pop ${L_RESULT}
-#    StrCmp ${L_RESULT} "success" 0 shutdown_ok
     StrCmp ${L_RESULT} "OK" 0 shutdown_ok
     Push "$PLUGINSDIR\shutdown_2.htm"
     Call ${UN}PFI_GetFileSize
