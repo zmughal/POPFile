@@ -9,6 +9,7 @@ OPTIONAL-Japanese Language Support	0.0.0	Encode
 OPTIONAL-Japanese Language Support	0.0.0	Encode::Guess
 REQUIRED	0.0.0	Fcntl
 REQUIRED	0.0.0	File::Copy
+OPTIONAL-Japanese Language Support	0.0.0	File::Glob::Windows
 REQUIRED	0.0.0	Getopt::Long
 REQUIRED	0.0.0	HTML::Tagset
 REQUIRED	0.0.0	HTML::Template
