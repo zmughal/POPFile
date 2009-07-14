@@ -872,6 +872,18 @@ sub db_connect__
         }
     }
 
+    if ( $sqlite && ( $^O eq 'MSWin32' ) &&               # PROFILE BLOCK START
+         ( $self->{parser__}->{lang__} eq 'Nihongo' ) &&
+         ( $self->{db__}{sqlite_version} ge '3.0.0' ) ) { # PROFILE BLOCK STOP
+
+        # Convert database connection string to UTF-8.
+
+        require File::Glob::Windows;
+        require Encode;
+
+        Encode::from_to( $dbconnect, File::Glob::Windows::getCodePage(), 'utf-8' );
+    }
+
     $self->{db__} = DBI->connect( $dbconnect,                 # PROFILE BLOCK START
                                   $self->config_( 'dbuser' ),
                                   $self->config_( 'dbauth' ),
