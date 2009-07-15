@@ -1,5 +1,6 @@
 OPTIONAL-Upgrades from v0.20.x	0.0.0	BerkeleyDB
 REQUIRED	0.0.0	Carp
+REQUIRED	0.0.0	Cwd
 OPTIONAL-SQLite3 backend	0.0.0	DBD::SQLite
 REQUIRED	0.0.0	DBI
 REQUIRED	0.0.0	Date::Format
