@@ -159,7 +159,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.11"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.2.0"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -448,8 +448,10 @@
 
 Section CheckSQLiteDatabase
 
-  !define L_TEMP    $R9
+  !define L_PATH    $R9
+  !define L_TEMP    $R8
 
+  Push ${L_PATH}
   Push ${L_TEMP}
 
   SetDetailsPrint textonly
@@ -760,6 +762,25 @@ run_it:
   !endif
 
 use_it:
+  Push $G_DATABASE
+  Call PFI_GetParent
+  Pop ${L_PATH}
+  StrCmp ${L_PATH} "" run_it_now
+  
+  ; The SQLite command-line utility does not handle paths containing non-ASCII characters
+  ; properly. An example where this will cause a problem is when the POPFile 'User Data'
+  ; has been installed in the default location for a user with a Japanese login name.
+  ; As a workaround we change the current working directory to the folder containing the
+  ; database and supply only the database's filename when calling the command-line utility.
+  
+  StrLen ${L_TEMP} ${L_PATH}
+  IntOp ${L_TEMP} ${L_TEMP} + 1
+  StrCpy $G_DATABASE $G_DATABASE "" ${L_TEMP}
+  SetDetailsPrint none
+  SetOutPath "${L_PATH}"
+  SetDetailsPrint listonly
+  
+run_it_now:
   nsExec::ExecToStack '"$G_PLS_FIELD_1\$G_SQLITEUTIL" "$G_DATABASE" "select version from popfile;"'
   Pop ${L_TEMP}
   Call PFI_TrimNewlines
@@ -844,8 +865,10 @@ exit:
 
   Call HideFinalTimestamp
 
-  POP ${L_TEMP}
+  Pop ${L_TEMP}
+  Pop ${L_PATH}
 
+  !undef L_PATH
   !undef L_TEMP
 
 SectionEnd
