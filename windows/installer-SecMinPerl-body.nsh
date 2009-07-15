@@ -65,6 +65,10 @@
   File "${C_PERL_DIR}\lib\Config.pm"
   File "${C_PERL_DIR}\lib\Config_heavy.pl"
   File "${C_PERL_DIR}\lib\constant.pm"
+  File "${C_PERL_DIR}\lib\Cwd.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Cwd"
+        File "${C_PERL_DIR}\lib\auto\Cwd\*"
+        SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\DynaLoader.pm"
         SetOutPath "$G_MPLIBDIR\auto\DynaLoader"
         File "${C_PERL_DIR}\lib\auto\DynaLoader\*"
@@ -123,6 +127,9 @@
   File "${C_PERL_DIR}\lib\File\Spec.pm"
         SetOutPath "$G_MPLIBDIR\auto\File\Glob"
         File "${C_PERL_DIR}\lib\auto\File\Glob\*"
+
+  SetOutPath "$G_MPLIBDIR\File\Glob"
+  File "${C_PERL_DIR}\site\lib\File\Glob\Windows.pm"
 
   SetOutPath "$G_MPLIBDIR\File\Spec"
   File "${C_PERL_DIR}\lib\File\Spec\Unix.pm"
