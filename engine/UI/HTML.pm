@@ -1114,6 +1114,8 @@ sub pretty_date__
 #----------------------------------------------------------------------------
 sub advanced_page
 {
+    use Cwd 'abs_path';
+
     my ( $self, $client, $templ ) = @_;
 
     # Handle updating the parameter table
@@ -1213,7 +1215,7 @@ sub advanced_page
     $templ->param( 'Advanced_Loop_Word' => \@word_loop );
 
     $templ->param( 'Advanced_POPFILE_CFG' =>      # PROFILE BLOCK START
-        $self->get_user_path_( 'popfile.cfg' ) ); # PROFILE BLOCK STOP
+        abs_path( $self->get_user_path_( 'popfile.cfg' ) ) ); # PROFILE BLOCK STOP
 
     my $last_module = '';
 
