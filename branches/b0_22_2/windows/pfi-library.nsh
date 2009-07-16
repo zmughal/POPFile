@@ -62,7 +62,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.28"
+  !define C_PFI_LIBRARY_VERSION     "0.3.29"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -3038,7 +3038,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | LFNFIXER | MONITORCC | ONDEMAND | PORTABLE | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | LFNFIXER | MONITORCC | ONDEMAND | PORTABLE | RESTORE | RUNPOPFILE | RUNSQLITE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetParent
     #
@@ -3827,6 +3827,7 @@
     !define L_SQLITEPATH  $R6   ; path to sqlite.exe utility
     !define L_SQLITEUTIL  $R5   ; used to run relevant SQLite utility
     !define L_STATUS      $R4   ; status code returned by SQLite utility
+    !define L_WORKINGDIR  $R3   ; current working directory
 
     Exch ${L_COMMAND}
     Exch
@@ -3836,6 +3837,7 @@
     Push ${L_SQLITEPATH}
     Push ${L_SQLITEUTIL}
     Push ${L_STATUS}
+    Push ${L_WORKINGDIR}
 
     Push ${L_DATABASE}
     Call ${UN}PFI_GetSQLiteFormat
@@ -3855,14 +3857,35 @@
     Goto exit
 
   run_sqlite:
+    GetFullPathName ${L_WORKINGDIR} ".\"
+
+    Push "${L_DATABASE}"
+    Call ${UN}PFI_GetParent
+    Pop ${L_STATUS}
+    StrCmp ${L_STATUS} "" run_it_now
+
+    ; The SQLite command-line utility does not handle paths containing non-ASCII characters
+    ; properly. An example where this will cause a problem is when the POPFile 'User Data'
+    ; has been installed in the default location for a user with a Japanese login name.
+    ; As a workaround we change the current working directory to the folder containing the
+    ; database and supply only the database's filename when calling the command-line utility.
+
+    StrLen ${L_RESULT} ${L_STATUS}
+    IntOp ${L_RESULT} ${L_RESULT} + 1
+    StrCpy "${L_DATABASE}" "${L_DATABASE}" "" ${L_RESULT}
+    SetOutPath "${L_STATUS}"
+
+  run_it_now:
     nsExec::ExecToStack '"${L_SQLITEPATH}\${L_SQLITEUTIL}" "${L_DATABASE}" "${L_COMMAND}"'
     Pop ${L_STATUS}
     Call ${UN}PFI_TrimNewlines
     Pop ${L_RESULT}
+    SetOutPath ${L_WORKINGDIR}
     StrCmp ${L_STATUS} "0" exit
     StrCpy ${L_RESULT} "(${L_RESULT})"
 
   exit:
+    Pop ${L_WORKINGDIR}
     Pop ${L_STATUS}
     Pop ${L_SQLITEUTIL}
     Pop ${L_SQLITEPATH}
@@ -3876,6 +3899,7 @@
     !undef L_SQLITEPATH
     !undef L_SQLITEUTIL
     !undef L_STATUS
+    !undef L_WORKINGDIR
 
   FunctionEnd
 !macroend
