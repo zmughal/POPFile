@@ -128,9 +128,6 @@
         SetOutPath "$G_MPLIBDIR\auto\File\Glob"
         File "${C_PERL_DIR}\lib\auto\File\Glob\*"
 
-  SetOutPath "$G_MPLIBDIR\File\Glob"
-  File "${C_PERL_DIR}\site\lib\File\Glob\Windows.pm"
-
   SetOutPath "$G_MPLIBDIR\File\Spec"
   File "${C_PERL_DIR}\lib\File\Spec\Unix.pm"
   File "${C_PERL_DIR}\lib\File\Spec\Win32.pm"
