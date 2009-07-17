@@ -241,6 +241,33 @@
         SetOutPath "$G_MPLIBDIR\auto\Encode"
         File /r "${C_PERL_DIR}\lib\auto\Encode\*"
 
+        ;--------------------------------------------------------------------------
+        ; For the 1.1.1 release File::Glob::Windows and the necessary support files
+        ; were added to solve problems when the 'User Data' is installed using
+        ; a path containing non-ASCII characters (e.g. when the Windows login
+        ; name is a Japanese name)
+        ;--------------------------------------------------------------------------
+
+        SetOutPath "$G_MPLIBDIR"
+        File "${C_PERL_DIR}\lib\DirHandle.pm"
+
+        SetOutPath "$G_MPLIBDIR\File\Glob"
+        File "${C_PERL_DIR}\site\lib\File\Glob\Windows.pm"
+        
+        SetOutPath "$G_MPLIBDIR\Win32\"
+        File "${C_PERL_DIR}\lib\Win32\API.pm"
+        
+        SetOutPath "$G_MPLIBDIR\Win32\API"
+        File "${C_PERL_DIR}\lib\Win32\API\Callback.pm"
+        File "${C_PERL_DIR}\lib\Win32\API\Struct.pm"
+        File "${C_PERL_DIR}\lib\Win32\API\Test.pm"
+        File "${C_PERL_DIR}\lib\Win32\API\Type.pm"
+              SetOutPath "$G_MPLIBDIR\auto\Win32\API"
+              File "${C_PERL_DIR}\lib\auto\Win32\API\API.dll"
+              SetOutPath "$G_MPLIBDIR\auto\Win32\API\Callback"
+              File "${C_PERL_DIR}\lib\auto\Win32\API\Callback\Callback.dll"
+              SetOutPath "$G_MPLIBDIR"
+
     !endif
 
     !if '${PARSER}' == 'kakasi'
@@ -1135,7 +1162,7 @@
     !endif
 
     ; If we are upgrading then use the "real" user's current setting as the default
-    ; Nihingo parser if available, otherwise use the most recently installed parser
+    ; Nihongo parser if available, otherwise use the most recently installed parser
 
     ReadINIStr $G_PARSER "$G_COMMS_FILE" "RealUser" "Parser"
     StrCmp $G_PARSER "" 0 select_parser_section
