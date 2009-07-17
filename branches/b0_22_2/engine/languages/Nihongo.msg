@@ -110,7 +110,7 @@ Header_Magnets                          マグネット
 Footer_HomePage                         POPFile ホームページ
 Footer_Manual                           マニュアル
 Footer_Forums                           フォーラム
-Footer_FeedMe                           寄付(英語)
+Footer_FeedMe                           寄付
 Footer_RequestFeature                   要望
 Footer_MailingList                      メーリングリスト
 Footer_Wiki                             ドキュメント
