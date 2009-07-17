@@ -172,7 +172,7 @@ sub service
         $self->{next_update_check__} = time + $self->{update_check_interval__};
         $self->global_config_( 'last_update_check', time );
 
-        if ( my $updated = ( $self->{updated__} || $self->update_check() ) ) {
+        if ( my $updated = ( $self->{updated__} || $self->update_check( 1 ) ) ) {
             $self->update_check_result( $updated, 0, 1 );
         }
     }
@@ -299,20 +299,34 @@ sub track_popup_menu
 #
 # Check if new version of POPFile is available
 #
+#    $timeout        Seconds to timeout for checking updates.
+#
 # ----------------------------------------------------------------------------
 sub update_check
 {
     my ( $self ) = shift;
+    my ( $timeout ) = shift || 10;
 
-    use LWP::Simple;
+    use LWP::UserAgent;
 
     my ( $major_version, $minor_version, $build_version ) =
         $self->version() =~ /^v(\d+)\.(\d+)\.(\d+)$/;
 
-    my $latest_release = get( $self->{update_check_url__} );
+    my $ua = LWP::UserAgent->new;
+    $ua->timeout( $timeout );
+    $ua->env_proxy;
+    $ua->agent( 'POPFile/' . $self->version() );
 
-    if ( defined( $latest_release ) &&
+    my $response = $ua->get( $self->{update_check_url__} );
+    my $latest_release;
+
+    $self->{next_update_check__} = time + $self->{update_check_interval__};
+    $self->global_config_( 'last_update_check' , time );
+
+    if ( $response->is_success &&
+         ( $latest_release = $response->content ) &&
          ( $latest_release =~ /^(\d+)[.](\d+)[.](\d+)$/m ) ) {
+
         my ( $latest_ma, $latest_mi, $latest_bu ) = ( $1, $2, $3 );
 
         my $cmp;
@@ -323,11 +337,11 @@ sub update_check
         my $updated = ( $cmp > 0 );
 
         $self->{updated__} = $updated;
-        $self->{next_update_check__} = time + $self->{update_check_interval__};
-        $self->global_config_( 'last_update_check' , time );
 
         return $updated;
     } else {
+        $self->log_( 0, "Failed to check updates: " . $response->status_line );
+
         return -1;
     }
 }
@@ -339,6 +353,8 @@ sub update_check
 # Show result of checking updates
 #
 #    $updated        1 : New version of POPFile is available
+#                    0 : POPFile is up to date
+#                   -1 : Failed to check updates
 #    $show_dialog    1 : Show update check result dialog
 #    $show_balloon   1 : Show balloon tips
 #
@@ -350,7 +366,7 @@ sub update_check_result
     $self->{updated__} = ( $updated == 1 );
 
     if ( $show_dialog ) {
-        if ( $updated == 1 ) {
+        if ( $self->{updated__} ) {
             # Found updates.
 
             my $result = Win32::GUI::MessageBox(
@@ -390,7 +406,7 @@ sub update_check_result
         }
     }
 
-    if ( $updated == 1 ) {
+    if ( $self->{updated__} ) {
         # Change icon
 
         my $updated_icon = Win32::GUI::Icon->new(
