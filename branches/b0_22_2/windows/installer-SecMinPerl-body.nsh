@@ -83,6 +83,7 @@
   File "${C_PERL_DIR}\lib\IO.pm"
   File "${C_PERL_DIR}\lib\lib.pm"
   File "${C_PERL_DIR}\lib\locale.pm"
+  File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\POSIX.pm"
         SetOutPath "$G_MPLIBDIR\auto\POSIX"
         File "${C_PERL_DIR}\lib\auto\POSIX\POSIX.dll"
@@ -97,6 +98,9 @@
         SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\strict.pm"
   File "${C_PERL_DIR}\lib\Symbol.pm"
+  File "${C_PERL_DIR}\site\lib\URI.pm"
+  File "${C_PERL_DIR}\lib\utf8.pm"
+  File "${C_PERL_DIR}\lib\utf8_heavy.pl"
   File "${C_PERL_DIR}\lib\vars.pm"
   File "${C_PERL_DIR}\lib\warnings.pm"
   File "${C_PERL_DIR}\site\lib\Win32.pm"
@@ -140,7 +144,16 @@
   File "${C_PERL_DIR}\lib\HTML\Template.pm"
 
   SetOutPath "$G_MPLIBDIR\HTTP"
+  File "${C_PERL_DIR}\lib\HTTP\Config.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Date.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Headers.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Message.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Request.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Response.pm"
   File "${C_PERL_DIR}\lib\HTTP\Status.pm"
+
+  SetOutPath "$G_MPLIBDIR\HTTP\Request"
+  File "${C_PERL_DIR}\lib\HTTP\Request\Common.pm"
 
   SetOutPath "$G_MPLIBDIR\IO"
   File "${C_PERL_DIR}\lib\IO\*"
@@ -156,12 +169,24 @@
         File "${C_PERL_DIR}\site\lib\auto\List\Util\*"
 
   SetOutPath "$G_MPLIBDIR\LWP"
+  File "${C_PERL_DIR}\lib\LWP\MemberMixin.pm"
+  File "${C_PERL_DIR}\lib\LWP\Protocol.pm"
   File "${C_PERL_DIR}\lib\LWP\Simple.pm"
+  File "${C_PERL_DIR}\lib\LWP\UserAgent.pm"
+
+  SetOutPath "$G_MPLIBDIR\LWP\Protocol"
+  File "${C_PERL_DIR}\lib\LWP\Protocol\http.pm"
 
   SetOutPath "$G_MPLIBDIR\MIME"
   File "${C_PERL_DIR}\lib\MIME\*"
         SetOutPath "$G_MPLIBDIR\auto\MIME\Base64"
         File "${C_PERL_DIR}\lib\auto\MIME\Base64\*"
+
+  SetOutPath "$G_MPLIBDIR\Net"
+  File "${C_PERL_DIR}\lib\Net\HTTP.pm"
+
+  SetOutPath "$G_MPLIBDIR\Net\HTTP"
+  File "${C_PERL_DIR}\lib\Net\HTTP\Methods.pm"
 
   SetOutPath "$G_MPLIBDIR\Scalar"
   File "${C_PERL_DIR}\site\lib\Scalar\Util.pm"
@@ -180,6 +205,21 @@
   SetOutPath "$G_MPLIBDIR\Time"
   File "${C_PERL_DIR}\site\lib\Time\Local.pm"
   File "${C_PERL_DIR}\site\lib\Time\Zone.pm"
+
+  SetOutPath "$G_MPLIBDIR\unicore"
+  File "${C_PERL_DIR}\lib\unicore\Exact.pl"
+  File "${C_PERL_DIR}\lib\unicore\PVA.pl"
+
+  SetOutPath "$G_MPLIBDIR\unicore\lib\gc_sc"
+  File "${C_PERL_DIR}\lib\unicore\lib\gc_sc\Digit.pl"
+
+  SetOutPath "$G_MPLIBDIR\URI"
+  File "${C_PERL_DIR}\site\lib\URI\_foreign.pm"
+  File "${C_PERL_DIR}\site\lib\URI\_generic.pm"
+  File "${C_PERL_DIR}\site\lib\URI\_query.pm"
+  File "${C_PERL_DIR}\site\lib\URI\_server.pm"
+  File "${C_PERL_DIR}\site\lib\URI\Escape.pm"
+  File "${C_PERL_DIR}\site\lib\URI\http.pm"
 
   SetOutPath "$G_MPLIBDIR\warnings"
   File "${C_PERL_DIR}\lib\warnings\register.pm"
