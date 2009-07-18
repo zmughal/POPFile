@@ -29,6 +29,7 @@ WikiLink                                index.php
 FAQLink                                 FAQ
 RequestFeatureLink                      RequestFeature
 MailingListLink                         mailing_lists
+DonateLink                              Donate
 
 # Common words that are used on their own all over the interface
 Apply                                   Apply
@@ -305,6 +306,7 @@ Bucket_LookupMessage                    Lookup word in buckets
 Bucket_LookupMessage2                   Lookup result for
 Bucket_LookupMostLikely                 <b>%s</b> is most likely to appear in <font color="%s">%s</font>
 Bucket_DoesNotAppear                    <p><b>%s</b> does not appear in any of the buckets
+Bucket_InIgnoredWords                   <b>%s</b> is in Ignored Words. POPFile ignores this word
 Bucket_DisabledGlobally                 Disabled globally
 Bucket_To                               to
 Bucket_Quarantine                       Quarantine<br>Message
@@ -331,6 +333,8 @@ View_WordFrequencies                    showing word frequencies
 View_WordScores                         showing word scores
 View_Chart                              Decision Chart
 View_DownloadMessage                    Download Message
+View_MessageHeader                      Message Header
+View_MessageBody                        Message Body
 
 Windows_TrayIcon                        Show POPFile icon in Windows system tray?
 Windows_Console                         Run POPFile in a console window?
