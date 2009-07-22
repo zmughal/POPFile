@@ -1212,7 +1212,10 @@ sub advanced_page
 
     $templ->param( 'Advanced_Loop_Word' => \@word_loop );
 
-    my $config_file = abs_path( $self->get_user_path_( 'popfile.cfg' ) );
+    my $config_file = $self->get_user_path_( 'popfile.cfg' );
+    if ( -e $config_file ) {
+        $config_file = abs_path( $config_file );
+    }
 
     if ( ( $^O eq 'MSWin32' ) &&                           # PROFILE BLOCK START
          ( $self->config_( 'language' ) eq 'Nihongo' ) ) { # PROFILE BLOCK STOP
