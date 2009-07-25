@@ -47,7 +47,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PPL_LIBRARY_VERSION     "0.0.5"
+  !define C_PPL_LIBRARY_VERSION     "0.0.6"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -610,7 +610,7 @@
   FunctionEnd
 !macroend
 
-!ifdef PORTABLE
+!ifdef CREATEUSER | PORTABLE
     #--------------------------------------------------------------------------
     # Installer Function: PPL_CfgSettingRead
     #
@@ -1357,7 +1357,7 @@
   FunctionEnd
 !macroend
 
-!ifdef LFNFIXER | PORTABLE
+!ifdef CREATEUSER | LFNFIXER | PORTABLE
     #--------------------------------------------------------------------------
     # Installer Function: PPL_GetParent
     #
