@@ -194,7 +194,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.0.43"
+  !define C_PFI_VERSION   "0.0.44"
 
   !define C_OUTFILE       "POPFilePortable.exe"
 
@@ -669,15 +669,6 @@ FunctionEnd
 #
 ###########################################################################
 
-#--------------------------------------------------------------------------
-# Section: default (always run silently)
-#
-# Perform the required POPFilePortable Launcher actions.
-#
-# If the Maintenance Menu was exited without selecting an option then
-# $G_MODE will still be '/menu' so there is nothing for us to do!
-#--------------------------------------------------------------------------
-
 !macro SET_TEMP_ENVIRONMENT_VARIABLE NAME VALUE
 
       !insertmacro PPL_UNIQUE_ID
@@ -691,6 +682,15 @@ FunctionEnd
   continue_${PPL_UNIQUE_ID}:
 !macroend
 
+#--------------------------------------------------------------------------
+# Section: default (always run silently)
+#
+# Perform the required POPFilePortable Launcher actions.
+#
+# If the Maintenance Menu was exited without selecting an option then
+# $G_MODE will still be '/menu' so there is nothing for us to do!
+#--------------------------------------------------------------------------
+
 Section default
 
   ; Normally this launcher runs silently. However if the '/menu' option was
@@ -703,28 +703,28 @@ Section default
 
 continue:
 
-  !define L_CFG           $R9   ; file handle used to access 'popfile.cfg'
-  !define L_CONSOLE       $R8   ; 1 = console mode, 0 = background mode
-  !define L_ICONSETTING   $R7   ; 1 (or "i") = tray icon enabled, 0 (or "") = disabled
-  !define L_LINE          $R6   ; a line (or part of a line) from 'popfile.cfg'
+  !define L_CONSOLE       $R9   ; 1 = console mode, 0 = background mode
+  !define L_FILEHANDLE    $R8   ; used when searching the DATA folder
+  !define L_FILENAME      $R7   ; entry found when searching the DATA folder
+  !define L_ICONSETTING   $R6   ; 1 (or "i") = tray icon enabled, 0 (or "") = disabled
   !define L_PFI_ROOT      $R5   ; path to the POPFile program (popfile.pl, etc)
   !define L_PFI_USER      $R4   ; path to user's 'popfile.cfg' file
-  !define L_SQLITEUTIL    $R3   ; SQLite utility (sqlite3.exe or sqlite.exe)
-  !define L_TEMP          $R2
-  !define L_TEXTEND       $R1   ; helps when processing lines over 1023 chars long
+  !define L_RESULT        $R3
+  !define L_SQLITEUTIL    $R2   ; SQLite utility (sqlite3.exe or sqlite.exe)
+  !define L_TEMP          $R1
   !define L_WORKINGDIR    $R0   ; used to manipulate current working directory
 
   !define L_RESERVED      $0    ; used in system.dll calls
 
-  Push ${L_CFG}
   Push ${L_CONSOLE}
+  Push ${L_FILEHANDLE}
+  Push ${L_FILENAME}
   Push ${L_ICONSETTING}
-  Push ${L_LINE}
   Push ${L_PFI_ROOT}
   Push ${L_PFI_USER}
+  Push ${L_RESULT}
   Push ${L_SQLITEUTIL}
   Push ${L_TEMP}
-  Push ${L_TEXTEND}
   Push ${L_WORKINGDIR}
 
   Push ${L_RESERVED}
@@ -830,18 +830,18 @@ prepare_cmdline:
 
   Push $G_DATABASE
   Call PPL_GetParent
-  Pop ${L_CFG}
-  StrCmp ${L_CFG} "" execute_sqlite
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "" execute_sqlite
 
   ; The SQLite command-line utility does not handle paths containing non-ASCII
   ; characters properly. To avoid problems temporarily change the current working
   ; directory to the folder containing the database and supply only the database's
   ; filename when calling the command-line utility.
 
-  StrLen ${L_TEMP} ${L_CFG}
+  StrLen ${L_TEMP} ${L_RESULT}
   IntOp ${L_TEMP} ${L_TEMP} + 1
   StrCpy $G_DATABASE $G_DATABASE "" ${L_TEMP}
-  SetOutPath "${L_CFG}"
+  SetOutPath "${L_RESULT}"
 
 execute_sqlite:
   ClearErrors
@@ -863,22 +863,44 @@ run_popfile:
       "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
   StrCmp ${L_TEMP} "" 0 look_for_userdata
   IfFileExists "$EXEDIR\Data\pfpi.ini" look_for_userdata
-  IfFileExists "$EXEDIR\App\POPFile\lfnfixer.exe" fix_lfn_problems_now
+  IfFileExists "$EXEDIR\App\POPFile\lfnfixer.exe" fix_lfn_problems
   StrCpy $G_PLS_FIELD_1 "$EXEDIR\App\POPFile\lfnfixer.exe"
   MessageBox MB_OK|MB_ICONSTOP "$(PFPL_MSG_NOLFNFIXER)"
   Goto exit
 
-fix_lfn_problems_now:
+fix_lfn_problems:
   ExecWait '"$EXEDIR\App\POPFile\lfnfixer.exe"'
   WriteINIStr "$EXEDIR\Data\pfpi.ini" "LFN_fixer" "RunBy" "${C_OUTFILE}"
 
 look_for_userdata:
-  IfFileExists "$EXEDIR\Data\popfile.cfg" got_config
+  StrCpy ${L_RESULT} "clean"
+  IfFileExists "$EXEDIR\Data\*.*" search_for_files
   CreateDirectory "$EXEDIR\Data\"
-  CopyFiles "$EXEDIR\App\DefaultData\*.*" "$EXEDIR\Data\"
+  Goto default_stopwords
 
-got_config:
-  IfFileExists "$G_DATABASE" got_corpus
+search_for_files:
+  FindFirst ${L_FILEHANDLE} ${L_FILENAME} "$EXEDIR\Data\*.*"
+
+continue_search:
+  FindNext ${L_FILEHANDLE} ${L_FILENAME}
+  StrCmp ${L_FILENAME} ".." continue_search
+  StrCmp ${L_FILENAME} "pfpi.ini" continue_search
+  StrCmp ${L_FILENAME} "" search_done
+  StrCpy ${L_RESULT} "dirty"
+
+search_done:
+  FindClose ${L_FILEHANDLE}
+  StrCmp ${L_RESULT} "dirty" check_existing_data
+
+default_stopwords:
+  IfFileExists "$EXEDIR\App\DefaultData\stopwords" 0 create_data
+  CopyFiles "$EXEDIR\App\DefaultData\stopwords" "$EXEDIR\Data\"
+
+check_existing_data:
+  IfFileExists "$EXEDIR\Data\popfile.cfg" 0 create_data
+  IfFileExists "$G_DATABASE" prepare_env_vars
+
+create_data:
   IfFileExists "$EXEDIR\App\POPFile\CreateUserData.exe" create_data_now
   StrCpy $G_PLS_FIELD_1 "$EXEDIR\App\POPFile\CreateUserData.exe"
   MessageBox MB_OK|MB_ICONSTOP "$(PFPL_MSG_NOCREATEDATA)"
@@ -886,8 +908,11 @@ got_config:
 
 create_data_now:
   ExecWait '"$EXEDIR\App\POPFile\CreateUserData.exe"'
+  IfFileExists "$EXEDIR\Data\popfile.cfg" prepare_env_vars
+  IfFileExists "$EXEDIR\App\DefaultData\popfile.cfg" 0 prepare_env_vars
+  CopyFiles "$EXEDIR\App\DefaultData\popfile.cfg" "$EXEDIR\Data\"
 
-got_corpus:
+prepare_env_vars:
   SetOutPath $EXEDIR
   StrCpy ${L_PFI_ROOT} ".\App\POPFile"
   StrCpy ${L_PFI_USER} ".\Data"
@@ -999,25 +1024,25 @@ exit:
   Pop ${L_RESERVED}
 
   Pop ${L_WORKINGDIR}
-  Pop ${L_TEXTEND}
   Pop ${L_TEMP}
   Pop ${L_SQLITEUTIL}
+  Pop ${L_RESULT}
   Pop ${L_PFI_USER}
   Pop ${L_PFI_ROOT}
-  Pop ${L_LINE}
   Pop ${L_ICONSETTING}
+  Pop ${L_FILENAME}
+  Pop ${L_FILEHANDLE}
   Pop ${L_CONSOLE}
-  Pop ${L_CFG}
 
-  !undef L_CFG
   !undef L_CONSOLE
+  !undef L_FILEHANDLE
+  !undef L_FILENAME
   !undef L_ICONSETTING
-  !undef L_LINE
   !undef L_PFI_ROOT
   !undef L_PFI_USER
+  !undef L_RESULT
   !undef L_SQLITEUTIL
   !undef L_TEMP
-  !undef L_TEXTEND
   !undef L_WORKINGDIR
 
   !undef L_RESERVED
