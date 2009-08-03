@@ -123,36 +123,7 @@
   done_CfgSettingRead:
     FileClose ${L_CFG}
     StrCmp ${L_RESULT} "" error_exit_CfgSettingRead
-    Push ${L_RESULT}
-
-    #-----------------------------------
-    # Call PPL_TrimNewlines (start)
-    #-----------------------------------
-
-    Exch $R0
-    Push $R1
-    Push $R2
-    StrCpy $R1 0
-
-  loop_CfgSettingRead_TrimNewlines:
-    IntOp $R1 $R1 - 1
-    StrCpy $R2 $R0 1 $R1
-    StrCmp $R2 "$\r" loop_CfgSettingRead_TrimNewlines
-    StrCmp $R2 "$\n" loop_CfgSettingRead_TrimNewlines
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 0 no_trim_needed_CfgSettingRead_TrimNewlines
-    StrCpy $R0 $R0 $R1
-
-  no_trim_needed_CfgSettingRead_TrimNewlines:
-    Pop $R2
-    Pop $R1
-    Exch $R0
-
-    #-----------------------------------
-    # Call PPL_TrimNewlines (end)
-    #-----------------------------------
-
-    Pop ${L_RESULT}
+    ${TrimNewlines} ${L_RESULT} ${L_RESULT}
     ClearErrors
     StrCmp ${L_RESULT} "" 0 exit_CfgSettingRead
 
@@ -272,7 +243,8 @@
         StrCpy ${L_UI_LANG} "Turkce"
 
 ;;;   ${Case} "${LANG_UKRAINIAN}"
-;;;   Use the appropriate numeric value to avoid undefined ${LANG_UKRAINIAN} error here
+;;;         Use the appropriate numeric value to avoid the warning
+;;;         'unknown variable/constant "{LANG_UKRAINIAN}" detected'
       ${Case} "1058"
         StrCpy ${L_UI_LANG} "Ukrainian"
 
@@ -369,36 +341,7 @@
     StrCmp ${L_VALUE} "" delete_it_CfgSettingWrite
 
     StrCpy ${L_TEMP} ${L_LINE} "" ${L_MATCHLEN}
-    Push ${L_TEMP}
-
-    #-----------------------------------
-    # Call PPL_TrimNewlines (start)
-    #-----------------------------------
-
-    Exch $R0
-    Push $R1
-    Push $R2
-    StrCpy $R1 0
-
-  loop_CfgSettingWrite_TrimNewlines:
-    IntOp $R1 $R1 - 1
-    StrCpy $R2 $R0 1 $R1
-    StrCmp $R2 "$\r" loop_CfgSettingWrite_TrimNewlines
-    StrCmp $R2 "$\n" loop_CfgSettingWrite_TrimNewlines
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 0 no_trim_needed_CfgSettingWrite_TrimNewlines
-    StrCpy $R0 $R0 $R1
-
-  no_trim_needed_CfgSettingWrite_TrimNewlines:
-    Pop $R2
-    Pop $R1
-    Exch $R0
-
-    #-----------------------------------
-    # Call PPL_TrimNewlines (end)
-    #-----------------------------------
-
-    Pop ${L_TEMP}
+    ${TrimNewlines} ${L_TEMP} ${L_TEMP}
     StrCmp ${L_VALUE} ${L_TEMP} 0 change_it_CfgSettingWrite
     StrCmp ${L_STATUS} "${C_CFG_WRITE_CHANGED}" copy_line_CfgSettingWrite
     StrCpy ${L_STATUS} "${C_CFG_WRITE_SAME}"
@@ -437,40 +380,7 @@
     FileClose ${L_NEW_HANDLE}
 
     StrCmp ${L_STATUS} ${C_CFG_WRITE_SAME} success_exit_CfgSettingWrite
-    Push ${L_OLD_CFG}
-
-    #---------------------------
-    # Call PPL_GetParent (start)
-    #---------------------------
-
-    Exch $R0
-    Push $R1
-    Push $R2
-    Push $R3
-
-    StrCpy $R1 0
-    StrLen $R2 $R0
-
-  loop_CfgSettingWrite_GetParent:
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 $R2 get_CfgSettingWrite_GetParent 0 get_CfgSettingWrite_GetParent
-    StrCpy $R3 $R0 1 -$R1
-    StrCmp $R3 "\" get_CfgSettingWrite_GetParent
-    Goto loop_CfgSettingWrite_GetParent
-
-  get_CfgSettingWrite_GetParent:
-    StrCpy $R0 $R0 -$R1
-
-    Pop $R3
-    Pop $R2
-    Pop $R1
-    Exch $R0
-
-    #---------------------------
-    # Call PPL_GetParent (end)
-    #---------------------------
-
-    Pop ${L_TEMP}
+    ${GetParent} ${L_OLD_CFG} ${L_TEMP}
     StrCmp ${L_TEMP} "" 0 path_supplied_CfgSettingWrite
     StrCpy ${L_TEMP} "."
     Goto update_file_CfgSettingWrite
@@ -542,7 +452,8 @@
   #------------------------------------------------
 
     Pop ${L_CFG_RESULT}
-;;;    MessageBox MB_OK "CfgSettingWrite (backup) status: ${L_CFG_RESULT}${MB_NL}(${L_CFG_FILE})"
+;;;    MessageBox MB_OK \
+;;;           "CfgSettingWrite (backup) status: ${L_CFG_RESULT}${MB_NL}(${L_CFG_FILE})"
     StrCmp ${L_CFG_RESULT} ${C_CFG_WRITE_ERROR} 0 cfg_update_ok_CCPostInstall
     MessageBox MB_OK|MB_ICONSTOP "*** Internal error ***\
         ${MB_NL}\
@@ -571,8 +482,94 @@
 
 !macro CustomCodeOptionalCleanup
 
-;;;  MessageBox MB_OK "'CustomCodeOptionalCleanup' executed"
+    ; The Nihongo parser is NOT being installed. If the existing POPFilePortable
+    ; installation includes the MeCab parser we need to remove it and all of its
+    ; support files if it uses a different version of Perl from the one we are
+    ; about to install.
 
+    IfFileExists "$INSTDIR\App\POPFile\perl58.dll" 0 exit_CustomCodeOptionalCleanup
+    IfFileExists "$INSTDIR\App\POPFile\mecab\*.*" 0 exit_CustomCodeOptionalCleanup
+
+    !define L_NEW_MAJOR  $R9
+    !define L_NEW_MINOR  $R8
+    !define L_NEW_REVSN  $R7
+    !define L_NEW_BUILD  $R6
+
+    !define L_OLD_MAJOR  $R5
+    !define L_OLD_MINOR  $R4
+    !define L_OLD_REVSN  $R3
+    !define L_OLD_BUILD  $R2
+
+    Push ${L_NEW_MAJOR}
+    Push ${L_NEW_MINOR}
+    Push ${L_NEW_REVSN}
+    Push ${L_NEW_BUILD}
+
+    Push ${L_OLD_MAJOR}
+    Push ${L_OLD_MINOR}
+    Push ${L_OLD_REVSN}
+    Push ${L_OLD_BUILD}
+
+    GetDllVersionLocal "..\..\App\POPFile\perl58.dll" ${L_NEW_MINOR} ${L_NEW_BUILD}
+    IntOp ${L_NEW_MAJOR} ${L_NEW_MINOR} / 0x00010000
+    IntOp ${L_NEW_MINOR} ${L_NEW_MINOR} & 0x0000FFFF
+    IntOp ${L_NEW_REVSN} ${L_NEW_BUILD} / 0x00010000
+    IntOp ${L_NEW_BUILD} ${L_NEW_BUILD} & 0x0000FFFF
+
+    GetDllVersion "$INSTDIR\App\POPFile\perl58.dll" ${L_OLD_MINOR} ${L_OLD_BUILD}
+    IntOp ${L_OLD_MAJOR} ${L_OLD_MINOR} / 0x00010000
+    IntOp ${L_OLD_MINOR} ${L_OLD_MINOR} & 0x0000FFFF
+    IntOp ${L_OLD_REVSN} ${L_OLD_BUILD} / 0x00010000
+    IntOp ${L_OLD_BUILD} ${L_OLD_BUILD} & 0x0000FFFF
+
+;;;    MessageBox MB_OK \
+;;;        "Old Perl: ${L_OLD_MAJOR}.${L_OLD_MINOR}.${L_OLD_REVSN} Build ${L_OLD_BUILD}\
+;;;        ${MB_NL}${MB_NL}\
+;;;        New Perl: ${L_NEW_MAJOR}.${L_NEW_MINOR}.${L_NEW_REVSN} Build ${L_NEW_BUILD}"
+
+    StrCmp ${L_NEW_MAJOR} ${L_OLD_MAJOR} 0 remove_mecab
+    StrCmp ${L_NEW_MINOR} ${L_OLD_MINOR} 0 remove_mecab
+    StrCmp ${L_NEW_REVSN} ${L_OLD_REVSN} 0 remove_mecab
+    StrCmp ${L_NEW_BUILD} ${L_OLD_BUILD} restore_regs_CustomCodeOptionalCleanup
+
+  remove_mecab:
+;;;    MessageBox MB_OK "Removing out-of-date MeCab files"
+
+    Delete "$INSTDIR\App\POPFile\lib\DirHandle.pm"
+    Delete "$INSTDIR\App\POPFile\lib\Encode.pm"
+    Delete "$INSTDIR\App\POPFile\lib\MeCab.pm"
+    Delete "$INSTDIR\App\POPFile\lib\File\Glob\Windows.pm"
+    Delete "$INSTDIR\App\POPFile\lib\Win32\API.pm"
+
+    RmDir /r "$INSTDIR\App\POPFile\lib\auto\Encode"
+    RmDir /r "$INSTDIR\App\POPFile\lib\auto\MeCab"
+    RmDir /r "$INSTDIR\App\POPFile\lib\auto\Win32\API"
+    RmDir /r "$INSTDIR\App\POPFile\lib\Encode"
+    RmDir /r "$INSTDIR\App\POPFile\lib\Win32\API"
+    RmDir /r "$INSTDIR\App\POPFile\mecab"
+
+  restore_regs_CustomCodeOptionalCleanup:
+    Pop ${L_OLD_BUILD}
+    Pop ${L_OLD_REVSN}
+    Pop ${L_OLD_MINOR}
+    Pop ${L_OLD_MAJOR}
+
+    Pop ${L_NEW_BUILD}
+    Pop ${L_NEW_REVSN}
+    Pop ${L_NEW_MINOR}
+    Pop ${L_NEW_MAJOR}
+
+    !undef L_NEW_MAJOR
+    !undef L_NEW_MINOR
+    !undef L_NEW_REVSN
+    !undef L_NEW_BUILD
+
+    !undef L_OLD_MAJOR
+    !undef L_OLD_MINOR
+    !undef L_OLD_REVSN
+    !undef L_OLD_BUILD
+
+  exit_CustomCodeOptionalCleanup:
 !macroend
 
 #--------------------------------------------------------------------------
