@@ -21,6 +21,18 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
+# One optional command-line parameter is supported: the reporting level.
+#
+# /SHOWERRORS     - specifies that a message is to be shown if any errors were
+#                   detected (nothing is displayed if the shutdown was successful).
+#
+# /SHOWALL        - specifies that a success/fail message will always be shown.
+#
+# /SHOWNONE       - specifies that no messages are to be displayed.
+#                   [This is the default used when no option is supplied]
+#
+# Uppercase or lowercase can be used for this optional parameter.
+#-------------------------------------------------------------------------------------------
 
   ; This version of the script has been tested with the "NSIS v2.45" compiler,
   ; released 6 June 2009. This particular compiler can be downloaded from
@@ -68,7 +80,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.1"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.0.2"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE   "POPFilePortableShutdown.exe"
 
@@ -104,6 +116,8 @@
 
   !include "ppl-library.nsh"
 
+  !include "nsis-library.nsh"
+
   ;--------------------------------------------------------------------------
   ; Add VersionInfo to the executable file
   ;--------------------------------------------------------------------------
@@ -136,7 +150,8 @@
 
 Section default
 
-  !define L_GUI   $R9
+  !define L_GUI      $R9
+  !define L_REPORT   $R8
 
   IfFileExists "$EXEDIR\App\POPFile\stop_pf.exe" get_ui_port
   MessageBox MB_OK|MB_ICONSTOP "Cannot find the silent shutdown utility in expected location:\
@@ -156,7 +171,9 @@ get_ui_port:
   Goto exit
 
 silent_shutdown:
-  Exec '"$EXEDIR\App\POPFile\stop_pf.exe" /showerrors ${L_GUI}'
+  Call NSIS_GetParameters
+  Pop ${L_REPORT}
+  Exec '"$EXEDIR\App\POPFile\stop_pf.exe" ${L_REPORT} ${L_GUI}'
 
 exit:
 
