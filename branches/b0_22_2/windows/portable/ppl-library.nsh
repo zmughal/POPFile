@@ -47,7 +47,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PPL_LIBRARY_VERSION     "0.0.6"
+  !define C_PPL_LIBRARY_VERSION     "0.0.8"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -222,76 +222,10 @@
 #
 # Functions used only during 'installation':
 #
-#    Installer Function: PPL_GetRoot
 #    Installer Function: PPL_GetSFNStatus
 #    Installer Function: PPL_StrStripLZS
 #
 #=============================================================================================
-
-
-!ifdef PORTABLE
-    #--------------------------------------------------------------------------
-    # Installer Function: PPL_GetRoot
-    #
-    # This function returns the root directory of a given path.
-    # The given path must be a full path. Normal paths and UNC paths are supported.
-    #
-    # NB: The path is assumed to use backslashes (\)
-    #
-    # Inputs:
-    #         (top of stack)          - input path
-    #
-    # Outputs:
-    #         (top of stack)          - root part of the path (eg "X:" or "\\server\share")
-    #
-    # Usage:
-    #
-    #         Push "C:\Program Files\Directory\Whatever"
-    #         Call PPL_GetRoot
-    #         Pop $R0
-    #
-    #         ($R0 at this point is ""C:")
-    #
-    #--------------------------------------------------------------------------
-
-    Function PPL_GetRoot
-      Exch $0
-      Push $1
-      Push $2
-      Push $3
-      Push $4
-
-      StrCpy $1 $0 2
-      StrCmp $1 "\\" UNC
-      StrCpy $0 $1
-      Goto done
-
-    UNC:
-      StrCpy $2 3
-      StrLen $3 $0
-
-    loop:
-      IntCmp $2 $3 "" "" loopend
-      StrCpy $1 $0 1 $2
-      IntOp $2 $2 + 1
-      StrCmp $1 "\" loopend loop
-
-    loopend:
-      StrCmp $4 "1" +3
-      StrCpy $4 1
-      Goto loop
-
-      IntOp $2 $2 - 1
-      StrCpy $0 $0 $2
-
-    done:
-      Pop $4
-      Pop $3
-      Pop $2
-      Pop $1
-      Exch $0
-    FunctionEnd
-!endif
 
 
 !ifdef PORTABLE
@@ -339,7 +273,7 @@
 
     getroot:
       Push ${L_FOLDERPATH}
-      Call PPL_GetRoot              ; extract the "X:" or "\\server\share" part of the path
+      Call NSIS_GetRoot              ; extract the "X:" or "\\server\share" part of the path
       Pop ${L_FOLDERPATH}
       StrCpy ${L_FILESYSTEM} ""     ; volume's file system type, eg FAT32, NTFS, CDFS, UDF, ""
       StrCpy ${L_RESULT} ""         ; return code 1 = success, 0 = fail
@@ -451,14 +385,6 @@
 #    Installer Function:   PPL_GetLocalTime
 #    Uninstaller Function: un.PPL_GetLocalTime
 #
-#    Macro:                PPL_GetParameters
-#    Installer Function:   PPL_GetParameters
-#    Uninstaller Function: un.PPL_GetParameters
-#
-#    Macro:                PPL_GetParent
-#    Installer Function:   PPL_GetParent
-#    Uninstaller Function: un.PPL_GetParent
-#
 #    Macro:                PPL_GetSQLiteFormat
 #    Installer Function:   PPL_GetSQLiteFormat
 #    Uninstaller Function: un.PPL_GetSQLiteFormat
@@ -470,10 +396,6 @@
 #    Macro:                PPL_StrStr
 #    Installer Function:   PPL_StrStr
 #    Uninstaller Function: un.PPL_StrStr
-#
-#    Macro:                PPL_TrimNewlines
-#    Installer Function:   PPL_TrimNewlines
-#    Uninstaller Function: un.PPL_TrimNewlines
 #
 #=============================================================================================
 
@@ -536,9 +458,9 @@
     !define L_SETTING   $R4     ; the configuration setting to be read
     !define L_TEXTEND   $R3     ; helps ensure correct handling of lines over 1023 chars long
 
-    Exch ${L_SETTING}          ; get the name of the setting to be found
+    Exch ${L_SETTING}           ; get the name of the setting to be found
     Exch
-    Exch ${L_CFG}              ; get the full path to the configuration file
+    Exch ${L_CFG}               ; get the full path to the configuration file
     Push ${L_LINE}
     Push ${L_MATCHLEN}
     Push ${L_PARAM}
@@ -581,7 +503,7 @@
     FileClose ${L_CFG}
     StrCmp ${L_RESULT} "" error_exit
     Push ${L_RESULT}
-    Call ${UN}PPL_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_RESULT}
     ClearErrors
     StrCmp ${L_RESULT} "" 0 exit
@@ -610,7 +532,7 @@
   FunctionEnd
 !macroend
 
-!ifdef CREATEUSER | PORTABLE
+!ifdef CREATEUSER | PORTABLE | SHUTDOWN
     #--------------------------------------------------------------------------
     # Installer Function: PPL_CfgSettingRead
     #
@@ -764,7 +686,7 @@
 
     StrCpy ${L_TEMP} ${L_LINE} "" ${L_MATCHLEN}
     Push ${L_TEMP}
-    Call ${UN}PPL_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_TEMP}
     StrCmp ${L_VALUE} ${L_TEMP} 0 change_it
     StrCmp ${L_STATUS} "${C_CFG_WRITE_CHANGED}" copy_line
@@ -806,7 +728,7 @@
 
     StrCmp ${L_STATUS} ${C_CFG_WRITE_SAME} success_exit
     Push ${L_OLD_CFG}
-    Call ${UN}PPL_GetParent
+    Call ${UN}NSIS_GetParent
     Pop ${L_TEMP}
     StrCmp ${L_TEMP} "" 0 path_supplied
     StrCpy ${L_TEMP} "."
@@ -983,7 +905,7 @@
       StrCmp $2 '.' finished_unc  ; If last char of result is '.' then the path was a UNC one
       StrCpy $0 $3                ; Set path we are working on to the 'GetFullPathName' result
       Push $0
-      Call ${UN}PPL_GetParent
+      Call ${UN}NSIS_GetParent
       Pop $2
       StrLen $3 $2
       StrCpy $3 $0 "" $3          ; Get the last part of the path, including the leading '\'
@@ -1025,6 +947,14 @@
 
     !insertmacro PPL_GetCompleteFPN ""
 !endif
+
+;    #--------------------------------------------------------------------------
+;    # Uninstaller Function: un.PPL_GetCompleteFPN
+;    #
+;    # This function is used during the uninstall process
+;    #--------------------------------------------------------------------------
+;
+;    !insertmacro PPL_GetCompleteFPN "un."
 
 
 #--------------------------------------------------------------------------
@@ -1087,7 +1017,8 @@
 
     IntOp ${L_MONTH} ${L_MONTH} & 0xF
     IntOp ${L_MONTH} ${L_MONTH} << 2
-    StrCpy ${L_MONTH} "??? Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec ??? ??? ???" 3 ${L_MONTH}
+    StrCpy ${L_MONTH} \
+      "??? Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec ??? ??? ???" 3 ${L_MONTH}
 
     StrCpy ${L_HOURS} "0${L_HOURS}" "" -2
     StrCpy ${L_MINUTES} "0${L_MINUTES}" "" -2
@@ -1124,6 +1055,14 @@
 
     !insertmacro PPL_GetDateTimeStamp ""
 !endif
+
+;    #--------------------------------------------------------------------------
+;    # Uninstaller Function: un.PPL_GetDateTimeStamp
+;    #
+;    # This function is used during the uninstall process
+;    #--------------------------------------------------------------------------
+;
+;    !insertmacro PPL_GetDateTimeStamp "un."
 
 
 #--------------------------------------------------------------------------
@@ -1220,152 +1159,13 @@
     !insertmacro PPL_GetLocalTime ""
 !endif
 
-
-#--------------------------------------------------------------------------
-# Macro: PPL_GetParameters
-#
-# The installation process and the uninstall process may need a function which extracts
-# the parameters (if any) supplied on the command-line. This macro makes maintenance
-# easier by ensuring that both processes use identical functions, with the only difference
-# being their names.
-#
-# NOTE:
-# The !insertmacro PPL_GetParameters "" and !insertmacro PPL_GetParameters "un." commands are
-# included in this file so the NSIS script can use 'Call PPL_GetParameters' and
-# 'Call un.PPL_GetParameters' without additional preparation.
-#
-# Inputs:
-#         none
-#
-# Outputs:
-#         top of stack)     - all of the parameters supplied on the command line (may be "")
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Call PPL_GetParameters
-#         Pop $R0
-#
-#         (if 'setup.exe /SSL' was used to start the installer, $R0 will hold '/SSL')
-#--------------------------------------------------------------------------
-
-!macro PPL_GetParameters UN
-  Function ${UN}PPL_GetParameters
-
-      Push $R0
-      Push $R1
-      Push $R2
-      Push $R3
-
-      StrCpy $R2 1
-      StrLen $R3 $CMDLINE
-
-      ; Check for quote or space
-
-      StrCpy $R0 $CMDLINE $R2
-      StrCmp $R0 '"' 0 +3
-      StrCpy $R1 '"'
-      Goto loop
-
-      StrCpy $R1 " "
-
-    loop:
-      IntOp $R2 $R2 + 1
-      StrCpy $R0 $CMDLINE 1 $R2
-      StrCmp $R0 $R1 get
-      StrCmp $R2 $R3 get
-      Goto loop
-
-    get:
-      IntOp $R2 $R2 + 1
-      StrCpy $R0 $CMDLINE 1 $R2
-      StrCmp $R0 " " get
-      StrCpy $R0 $CMDLINE "" $R2
-
-      Pop $R3
-      Pop $R2
-      Pop $R1
-      Exch $R0
-
-    FunctionEnd
-!macroend
-
-!ifndef CREATEUSER
-    #--------------------------------------------------------------------------
-    # Installer Function: PPL_GetParameters
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PPL_GetParameters ""
-!endif
-
-
-#--------------------------------------------------------------------------
-# Macro: PPL_GetParent
-#
-# The installation process and the uninstall process may both use a function which extracts
-# the parent directory from a given path. This macro makes maintenance easier by ensuring
-# that both processes use identical functions, with the only difference being their names.
-#
-# NB: The path is assumed to use backslashes (\)
-#
-# NOTE:
-# The !insertmacro PPL_GetParent "" and !insertmacro PPL_GetParent "un." commands are included
-# in this file so the NSIS script can use 'Call PPL_GetParent' and 'Call un.PPL_GetParent'
-# without additional preparation.
-#
-# Inputs:
-#         (top of stack)          - string containing a path (e.g. C:\A\B\C)
-#
-# Outputs:
-#         (top of stack)          - the parent part of the input string (e.g. C:\A\B)
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Push "C:\Program Files\Directory\Whatever"
-#         Call un.PPL_GetParent
-#         Pop $R0
-#
-#         ($R0 at this point is ""C:\Program Files\Directory")
-#
-#--------------------------------------------------------------------------
-
-!macro PPL_GetParent UN
-  Function ${UN}PPL_GetParent
-    Exch $R0
-    Push $R1
-    Push $R2
-    Push $R3
-
-    StrCpy $R1 0
-    StrLen $R2 $R0
-
-  loop:
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 $R2 get 0 get
-    StrCpy $R3 $R0 1 -$R1
-    StrCmp $R3 "\" get
-    Goto loop
-
-  get:
-    StrCpy $R0 $R0 -$R1
-
-    Pop $R3
-    Pop $R2
-    Pop $R1
-    Exch $R0
-  FunctionEnd
-!macroend
-
-!ifdef CREATEUSER | LFNFIXER | PORTABLE
-    #--------------------------------------------------------------------------
-    # Installer Function: PPL_GetParent
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PPL_GetParent ""
-!endif
+;    #--------------------------------------------------------------------------
+;    # Uninstaller Function: un.PPL_GetLocalTime
+;    #
+;    # This function is used during the uninstall process
+;    #--------------------------------------------------------------------------
+;
+;    !insertmacro PPL_GetLocalTime "un."
 
 
 #--------------------------------------------------------------------------
@@ -1481,6 +1281,14 @@
     !insertmacro PPL_GetSQLiteFormat ""
 !endif
 
+;    #--------------------------------------------------------------------------
+;    # Uninstaller Function: un.PPL_GetSQLiteFormat
+;    #
+;    # This function is used during the uninstall process
+;    #--------------------------------------------------------------------------
+;
+;    !insertmacro PPL_GetSQLiteFormat "un."
+
 
 #--------------------------------------------------------------------------
 # Macro: PPL_StrCheckDecimal
@@ -1595,13 +1403,22 @@
     !insertmacro PPL_StrCheckDecimal ""
 !endif
 
+;    #--------------------------------------------------------------------------
+;    # Uninstaller Function: un.PPL_StrCheckDecimal
+;    #
+;    # This function is used during the uninstall process
+;    #--------------------------------------------------------------------------
+;
+;    !insertmacro PPL_StrCheckDecimal "un."
+
 
 #--------------------------------------------------------------------------
 # Macro: PPL_StrStr
 #
-# The installation process and the uninstall process may both use a function which checks if
-# a given string appears inside another string. This macro makes maintenance easier by ensuring
-# that both processes use identical functions, with the only difference being their names.
+# The installation process and the uninstall process may both use a function which checks
+# if a given string appears inside another string. This macro makes maintenance easier by
+# ensuring that both processes use identical functions, with the only difference being
+# their names.
 #
 # NOTE:
 # The !insertmacro PPL_StrStr "" and !insertmacro PPL_StrStr "un." commands are included in
@@ -1692,7 +1509,7 @@
     FunctionEnd
 !macroend
 
-!ifndef LFNFIXER
+!ifndef LFNFIXER & SHUTDOWN
     #--------------------------------------------------------------------------
     # Installer Function: PPL_StrStr
     #
@@ -1702,66 +1519,13 @@
     !insertmacro PPL_StrStr ""
 !endif
 
-
-#--------------------------------------------------------------------------
-# Macro: PPL_TrimNewlines
-#
-# The installation process and the uninstall process may both use a function to trim newlines
-# from lines of text. This macro makes maintenance easier by ensuring that both processes use
-# identical functions, with the only difference being their names.
-#
-# NOTE:
-# The !insertmacro PPL_TrimNewlines "" and !insertmacro PPL_TrimNewlines "un." commands are
-# included in this file so the NSIS script can use 'Call PPL_TrimNewlines' and
-# 'Call un.PPL_TrimNewlines' without additional preparation.
-#
-# Inputs:
-#         (top of stack)   - string which may end with one or more newlines
-#
-# Outputs:
-#         (top of stack)   - the input string with the trailing newlines (if any) removed
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Push "whatever$\r$\n"
-#         Call un.PPL_TrimNewlines
-#         Pop $R0
-#         ($R0 at this point is "whatever")
-#
-#--------------------------------------------------------------------------
-
-!macro PPL_TrimNewlines UN
-  Function ${UN}PPL_TrimNewlines
-    Exch $R0
-    Push $R1
-    Push $R2
-    StrCpy $R1 0
-
-  loop:
-    IntOp $R1 $R1 - 1
-    StrCpy $R2 $R0 1 $R1
-    StrCmp $R2 "$\r" loop
-    StrCmp $R2 "$\n" loop
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 0 no_trim_needed
-    StrCpy $R0 $R0 $R1
-
-  no_trim_needed:
-    Pop $R2
-    Pop $R1
-    Exch $R0
-  FunctionEnd
-!macroend
-
-!ifndef LFNFIXER
-    #--------------------------------------------------------------------------
-    # Installer Function: PPL_TrimNewlines
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PPL_TrimNewlines ""
-!endif
+;    #--------------------------------------------------------------------------
+;    # Uninstaller Function: un.PPL_StrStr
+;    #
+;    # This function is used during the uninstall process
+;    #--------------------------------------------------------------------------
+;
+;    !insertmacro PPL_StrStr "un."
 
 
 #--------------------------------------------------------------------------
