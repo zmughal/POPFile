@@ -70,7 +70,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.0.19"
+  !define C_PFI_VERSION   "0.0.20"
 
   !define C_OUTFILE       "CreateUserData.exe"
 
@@ -118,7 +118,7 @@
   !include "MUI.nsh"
 
 #--------------------------------------------------------------------------
-# Include private library functions and macro definitions
+# Include library functions and macro definitions
 #--------------------------------------------------------------------------
 
   ; Avoid compiler warnings by disabling the functions and definitions we do not use
@@ -126,6 +126,8 @@
   !define CREATEUSER
 
   !include "ppl-library.nsh"
+
+  !include "nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for runpopfile.exe)
@@ -354,8 +356,8 @@ mutex_ok:
   StrCpy $G_WINUSERNAME "current user"
 
   Push "$EXEDIR"
-  Call CBP_GetParent
-  Call CBP_GetParent
+  Call NSIS_GetParent
+  Call NSIS_GetParent
   Pop $G_USERDIR
   StrCpy $G_USERDIR "$G_USERDIR\Data"
 

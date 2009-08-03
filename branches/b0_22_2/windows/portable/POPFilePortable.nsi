@@ -194,7 +194,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.0.44"
+  !define C_PFI_VERSION   "0.0.45"
 
   !define C_OUTFILE       "POPFilePortable.exe"
 
@@ -226,7 +226,7 @@
   !include "MUI2.nsh"
 
 #--------------------------------------------------------------------------
-# Include private library functions and macro definitions
+# Include library functions and macro definitions
 #--------------------------------------------------------------------------
 
   ; Avoid compiler warnings by disabling the functions and definitions we do not use
@@ -234,6 +234,8 @@
   !define PORTABLE
 
   !include "ppl-library.nsh"
+
+  !include "nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings
@@ -450,7 +452,7 @@ Function .onInit
   Abort
 
 mutex_ok:
-  Call PPL_GetParameters
+  Call NSIS_GetParameters
   Pop $G_MODE
   StrCmp $G_MODE ""                     run_silent
   StrCmp $G_MODE "/?"                   run_silent
@@ -829,7 +831,7 @@ prepare_cmdline:
   GetFullPathName ${L_WORKINGDIR} ".\"
 
   Push $G_DATABASE
-  Call PPL_GetParent
+  Call NSIS_GetParent
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" execute_sqlite
 

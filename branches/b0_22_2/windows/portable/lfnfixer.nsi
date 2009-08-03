@@ -66,7 +66,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.23"
+  !define C_VERSION             "0.0.24"
 
   !define C_OUTFILE             "lfnfixer.exe"
 
@@ -85,7 +85,7 @@
   RequestExecutionLevel   user
 
 #--------------------------------------------------------------------------
-# Include private library functions and macro definitions
+# Include library functions and macro definitions
 #--------------------------------------------------------------------------
 
   ; Avoid compiler warnings by disabling the functions and definitions we do not use
@@ -93,6 +93,8 @@
   !define LFNFIXER
 
   !include "ppl-library.nsh"
+
+  !include "nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the utility's EXE file)
@@ -167,8 +169,7 @@ Section default
   SetDetailsPrint listonly
 
   ; Based upon a full installation of POPFile 1.1.1 RC5 including SSL Support and all
-  ; three Nihongo parsers: internal, Kakasi and MeCab (Note that the portable version
-  ; only supports internal and Kakasi at present, so some of these entries are skipped)
+  ; three Nihongo parsers: internal, Kakasi and MeCab
 
   DetailPrint "------------------------------------------------------------"
   DetailPrint "$(^Name) v${C_VERSION}"
@@ -515,8 +516,8 @@ Section default
   ; Now adjust the default user data and the current user data (if any)
 
   Push $G_ROOTDIR
-  Call PPL_GetParent
-  Call PPL_GetParent
+  Call NSIS_GetParent
+  Call NSIS_GetParent
   Pop $G_ROOTDIR
 
   !insertmacro SFN2LFN  "App\DefaultData\POPFILE.CFG"               "App\DefaultData\popfile.cfg"
@@ -540,7 +541,7 @@ Section default
   DetailPrint "------------------------------------------------------------"
   SetDetailsPrint none
 
-  Call PPL_GetParameters
+  Call NSIS_GetParameters
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "/wait" 0 exit
   SetAutoClose false
