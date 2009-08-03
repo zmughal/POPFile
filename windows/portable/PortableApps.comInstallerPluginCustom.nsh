@@ -145,36 +145,7 @@
     StrCmp ${L_VALUE} "" delete_it_CfgSettingWrite
 
     StrCpy ${L_TEMP} ${L_LINE} "" ${L_MATCHLEN}
-    Push ${L_TEMP}
-
-    #-----------------------------------
-    # Call PPL_TrimNewlines (start)
-    #-----------------------------------
-
-    Exch $R0
-    Push $R1
-    Push $R2
-    StrCpy $R1 0
-
-  loop_CfgSettingWrite_TrimNewlines:
-    IntOp $R1 $R1 - 1
-    StrCpy $R2 $R0 1 $R1
-    StrCmp $R2 "$\r" loop_CfgSettingWrite_TrimNewlines
-    StrCmp $R2 "$\n" loop_CfgSettingWrite_TrimNewlines
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 0 no_trim_needed_CfgSettingWrite_TrimNewlines
-    StrCpy $R0 $R0 $R1
-
-  no_trim_needed_CfgSettingWrite_TrimNewlines:
-    Pop $R2
-    Pop $R1
-    Exch $R0
-
-    #-----------------------------------
-    # Call PPL_TrimNewlines (end)
-    #-----------------------------------
-
-    Pop ${L_TEMP}
+    ${TrimNewlines} ${L_TEMP} ${L_TEMP}
     StrCmp ${L_VALUE} ${L_TEMP} 0 change_it_CfgSettingWrite
     StrCmp ${L_STATUS} "${C_CFG_WRITE_CHANGED}" copy_line_CfgSettingWrite
     StrCpy ${L_STATUS} "${C_CFG_WRITE_SAME}"
@@ -213,40 +184,7 @@
     FileClose ${L_NEW_HANDLE}
 
     StrCmp ${L_STATUS} ${C_CFG_WRITE_SAME} success_exit_CfgSettingWrite
-    Push ${L_OLD_CFG}
-
-    #---------------------------
-    # Call PPL_GetParent (start)
-    #---------------------------
-
-    Exch $R0
-    Push $R1
-    Push $R2
-    Push $R3
-
-    StrCpy $R1 0
-    StrLen $R2 $R0
-
-  loop_CfgSettingWrite_GetParent:
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 $R2 get_CfgSettingWrite_GetParent 0 get_CfgSettingWrite_GetParent
-    StrCpy $R3 $R0 1 -$R1
-    StrCmp $R3 "\" get_CfgSettingWrite_GetParent
-    Goto loop_CfgSettingWrite_GetParent
-
-  get_CfgSettingWrite_GetParent:
-    StrCpy $R0 $R0 -$R1
-
-    Pop $R3
-    Pop $R2
-    Pop $R1
-    Exch $R0
-
-    #---------------------------
-    # Call PPL_GetParent (end)
-    #---------------------------
-
-    Pop ${L_TEMP}
+    ${GetParent} ${L_OLD_CFG} ${L_TEMP}
     StrCmp ${L_TEMP} "" 0 path_supplied_CfgSettingWrite
     StrCpy ${L_TEMP} "."
     Goto update_file_CfgSettingWrite
