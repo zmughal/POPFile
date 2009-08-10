@@ -532,20 +532,11 @@ sub url_handler__
     }
 
     if ( $url eq '/shutdown' )  {
-        my $http_header = "HTTP/1.1 200 OK\r\n";
-        $http_header .= "Connection: close\r\n";
-        $http_header .= "Pragma: no-cache\r\n";
-        $http_header .= "Expires: 0\r\n";
-        $http_header .= "Cache-Control: no-cache\r\n";
-        $http_header .= "Content-Type: text/html";
-        my $charset = $self->{language__}{LanguageCharset};
-        $http_header .= "; charset=$charset\r\n";
-        $http_header .= "Content-Length: ";
-
         my $text = $self->shutdown_page__();
+        my $charset = $self->{language__}{LanguageCharset};
 
-        $http_header .= length($text);
-        $http_header .= "$eol$eol";
+        my $http_header = $self->build_http_header_(
+            200, "text/html; charset=$charset", 0, length( $text ) );
 
         if ( $client->connected ) {
             print $client $http_header . $text;
@@ -651,15 +642,9 @@ sub bmp_file__
         for my $i (0..length($bmp)/2-1) {
             $file .= chr(hex(substr($bmp,$i*2,2)));
         }
-        my $http_header = "HTTP/1.1 200 OK\r\n";
-        $http_header .= "Connection: close\r\n";
-        $http_header .= "Pragma: no-cache\r\n";
-        $http_header .= "Expires: 0\r\n";
-        $http_header .= "Cache-Control: no-cache\r\n";
-        $http_header .= "Content-Type: image/bmp\r\n";
-        $http_header .= "Content-Length: ";
-        $http_header .= length($file);
-        $http_header .= "$eol$eol";
+
+        my $http_header = $self->build_http_header_( 200, "image/bmp", 0,
+                                                     length( $file ) );
 
         if ( $client->connected ) {
             print $client $http_header . $file;
@@ -727,20 +712,11 @@ sub http_ok
 
     # Build an HTTP header for standard HTML
 
-    my $http_header = "HTTP/1.1 200 OK\r\n";
-    $http_header .= "Connection: close\r\n";
-    $http_header .= "Pragma: no-cache\r\n";
-    $http_header .= "Expires: 0\r\n";
-    $http_header .= "Cache-Control: no-cache\r\n";
-    $http_header .= "Content-Type: text/html";
     my $charset = $self->{language__}{LanguageCharset};
-    $http_header .= "; charset=$charset\r\n";
-    $http_header .= "Content-Length: ";
-
     my $text = $templ->output;
 
-    $http_header .= length($text);
-    $http_header .= "$eol$eol";
+    my $http_header = $self->build_http_header_(
+        200, "text/html; charset=$charset", 0, length( $text ) );
 
     if ( $client->connected ) {
         $client->print( $http_header . $text );

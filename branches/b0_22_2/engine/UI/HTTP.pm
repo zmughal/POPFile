@@ -32,6 +32,7 @@ use locale;
 
 use IO::Socket::INET qw(:DEFAULT :crlf);
 use IO::Select;
+use Date::Format qw(time2str);
 
 # A handy variable containing the value of an EOL for the network
 
@@ -255,10 +256,10 @@ sub parse_form_
         my $need_array = defined( $self->{form_}{$arg} );
 
         if ( $need_array ) {
-	    if ( $#{ $self->{form_}{$arg . "_array"} } == -1 ) {
+            if ( $#{ $self->{form_}{$arg . "_array"} } == -1 ) {
                 push( @{ $self->{form_}{$arg . "_array"} }, $self->{form_}{$arg} );
-	    }
-	}
+            }
+        }
 
         $self->{form_}{$arg} = $2;
         $self->{form_}{$arg} =~ s/\+/ /g;
@@ -309,9 +310,9 @@ sub http_redirect_
 {
     my ( $self, $client, $url ) = @_;
 
-    my $header = "HTTP/1.0 302 Found$eol" . 'Location: ';
-    $header .= $url;
-    $header .= "$eol$eol";
+    my $header = "HTTP/1.0 302 Found$eol" .
+                 "Location: $url$eol" .
+                 "$eol";
     print $client $header;
 }
 
@@ -384,24 +385,52 @@ sub http_file_
         # plus 1 hour to give the browser cache 1 hour to keep things
         # like graphics and style sheets in cache.
 
-        my @day   = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' );
-        my @month = ( 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' );
-        my $zulu = time;
-        $zulu += 60 * 60; # 1 hour
-        my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime( $zulu );
+        my $header = $self->build_http_header_( 200, $type, time + 60 * 60,
+                                                length( $contents ) );
 
-        my $expires = sprintf( "%s, %02d %s %04d %02d:%02d:%02d GMT",          # PROFILE BLOCK START
-                               $day[$wday], $mday, $month[$mon], $year+1900,
-                               $hour, 59, 0);                                  # PROFILE BLOCK STOP
-
-        my $header = "HTTP/1.0 200 OK$eol" . "Content-Type: $type$eol" . "Expires: $expires$eol" . "Content-Length: ";
-        $header .= length($contents);
-        $header .= "$eol$eol";
         print $client $header . $contents;
     } else {
         $self->http_error_( $client, 404 );
     }
 }
+
+# ----------------------------------------------------------------------------
+#
+# build_http_header_ - 
+#
+# $status     The status code
+# $type       The type of the content
+# $expires    The datetime the page cache expires
+#             If 0, the page cache will expire instantly
+# $length     The length of the content
+#
+# Returns the header
+#
+# ----------------------------------------------------------------------------
+sub build_http_header_
+{
+    my ( $self, $status, $type, $expires, $length ) = @_;
+
+    my $date = time2str( "%a, %d %h %Y %X %Z", time, 'GMT' );
+    if ( $expires != 0 ) {
+        $expires = time2str( "%a, %d %h %Y %X %Z", $expires, 'GMT' );
+    }
+
+    my $header = "HTTP/1.0 $status OK$eol" .  # PROFILE BLOCK START
+                 "Connection: close$eol" .
+                 "Content-Type: $type$eol" .
+                 "Date: $date$eol" .
+                 "Expires: $expires$eol" .
+                 ( $expires eq '0' ?
+                   "Pragma: no-cache$eol" .
+                   "Cache-Control: no-cache$eol" : '' ) .
+                 "Content-Length: $length$eol" .
+                 "$eol";                      # PROFILE BLOCK STOP
+
+    return $header;
+}
+
+# GETTERS/SETTERS
 
 sub history
 {
