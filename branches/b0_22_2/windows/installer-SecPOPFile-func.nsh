@@ -3,7 +3,7 @@
 # installer-SecPOPFile-func.nsh --- This 'include' file contains the non-library functions
 #                                   used by the 'installer-SecPOPFile-body.nsh' file.
 #
-# Copyright (c) 2005-2008 John Graham-Cumming
+# Copyright (c) 2005-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -148,9 +148,10 @@ Function MinPerlRestructure
   Delete "$G_ROOTDIR\perl56.dll"
 
   ; If the minimal Perl folder used by 0.21.0 or later exists and has some Perl files in it,
-  ; assume there are no pre-0.21.0 minimal Perl files to be moved out of the way.
+  ; assume there are no pre-0.21.0 minimal Perl files to be moved out of the way. However,
+  ; to avoid runtime problems, make sure the old 'Win32' Perl module really has been removed.
 
-  IfFileExists "$G_MPLIBDIR\*.pm" exit
+  IfFileExists "$G_MPLIBDIR\*.pm" delete_redundant_mp
 
   CreateDirectory "$G_MPLIBDIR"
 
@@ -173,6 +174,8 @@ move_folders:
   !insertmacro PFI_MinPerlMove "Sys"
   !insertmacro PFI_MinPerlMove "Text"
   !insertmacro PFI_MinPerlMove "warnings"
+
+delete_redundant_mp:
 
   ; Delete redundant minimal Perl files from earlier installations
 
@@ -356,7 +359,7 @@ FunctionEnd
     Push ${L_RESULT}
     Push ${L_TEXTEND}
 
-    ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
+    ; Starting with POPFile 0.21.0 an experimental version of 'popfile-service.exe' was included
     ; to allow POPFile to be run as a Windows service.
 
     Push "POPFile"
