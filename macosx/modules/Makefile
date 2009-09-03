@@ -213,9 +213,17 @@ japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
 	cd $(KAKASI); \
 	if test ! -e Makefile; \
 	then \
-	  env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -arch x86_64" \
-	  env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -arch x86_64 -mmacosx-version-min=10.3" \
-	  ./configure --disable-dependency-tracking --disable-shared ; \
+	  PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
+	  if test "$$PERL510" == "1"; \
+	  then \
+		env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64" \
+		env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64 -mmacosx-version-min=10.6" \
+		./configure --disable-dependency-tracking --disable-shared ; \
+	  else \
+		env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64" \
+		env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -mmacosx-version-min=10.3" \
+		./configure --disable-dependency-tracking --disable-shared ; \
+	  fi ; \
 	fi ;\
 	make
 
@@ -232,7 +240,7 @@ ssl_modules_build: $(SSL_ARCHIVES)
 
 	if test ! -d $(IOSOCKETSSL); then tar xzf $(IOSOCKETSSL_ARCHIVE); fi
 	cd $(IOSOCKETSSL); \
-	if test ! -e Makefile; then perl -I../$(NETSSLEAY)/blib/lib Makefile.PL ; fi ;\
+	if test ! -e Makefile; then perl -I../$(NETSSLEAY)/blib/lib -MConfig_ub Makefile.PL ; fi ;\
 	make
 
 $(DBI_ARCHIVE):
