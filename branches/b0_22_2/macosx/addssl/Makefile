@@ -28,7 +28,7 @@ PACKAGE_VERSION_RC=$(RC)
 
 PACKAGE_NAME=$(PACKAGE_TITLE)-$(PACKAGE_VERSION)$(PACKAGE_VERSION_RC)
 PACKAGE_ROOT=./Package_Root
-PACKAGE_ID=org.getpopfile
+PACKAGE_ID=org.getpopfile.macosx.addssl
 
 RESOURCES=./Resources
 
@@ -67,13 +67,20 @@ ssl_installer: $(LIB_ROOT)/auto/Net/SSLeay/*.* $(LIB_ROOT)/IO/Socket/SSL.pm $(LI
 
 	@echo "Building installer packages ..."
 
+	PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
+	if test "$$PERL510" == "1"; \
+	then \
+		TARGET_OS='10.5'; \
+	else \
+		TARGET_OS='10.3'; \
+	fi; \
 	$(PACKAGE_MAKER) \
 		--root $(PACKAGE_ROOT) \
 		--id $(PACKAGE_ID) \
 		--out $(PACKAGE) \
 		--root-volume-only \
 		--discard-forks \
-		--target 10.3 \
+		--target $$TARGET_OS \
 		--resources $(RESOURCES) \
 		--scripts $(RESOURCES) \
 		--title $(PACKAGE_TITLE) \

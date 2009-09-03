@@ -31,7 +31,7 @@ PACKAGE_VERSION_RC=$(RC)
 
 PACKAGE_NAME=$(PACKAGE_TITLE)-$(PACKAGE_VERSION)$(PACKAGE_VERSION_RC)
 PACKAGE_ROOT=./Package_Root
-PACKAGE_ID=org.getpopfile
+PACKAGE_ID=org.getpopfile.macosx
 
 RESOURCES=./Resources
 
@@ -88,7 +88,7 @@ clean:
 engine = $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/Services/IMAP.pm $(ENGINE)/Services/IMAP/Client.pm $(ENGINE)/skins/*/*.css $(ENGINE)/skins/*/*.gif $(ENGINE)/skins/*/*.thtml $(ENGINE)/stopwords $(ENGINE)/license $(ENGINE)/favicon.ico $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo
 
 installer: documents engine build_modules
-installer: $(engine) ./Readme.txt
+installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt
 	rm -rf $(PACKAGE_DIST)
 	mkdir $(PACKAGE_DIST)
 
@@ -109,13 +109,20 @@ installer: $(engine) ./Readme.txt
 
 	@echo "Building installer packages ..."
 
+	PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
+	if test "$$PERL510" == "1"; \
+	then \
+		TARGET_OS='10.5'; \
+	else \
+		TARGET_OS='10.3'; \
+	fi; \
 	$(PACKAGE_MAKER) \
 		--root $(PACKAGE_ROOT) \
 		--id $(PACKAGE_ID) \
 		--out $(PACKAGE) \
 		--root-volume-only \
 		--discard-forks \
-		--target 10.3 \
+		--target $$TARGET_OS \
 		--resources $(RESOURCES) \
 		--scripts $(RESOURCES) \
 		--title $(PACKAGE_TITLE) \
@@ -133,7 +140,13 @@ installer: $(engine) ./Readme.txt
 
 	@echo "...done"
 
-	cp ./Readme.txt $(PACKAGE_DIST)
+	PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
+	if test "$$PERL510" == "1"; \
+	then \
+		cp ./Readme-SnowLeopard.txt $(PACKAGE_DIST); \
+	else \
+		cp ./Readme.txt $(PACKAGE_DIST); \
+	fi
 
 ssl_installer: modules
 	$(MAKE) -C ./addssl
