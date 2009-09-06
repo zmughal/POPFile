@@ -217,7 +217,7 @@ sub service
 
                     $self->{server__}->SOAP::Transport::HTTP::Server::handle();
                     $client->send_response( $self->{server__}->response );
-		}
+                }
                 $client->close();
             }
         }
