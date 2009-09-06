@@ -3411,7 +3411,10 @@ sub get_bucket_word_list
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
+    return undef if ( !exists( $self->{db_bucketid__}{$userid}{$bucket} ) );
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
+
+    $prefix = '' if ( !defined( $prefix ) );
     $prefix =~ s/\0//g;
     $prefix = $self->db_quote( "$prefix%" );
 
@@ -3678,6 +3681,12 @@ sub set_bucket_parameter
         return undef;
     }
 
+    # Make sure that the parameter is valid
+
+    if ( !defined( $self->{db_parameterid__}{$parameter} ) ) {
+        return undef;
+    }
+
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
     my $btid     = $self->{db_parameterid__}{$parameter};
 
@@ -3774,13 +3783,15 @@ sub create_bucket
 {
     my ( $self, $session, $bucket ) = @_;
 
+    my $userid = $self->valid_session_key__( $session );
+    return undef if ( !defined( $userid ) );
+
     if ( $self->is_bucket( $session, $bucket ) ||           # PROFILE BLOCK START
          $self->is_pseudo_bucket( $session, $bucket ) ) {   # PROFILE BLOCK STOP
         return 0;
     }
 
-    my $userid = $self->valid_session_key__( $session );
-    return undef if ( !defined( $userid ) );
+    return 0 if ( $bucket =~ /[^[:lower:]\-_0-9]/ );
 
     $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
         'insert into buckets ( name, pseudo, userid )
@@ -3857,6 +3868,8 @@ sub rename_bucket
         return 0;
     }
 
+    return 0 if ( $new_bucket =~ /[^[:lower:]\-_0-9]/ );
+
     my $id = $self->{db_bucketid__}{$userid}{$old_bucket}{id};
 
     $self->log_( 1, "Rename bucket $old_bucket to $new_bucket" );
@@ -3893,7 +3906,7 @@ sub add_messages_to_bucket
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
-    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket}{id} ) ) {
+    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
         return 0;
     }
 
@@ -3933,6 +3946,10 @@ sub add_message_to_bucket
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
+    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
+        return 0;
+    }
+
     return $self->add_messages_to_bucket( $session, $bucket, $file );
 }
 
@@ -3953,6 +3970,10 @@ sub remove_message_from_bucket
 
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
+
+    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
+        return 0;
+    }
 
     $self->{parser__}->parse_file( $file,            # PROFILE BLOCK START
         $self->global_config_( 'message_cutoff' ) ); # PROFILE BLOCK STOP
@@ -4009,6 +4030,10 @@ sub get_magnet_types_in_bucket
 
     my @result;
 
+    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
+        return undef;
+    }
+
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
     my $h = $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
         'select magnet_types.mtype from magnet_types, magnets, buckets
@@ -4044,12 +4069,18 @@ sub clear_bucket
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
+    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
+        return undef;
+    }
+
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
 
     $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
         'delete from matrix where matrix.bucketid = ?;',
         $bucketid );                          # PROFILE BLOCK STOP
     $self->db_update_cache__( $session, $bucket );
+
+    return 1;
 }
 
 #----------------------------------------------------------------------------
@@ -4082,6 +4113,8 @@ sub clear_magnets
                           userid   = ?;',
             $bucketid, $userid );                 # PROFILE BLOCK STOP
     }
+
+    return 1;
 }
 
 #----------------------------------------------------------------------------
@@ -4103,6 +4136,12 @@ sub get_magnets
     return undef if ( !defined( $userid ) );
 
     my @result;
+
+    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
+        return 0;
+    }
+
+    return 0 if ( !defined( $type ) );
 
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
     my $h = $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
@@ -4141,6 +4180,10 @@ sub create_magnet
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
+    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
+        return 0;
+    }
+
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
     my $result = $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
         'select magnet_types.id from magnet_types
@@ -4148,11 +4191,14 @@ sub create_magnet
         $type )->fetchrow_arrayref;                        # PROFILE BLOCK STOP
 
     my $mtid = $result->[0];
+    return 0 if ( !defined( $mtid ) );
 
     $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
         'insert into magnets ( bucketid, mtid, val )
                       values (        ?,    ?,   ? );',
         $bucketid, $mtid, $text );            # PROFILE BLOCK STOP
+
+    return 1;
 }
 
 #----------------------------------------------------------------------------
@@ -4204,6 +4250,10 @@ sub delete_magnet
     my $userid = $self->valid_session_key__( $session );
     return undef if ( !defined( $userid ) );
 
+    if ( !defined( $self->{db_bucketid__}{$userid}{$bucket} ) ) {
+        return 0;
+    }
+
     my $bucketid = $self->{db_bucketid__}{$userid}{$bucket}{id};
 
     my $result = $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
@@ -4214,9 +4264,11 @@ sub delete_magnet
                       magnet_types.mtype = ?;',
         $bucketid, $text, $type )->fetchrow_arrayref;      # PROFILE BLOCK STOP
 
-    return if ( !defined( $result ) );
+    return 0 if ( !defined( $result ) );
 
     my $magnetid = $result->[0];
+
+    return 0 if ( !defined( $magnetid ) );
 
     $self->validate_sql_prepare_and_execute(  # PROFILE BLOCK START
         'delete from magnets where id = ?;',
@@ -4231,6 +4283,8 @@ sub delete_magnet
         $magnetid, $userid );                 # PROFILE BLOCK STOP
 
     $self->{history__}->force_requery();
+
+    return 1;
 }
 
 #----------------------------------------------------------------------------
