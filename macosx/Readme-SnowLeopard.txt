@@ -8,7 +8,7 @@ About the POPFile installer for Mac OS X 10.6 (Snow Leopard)
 
 Install POPFile
 
-  Open 'POPFile-x.x.x.pkg' and follow the wizard.
+  Open 'POPFile-x.x.x-sl.pkg' and follow the wizard.
 
 
 Start to use POPFile
