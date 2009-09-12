@@ -240,7 +240,7 @@ ssl_modules_build: $(SSL_ARCHIVES)
 
 	if test ! -d $(IOSOCKETSSL); then tar xzf $(IOSOCKETSSL_ARCHIVE); fi
 	cd $(IOSOCKETSSL); \
-	if test ! -e Makefile; then perl -I../$(NETSSLEAY)/blib/lib -MConfig_ub Makefile.PL ; fi ;\
+	if test ! -e Makefile; then perl -I.. -I../$(NETSSLEAY)/blib/lib -MConfig_ub Makefile.PL ; fi ;\
 	make
 
 $(DBI_ARCHIVE):
