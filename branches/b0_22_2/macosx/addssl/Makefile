@@ -67,20 +67,13 @@ ssl_installer: $(LIB_ROOT)/auto/Net/SSLeay/*.* $(LIB_ROOT)/IO/Socket/SSL.pm $(LI
 
 	@echo "Building installer packages ..."
 
-	PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
-	if test "$$PERL510" == "1"; \
-	then \
-		TARGET_OS='10.5'; \
-	else \
-		TARGET_OS='10.3'; \
-	fi; \
 	$(PACKAGE_MAKER) \
 		--root $(PACKAGE_ROOT) \
 		--id $(PACKAGE_ID) \
 		--out $(PACKAGE) \
 		--root-volume-only \
 		--discard-forks \
-		--target $$TARGET_OS \
+		--target 10.3 \
 		--resources $(RESOURCES) \
 		--scripts $(RESOURCES) \
 		--title $(PACKAGE_TITLE) \
