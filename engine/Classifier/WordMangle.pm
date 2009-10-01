@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 1
+# POPFILE LOADABLE MODULE
 package Classifier::WordMangle;
 
 use POPFile::Module;
@@ -176,7 +176,7 @@ sub add_stopword
     # In Japanese mode, reject non EUC Japanese characters.
 
     if ( $lang eq 'Nihongo') {
-        if ( $stopword !~ /$euc_jp/i ) {
+        if ( $stopword !~ /^($euc_jp)+$/o ) {
             return 0;
         }
     } else {
@@ -204,7 +204,7 @@ sub remove_stopword
     # In Japanese mode, reject non EUC Japanese characters.
 
     if ( $lang eq 'Nihongo') {
-        if ( $stopword !~ /$euc_jp/i ) {
+        if ( $stopword !~ /^($euc_jp)+$/o ) {
             return 0;
         }
     } else {

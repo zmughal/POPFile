@@ -39,28 +39,42 @@ sub my_handler
 
 use IO::Handle;
 use POSIX ":sys_wait_h";
+use Date::Format qw(time2str);
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
-
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
-
-$POPFile->CORE_load( 0, \%valid );
 use UI::HTTP;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 my $h = new UI::HTTP;
-$h->loader( $POPFile );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$h->configuration( $c );
+$h->mq( $mq );
+$h->logger( $l );
+
+$c->initialize();
+$h->initialize();
 
 my $port = 9000 + int(rand(1000));
 $h->config_( 'port', $port );
 $h->config_( 'local', 1 );
-$h->config_( 'cookie_cipher', 'Blowfish' );
 test_assert_equal( $h->config_( 'port' ),  $port );
 test_assert_equal( $h->config_( 'local' ), 1 );
 test_assert_equal( $h->start(), 1 );
@@ -121,6 +135,25 @@ test_assert_equal( $h->url_encode_( 'thealmighty$' ), 'thealmighty%24' );
 test_assert_equal( $h->url_encode_( 'youcan"me' ), 'youcan%22me' );
 test_assert_equal( $h->url_encode_( '{start' ), '%7bstart' );
 
+# http_redirect_ tests
+
+open FILE, ">temp.tmp";
+binmode FILE;
+$h->http_redirect_( \*FILE, 'http://www.usethesource.com/' );
+close FILE;
+open FILE, "<temp.tmp";
+binmode FILE;
+my $line = <FILE>;
+test_assert_equal( $line, "HTTP/1.0 302 Found$eol" );
+$line = <FILE>;
+test_assert_equal( $line, "Location: http://www.usethesource.com/$eol" );
+$line = <FILE>;
+test_assert( defined( $line ) );
+test_assert( $line =~ /^$eol$/ );
+$line = <FILE>;
+test_assert( !defined( $line ) );
+close FILE;
+
 # http_error_ tests
 
 open FILE, ">temp.tmp";
@@ -131,15 +164,6 @@ open FILE, "<temp.tmp";
 binmode FILE;
 my $line = <FILE>;
 test_assert_equal( $line, "HTTP/1.0 404 Error$eol" );
-$line = <FILE>;
-test_assert( defined( $line ) );
-$line = <FILE>;
-test_assert( defined( $line ) );
-$line = <FILE>;
-test_assert( defined( $line ) );
-test_assert( $line =~ /^$eol$/ );
-#$line = <FILE>;
-#test_assert( !defined( $line ) );
 close FILE;
 
 # http_file_ tests
@@ -152,15 +176,6 @@ open FILE, "<temp.tmp";
 binmode FILE;
 my $line = <FILE>;
 test_assert_equal( $line, "HTTP/1.0 404 Error$eol" );
-$line = <FILE>;
-test_assert( defined( $line ) );
-$line = <FILE>;
-test_assert( defined( $line ) );
-$line = <FILE>;
-test_assert( defined( $line ) );
-test_assert( $line =~ /^$eol$/ );
-#$line = <FILE>;
-#test_assert( !defined( $line ) );
 close FILE;
 
 open FILE, ">send.tmp";
@@ -177,16 +192,14 @@ binmode FILE;
 my $line = <FILE>;
 test_assert_equal( $line, "HTTP/1.0 200 OK$eol" );
 $line = <FILE>;
+test_assert_equal( $line, "Connection: close$eol" );
+$line = <FILE>;
 test_assert_equal( $line, "Content-Type: text/plain$eol" );
 
-my @day   = ( 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat' );
-my @month = ( 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' );
-my $zulu = time;
-$zulu += 60 * 60; # 1 hour
-my ( $sec, $min, $hour, $mday, $mon, $year, $wday ) = gmtime( $zulu );
-my $expires = sprintf( "%s, %02d %s %04d %02d:%02d:%02d GMT",
-                       $day[$wday], $mday, $month[$mon], $year+1900,
-                       $hour, 59, 0);
+my $date = time2str( "%a, %d %h %Y %X %Z", time, 'GMT' );
+$line = <FILE>;
+test_assert_equal( $line, "Date: $date$eol" );
+my $expires = time2str( "%a, %d %h %Y %X %Z", time + 60 * 60, 'GMT' );
 $line = <FILE>;
 test_assert_equal( $line, "Expires: $expires$eol" );
 $line = <FILE>;
@@ -204,7 +217,10 @@ close FILE;
 
 my $h2 = new UI::HTTP;
 
-$h2->loader( $POPFile );
+$h2->configuration( $c );
+$h2->mq( $mq );
+$h2->logger( $l );
+
 $h2->initialize();
 $h2->name( 'simple' );
 $h2->config_( 'port', -1 );
@@ -332,7 +348,5 @@ if ( $pid == 0 ) {
 
     $h->stop();
 }
-
-$POPFile->CORE_stop();
 
 1;

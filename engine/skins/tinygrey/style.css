@@ -23,7 +23,7 @@ table.head {
   background: #d0d0d0;
   width: 100%;
   color: #3333ee;
-}
+  }
 
 td.head {
   font-weight: bold;
@@ -384,7 +384,7 @@ h2.advanced {
 }
 
 .advancedGroupSpacing { 
-  height: 2.5em;
+  height: 2.5em;  
   vertical-align: text-bottom;
   padding-top: 1em;
   }
@@ -522,120 +522,24 @@ div.helpMessage form {
   margin: 0;
 }
 
+.historyMagnetUsed {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.historyMagnetUsed img {
+  vertical-align: bottom;
+}
+
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
+}
+
 /*********************************************************/
 /* Form Labels */
 
 th.historyLabel {
   text-align: left;
-}
-
-/*********************************************************/
-/* Positioning */
-
-.historyNavigatorTop, .historyNavigatorBottom {
-  text-align: right;
-  vertical-align: top;
-}
-
-.historyNavigatorTop form, .historyNavigatorBottom form {
-  display:inline;
-}
-
-.refreshLink {
-  margin-top: 0.5em;
-}
-
-h2.history {
-  margin-top: 0;
-  margin-bottom: 0.3em;
-}
-
-.search {
-  display: inline;
-  float: left;
-  padding-right: 1em;
-}
-
-.filter {
-  display: inline;
-}
-
-.viewHeadings {
-  display: inline;
-}
-
-/*********************************************************/
-/* Config Bars */
-
-.configBar {
-  padding-top: 1em;
-}
-
-.configBarTitle {
-  display: inline;
-  font-size: 90%;
-}
-
-.configBarTitle a {
-  padding: 0.3em;
-  padding-bottom: 0;
-  margin-left: 0.3em;
-  font-weight: bold;
-  background-color: #cccccc;
-  border: 1px solid #666699;
-  text-decoration: none;
-  color: #0000ff;
-}
-
-.configBarBody {
-  background-color: #cccccc;
-  border-bottom: 1px solid #666699;
-}
-
-.configBar td {
-  border: 1px solid #666699;
-  border-bottom: 0;
-}
-
-.configBarBody form {
-  margin: 0;
-}
-
-.configBarOption {
-  margin: 0.3em;
-  padding: 0.3em;
-  display: inline;
-  float: left;
-  min-height: 3em;
-  background-color: #ffffff;
-  border: 1px solid #666699;
-}
-
-.checkLabel {
-  border: 1px solid #666699;
-  white-space: nowrap;
-  font-size: 80%;
-}
-
-.configBarBody input.submit {
-  margin-top: 0.1em;
-}
-
-.configBarBody label.configurationLabel {
-  display: block;
-}
-
-/*********************************************************/
-/* History Column Controls */
-
-.columnControls {
-  white-space:nowrap;
-  vertical-align: top;
-  width: 10px;
-}
-
-.columnRemove, .columnMove {
-  display: block;
-  width:100%;
-  height: 1em;
 }

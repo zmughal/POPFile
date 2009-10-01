@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Proxy::NNTP;
 
 use Proxy::Proxy;
@@ -130,15 +130,25 @@ sub start
     # Tell the user interface module that we having a configuration
     # item that needs a UI component
 
-    $self->register_configuration_item_( 'configuration',   # PROFILE BLOCK START
-                                         'nntp_config',
-                                         'nntp-configuration.thtml',
-                                         $self );           # PROFILE BLOCK STOP
-    
-    $self->register_configuration_item_( 'security',        # PROFILE BLOCK START
+    $self->register_configuration_item_( 'configuration',  # PROFILE BLOCK START
+                                         'nntp_port',
+                                         'nntp-port.thtml',
+                                         $self );          # PROFILE BLOCK STOP
+
+    $self->register_configuration_item_( 'configuration',  # PROFILE BLOCK START
+                                         'nntp_force_fork',
+                                         'nntp-force-fork.thtml',
+                                         $self );          # PROFILE BLOCK STOP
+
+    $self->register_configuration_item_( 'configuration',  # PROFILE BLOCK START
+                                         'nntp_separator',
+                                         'nntp-separator.thtml',
+                                         $self );          # PROFILE BLOCK STOP
+
+    $self->register_configuration_item_( 'security',       # PROFILE BLOCK START
                                          'nntp_local',
                                          'nntp-security-local.thtml',
-                                         $self );           # PROFILE BLOCK STOP 
+                                         $self );          # PROFILE BLOCK STOP
 
     if ( $self->config_( 'welcome_string' ) =~                # PROFILE BLOCK START
          /^NNTP POPFile \(v\d+\.\d+\.\d+\) server ready$/ ) { # PROFILE BLOCK STOP
@@ -161,7 +171,7 @@ sub start
 # ----------------------------------------------------------------------------
 sub child__
 {
-    my ( $self, $client, $admin_session ) = @_;
+    my ( $self, $client, $session ) = @_;
 
     # Hash of indexes of downloaded messages mapped to their
     # slot IDs
@@ -171,12 +181,6 @@ sub child__
     # The handle to the real news server gets stored here
 
     my $news;
-
-    # Will hold the session key for the API, $token contains the
-    # string for the AUTHINFO USER command that is used to get the key
-
-    my $session = undef;
-    my $token;
 
     # The state of the connection (username needed, password needed,
     # authenticated/connected)
@@ -211,8 +215,8 @@ sub child__
 
         if ( $command =~ /^ *QUIT/i ) {
             if ( $news )  {
-                last if ( $self->echo_response_( $news, $client, $command ) == # PROFILE BLOCK START
-                         2 );                                                  # PROFILE BLOCK STOP
+                last if ( $self->echo_response_( $news, $client, $command ) ==  # PROFILE BLOCK START
+                          2 );                                                  # PROFILE BLOCK STOP
                 close $news;
             } else {
                 $self->tee_( $client, "205 goodbye$eol" );
@@ -254,14 +258,12 @@ sub child__
                                                   'AUTHINFO USER ' .
                                                   $username );     # PROFILE BLOCK STOP
                             $connection_state = "password needed";
-                            $token = "$server:$username";
                         } else {
 
                             # Signal to the client to send the password
 
                             $self->tee_($client, "381 password$eol");
                             $connection_state = "ignore password";
-                            $token = "$server:";
                         }
                     } else {
                         last;
@@ -284,12 +286,11 @@ sub child__
 
         if ( $connection_state eq "password needed" ) {
             if ( $command =~ /^ *AUTHINFO PASS (.*)/i ) {
-                ( $response, $ok ) =                                  # PROFILE BLOCK START
+                ( $response, $ok ) =                                 # PROFILE BLOCK START
                     $self->get_response_( $news, $client, $command ); # PROFILE BLOCK STOP
 
                 if ( $response =~ /^281 .*/ ) {
                     $connection_state = "connected";
-                    $session = $self->get_session_key_( $token );
                 }
             } else {
 
@@ -304,7 +305,6 @@ sub child__
             if ( $command =~ /^ *AUTHINFO PASS (.*)/i ) {
                 $self->tee_( $client, "281 authentication accepted$eol" );
                 $connection_state = "connected";
-                $session = $self->get_session_key_( $token );
             } else {
 
                 # Issue a 480 authentication required response
@@ -337,7 +337,7 @@ sub child__
                 }
 
                 if ( defined($downloaded{$message_id}) &&  # PROFILE BLOCK START
-                     ( $file = $self->history_()->get_slot_file(
+                     ( $file = $self->{history__}->get_slot_file(
                             $downloaded{$message_id}{slot} ) ) &&
                      ( open RETRFILE, "<$file" ) ) {       # PROFILE BLOCK STOP
 
@@ -357,10 +357,10 @@ sub child__
                     # without saving
 
                     ( my $class, undef ) =                          # PROFILE BLOCK START
-                        $self->classifier_()->classify_and_modify(
+                        $self->{classifier__}->classify_and_modify(
                             $session, \*RETRFILE, $client, 1,
                             $downloaded{$message_id}{class},
-                            $downloaded{$message_id}{slot} );           # PROFILE BLOCK STOP
+                            $downloaded{$message_id}{slot} );       # PROFILE BLOCK STOP
                     print $client ".$eol";
 
                     close RETRFILE;
@@ -372,7 +372,7 @@ sub child__
                         $message_id = $2;
 
                         my ( $class, $history_file ) =                  # PROFILE BLOCK START
-                            $self->classifier_()->classify_and_modify(
+                            $self->{classifier__}->classify_and_modify(
                                 $session, $news, $client, 0, '', 0 );   # PROFILE BLOCK STOP
 
                         $downloaded{$message_id}{slot}  = $history_file;
@@ -422,7 +422,7 @@ sub child__
                             # Classify without sending to client
 
                             ( $class, $history_file ) =                     # PROFILE BLOCK START
-                                $self->classifier_()->classify_and_modify(
+                                $self->{classifier__}->classify_and_modify(
                                     $session, $news, undef, 0, '', 0, 0 );  # PROFILE BLOCK STOP
 
                             $downloaded{$message_id}{slot}  = $history_file;
@@ -439,9 +439,9 @@ sub child__
                         $self->get_response_( $news, $client, $command,
                                               0, ( $cached ? 0 : 1 ) ); # PROFILE BLOCK STOP
                     if ( $response =~ /^221 +(\d+) +([^ ]+)/i ) {
-                        $self->classifier_()->classify_and_modify(  # PROFILE BLOCK START
+                        $self->{classifier__}->classify_and_modify(  # PROFILE BLOCK START
                             $session, $news, $client, 1, $class,
-                            $history_file, 1 );                     # PROFILE BLOCK STOP
+                            $history_file, 1 );                      # PROFILE BLOCK STOP
                     }
                     next;
                 }
@@ -462,7 +462,7 @@ sub child__
                 }
 
                 if ( defined($downloaded{$message_id}) &&  # PROFILE BLOCK START
-                     ( $file = $self->history_()->get_slot_file(
+                     ( $file = $self->{history__}->get_slot_file(
                             $downloaded{$message_id}{slot} ) ) &&
                      ( open RETRFILE, "<$file" ) ) {       # PROFILE BLOCK STOP
                     
@@ -506,7 +506,7 @@ sub child__
                         # Classify without sending to client
 
                         my ( $class, $history_file ) =                  # PROFILE BLOCK START
-                            $self->classifier_()->classify_and_modify(
+                            $self->{classifier__}->classify_and_modify(
                                 $session, $news, undef, 0, '', 0, 0 );  # PROFILE BLOCK STOP
 
                         $downloaded{$message_id}{slot}  = $history_file;
@@ -605,7 +605,7 @@ sub child__
             $self->echo_response_( $news, $client, $command );
             next;
         } else {
-            $self->tee_( $client, "500 unknown command or bad syntax$eol" );
+            $self->tee_(  $client, "500 unknown command or bad syntax$eol" );
             last;
         }
     }
@@ -628,23 +628,31 @@ sub child__
 #                     when registering
 #    $language        Current language
 #
-# Returns 1 if nntp_local is 1
-#
 # ----------------------------------------------------------------------------
 
 sub configure_item
 {
     my ( $self, $name, $templ, $language ) = @_;
 
-    if ( $name eq 'nntp_config' ) {
-        $templ->param( 'nntp_port'          => $self->config_( 'port' ) );
-        $templ->param( 'nntp_separator'     => $self->config_( 'separator' ) );
-        $templ->param( 'nntp_force_fork_on' => ( $self->config_( 'force_fork' ) == 1 ) );
+    if ( $name eq 'nntp_port' ) {
+        $templ->param( 'nntp_port' => $self->config_( 'port' ) );
+        return;
     }
-    
+
+    # Separator Character widget
+    if ( $name eq 'nntp_separator' ) {
+        $templ->param( 'nntp_separator' => $self->config_( 'separator' ) );
+        return;
+    }
+
     if ( $name eq 'nntp_local' ) {
         $templ->param( 'nntp_if_local' => $self->config_( 'local' ) );
-        return $self->config_( 'local' );
+        return;
+    }
+
+    if ( $name eq 'nntp_force_fork' ) {
+        $templ->param( 'nntp_force_fork_on' => $self->config_( 'force_fork' ) );
+        return;
     }
 
     $self->SUPER::configure_item( $name, $templ, $language );
@@ -666,69 +674,50 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ( $status, $error );
-
-    if ( $name eq 'nntp_config' ) {
-        
+    if ( $name eq 'nntp_port' ) {
         if ( defined $$form{nntp_port} ) {
-            if ( $self->is_valid_port_( $$form{nntp_port} ) ) {
-                if ( $self->config_( 'port' ) ne $$form{nntp_port} ) {
-                    $self->config_( 'port', $$form{nntp_port} );
-                    $status = sprintf(                         # PROFILE BLOCK START
-                            $$language{Configuration_NNTPUpdate},
-                            $self->config_( 'port' ) ) . "\n"; # PROFILE BLOCK STOP
-                }
-            } else {
-                $error = $$language{Configuration_Error3} . "\n";
+            if ( ( $$form{nntp_port} =~ /^\d+$/ ) &&   # PROFILE BLOCK START
+                 ( $$form{nntp_port} >= 1 ) &&
+                 ( $$form{nntp_port} <= 65535 ) ) {    # PROFILE BLOCK STOP
+                $self->config_( 'port', $$form{nntp_port} );
+                $templ->param( 'nntp_port_feedback' => sprintf $$language{Configuration_NNTPUpdate}, $self->config_( 'port' ) );
+            } 
+            else {
+                $templ->param( 'nntp_port_feedback' => "<div class=\"error01\">$$language{Configuration_Error3}</div>" );
             }
         }
+        return;
+    }
 
+    if ( $name eq 'nntp_separator' ) {
         if ( defined $$form{nntp_separator} ) {
             if ( length($$form{nntp_separator}) == 1 ) {
-                if ( $self->config_( 'separator' ) ne $$form{nntp_separator} ) {
-                    $self->config_( 'separator', $$form{nntp_separator} );
-                    $status .= sprintf(                             # PROFILE BLOCK START
-                            $$language{Configuration_NNTPSepUpdate},
-                            $self->config_( 'separator' ) ) . "\n"; # PROFILE BLOCK STOP
-                }
-            } else {
-                $error .= $$language{Configuration_Error1} . "\n";
+                $self->config_( 'separator', $$form{nntp_separator} );
+                $templ->param( 'nntp_separator_feedback' => sprintf $$language{Configuration_NNTPSepUpdate}, $self->config_( 'separator' ) );
+            } 
+            else {
+                $templ->param( 'nntp_separator_feedback' => "<div class=\"error01\">\n$$language{Configuration_Error1}</div>\n" );
             }
         }
-
-        if ( defined $$form{nntp_force_fork} ) {
-            if ( $$form{nntp_force_fork} ) {
-                if ( $self->config_( 'force_fork' ) ne 1 ) {
-                    $self->config_( 'force_fork', 1 );
-                    $status .= $$language{Configuration_NNTPForkEnabled};
-                }
-            } else {
-                if ( $self->config_( 'force_fork' ) ne 0 ) {
-                    $self->config_( 'force_fork', 0 );
-                    $status .= $$language{Configuration_NNTPForkDisabled};
-                }
-            }
-        }
-        
-        return( $status, $error );
+        return;
     }
-    
-    if ( $name eq 'nntp_local' ) {
-        if ( $form->{serveropt_nntp} ) {
-            if ( $self->config_( 'local' ) ne 0 ) {
-                $self->config_( 'local', 0 );
-                $status = $$language{Security_ServerModeUpdateNNTP};
-            }
-        } else {
-            if ( $self->config_( 'local' ) ne 1 ) {
-                $self->config_( 'local', 1 );
-                $status = $$language{Security_StealthModeUpdateNNTP};
-            }
-        }
-        return( $status, $error );
-    }    
 
-    return $self->SUPER::validate_item( $name, $templ, $language, $form );
+    if ( $name eq 'nntp_local' ) {
+        if ( defined $$form{nntp_local} ) {
+            $self->config_( 'local', $$form{nntp_local} );
+        }
+        return;
+    }
+
+
+    if ( $name eq 'nntp_force_fork' ) {
+        if ( defined $$form{nntp_force_fork} ) {
+            $self->config_( 'force_fork', $$form{nntp_force_fork} );
+        }
+        return;
+    }
+
+    $self->SUPER::validate_item( $name, $templ, $language, $form );
 }
 
 # ----------------------------------------------------------------------------

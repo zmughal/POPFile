@@ -33,6 +33,8 @@ package PerlSvc;
 use strict;
 use locale;
 
+use Win32::GUI::Constants qw(MB_OK MB_OKCANCEL MB_ICONASTERISK IDOK);
+
 use POPFile::Loader;
 
 # This hash is used by PerlSvc for various parameters that we need
@@ -80,6 +82,7 @@ sub Startup
     # configuration from disk, start the modules running
 
     $POPFile->CORE_load();
+    $POPFile->CORE_link_components();
     $POPFile->CORE_initialize();
     $POPFile->CORE_config();
     $POPFile->CORE_start();

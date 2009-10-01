@@ -28,7 +28,7 @@ LanguageDirection                       ltr
 ManualLanguage                          en
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 faq
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   Uygula
@@ -231,8 +231,8 @@ Security_Error1                         Port 1 ile 65535 arasýnda bir numara olm
 Security_Stealth                        Gizli Mod/Sunucu Çalýþmasý
 Security_NoStealthMode                  Hayýr (Gizli Mod)
 Security_StealthMode                    (Gizli Mod)
-Security_ExplainStats                   (Bu ayar açýk olduðunda, POPFile günde bir kez olmak üzere þu deðerleri www.usethesource.com içindeki bir koda gönderir; bc (sahip olduðunuz toplam kategori sayýsý), mc (POPFile'ýn sýnýflandýrdýðý toplam mesaj sayýsý) ve ec (toplam sýnýflandýrma hatasý sayýsý). Bu bilgiler bir dosyada saklanýr, bunlarý kullanýcýlarýn POPFile'ý nasýl kullandýðýný ve ne kadar iyi çalýþtýðý hakkýnda istatistikler yayýnlamak amacýyla kullanacaðým.  Web sunucum günlük dosyalarýný yaklaþýk 5 gün saklar ve siler; istatistikler ve IP adresleri arasýnda herhangi bir baðlantý biriktirmemekteyim.)
-Security_ExplainUpdate                  (Bu ayar açýk olduðunda, POPFile günde bir kez olmak üzere þu üç deðeri www.usethesource.com içindeki bir koda gönderir; ma (yüklediðiniz POPFile'ýn büyük sürüm numarasý), mi (yüklediðiniz POPFile'ýn küçük sürüm numarasý) ve bn (yüklediðiniz POPFile'ýn yapý [build] numarasý).  Yeni bir sürüm bulunduðunda POPFile, sayfanýn üstünde gösterilen, grafik biçiminde bir cevap alýr.  Web sunucum günlük dosyalarýný yaklaþýk 5 gün saklar ve siler; güncelleme kontrolleri ve IP adresleri arasýnda herhangi bir baðlantý biriktirmemekteyim.)
+Security_ExplainStats                   (Bu ayar açýk olduðunda, POPFile günde bir kez olmak üzere þu deðerleri getpopfile.org içindeki bir koda gönderir; bc (sahip olduðunuz toplam kategori sayýsý), mc (POPFile'ýn sýnýflandýrdýðý toplam mesaj sayýsý) ve ec (toplam sýnýflandýrma hatasý sayýsý). Bu bilgiler bir dosyada saklanýr, bunlarý kullanýcýlarýn POPFile'ý nasýl kullandýðýný ve ne kadar iyi çalýþtýðý hakkýnda istatistikler yayýnlamak amacýyla kullanacaðým.  Web sunucum günlük dosyalarýný yaklaþýk 5 gün saklar ve siler; istatistikler ve IP adresleri arasýnda herhangi bir baðlantý biriktirmemekteyim.)
+Security_ExplainUpdate                  (Bu ayar açýk olduðunda, POPFile günde bir kez olmak üzere þu üç deðeri getpopfile.org içindeki bir koda gönderir; ma (yüklediðiniz POPFile'ýn büyük sürüm numarasý), mi (yüklediðiniz POPFile'ýn küçük sürüm numarasý) ve bn (yüklediðiniz POPFile'ýn yapý [build] numarasý).  Yeni bir sürüm bulunduðunda POPFile, sayfanýn üstünde gösterilen, grafik biçiminde bir cevap alýr.  Web sunucum günlük dosyalarýný yaklaþýk 5 gün saklar ve siler; güncelleme kontrolleri ve IP adresleri arasýnda herhangi bir baðlantý biriktirmemekteyim.)
 Security_PasswordTitle                  Kullanýcý Arayüzü Parolasý
 Security_Password                       Parola
 Security_PasswordUpdate                 Parola %s olarak güncellendi
@@ -261,7 +261,7 @@ Magnet_Error3                           Yeni mýknatýs oluþtur: '%s' Kategori: '%
 Magnet_CurrentMagnets                   Þu Anki Mýknatýslar
 Magnet_Message1                         Bu mýknatýslar, postanýn her zaman belirtilen kategori olarak sýnýflandýrýlmasýný saðlayacaktýr.
 Magnet_CreateNew                        Yeni Mýknatýs Oluþtur
-Magnet_Explanation                      <b>Þu tür mýknatýslar mevcuttur:</b> <ul><li><b>Kimden adresi veya isim:</b> Örneðin: Belirli bir adresle eþleþtirmek için zeynel@sirket.com, <br />sirket.com'dan gönderen herkes ile eþleþtirmek için sirket.com, <br />belirli bir kiþiyle eþleþtirmek için Zeynel Abidin Öztürk, tüm Zeynel'ler ile eþleþtirmek için Zeynel yazýn</li><li><b>Kime/Bilgi adres veya adý:</b> Kimden: mýknatýsý gibidir fakat mesajdaki Kime:/Bilgi: adresi içindir</li> <li><b>Konu sözcükleri:</b> Örneðin: Konusunda merhaba bulunan tüm mesajlarla eþleþtirmek için merhaba yazýn</li></ul>
+Magnet_Explanation                      Þu tür mýknatýslar mevcuttur:</b> <ul><li><b>Kimden adresi veya isim:</b> Örneðin: Belirli bir adresle eþleþtirmek için zeynel@sirket.com, <br />sirket.com'dan gönderen herkes ile eþleþtirmek için sirket.com, <br />belirli bir kiþiyle eþleþtirmek için Zeynel Abidin Öztürk, tüm Zeynel'ler ile eþleþtirmek için Zeynel yazýn</li><li><b>Kime/Bilgi adres veya adý:</b> Kimden: mýknatýsý gibidir fakat mesajdaki Kime:/Bilgi: adresi içindir</li> <li><b>Konu sözcükleri:</b> Örneðin: Konusunda merhaba bulunan tüm mesajlarla eþleþtirmek için merhaba yazýn</li></ul>
 Magnet_MagnetType                       Mýknatýs türü
 Magnet_Value                            Deðer
 Magnet_Always                           Her zaman bu kategoriye gider
@@ -361,6 +361,8 @@ Imap_PasswordError                      Lütfen sunucu için bir parola girin!
 Imap_Expunge                            Silinen mesajlarý izlenen klasörlerden kaldýr.
 Imap_Interval                           Güncelleme aralýðý, saniye:
 Imap_IntervalError                      Lütfen 10 ile 3600 saniye arasýnda bir sayý girin.
+Imap_Bytelimit                          Her mesajýn sýnýflandýrýlmasýnda kullanýlacak bayt. Tüm mesaj için 0 girin:
+Imap_BytelimitError                     Lütfen bir sayý girin.
 Imap_RefreshFolders                     Klasör listesini yenile
 Imap_Now                                þimdi!
 Imap_UpdateError1                       Oturum açýlamýyor. Lütfen oturum açma adýný ve parolayý kontrol edin.
@@ -372,6 +374,6 @@ Imap_WatchedFolder                      Ýzlenilen klasör numarasý
 
 Shutdown_Message                        POPFile kapatýldý
 
-Help_Training                           POPFile'ý ilk kullandýðýnýzda o hiçbir bilgiye sahip deðildir ve eðitime ihtiyacý vardýr. POPFile her kategori için mesajlar ile eðitilmelidir. Eðitim, POPFile bir mesajý yanlýþ sýnýflandýrdýðýnda bunu doðru kategori ile tekrar sýnýflandýrarak gerçekleþtirilir. Bunun dýþýnda, posta programýnýzýn mesajlarý POPFile'ýn sýnýflandýrmasýna göre filtrelemesi için ayarlamalýsýnýz. Posta programýnýzýn filtelerini ayarlamak hakkýnda bilgi <a href="http://getpopfile.org/docs/faq/EmailSorting">POPFile Dökümantasyon Projesi</a> adresinde bulunabilir.
+Help_Training                           POPFile'ý ilk kullandýðýnýzda o hiçbir bilgiye sahip deðildir ve eðitime ihtiyacý vardýr. POPFile her kategori için mesajlar ile eðitilmelidir. Eðitim, POPFile bir mesajý yanlýþ sýnýflandýrdýðýnda bunu doðru kategori ile tekrar sýnýflandýrarak gerçekleþtirilir. Bunun dýþýnda, posta programýnýzýn mesajlarý POPFile'ýn sýnýflandýrmasýna göre filtrelemesi için ayarlamalýsýnýz. Posta programýnýzýn filtelerini ayarlamak hakkýnda bilgi <a href="http://getpopfile.org/docs/FAQ:EmailSorting">POPFile Dökümantasyon Projesi</a> adresinde bulunabilir.
 Help_Bucket_Setup                       POPFile, sýnýflandýrýlmamýþ pseudo-kategorisi dýþýnda en az iki kategori gerektirir. POPFile'ý eþsiz yapan, ikiden fazla, istediðiniz sayýda kategoriye sahip olabilmenizdir. Basit bir kurulum, "spam", "kiþisel", ve "iþ" kategorileri gibi olabilir.
 Help_No_More                            Bunu bir daha gösterme 

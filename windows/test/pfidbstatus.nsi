@@ -11,7 +11,7 @@
 #                           to execute SQL from the command-line so this utility checks the
 #                           sqlite.exe version number before trying to execute any SQL.
 #
-# Copyright (c) 2005-2006  John Graham-Cumming
+# Copyright (c) 2005-2009  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -29,18 +29,20 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.45" compiler,
+  ; released 6 June 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.45"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -48,6 +50,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
   ;------------------------------------------------
   ; This script requires the 'GetSize' NSIS plugin
@@ -156,7 +159,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.8"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.2.0"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -174,6 +177,18 @@
   OutFile "${C_OUTFILE}"
 
   Icon "..\POPFileIcon\popfile.ico"
+
+  ; The 2.x and 3.x versions of the SQLite command-line utility make the nsExec
+  ; plugin return different result codes so we place a marker on the stack to
+  ; help detect problems with the execution of the SQLite command-line utility
+
+  !define C_BOOKMARK    "__${C_OUTFILE}__"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"
@@ -198,6 +213,8 @@
 
   VIProductVersion                          "${C_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   !ifdef CTS_INTEGRATED
       VIAddVersionKey "ProductName"         "POPFile SQLite Database Status Check (integrated version)"
   !else
@@ -205,11 +222,13 @@
   !endif
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2006  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Check the status of POPFile's SQLite database"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -429,8 +448,10 @@
 
 Section CheckSQLiteDatabase
 
-  !define L_TEMP    $R9
+  !define L_PATH    $R9
+  !define L_TEMP    $R8
 
+  Push ${L_PATH}
   Push ${L_TEMP}
 
   SetDetailsPrint textonly
@@ -602,16 +623,8 @@ give_up:
 usage_msg:
 
   ; Ensure the correct program name appears in the 'usage' message added to the log.
-  ; The first system call gets the full pathname (returned in $R0) and the second call
-  ; extracts the filename (and possibly the extension) part (result returned in $R1)
 
-  Push $R0
-  Push $R1
-  System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024)'
-  System::Call 'comdlg32::GetFileTitleA(t R0, t .R1, i 1024)'
-  StrCpy $G_PLS_FIELD_1 $R1
-  Pop $R1
-  Pop $R0
+  StrCpy $G_PLS_FIELD_1 $EXEFILE
 
   DetailPrint ""
   DetailPrint "$(DBS_LANG_NODBPARAM_2)"
@@ -698,11 +711,25 @@ no_util:
 
 run_it:
   StrCpy $G_PLS_FIELD_1 ${L_TEMP}
+  Push "${C_BOOKMARK}"
   nsExec::ExecToStack '"$G_PLS_FIELD_1\$G_SQLITEUTIL" -version'
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "error" start_error
   StrCmp ${L_TEMP} "timeout" start_error
-  IntCmp ${L_TEMP} 1 0 version_error version_error
+
+  ; As of 15 June 2009:
+  ;
+  ; v2.8.17 is the most recent version of the SQLite 2.x command-line utility
+  ; The current DBD::SQLite module (v1.25) is based upon the SQLite 3.6.13 library
+  ;
+  ; sqlite.exe  v2.8.17 returns "1" in ${L_TEMP} after a successful version check
+  ; sqlite3.exe v3.6.13 returns "0" in ${L_TEMP} after a successful version check
+
+  IntCmp ${L_TEMP} 2 version_error 0 version_error
+  IntCmp ${L_TEMP} 0 0 version_error
+  Exch
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "${C_BOOKMARK}" 0 unexpected_version_error
   Call PFI_TrimNewlines
   Pop $G_PLS_FIELD_2
   StrCpy $G_PLS_FIELD_2 "v$G_PLS_FIELD_2"
@@ -735,6 +762,25 @@ run_it:
   !endif
 
 use_it:
+  Push $G_DATABASE
+  Call PFI_GetParent
+  Pop ${L_PATH}
+  StrCmp ${L_PATH} "" run_it_now
+  
+  ; The SQLite command-line utility does not handle paths containing non-ASCII characters
+  ; properly. An example where this will cause a problem is when the POPFile 'User Data'
+  ; has been installed in the default location for a user with a Japanese login name.
+  ; As a workaround we change the current working directory to the folder containing the
+  ; database and supply only the database's filename when calling the command-line utility.
+  
+  StrLen ${L_TEMP} ${L_PATH}
+  IntOp ${L_TEMP} ${L_TEMP} + 1
+  StrCpy $G_DATABASE $G_DATABASE "" ${L_TEMP}
+  SetDetailsPrint none
+  SetOutPath "${L_PATH}"
+  SetDetailsPrint listonly
+  
+run_it_now:
   nsExec::ExecToStack '"$G_PLS_FIELD_1\$G_SQLITEUTIL" "$G_DATABASE" "select version from popfile;"'
   Pop ${L_TEMP}
   Call PFI_TrimNewlines
@@ -771,13 +817,20 @@ dir_not_file:
   MessageBox MB_OK|MB_ICONEXCLAMATION "$(DBS_LANG_DIRNOTFILE)"
   Goto error_exit
 
+unexpected_version_error:
+  StrCpy ${L_TEMP} "${MB_NL}${MB_NL}(stack corruption detected)"
+  Goto error_msg
+
 version_error:
+  StrCpy ${L_TEMP} "${MB_NL}${MB_NL}(return code: ${L_TEMP})"
+
+error_msg:
   StrCpy $G_PLS_FIELD_2 ""
   DetailPrint ""
   DetailPrint "$(DBS_LANG_SQLITEUTIL)"
   DetailPrint ""
   DetailPrint "$(DBS_LANG_VERSIONERROR)"
-  MessageBox MB_OK|MB_ICONEXCLAMATION "$(DBS_LANG_VERSIONERROR)"
+  MessageBox MB_OK|MB_ICONEXCLAMATION "$(DBS_LANG_VERSIONERROR)${L_TEMP}"
   Goto error_exit
 
 start_error:
@@ -812,8 +865,10 @@ exit:
 
   Call HideFinalTimestamp
 
-  POP ${L_TEMP}
+  Pop ${L_TEMP}
+  Pop ${L_PATH}
 
+  !undef L_PATH
   !undef L_TEMP
 
 SectionEnd
@@ -935,6 +990,8 @@ FunctionEnd
   !define C_LVM_ENSUREVISIBLE       0x1013
   !define C_LVM_GETTOPINDEX         0x1027
 
+  !define C_LVM_COUNTPERPAGE        0x1028
+
 #--------------------------------------------------------------------------
 # Installer Function: GetDetailViewItemCount
 #
@@ -1014,35 +1071,56 @@ FunctionEnd
 
 Function HideFinalTimestamp
 
-  !define L_TEMP      $R9
-  !define L_TOPROW    $R8
+  !define L_DLG_ITEM    $R9   ; the dialog item we are going to manipulate
+  !define L_SCROLLUP    $R8   ; number of lines to scroll up
+  !define L_TEMP        $R7
+  !define L_TOPROW      $R6   ; index of the row to appear at the top
 
+  Push ${L_DLG_ITEM}
+  Push ${L_SCROLLUP}
   Push ${L_TEMP}
   Push ${L_TOPROW}
 
-  ; The final timestamp block uses 3 lines so we want to scroll up 3 lines to bring
+  ; The final timestamp block uses several lines so we scroll up a few lines to bring
   ; more important lines back into view at the top of the list. The LVM_SCROLL message
   ; uses a pixel-based vertical scroll value instead of an item-based value so we take
   ; an easier approach: find the item index of the currently visible top row and then
-  ; make visible the item which is 3 rows before that. (The item index is zero based so
-  ; we must ensure we never supply a negative item index)
+  ; make visible the item which is a few rows before that.
 
-  FindWindow ${L_TOPROW} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_TOPROW} ${L_TOPROW} 0x3F8       ; This is the Control ID of the details view
-  SendMessage ${L_TOPROW} ${C_LVM_GETTOPINDEX} 0 0 ${L_TOPROW}
+  FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
+  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x3F8      ; This is the Control ID of the details view
 
-  IntOp ${L_TOPROW} ${L_TOPROW} - 3
+  ; Check how many lines can be shown in the details view
+
+  SendMessage ${L_DLG_ITEM} ${C_LVM_COUNTPERPAGE} 0 0 ${L_TEMP}
+
+  StrCpy ${L_SCROLLUP} 4   ; hide the three-line timestamp plus the blank line before it
+  IntCmp ${L_TEMP} 10 findtop findtop
+  StrCpy ${L_SCROLLUP} 3   ; hide the timestamp, leaving a blank line before & after the important lines
+
+findtop:
+
+  ; Get the index of the row currently shown at the top of the details view
+
+  SendMessage ${L_DLG_ITEM} ${C_LVM_GETTOPINDEX} 0 0 ${L_TOPROW}
+
+  IntOp ${L_TOPROW} ${L_TOPROW} - ${L_SCROLLUP}
+
+   ; The item index is zero based so we must ensure we never supply a negative item index
+
   IntCmp ${L_TOPROW} 0 scrollup 0 scrollup
   StrCpy ${L_TOPROW} 0
 
 scrollup:
-  FindWindow ${L_TEMP} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_TEMP} ${L_TEMP} 0x3F8           ; This is the Control ID of the details view
-  SendMessage ${L_TEMP} ${C_LVM_ENSUREVISIBLE} ${L_TOPROW} 0
+  SendMessage ${L_DLG_ITEM} ${C_LVM_ENSUREVISIBLE} ${L_TOPROW} 0
 
   Pop ${L_TOPROW}
   Pop ${L_TEMP}
+  Pop ${L_SCROLLUP}
+  Pop ${L_DLG_ITEM}
 
+  !undef L_DLG_ITEM
+  !undef L_SCROLLUP
   !undef L_TEMP
   !undef L_TOPROW
 

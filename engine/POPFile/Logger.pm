@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 1
+# POPFILE LOADABLE MODULE
 package POPFile::Logger;
 
 use POPFile::Module;
@@ -31,8 +31,6 @@ use POPFile::Module;
 use strict;
 use warnings;
 use locale;
-
-use File::Path;
 
 # Constant used by the log rotation code
 my $seconds_per_day = 60 * 60 * 24;
@@ -138,13 +136,6 @@ sub start
 
     $self->calculate_today__();
 
-    # Verify that the logger directory actually exists
-
-    eval { mkpath( $self->config_( 'logdir' ) ) };
-    if ( $@ ) {
-        $self->log_( 0, "Failed to create directory " . $self->config_( 'logdir' ) );
-    }
-
     $self->debug( 0, '-----------------------' );
     $self->debug( 0, 'POPFile ' . $self->version() . ' starting' );
 
@@ -220,9 +211,8 @@ sub calculate_today__
     # Note that 0 parameter than allows the logdir to be outside the user
     # sandbox
 
-    $self->{debug_filename__} = $self->get_user_path_(          # PROFILE BLOCK START
-        $self->path_join( $self->config_( 'logdir' ),
-                          "popfile$self->{today__}.log" ), 0 ); # PROFILE BLOCK STOP
+    $self->{debug_filename__} = $self->get_user_path_(                   # PROFILE BLOCK START
+        $self->config_( 'logdir' ) . "popfile$self->{today__}.log", 0 ); # PROFILE BLOCK STOP
 }
 
 # ---------------------------------------------------------------------------
@@ -236,9 +226,8 @@ sub remove_debug_files
 {
     my ( $self ) = @_;
 
-    my @debug_files = glob( $self->get_user_path_(
-                          $self->path_join( $self->config_( 'logdir' ),
-                                            'popfile*.log' ), 0 ) );
+    my @debug_files = glob( $self->get_user_path_(                            # PROFILE BLOCK START
+                          $self->config_( 'logdir' ) . 'popfile*.log', 0 ) ); # PROFILE BLOCK STOP
 
     foreach my $debug_file (@debug_files) {
         # Extract the epoch information from the popfile log file name
@@ -301,11 +290,11 @@ sub debug
         $delim = "\t" if ( $self->config_( 'format' ) eq 'tabbed' );
         $delim = ',' if ( $self->config_( 'format' ) eq 'csv' );
 
-        my $msg =
-            "$year/$mon/$mday$delim$hour:$min:$sec$delim$$:$delim$message\n";
+        my $msg =                                                             # PROFILE BLOCK START
+            "$year/$mon/$mday$delim$hour:$min:$sec$delim$$:$delim$message\n"; # PROFILE BLOCK STOP
 
         if ( $self->global_config_( 'debug' ) & 1 )  {
-              if ( open DEBUG, ">>$self->{debug_filename__}" ) {
+            if ( open DEBUG, ">>$self->{debug_filename__}" ) {
                 print DEBUG $msg;
                 close DEBUG;
             }

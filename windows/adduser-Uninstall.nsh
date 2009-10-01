@@ -3,7 +3,7 @@
 # adduser-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the NSIS
 #                           script (adduser.nsi) used to build the 'Add POPFile User' wizard.
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -74,9 +74,9 @@ Function un.onInit
   ; Email settings are stored on a 'per user' basis therefore we need to know which user is
   ; running the uninstaller so we can check if the email settings can be safely restored
 
-	ClearErrors
-	UserInfo::GetName
-	IfErrors 0 got_name
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
 
   ; Assume Win9x system, so user has 'Admin' rights
   ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
@@ -86,13 +86,13 @@ Function un.onInit
   Goto exit
 
 got_name:
-	Pop $G_WINUSERNAME
+  Pop $G_WINUSERNAME
   StrCmp $G_WINUSERNAME "" 0 get_usertype
   StrCpy $G_WINUSERNAME "UnknownUser"
 
 get_usertype:
   UserInfo::GetAccountType
-	Pop $G_WINUSERTYPE
+  Pop $G_WINUSERTYPE
   StrCmp $G_WINUSERTYPE "Admin" exit
   StrCmp $G_WINUSERTYPE "Power" exit
   StrCmp $G_WINUSERTYPE "User" exit
@@ -193,7 +193,7 @@ Section "un.Shutdown POPFile" UnSecShutdown
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
-  Call un.PFI_ServiceRunning
+  Call un.PFI_ServiceActive
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "true" manual_shutdown
 
@@ -219,6 +219,7 @@ Section "un.Shutdown POPFile" UnSecShutdown
 
   Push ${L_EXE}
   Call un.PFI_WaitUntilUnlocked
+  Push "${C_EXE_END_MARKER}"
   Push ${L_EXE}
   Call un.PFI_CheckIfLocked
   Pop ${L_EXE}
@@ -445,6 +446,7 @@ Section "un.User Config" UnSecConfig
   Delete "$G_USERDIR\stopwords.default"
 
   Delete "$G_USERDIR\pfi-run.bat"
+  Delete "$G_USERDIR\pfi-run.bat.bk?"
 
   SetDetailsPrint textonly
   DetailPrint " "
@@ -460,21 +462,76 @@ Section "un.ShortCuts" UnSecShortcuts
 
   StrCmp $G_PFIFLAG "fail" do_nothing
 
+  !define L_TEMP    $R9
+
+  Push ${L_TEMP}
+
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_UN_PROG_SHORT)"
   SetDetailsPrint listonly
 
+  ; Remove the utility shortcuts in the 'User Data' folder
+
   Delete "$G_USERDIR\Check database status.lnk"
   Delete "$G_USERDIR\Run SQLite utility.lnk"
+
+  ; Remove the POPFile shortcuts from the current user's Start Menu
+
+  SetShellVarContext all
+  StrCpy ${L_TEMP} "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\"
+  SetShellVarContext current
+  StrCmp ${L_TEMP} "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\" 0 remove_all_support
+
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" 0 try_full
+  ShellLink::GetShortCutTarget "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk"
+  Pop ${L_TEMP}
+  IfFileExists "${L_TEMP}" skip_system_entries
+
+try_full:
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" 0 remove_all_support
+  ShellLink::GetShortCutTarget "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk"
+  Pop ${L_TEMP}
+  IfFileExists "${L_TEMP}" skip_system_entries
+
+remove_all_support:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url"
+
+skip_system_entries:
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Check database status.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile Data ($G_WINUSERNAME).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
+
+  Call un.PFI_IsNT
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} 1 remove_all_main
+  IfFileExists "$G_ROOTDIR\uninstall.exe" remove_most
+
+remove_all_main:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk"
+
+remove_most:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile Data ($G_WINUSERNAME).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}"
+
+  Delete "$SMSTARTUP\Run POPFile.lnk"
 
   SetDetailsPrint textonly
   DetailPrint " "
   SetDetailsPrint listonly
+
+  Pop ${L_TEMP}
+
+  !undef L_TEMP
 
 do_nothing:
 SectionEnd

@@ -9,7 +9,7 @@
 #                                   required and these are installed at the same time as the
 #                                   optional POPFile component.
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -37,14 +37,9 @@
 ; Section "-Minimal Perl" SecMinPerl
 
   ; This section installs the "core" version of the minimal Perl. Some of the optional
-  ; POPFile components, such as the Kakasi package and POPFile's XMLRPC module, require
-  ; extra Perl components which are added when the optional POPFile components are installed.
-
-  ; The 0.22.2 release's minimal Perl was based upon ActivePerl 5.8.4 but the optional SSL
-  ; components from the University of Winnipeg repository are no longer compatible with this
-  ; version of ActivePerl. ActivePerl 5.8.7 (the most recent version at the time of writing)
-  ; introduced some new dependencies so this section assumes the minimal Perl will be based
-  ; upon ActivePerl 5.8.7.
+  ; POPFile components, such as the Nihongo (Japanese) parser and POPFile's XMLRPC
+  ; module, require extra Perl components which are added when the optional POPFile
+  ; components are installed.
 
   !insertmacro SECTIONLOG_ENTER "Minimal Perl"
 
@@ -54,8 +49,10 @@
   DetailPrint "$(PFI_LANG_INST_PROG_PERL)"
   SetDetailsPrint listonly
 
-  ; Install the minimal Perl "core"
-  ; (extra Perl files are added by the "Kakasi", "SOCKS" & "XMLRPC" sections in installer.nsi)
+  ; Install the minimal Perl "core" based upon ActivePerl 5.8.9 Build 825
+  ; (extra Perl files are added by the "SOCKS" & "XMLRPC" sections in installer.nsi
+  ; and by the macro-based "Kakasi", "MeCab" and "InternalParser" sections defined
+  ; in getparser.nsh)
 
   SetOutPath "$G_ROOTDIR"
   File "${C_PERL_DIR}\bin\perl.exe"
@@ -69,22 +66,47 @@
   File "${C_PERL_DIR}\lib\Config_heavy.pl"
   File "${C_PERL_DIR}\lib\constant.pm"
   File "${C_PERL_DIR}\lib\Cwd.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Cwd"
+        File "${C_PERL_DIR}\lib\auto\Cwd\*"
+        SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\DynaLoader.pm"
+        SetOutPath "$G_MPLIBDIR\auto\DynaLoader"
+        File "${C_PERL_DIR}\lib\auto\DynaLoader\*"
+        SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\Errno.pm"
   File "${C_PERL_DIR}\lib\Exporter.pm"
   File "${C_PERL_DIR}\lib\Fcntl.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Fcntl"
+        File "${C_PERL_DIR}\lib\auto\Fcntl\Fcntl.dll"
+        SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\integer.pm"
   File "${C_PERL_DIR}\lib\IO.pm"
   File "${C_PERL_DIR}\lib\lib.pm"
   File "${C_PERL_DIR}\lib\locale.pm"
+  File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\POSIX.pm"
+        SetOutPath "$G_MPLIBDIR\auto\POSIX"
+        File "${C_PERL_DIR}\lib\auto\POSIX\POSIX.dll"
+        File "${C_PERL_DIR}\lib\auto\POSIX\autosplit.ix"
+        File "${C_PERL_DIR}\lib\auto\POSIX\load_imports.al"
+        SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\re.pm"
   File "${C_PERL_DIR}\lib\SelectSaver.pm"
   File "${C_PERL_DIR}\lib\Socket.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Socket"
+        File "${C_PERL_DIR}\lib\auto\Socket\*"
+        SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\strict.pm"
   File "${C_PERL_DIR}\lib\Symbol.pm"
+  File "${C_PERL_DIR}\site\lib\URI.pm"
+  File "${C_PERL_DIR}\lib\utf8.pm"
+  File "${C_PERL_DIR}\lib\utf8_heavy.pl"
   File "${C_PERL_DIR}\lib\vars.pm"
   File "${C_PERL_DIR}\lib\warnings.pm"
+  File "${C_PERL_DIR}\site\lib\Win32.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Win32"
+        File "${C_PERL_DIR}\site\lib\auto\Win32\*"
+        SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\XSLoader.pm"
 
   SetOutPath "$G_MPLIBDIR\Carp"
@@ -96,6 +118,8 @@
 
   SetOutPath "$G_MPLIBDIR\Digest"
   File "${C_PERL_DIR}\lib\Digest\MD5.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Digest\MD5"
+        File "${C_PERL_DIR}\lib\auto\Digest\MD5\*"
 
   SetOutPath "$G_MPLIBDIR\Exporter"
   File "${C_PERL_DIR}\lib\Exporter\*"
@@ -104,8 +128,9 @@
   File "${C_PERL_DIR}\lib\File\Basename.pm"
   File "${C_PERL_DIR}\lib\File\Copy.pm"
   File "${C_PERL_DIR}\lib\File\Glob.pm"
-  File "${C_PERL_DIR}\lib\File\Path.pm"
   File "${C_PERL_DIR}\lib\File\Spec.pm"
+        SetOutPath "$G_MPLIBDIR\auto\File\Glob"
+        File "${C_PERL_DIR}\lib\auto\File\Glob\*"
 
   SetOutPath "$G_MPLIBDIR\File\Spec"
   File "${C_PERL_DIR}\lib\File\Spec\Unix.pm"
@@ -115,64 +140,113 @@
   File "${C_PERL_DIR}\lib\Getopt\Long.pm"
 
   SetOutPath "$G_MPLIBDIR\HTML"
-  File "${C_PERL_DIR}\site\lib\HTML\Tagset.pm"
-  File "${C_PERL_DIR}\site\lib\HTML\Template.pm"
+  File "${C_PERL_DIR}\lib\HTML\Tagset.pm"
+  File "${C_PERL_DIR}\lib\HTML\Template.pm"
+
+  SetOutPath "$G_MPLIBDIR\HTTP"
+  File "${C_PERL_DIR}\lib\HTTP\Config.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Date.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Headers.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Message.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Request.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Response.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Status.pm"
+
+  SetOutPath "$G_MPLIBDIR\HTTP\Request"
+  File "${C_PERL_DIR}\lib\HTTP\Request\Common.pm"
 
   SetOutPath "$G_MPLIBDIR\IO"
   File "${C_PERL_DIR}\lib\IO\*"
+        SetOutPath "$G_MPLIBDIR\auto\IO"
+        File "${C_PERL_DIR}\lib\auto\IO\*"
 
   SetOutPath "$G_MPLIBDIR\IO\Socket"
   File "${C_PERL_DIR}\lib\IO\Socket\*"
 
+  SetOutPath "$G_MPLIBDIR\List"
+  File "${C_PERL_DIR}\site\lib\List\Util.pm"
+        SetOutPath "$G_MPLIBDIR\auto\List\Util"
+        File "${C_PERL_DIR}\site\lib\auto\List\Util\*"
+
+  SetOutPath "$G_MPLIBDIR\LWP"
+  File "${C_PERL_DIR}\lib\LWP\MemberMixin.pm"
+  File "${C_PERL_DIR}\lib\LWP\Protocol.pm"
+  File "${C_PERL_DIR}\lib\LWP\Simple.pm"
+  File "${C_PERL_DIR}\lib\LWP\UserAgent.pm"
+
+  SetOutPath "$G_MPLIBDIR\LWP\Protocol"
+  File "${C_PERL_DIR}\lib\LWP\Protocol\http.pm"
+
   SetOutPath "$G_MPLIBDIR\MIME"
   File "${C_PERL_DIR}\lib\MIME\*"
+        SetOutPath "$G_MPLIBDIR\auto\MIME\Base64"
+        File "${C_PERL_DIR}\lib\auto\MIME\Base64\*"
+
+  SetOutPath "$G_MPLIBDIR\Net"
+  File "${C_PERL_DIR}\lib\Net\HTTP.pm"
+
+  SetOutPath "$G_MPLIBDIR\Net\HTTP"
+  File "${C_PERL_DIR}\lib\Net\HTTP\Methods.pm"
+
+  SetOutPath "$G_MPLIBDIR\Scalar"
+  File "${C_PERL_DIR}\site\lib\Scalar\Util.pm"
 
   SetOutPath "$G_MPLIBDIR\Sys"
   File "${C_PERL_DIR}\lib\Sys\*"
+        SetOutPath "$G_MPLIBDIR\auto\Sys\Hostname"
+        File "${C_PERL_DIR}\lib\auto\Sys\Hostname\*"
 
   SetOutPath "$G_MPLIBDIR\Text"
   File "${C_PERL_DIR}\lib\Text\ParseWords.pm"
 
+  SetOutPath "$G_MPLIBDIR\Tie"
+  File "${C_PERL_DIR}\lib\Tie\Hash.pm"
+
   SetOutPath "$G_MPLIBDIR\Time"
-  File "${C_PERL_DIR}\lib\Time\Local.pm"
+  File "${C_PERL_DIR}\site\lib\Time\Local.pm"
   File "${C_PERL_DIR}\site\lib\Time\Zone.pm"
+
+  SetOutPath "$G_MPLIBDIR\unicore"
+  File "${C_PERL_DIR}\lib\unicore\Exact.pl"
+  File "${C_PERL_DIR}\lib\unicore\PVA.pl"
+
+  SetOutPath "$G_MPLIBDIR\unicore\lib\gc_sc"
+  File "${C_PERL_DIR}\lib\unicore\lib\gc_sc\Digit.pl"
+
+  SetOutPath "$G_MPLIBDIR\URI"
+  File "${C_PERL_DIR}\site\lib\URI\_foreign.pm"
+  File "${C_PERL_DIR}\site\lib\URI\_generic.pm"
+  File "${C_PERL_DIR}\site\lib\URI\_query.pm"
+  File "${C_PERL_DIR}\site\lib\URI\_server.pm"
+  File "${C_PERL_DIR}\site\lib\URI\Escape.pm"
+  File "${C_PERL_DIR}\site\lib\URI\http.pm"
 
   SetOutPath "$G_MPLIBDIR\warnings"
   File "${C_PERL_DIR}\lib\warnings\register.pm"
 
-  SetOutPath "$G_MPLIBDIR\auto\Digest\MD5"
-  File "${C_PERL_DIR}\lib\auto\Digest\MD5\*"
+  SetOutPath "$G_MPLIBDIR\Win32"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI.pm"
 
-  SetOutPath "$G_MPLIBDIR\auto\DynaLoader"
-  File "${C_PERL_DIR}\lib\auto\DynaLoader\*"
+  SetOutPath "$G_MPLIBDIR\Win32\GUI"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\*.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Win32\GUI"
+        File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\GUI*"
 
-  SetOutPath "$G_MPLIBDIR\auto\Fcntl"
-  File "${C_PERL_DIR}\lib\auto\Fcntl\Fcntl.dll"
-
-  SetOutPath "$G_MPLIBDIR\auto\File\Glob"
-  File "${C_PERL_DIR}\lib\auto\File\Glob\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\IO"
-  File "${C_PERL_DIR}\lib\auto\IO\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\MIME\Base64"
-  File "${C_PERL_DIR}\lib\auto\MIME\Base64\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\POSIX"
-  File "${C_PERL_DIR}\lib\auto\POSIX\POSIX.dll"
-  File "${C_PERL_DIR}\lib\auto\POSIX\autosplit.ix"
-  File "${C_PERL_DIR}\lib\auto\POSIX\load_imports.al"
-
-  SetOutPath "$G_MPLIBDIR\auto\Socket"
-  File "${C_PERL_DIR}\lib\auto\Socket\*"
-
-  SetOutPath "$G_MPLIBDIR\auto\Sys\Hostname"
-  File "${C_PERL_DIR}\lib\auto\Sys\Hostname\*"
+  SetOutPath "$G_MPLIBDIR\Win32\GUI\Constants"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\Constants\Tags.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Win32\GUI\Constants"
+        File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Constants.dll"
+        SetOutPath "$G_MPLIBDIR\auto\Win32\GUI\Constants\Tags"
+        File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Tags\autosplit.ix"
+        File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\Constants\Tags\tag_compatibility_win32_gui.al"
 
   ; Install Perl modules and library files for BerkeleyDB support. Although POPFile now uses
   ; SQLite (or another SQL database) to store the corpus and other essential data, it retains
   ; the ability to automatically convert old BerkeleyDB format corpus files to the SQL database
   ; format. Therefore the installer still installs the BerkeleyDB Perl components.
+  ;
+  ; WARNING: An old version of BerkeleyDB.pm is required here in order to be compatible with the
+  ; BerkeleyDB databases generated by POPFile 0.20.x (BerkeleyDB.pm v0.22 is safe to use here).
 
   SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\site\lib\BerkeleyDB.pm"
@@ -200,10 +274,14 @@
   File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.exp"
   File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.lib"
 
-  ; Install SQLite support
+  ; POPFile 1.1.0 was the first version of POPFile to work with SQLIte 3.x libraries.
+  ; SQLite databases built using SQLite 3.x are incompatible with those built using
+  ; SQLite 2.x so the installer needs to install support for both types of database in
+  ; order to allow old POPFile databases to be upgraded to the new SQLite 3.x format.
 
   SetOutPath "$G_MPLIBDIR\DBD"
   File "${C_PERL_DIR}\site\lib\DBD\SQLite.pm"
+  File "${C_PERL_DIR}\site\lib\DBD\SQLite2.pm"
 
   SetOutPath "$G_MPLIBDIR\auto\DBD\SQLite"
   File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.bs"
@@ -211,59 +289,11 @@
   File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.exp"
   File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.lib"
 
-  ; Extra Perl modules required for the encrypted cookies introduced in POPFile 0.23.0
-
-  SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\lib\bytes.pm"
-  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-  File "${C_PERL_DIR}\lib\subs.pm"
-
-  SetOutPath "$G_MPLIBDIR\Class"
-  File "${C_PERL_DIR}\site\lib\Class\Loader.pm"
-
-  SetOutPath "$G_MPLIBDIR\Crypt"
-  File "${C_PERL_DIR}\site\lib\Crypt\Blowfish.pm"
-  File "${C_PERL_DIR}\site\lib\Crypt\CBC.pm"
-  File "${C_PERL_DIR}\site\lib\Crypt\Random.pm"
-
-  SetOutPath "$G_MPLIBDIR\Crypt\Random"
-  File "${C_PERL_DIR}\site\lib\Crypt\Random\Generator.pm"
-
-  SetOutPath "$G_MPLIBDIR\Crypt\Random\Provider"
-  File "${C_PERL_DIR}\site\lib\Crypt\Random\Provider\*.pm"
-
-  SetOutPath "$G_MPLIBDIR\Data"
-  File "${C_PERL_DIR}\lib\Data\Dumper.pm"
-
-  SetOutPath "$G_MPLIBDIR\Digest"
-  File "${C_PERL_DIR}\site\lib\Digest\SHA.pm"
-
-  SetOutPath "$G_MPLIBDIR\Math"
-  File "${C_PERL_DIR}\site\lib\Math\Pari.pm"
-
-  SetOutPath "$G_MPLIBDIR\auto\Crypt\Blowfish"
-  File "${C_PERL_DIR}\site\lib\auto\Crypt\Blowfish\Blowfish.bs"
-  File "${C_PERL_DIR}\site\lib\auto\Crypt\Blowfish\Blowfish.dll"
-  File "${C_PERL_DIR}\site\lib\auto\Crypt\Blowfish\Blowfish.exp"
-  File "${C_PERL_DIR}\site\lib\auto\Crypt\Blowfish\Blowfish.lib"
-
-  SetOutPath "$G_MPLIBDIR\auto\Data\Dumper"
-  File "${C_PERL_DIR}\lib\auto\Data\Dumper\Dumper.bs"
-  File "${C_PERL_DIR}\lib\auto\Data\Dumper\Dumper.dll"
-  File "${C_PERL_DIR}\lib\auto\Data\Dumper\Dumper.exp"
-  File "${C_PERL_DIR}\lib\auto\Data\Dumper\Dumper.lib"
-
-  SetOutPath "$G_MPLIBDIR\auto\Digest\SHA"
-  File "${C_PERL_DIR}\site\lib\auto\Digest\SHA\SHA.bs"
-  File "${C_PERL_DIR}\site\lib\auto\Digest\SHA\SHA.dll"
-  File "${C_PERL_DIR}\site\lib\auto\Digest\SHA\SHA.exp"
-  File "${C_PERL_DIR}\site\lib\auto\Digest\SHA\SHA.lib"
-
-  SetOutPath "$G_MPLIBDIR\auto\Math\Pari"
-  File "${C_PERL_DIR}\site\lib\auto\Math\Pari\Pari.bs"
-  File "${C_PERL_DIR}\site\lib\auto\Math\Pari\Pari.dll"
-  File "${C_PERL_DIR}\site\lib\auto\Math\Pari\Pari.exp"
-  File "${C_PERL_DIR}\site\lib\auto\Math\Pari\Pari.lib"
+  SetOutPath "$G_MPLIBDIR\auto\DBD\SQLite2"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.bs"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.dll"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.exp"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.lib"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"

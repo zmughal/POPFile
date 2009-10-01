@@ -21,23 +21,42 @@
 #
 # ----------------------------------------------------------------------------
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use Classifier::WordMangle;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
 
-my %valid = ( 'Classifier/WordMangle' => 1,
-              'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+# Load the test corpus
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $w = new Classifier::WordMangle;
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
+
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->initialize();
+
 unlink 'stopwords';
-$POPFile->CORE_start();
 
-my $w = $POPFile->get_module( 'Classifier/WordMangle' );
+$w->start();
 
 # Test basic mangling functions
 
@@ -63,6 +82,8 @@ test_assert_equal( $w->add_stopword( 'b*ox', 'English' ), 0 );
 # Test Japanese
 test_assert_equal( $w->add_stopword( chr(0x8e) . chr(0xa0), 'Nihongo' ), 0 );
 test_assert_equal( $w->remove_stopword( chr(0x8e) . chr(0xa0), 'Nihongo' ), 0 );
+test_assert_equal( $w->add_stopword( chr(0xa4) . chr(0xa2), 'Nihongo' ), 1 );
+test_assert_equal( $w->remove_stopword( chr(0xa4) . chr(0xa2), 'Nihongo' ), 1 );
 
 # Getter/setter
 my %stops = ( 'oneword', 1 );
@@ -96,7 +117,5 @@ $w->start();
 my @stopwords = $w->stopwords();
 test_assert_equal( $#stopwords, 0 );
 test_assert_equal( $stopwords[0], 'anotherbigword' );
-
-$POPFile->CORE_stop();
 
 1;

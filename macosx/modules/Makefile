@@ -1,3 +1,5 @@
+# ---------------------------------------------------------------------------
+#
 # Copyright (c) John Graham-Cumming
 #
 #   This file is part of POPFile
@@ -15,6 +17,7 @@
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
+# ---------------------------------------------------------------------------
 
 .PHONY: all build clean
 
@@ -29,15 +32,15 @@ SSLPACKAGE_LIBRARY_ROOT = $(SSLPACKAGE_ROOT)/Library
 SSLPOPFILE_ROOT = $(SSLPACKAGE_LIBRARY_ROOT)/POPFile
 SSLLIB_ROOT = $(SSLPOPFILE_ROOT)/lib
 
-FAKECONFIG = ExtUtils-FakeConfig-0.11
+FAKECONFIG = ExtUtils-FakeConfig-0.12
 FAKECONFIG_ARCHIVE = $(FAKECONFIG).zip
 FAKECONFIG_URL = http://search.cpan.org/CPAN/authors/id/M/MB/MBARBON/$(FAKECONFIG_ARCHIVE)
 
-DBI = DBI-1.607
+DBI = DBI-1.609
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.21
+SQLITE = DBD-SQLite-1.25
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
 SQLITE_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(SQLITE_ARCHIVE)
 
@@ -63,7 +66,7 @@ SOAPLITE = SOAP-Lite-0.60
 SOAPLITE_ARCHIVE = $(SOAPLITE)a.tar.gz
 SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/B/BY/BYRNE/SOAP/$(SOAPLITE_ARCHIVE)
 
-VERSION_MODULE = version-0.74
+VERSION_MODULE = version-0.76
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
 VERSION_URL = http://search.cpan.org/CPAN/authors/id/J/JP/JPEACOCK/$(VERSION_ARCHIVE)
 
@@ -83,7 +86,7 @@ NETSSLEAY = Net-SSLeay-1.35
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
 NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/F/FL/FLORA/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-1.24
+IOSOCKETSSL = IO-Socket-SSL-1.30
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
@@ -113,6 +116,7 @@ clean:
 	rm -rf $(KAKASI_DIC_ROOT)/*
 
 core_modules:core_modules_build $(CORE_MODULES)
+	if test ! -d $(POPFILE_ROOT); then mkdir $(POPFILE_ROOT) ; fi
 	if test ! -d $(LIB_ROOT); then mkdir $(LIB_ROOT) ; fi
 
 	cp -rf $(DBI)/blib/arch/auto $(LIB_ROOT)
@@ -134,6 +138,7 @@ core_modules:core_modules_build $(CORE_MODULES)
 	cp -rf $(TIMEDATE)/blib/lib/* $(LIB_ROOT)
 
 xmlrpc_modules: xmlrpc_modules_build
+	if test ! -d $(POPFILE_ROOT); then mkdir $(POPFILE_ROOT) ; fi
 	if test ! -d $(LIB_ROOT); then mkdir $(LIB_ROOT) ; fi
 
 	cp -rf $(SOAPLITE)/lib/* $(LIB_ROOT)
@@ -208,9 +213,17 @@ japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
 	cd $(KAKASI); \
 	if test ! -e Makefile; \
 	then \
-	  env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750" \
-	  env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -mmacosx-version-min=10.3" \
-	  ./configure --disable-dependency-tracking --disable-shared ; \
+	  PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
+	  if test "$$PERL510" == "1"; \
+	  then \
+		env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64" \
+		env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64 -mmacosx-version-min=10.6" \
+		./configure --disable-dependency-tracking --disable-shared ; \
+	  else \
+		env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64" \
+		env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -mmacosx-version-min=10.3" \
+		./configure --disable-dependency-tracking --disable-shared ; \
+	  fi ; \
 	fi ;\
 	make
 
@@ -227,7 +240,7 @@ ssl_modules_build: $(SSL_ARCHIVES)
 
 	if test ! -d $(IOSOCKETSSL); then tar xzf $(IOSOCKETSSL_ARCHIVE); fi
 	cd $(IOSOCKETSSL); \
-	if test ! -e Makefile; then perl -I../$(NETSSLEAY)/blib/lib Makefile.PL ; fi ;\
+	if test ! -e Makefile; then perl -I.. -I../$(NETSSLEAY)/blib/lib -MConfig_ub Makefile.PL ; fi ;\
 	make
 
 $(DBI_ARCHIVE):
@@ -301,7 +314,6 @@ kakasi_dictionary: $(KAKASI)/kanwadict $(KAKASI)/itaijidict
 	tail -c +73729 <kanwadict >kanwadict-body ; \
 	perl -e 'binmode STDIN; binmode STDOUT; $$a = qw(); while (<>) {$$a.=$$_}; $$a =~ s/(.)(.)(.)(.)/$$4$$3$$2$$1/sg; print $$a;' <kanwadict-head >kanwadict-head-swap ; \
 	CPU_TYPE=`/usr/bin/uname -p` ; \
-	CPU_TYPE='powerpc' ; \
 	case $$CPU_TYPE in \
 	powerpc ) \
 	  mv kanwadict-head-swap kanwadict-head_i386 ; \

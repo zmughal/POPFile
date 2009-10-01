@@ -74,7 +74,7 @@ END
 
                 open SOURCE_FILE, "<$file";
                 my $clean = $file;
-                $clean =~ s/^\.\.\/\///;
+                $clean =~ s/^([.][.]\/)+//;
                 $clean =~ s/\//-/g;
                 open LINE_DATA, ">$clean.$$.lne";
 
@@ -108,7 +108,7 @@ END
 
                             if ( /\# PROFILE PLATFORM START ([^\r\n]+)/ ) {
                                 $block_executed = ( $1 ne $^O );
-		            }
+		                    }
 
                             if ( ( $count{$file}{$current_line} > 0 ) ||
                                  ( $block_executed ) ) {

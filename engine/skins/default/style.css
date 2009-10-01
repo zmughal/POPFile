@@ -17,20 +17,6 @@ body {
   border: 3px #CCCC99 solid;
 }
 
-.shellStatusMessage { 
-  color: #000000;
-  background-color: #EDEDCA;
-  border: 3px #CCCC99 solid;
-  width: 100%;
-}
-
-.shellErrorMessage { 
-  color: #FF0000;
-  background-color: #EDEDCA;
-  border: 3px #CCCC99 solid;
-  width: 100%;
-}
-
 table.head {
   width: 100%;
 }
@@ -45,6 +31,7 @@ table.footer {
 }
 
 td.footerBody {
+  width:33%;
   text-align: center;
 }
 
@@ -137,12 +124,38 @@ table.lookupResultsTable {
 /*********************************************************/
 /* Graphics */
 
+td.accuracy0to49 {
+  background-color: red;
+  color: black;
+}
+
+td.accuracy50to93 {
+  background-color: yellow;
+  color: black;
+}
+
+td.accuracy94to100 {
+  background-color: green;
+  color: black;
+}
+
 span.graphFont {
   font-size: x-small;
 }
 
 /*********************************************************/
 /* Messages */
+
+div.error01 {
+  background-color: transparent;
+  color: red;
+  font-size: larger;
+}
+
+div.error02 {
+  background-color: transparent;
+  color: red;
+}
 
 div.helpMessage {
   background-color: #DFDFAF;
@@ -260,75 +273,17 @@ h2.history, h2.buckets, h2.magnets, h2.users {
   display: inline;
 }
 
-/*********************************************************/
-/* Config Bar */
-
-.configBar, .configBarHidden {
-  padding-top: 1em;
-}
-
-.configBarTitle {
-  display: inline;
-  font-size: 1.0em;
-}
-
-.configBarTitle a {
-  border: 2px #CCCC99 solid;
-  padding: 0.3em;
-  padding-bottom: 0;
-  margin-left: 0.3em;
-  background-color: #CCCC99;
-  font-weight: bold;
-  font-size: 1.0em;
-}
-
-.configBarBody {
-  background-color: #DFDFAF;
-  border: 1px solid #CCCC99;
-}
-
-.configBarBody td {
-  border: 1px solid #CCCC99;
-}
-
-.configBarBody form {
-  margin: 0;
-}
-
-.configBarOption {
-  border: 1px solid #CCCC99;
-  margin: 0.3em;
-  padding: 0.3em;
-  display: inline;
-  float: left;
-  min-height: 3em;
-  background-color: #EDEDCA;
-}
-
-.checkLabel {
-  border: 1px solid #CCCC99;
+.historyMagnetUsed {
+  overflow: hidden;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
-.configBarBody input.submit {
-  margin-top: 0.1em;
+.historyMagnetUsed img {
+  vertical-align: bottom;
 }
 
-.configBarBody label.configurationLabel {
-  display: block;
-}
-
-/*********************************************************/
-/* History Column Controls */
-
-.columnControls {
-  white-space:nowrap;
-  vertical-align: top;
-  width: 10px;
-}
-
-.columnRemove, .columnMove {
-  display: block;
-  width:100%;
-  height: 1em;
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
 }

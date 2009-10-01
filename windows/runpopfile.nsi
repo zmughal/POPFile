@@ -10,7 +10,7 @@
 #                    Capture utility (if it is available) whenever the 'windows-console'
 #                    mode is selected in 'popfile.cfg'.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2009 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -28,18 +28,20 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.45" compiler,
+  ; released 6 June 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.45"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -47,6 +49,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
 #--------------------------------------------------------------------------
 # Optional run-time command-line switches (used by 'runpopfile.exe')
@@ -63,7 +66,7 @@
 # same StartUp folder (to avoid unexpected 'Add POPFile User' activity if some users do not use
 # (or have not yet used) POPFile). The switch can be in uppercase or lowercase.
 #
-# This switch cannot be combined with the '/config' switch.
+# This switch cannot be combined with the '/config' or '/msgcapture' switches.
 #
 # ---------------------------------------------------------------------------------------
 #
@@ -85,7 +88,18 @@
 #
 # These temporary changes will override any existing values in these environment variables.
 #
-# This switch cannot be combined with the '/startup' switch.
+# This switch cannot be combined with the '/startup' or '/msgcapture' switches.
+#
+# ---------------------------------------------------------------------------------------
+#
+# /msgcapture
+#
+# By default POPFile runs without showing the console window. This command-line switch forces
+# the utility to use the Message Capture utility in order to make it easy to see (and save)
+# POPFile's console messages which are normally hidden from view. This switch makes it much
+# easier for users (especially those using Windows 9x) to capture these console messages.
+#
+# This switch cannot be combined with the '/startup' or '/config=path' switches.
 #
 #-------------------------------------------------------------------------------------------
 
@@ -105,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.1.16"
+  !define C_PFI_VERSION   "0.2.11"
 
   !define C_OUTFILE       "runpopfile.exe"
 
@@ -123,6 +137,12 @@
   ; This build is for use with the POPFile installer
 
   !define C_PFI_PRODUCT   "POPFile"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
 #--------------------------------------------------------------------------
 # Use the standard NSIS list of common Windows Messages
@@ -149,14 +169,18 @@
 
   VIProductVersion                          "${C_PFI_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "Run POPFile"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Enhanced front-end for POPFile starter program"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
@@ -191,10 +215,10 @@ Section default
 
   ; Need to be able to confirm ownership when accessing the HKCU data
 
-	ClearErrors
-	UserInfo::GetName
-	IfErrors default_name
-	Pop ${L_WINUSERNAME}
+  ClearErrors
+  UserInfo::GetName
+  IfErrors default_name
+  Pop ${L_WINUSERNAME}
   StrCmp ${L_WINUSERNAME} "" 0 find_popfile
 
 default_name:
@@ -216,6 +240,7 @@ found_popfile:
   Pop ${L_PARAMS}
   StrCmp ${L_PARAMS} "" use_reg_dirdata
   StrCmp ${L_PARAMS} "/startup" use_reg_dirdata
+  StrCmp ${L_PARAMS} "/msgcapture" use_reg_dirdata
   StrCpy ${L_TEMP} ${L_PARAMS} 8
   StrCmp ${L_TEMP} "/config=" extract_config_path
   MessageBox MB_OK|MB_ICONSTOP "Error: Unknown option supplied !\
@@ -386,6 +411,21 @@ set_user_now:
   Goto exit
 
 start_popfile:
+  StrCmp ${L_PARAMS} "/msgcapture" 0 look_for_pfimsgcapture
+  IfFileExists "${L_EXEFILE}\msgcapture.exe" run_capture_mode
+  IfFileExists "${L_EXEFILE}\pfimsgcapture.exe" run_debug_mode
+  MessageBox MB_OK|MB_ICONSTOP "Error: Unable to start Message Capture utility !\
+      ${MB_NL}${MB_NL}\
+      Cannot find\
+      ${MB_NL}\
+      ${L_EXEFILE}\msgcapture.exe\
+      ${MB_NL}\
+      or\
+      ${MB_NL}\
+      ${L_EXEFILE}\pfimsgcapture.exe"
+  Goto exit
+
+look_for_pfimsgcapture:
   IfFileExists "${L_EXEFILE}\pfimsgcapture.exe" 0 run_normal_mode
   IfFileExists "${L_PFI_USER}\popfile.cfg" 0 run_normal_mode
   StrCpy ${L_CONSOLE} "0"
@@ -422,6 +462,10 @@ run_normal_mode:
 
 run_debug_mode:
   Exec '"${L_EXEFILE}\pfimsgcapture.exe" /TIMEOUT=0'
+  Goto exit
+
+run_capture_mode:
+  Exec '"${L_EXEFILE}\msgcapture.exe" /TIMEOUT=0'
   Goto exit
 
 bad_root_error:

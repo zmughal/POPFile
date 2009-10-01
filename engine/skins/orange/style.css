@@ -46,6 +46,7 @@ table.footer {
 
 td.footerBody {
   text-align: center;
+  width: 33%;
 }
 
 td.naked {
@@ -273,75 +274,17 @@ h2.history {
   display: inline;
 }
 
-/*********************************************************/
-/* Config Bar */
-
-.configBar, .configBarHidden {
-  padding-top: 1em;
-}
-
-.configBarTitle {
-  display: inline;
-  font-size: 1.0em;
-}
-
-.configBarTitle a {
-  border: 2px #ff9966 solid;
-  padding: 0.3em;
-  padding-bottom: 0;
-  margin-left: 0.3em;
-  background-color: #ff9966;
-  font-weight: bold;
-  font-size: 1.0em;
-}
-
-.configBarBody {
-  background-color: #ffcc99;
-  border: 1px solid #ff9966;
-}
-
-.configBarBody td {
-  border: 1px solid #ff9966;
-}
-
-.configBarBody form {
-  margin: 0;
-}
-
-.configBarOption {
-  border: 1px solid #ff9966;
-  margin: 0.3em;
-  padding: 0.3em;
-  display: inline;
-  float: left;
-  min-height: 3em;
-  background-color: #ffffcc;
-}
-
-.checkLabel {
-  border: 1px solid #ff9966;
+.historyMagnetUsed {
+  overflow: hidden;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
-.configBarBody input.submit {
-  margin-top: 0.1em;
+.historyMagnetUsed img {
+  vertical-align: bottom;
 }
 
-.configBarBody label.configurationLabel {
-  display: block;
-}
-
-/*********************************************************/
-/* History Column Controls */
-
-.columnControls {
-  white-space:nowrap;
-  vertical-align: top;
-  width: 10px;
-}
-
-.columnRemove, .columnMove {
-  display: block;
-  width:100%;
-  height: 1em;
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
 }

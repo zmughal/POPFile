@@ -28,7 +28,7 @@ PACKAGE_VERSION_RC=$(RC)
 
 PACKAGE_NAME=$(PACKAGE_TITLE)-$(PACKAGE_VERSION)$(PACKAGE_VERSION_RC)
 PACKAGE_ROOT=./Package_Root
-PACKAGE_ID=org.getpopfile
+PACKAGE_ID=org.getpopfile.macosx.addssl
 
 RESOURCES=./Resources
 
@@ -97,5 +97,10 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 	if test ! -d $(RESOURCES)/Japanese.lproj; then mkdir $(RESOURCES)/Japanese.lproj ; fi
 	cp $(ENGINE)/v$(POPFILE_VERSION).change $(RESOURCES)/English.lproj/ReadMe.txt
 	cp $(ENGINE)/v$(POPFILE_VERSION).change.nihongo $(RESOURCES)/Japanese.lproj/ReadMe.txt
-
+	if test `sw_vers -productVersion` = "10.6"; \
+	then \
+		cp ../InstallationCheck-SnowLeopard $(RESOURCES)/InstallationCheck; \
+	else \
+		cp ../InstallationCheck $(RESOURCES)/InstallationCheck; \
+	fi;
 

@@ -1,4 +1,4 @@
--- POPFILE SCHEMA 8
+-- POPFILE SCHEMA 3
 -- ---------------------------------------------------------------------------
 --
 -- popfile.schema - POPFile's database schema
@@ -25,50 +25,47 @@
 -- An ASCII ERD (you might like to find the 'users' table first and work
 -- from there)
 --
---      +---------------+                             +-----------------+
---      | user_template |                             | bucket_template |
---      +---------------+                             +-----------------+
---      |      id       |-----\                       |       id        |---\
---      |     name      |     |                       |      name       |   |
---      |     def       |     |                       |       def       |   |
---      |     form      |     |  +----------+         +-----------------+   |
---      +---------------+     |  | accounts |                               |
---                            |  +----------+                               |
---      +---------------+     |  |    id    |         +---------------+     |
---      |  user_params  |     |  |  userid  |-\       | bucket_params |     |
---      +---------------+     |  | account  | |       +---------------+     |
---      |      id       |     |  +----------+ |       |      id       |     |
---  /---|    userid     |     |               |   /---|   bucketid    |     |
---  |   |     utid      |-----/               |   |   |     btid      |-----/
---  |   |     val       |                     |   |   |     val       |
---  |   +---------------+ /-------------------/   |   +---------------+
---  |                     |                       |
---  |                     |     /-----------------/    +----------+
---  |                     |     |                      |  matrix  |   +-------+
---  |                     |     |   +---------+        +----------+   | words |
---  |      +----------+   |     |   | buckets |        |    id    |   +-------+
---  |      |   users  |   |     |   +---------+        |  wordid  |---|  id   |
---  |      +----------+   |  /--+---|    id   |=====---| bucketid |   |  word |
---  \----==|    id    |---+-(-------| userid  |     \  |  times   |   +-------+
+--      +---------------+         +-----------------+
+--      | user_template |         | bucket_template |
+--      +---------------+         +-----------------+
+--      |      id       |-----+   |       id        |---+
+--      |     name      |     |   |      name       |   |
+--      |     def       |     |   |       def       |   |
+--      +---------------+     |   +-----------------+   |
+--                            |                         |
+--      +---------------+     |     +---------------+   |
+--      |  user_params  |     |     | bucket_params |   |
+--      +---------------+     |     +---------------+   |
+--      |      id       |     |     |      id       |   |
+--  +---|    userid     |     | +---|   bucketid    |   |
+--  |   |     utid      |-----+ |   |     btid      |---+
+--  |   |     val       |       |   |     val       |
+--  |   +---------------+       |   +---------------+
+--  |                           |                      +----------+
+--  |                           |                      |  matrix  |   +-------+
+--  |                           |   +---------+        +----------+   | words |
+--  |      +----------+         |   | buckets |        |    id    |   +-------+
+--  |      |   users  |         |   +---------+        |  wordid  |---|  id   |
+--  |      +----------+      /--+---|    id   |=====---| bucketid |   |  word |
+--  +----==|    id    |-----(-------| userid  |     \  |  times   |   +-------+
 --      /  |   name   |     |       |  name   |     |  | lastseen |
 --      |  | password |     |       | pseudo  |     |  +----------+
---      |  +----------+     |       | comment |     |
---      |                   |       +---------+     |
+--      |  +----------+     |       +---------+     |
 --      |                   |                       |
 --      |                   |        +-----------+  |
 --      |                   |        |  magnets  |  |
 --      |   +------------+  |        +-----------+  |     +--------------+
---      |   |   history  |  |     /--|    id     |  |     | magnet_types |
---      |   +------------+  |     |  | bucketid  |--/     +--------------+
+--      |   |   history  |  |     +--|    id     |  |     | magnet_types |
+--      |   +------------+  |     |  | bucketid  |--+     +--------------+
 --      |   |     id     |  |     |  |   mtid    |--------|      id      |
---      \---|   userid   |  |     |  |   val     |        |     mtype    |
+--      +---|   userid   |  |     |  |   val     |        |     mtype    |
 --          |   hdr_from |  |     |  |   seq     |        |    header    |
 --          |   hdr_to   |  |     |  +-----------+        +--------------+
 --          |   hdr_cc   |  |     |
 --          | hdr_subject|  |     |
 --          |  bucketid  |--+     |
 --          |  usedtobe  |--/     |
---          |  magnetid  |--------/
+--          |  magnetid  |--------+
 --          |  hdr_date  |
 --          | inserted   |
 --          |    hash    |
@@ -76,7 +73,6 @@
 --          | sort_from  |
 --          | sort_cc    |
 --          | sort_to    |
---          |sort_subject|
 --          |    size    |
 --          +------------+
 --
@@ -127,7 +123,6 @@ create table buckets( id integer primary key, -- unique ID for this bucket
                       pseudo int,             -- 1 if this is a pseudobucket
                                               -- (i.e. one POPFile uses
                                               -- internally)
-                      comment varchar(255),   -- user defined comment
                       unique (userid,name)    -- a user can't have two buckets
                                               -- with the same name
                     );
@@ -180,9 +175,6 @@ create table user_template( id integer primary key, -- unique ID for this entry
                                                     -- parameter
                           def varchar(255),         -- the default value for
                                                     -- the parameter
-                          form varchar(255),        -- sprintf format string
-                                                    -- defines display format
-                                                    -- for parameter
                           unique (name)             -- parameter name's are
                                                     -- unique
                         );
@@ -222,22 +214,6 @@ create table bucket_template( id integer primary key,  -- unique ID for this
                               unique (name)            -- parameter names
                                                        -- are unique
                             );
-
--- ---------------------------------------------------------------------------
---
--- accounts - the table of accounts (e.g. pop3:host:user) associated with
---            each user that is used by POPFile's multi-user mode
---
--- ---------------------------------------------------------------------------
-
-create table accounts( id integer primary key,        -- unique ID for this
-                                                      -- entry
-                       userid integer,                -- User associated with
-                                                      -- this account
-                       account varchar(255),          -- Account token
-                       unique (account)               -- Each account appears
-                                                      -- once
-                     );
 
 -- ---------------------------------------------------------------------------
 --
@@ -308,10 +284,9 @@ create table history( id integer primary key,    -- unique ID for this entry
                       bucketid integer,          -- Current classification
                       usedtobe integer,          -- Previous classification
                       magnetid integer,          -- If classified with magnet
-                      sort_from    varchar(255),  -- The From: header
-                      sort_to      varchar(255),  -- The To: header
-                      sort_cc      varchar(255),  -- The Cc: header
-                      sort_subject varchar(255),  -- The Subject: header
+                      sort_from   varchar(255),  -- The From: header
+                      sort_to     varchar(255),  -- The To: header
+                      sort_cc     varchar(255),  -- The Cc: header
                       size        integer        -- Size of the message (bytes)
                     );
 
@@ -426,13 +401,13 @@ create trigger delete_bucket_template delete on bucket_template
 
 -- Default data
 
--- This is schema version 8
+-- This is schema version 3
 
-insert into popfile ( version ) values ( 8 );
+insert into popfile ( version ) values ( 3 );
 
 -- There's always a user called 'admin'
 
-insert into users ( id, name, password ) values ( 1, 'admin', 'e11f180f4a31d8caface8e62994abfaf' );
+insert into users ( name, password ) values ( 'admin', 'e11f180f4a31d8caface8e62994abfaf' );
 
 insert into magnets ( id, bucketid, mtid, val, comment, seq ) values ( 0, 0, 0, '', '', 0 );
 
@@ -471,114 +446,6 @@ insert into magnet_types ( mtype, header ) values ( 'cc',      'Cc'      );
 -- messages that it isn't sure about.
 
 insert into buckets ( name, pseudo, userid ) values ( 'unclassified', 1, 1 );
-
--- These are the possible per-user parameters
-
--- The user's public and private keys for history encryption
-insert into user_template ( id, name, def, form ) values ( 1, 'GLOBAL_public_key', '', '%s' );
-insert into user_template ( id, name, def, form ) values ( 2, 'GLOBAL_private_key', '', '%s' );
-
--- Set to 1 if the user is an administrator
-insert into user_template ( id, name, def, form ) values ( 3, 'GLOBAL_can_admin', 0, '%d' );
-
--- The characters that appear before and after a subject modification
-insert into user_template ( name, def, form ) values ( 'bayes_subject_mod_left', '[', '%s' );
-insert into user_template ( name, def, form ) values ( 'bayes_subject_mod_right', ']', '%s' );
-
--- No default unclassified weight is the number of times more sure
--- POPFile must be of the top class vs the second class, default is
--- 100 times more
-insert into user_template ( name, def, form ) values ( 'bayes_unclassified_weight', 100, '%d' );
-
--- If set to 1 then the X-POPFile-Link will have < > around the URL
--- (i.e. X-POPFile-Link: <http://foo.bar>) when set to 0 there are
--- none (i.e. X-POPFile-Link: http://foo.bar)
-insert into user_template ( name, def, form ) values ( 'bayes_xpl_angle', 0, '%d' );
-
--- Keep the history for two days
-insert into user_template ( name, def, form ) values ( 'history_history_days', 2, '%d' );
-
--- Checking for updates is off by default
-insert into user_template ( name, def, form ) values ( 'html_update_check', 0, '%d' );
-
--- Sending of statistics is off
-insert into user_template ( name, def, form ) values ( 'html_send_stats', 0, '%d' );
-
--- The size of a history page
-insert into user_template ( name, def, form ) values ( 'html_page_size', 20, '%d' );
-
--- Use the default skin
-insert into user_template ( name, def, form ) values ( 'html_skin', 'default', '%s' );
-
--- The last time we checked for an update using the local epoch
-insert into user_template ( name, def, form ) values ( 'html_last_update_check', 1104192000, '%d' );
-
--- The last time (textual) that the statistics were reset
-insert into user_template ( name, def, form ) values ( 'html_last_reset', 'Thu Sep  2 14:22:23 2004', '%s' );
-
--- We start by assuming that the user speaks English like the
--- perfidious Anglo-Saxons that we are... :-)
-insert into user_template ( name, def, form ) values ( 'html_language', 'English', '%s' );
-
--- If this is 1 then when the language is loaded we will use the
--- language string identifier as the string shown in the UI.  This
--- is used to test whether which identifiers are used where.
-insert into user_template ( name, def, form ) values ( 'html_test_language', 0, '%d' );
-
--- This setting defines what is displayed in the word matrix:
--- 'freq' for frequencies, 'prob' for probabilities, 'score' for
--- logarithmic scores, if blank then the word table is not shown
-insert into user_template ( name, def, form ) values ( 'html_wordtable_format', '', '%s' );
-
--- The default columns to show in the History page.  The order here
--- is important, as is the presence of a + (show this column) or -
--- (hide this column) in the value.  By default we show everything
-insert into user_template ( name, def, form ) values ( 'html_columns', '+inserted,+from,+to,-cc,+subject,-date,-size,+bucket,', '%s' );
-
--- An overriden date format set by the user, if empty then the
--- Locale_Date from the language file is used (see pretty_date__)
-insert into user_template ( name, def, form ) values ( 'html_date_format', '', '%s' );
-
--- If you want session dividers
-insert into user_template ( name, def, form ) values ( 'html_session_dividers', 1, '%d' );
-
--- The number of characters to show in each column in the history, if set
--- to 0 then POPFile tries to do this automatically
-insert into user_template ( name, def, form ) values ( 'html_column_characters', 34, '%d' );
-
--- Two variables that tell us whether to show help items
--- concerning bucket setup and training. The bucket item
--- is displayed by default, when it is turned off, the
--- training item is shown.
-insert into user_template ( name, def, form ) values ( 'html_show_bucket_help', 1, '%d' );
-insert into user_template ( name, def, form ) values ( 'html_show_training_help', 0, '%d' );
-
--- TODO Deal with IMAP module
-
-insert into user_template ( name, def, form ) values ( 'imap_bucket_folder_mappings', '', '%s' );
-insert into user_template ( name, def, form ) values ( 'imap_expunge', 0, '%d' );
-insert into user_template ( name, def, form ) values ( 'imap_hostname', '', '%s' );
-insert into user_template ( name, def, form ) values ( 'imap_login', '', '%s' );
-insert into user_template ( name, def, form ) values ( 'imap_password', '', '%s' );
-insert into user_template ( name, def, form ) values ( 'imap_port', 143, '%d' );
-insert into user_template ( name, def, form ) values ( 'imap_training_mode', 0, '%d' );
-insert into user_template ( name, def, form ) values ( 'imap_uidnexts', '', '%s' );
-insert into user_template ( name, def, form ) values ( 'imap_uidvalidities', '', '%s' );
-insert into user_template ( name, def, form ) values ( 'imap_update_interval', 20, '%d' );
-insert into user_template ( name, def, form ) values ( 'imap_use_ssl', 0, '%d' );
-insert into user_template ( name, def, form ) values ( 'imap_watched_folders', 'INBOX', '%s' );
-
--- Show the config bar at the bottom of each page defaults to on
-insert into user_template ( name, def, form ) values ( 'html_show_configbars', 1, '%d' );
-
--- The position to insert a subject modification
---  1 : Beginning of the subject (default)
--- -1 : End of the subject
-insert into user_template ( name, def, form ) values ( 'bayes_subject_mod_pos', 1, '%d' );
-
--- The adminisrator (user 1) can_admin
-
-insert into user_params ( userid, utid, val ) values ( 1, 3, 1 );
 
 -- MySQL insists that auto_increment fields start at 1. POPFile requires
 -- a special magnet record with an id of 0 in order to work properly.

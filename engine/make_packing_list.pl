@@ -41,12 +41,11 @@ my %explain = ( 'Encode' => $japanese,
                 'Encode::Guess' => $japanese,
                 'BerkeleyDB' => 'Upgrades from v0.20.x',
                 'DBD::SQLite' => 'SQLite3 backend',
+                'File::Glob::Windows' => "$japanese (Windows only)",
                 'IO::Socket::SSL' => 'SSL Connection Support',
                 'IO::Socket::Socks' => 'Socks Proxy Support',
                 'MeCab' => $japanese,
                 'Text::Kakasi' => $japanese,
-                'Crypt::OpenSSL::Random' => 'Cryptgraphic Random support',
-                'Crypt::Random' => 'Cryptgraphic Random support',,
                 'XMLRPC::Transport::HTTP' => 'XML-RPC Server Support' );
 
 # ARGV should contain the name of the packing list to generate
