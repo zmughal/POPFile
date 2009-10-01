@@ -1,9 +1,0 @@
-#!/bin/sh
-
-MAJOR=`sw_vers -productVersion | awk -F "." '{print $2}'`
-if [ "${MAJOR}" = "6" ];
-then
-    exit 0
-else
-    exit 64
-fi
