@@ -72,7 +72,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.5"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.0.6"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "ap-vcheck.exe"
 
   Name "ActivePerl Version Check ${C_VERSION}"
@@ -116,6 +116,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
