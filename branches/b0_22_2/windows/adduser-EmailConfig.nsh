@@ -758,19 +758,19 @@ next_entry:
   FileRead ${L_CFG} ${L_REG_KEY}
   StrCmp ${L_REG_KEY} "" end_of_file
   Push ${L_REG_KEY}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_REG_KEY}
   StrCmp ${L_REG_KEY} "" next_entry
 
   FileRead ${L_CFG} ${L_REG_SUBKEY}
   Push ${L_REG_SUBKEY}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_REG_SUBKEY}
   StrCmp ${L_REG_SUBKEY} "" next_entry
 
   FileRead ${L_CFG} ${L_REG_VALUE}
   Push ${L_REG_VALUE}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_REG_VALUE}
   StrCmp ${L_REG_VALUE} "" next_entry
 
@@ -1782,7 +1782,7 @@ Function SetEudoraPage
   ; Look for the Eudora INI file
 
   Push ${L_STATUS}
-  Call PFI_GetParent
+  Call NSIS_GetParent
   Pop ${L_ININAME}
   StrCpy ${L_ININAME} "${L_ININAME}\EUDORA.INI"
   IfFileExists "${L_ININAME}" gotname exit

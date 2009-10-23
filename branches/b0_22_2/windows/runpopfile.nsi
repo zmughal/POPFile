@@ -119,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.2.11"
+  !define C_PFI_VERSION   "0.2.12"
 
   !define C_OUTFILE       "runpopfile.exe"
 
@@ -159,6 +159,7 @@
   !define RUNPOPFILE
 
   !include "pfi-library.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for runpopfile.exe)
@@ -184,6 +185,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -236,7 +240,7 @@ not_compatible:
   Goto exit
 
 found_popfile:
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop ${L_PARAMS}
   StrCmp ${L_PARAMS} "" use_reg_dirdata
   StrCmp ${L_PARAMS} "/startup" use_reg_dirdata

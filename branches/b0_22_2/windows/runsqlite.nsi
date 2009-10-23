@@ -77,7 +77,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.2.0"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.2.1"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -110,6 +110,7 @@
   !define RUNSQLITE
 
   !include "pfi-library.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 
@@ -133,6 +134,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -185,7 +189,7 @@ Section RunSQLiteUtility
   GetFullPathName ${L_TEMP} ".\"
   SetOutPath "${L_TEMP}"
 
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop $G_DATABASE
   StrCmp $G_DATABASE "" no_file_supplied
 
@@ -218,21 +222,21 @@ run_sqlite:
 
 prepare_cmdline:
   Push $G_DATABASE
-  Call PFI_GetParent
+  Call NSIS_GetParent
   Pop ${L_PATH}
   StrCmp ${L_PATH} "" run_it_now
-  
+
   ; The SQLite command-line utility does not handle paths containing non-ASCII characters
   ; properly. An example where this will cause a problem is when the POPFile 'User Data'
   ; has been installed in the default location for a user with a Japanese login name.
   ; As a workaround we change the current working directory to the folder containing the
   ; database and supply only the database's filename when calling the command-line utility.
-  
+
   StrLen ${L_TEMP} ${L_PATH}
   IntOp ${L_TEMP} ${L_TEMP} + 1
   StrCpy $G_DATABASE $G_DATABASE "" ${L_TEMP}
   SetOutPath "${L_PATH}"
-  
+
 run_it_now:
   ClearErrors
   Exec '"$EXEDIR\$G_SQLITEUTIL" "$G_DATABASE"'

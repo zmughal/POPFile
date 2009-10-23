@@ -207,7 +207,7 @@ Section "un.Shutdown POPFile" UnSecShutdown
   Call un.GetUIport
   StrCmp $G_GUI "" manual_shutdown
   Push $G_GUI
-  Call un.PFI_TrimNewlines
+  Call un.NSIS_TrimNewlines
   Call un.PFI_StrCheckDecimal
   Pop $G_GUI
   StrCmp $G_GUI "" manual_shutdown
@@ -506,7 +506,7 @@ skip_system_entries:
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
 
-  Call un.PFI_IsNT
+  Call un.NSIS_IsNT
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} 1 remove_all_main
   IfFileExists "$G_ROOTDIR\uninstall.exe" remove_most
@@ -549,7 +549,7 @@ Section "un.Environment" UnSecEnvVars
 
   Push ${L_TEMP}
 
-  Call un.PFI_IsNT
+  Call un.NSIS_IsNT
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} 0 section_exit
 

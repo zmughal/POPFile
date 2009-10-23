@@ -119,7 +119,7 @@ rootdir_exists:
   ; to display the User Interface (and the installer has been updated to follow suit), so we
   ; need to ensure Win9x systems have a suitable 'hosts' file
 
-  Call PFI_IsNT
+  Call NSIS_IsNT
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "1" continue
   Call CheckHostsFile

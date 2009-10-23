@@ -290,7 +290,7 @@ mutex_ok:
   ; of assuming the command-line is empty or only contains
   ; the /MODIFY or /UNINSTALL option)
 
-  Call un.PFI_GetParameters
+  Call un.NSIS_GetParameters
   Pop ${L_OPTIONLIST}
 
   Push ${L_OPTIONLIST}
@@ -1695,7 +1695,7 @@ ui_port_done:
 
   StrCmp $G_GUI "" manual_shutdown
   Push $G_GUI
-  Call un.PFI_TrimNewlines
+  Call un.NSIS_TrimNewlines
   Call un.PFI_StrCheckDecimal
   Pop $G_GUI
   StrCmp $G_GUI "" manual_shutdown

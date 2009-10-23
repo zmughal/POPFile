@@ -163,7 +163,7 @@
   ; the main source of the SSL support files (the University of Winnipeg repository) only has
   ; v1.08 of this package so we get a more up-to-date version from a different repository
   ; (currently that repository contains v1.13 of IO::Socket::SSL)
-  
+
 #  !define C_UWR_IO_SOCKET_SSL "http://theoryx5.uwinnipeg.ca/ppms/x86/IO-Socket-SSL.tar.gz"
 
   !define C_UWR_IO_SOCKET_SSL "http://ppm.tcool.org/archives/IO-Socket-SSL.tar.gz"
@@ -323,7 +323,7 @@
         ; the old SSL support files normally used only for the POPFile 0.22.0, 0.22.1 and
         ; 0.22.2 releases as a workaround
 
-        Call PFI_GetParameters
+        Call NSIS_GetParameters
         Pop ${L_RESULT}
         StrCmp ${L_RESULT} "/BUILTIN" 0 look_for_minimal_Perl
         DetailPrint "The '/BUILTIN' option was supplied on the command-line"
@@ -772,7 +772,7 @@
     StrCpy $G_PLS_FIELD_1 $G_SSL_FILEURL
     Push $G_PLS_FIELD_1
     Call ${UN}PFI_StrBackSlash
-    Call ${UN}PFI_GetParent
+    Call ${UN}NSIS_GetParent
     Pop $G_PLS_FIELD_2
     StrLen $G_PLS_FIELD_2 $G_PLS_FIELD_2
     IntOp $G_PLS_FIELD_2 $G_PLS_FIELD_2 + 1
@@ -867,7 +867,7 @@
     StrCmp ${L_DATA} '#' read_next_line
     StrCmp ${L_DATA} ';' read_next_line
     Push ${L_RESULT}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_DATA}
     StrCmp ${L_DATA} "" read_next_line
     StrCpy ${L_RESULT} ${L_DATA} "" 34       ; NSIS strings start at position 0 not 1
@@ -1031,7 +1031,7 @@
     FileRead ${L_SOURCE} ${L_TEMP}
     IfErrors close_files
     Push ${L_TEMP}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_TEMP}
     FileWrite ${L_TARGET} "${L_TEMP}${MB_NL}"
     Goto loop

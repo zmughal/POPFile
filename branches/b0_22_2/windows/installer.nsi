@@ -143,7 +143,7 @@
   ;----------------------------------------------------------
 
   ; The UAC plugin works by running an 'outer' installer at the 'standard user' level and
-  ; an 'inner' installer at the 'admin' level. To support two-communication between these
+  ; an 'inner' installer at the 'admin' level. To support two-way communication between these
   ; two installer instances the 'inner' one creates a temporary file in the 'All Users' data
   ; folder and uses the 'AccessControl' plugin to grant the 'outer' installer Read/Write
   ; access to this temporary file.
@@ -472,7 +472,7 @@
   !define INSTALLER
 
   !include "pfi-library.nsh"
-  !include "WriteEnvStr.nsh"
+  !include "pfi-nsis-library.nsh"
 
   ; Macros used for entries in the installation log file
 
@@ -523,6 +523,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -1079,7 +1082,7 @@ loop:
   FileRead ${L_INPUT_FILE_HANDLE} ${L_TEMP}
   IfErrors close_files
   Push ${L_TEMP}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_TEMP}
   FileWrite ${L_OUTPUT_FILE_HANDLE} "${L_TEMP}${MB_NL}"
   Goto loop
@@ -1207,7 +1210,7 @@ notes_ignored:
 
 continue:
   StrCpy $G_SSL_ONLY "0"    ; assume a full installation is required
-  Call PFI_GetParameters    ; The UAC plugin may modify the command-line
+  Call NSIS_GetParameters   ; The UAC plugin may modify the command-line
   Push "/SSL"               ; so we need to check for "/SSL" anywhere on
   Call PFI_StrStr           ; the command-line (instead of assuming the
   Pop ${L_RESERVED}         ; command-line is either /SSL or empty)
@@ -2486,7 +2489,7 @@ Function CheckExistingProgDir
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" check_locn
   Push $INSTDIR
-  Call PFI_GetRoot
+  Call NSIS_GetRoot
   Pop $G_PLS_FIELD_1
   MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_DIRSELECT_MBNOSFN)"
 
@@ -2711,7 +2714,7 @@ FunctionEnd
 
       Push ${L_RESULT}
 
-      Call PFI_IsNT
+      Call NSIS_IsNT
       Pop ${L_RESULT}
       StrCmp ${L_RESULT} "1" show_banner
 

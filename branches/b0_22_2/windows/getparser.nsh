@@ -253,10 +253,10 @@
 
         SetOutPath "$G_MPLIBDIR\File\Glob"
         File "${C_PERL_DIR}\site\lib\File\Glob\Windows.pm"
-        
+
         SetOutPath "$G_MPLIBDIR\Win32\"
         File "${C_PERL_DIR}\lib\Win32\API.pm"
-        
+
         SetOutPath "$G_MPLIBDIR\Win32\API"
         File "${C_PERL_DIR}\lib\Win32\API\Callback.pm"
         File "${C_PERL_DIR}\lib\Win32\API\Struct.pm"
@@ -345,7 +345,7 @@
     ; Running on a non-Win9x system which already has the correct Kakasi environment data
     ; or running on a non-Win9x system
 
-    Call ${UN}PFI_IsNT
+    Call ${UN}NSIS_IsNT
     Pop ${L_RESERVED}
     StrCmp ${L_RESERVED} "0" update_minPerl
 
@@ -582,7 +582,7 @@
     ; Running on a non-Win9x system which already has the correct MeCab environment data
     ; or running on a non-Win9x system
 
-    Call ${UN}PFI_IsNT
+    Call ${UN}NSIS_IsNT
     Pop ${L_RESERVED}
     StrCmp ${L_RESERVED} "0" set_parser_in_registry
 
@@ -821,7 +821,7 @@
     StrCmp ${L_TEMP} '#' read_next_line
     StrCmp ${L_TEMP} ';' read_next_line
     Push ${L_DATA}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_DATA}
     StrCmp ${L_DATA} "" read_next_line
     StrCpy ${L_FILEPATH} ${L_DATA} "" 34       ; NSIS strings start at position 0 not 1
@@ -978,7 +978,7 @@
     StrCmp ${L_TEMP} '#' read_next_line
     StrCmp ${L_TEMP} ';' read_next_line
     Push ${L_DATA}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_DATA}
     StrCmp ${L_DATA} "" read_next_line
     StrCpy ${L_FILEPATH} ${L_DATA} "" 34        ; NSIS strings start at position 0 not 1
@@ -1081,7 +1081,7 @@
     StrCpy $G_PLS_FIELD_1 $G_MECAB_FILEURL
     Push $G_PLS_FIELD_1
     Call ${UN}PFI_StrBackSlash
-    Call ${UN}PFI_GetParent
+    Call ${UN}NSIS_GetParent
     Pop $G_PLS_FIELD_2
     StrLen $G_PLS_FIELD_2 $G_PLS_FIELD_2
     IntOp $G_PLS_FIELD_2 $G_PLS_FIELD_2 + 1
