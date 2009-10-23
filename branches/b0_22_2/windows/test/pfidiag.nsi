@@ -119,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.14"
+  !define C_VERSION   "0.1.15"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -156,6 +156,7 @@
   !define PFIDIAG
 
   !include "..\pfi-library.nsh"
+  !include "..\pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the utility's EXE file)
@@ -181,6 +182,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}$\r$\n(${__TIMESTAMP__})"
 
@@ -453,7 +457,7 @@ Section "Initialise"
 
   Push ${L_TEMP}
 
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop $G_DIAG_MODE
 
   StrCmp $G_DIAG_MODE "" set_default
