@@ -1226,7 +1226,6 @@ create_comms_file:
   SetShellVarContext all
   GetTempFileName $G_COMMS_FILE $APPDATA
   SetShellVarContext current
-  AccessControl::GrantOnFile "$G_COMMS_FILE" "(BU)" "GenericRead + GenericWrite"
 
   ; The "comms" file provides two-way communication between the 'inner' (elevated)
   ; and 'outer' (the "real" user) instances of the installer. The "real" user is
@@ -1238,6 +1237,10 @@ create_comms_file:
   WriteINIStr "$G_COMMS_FILE" "POPFile" "StartTime" "${L_RESERVED}"
 
   WriteINIStr "$G_COMMS_FILE" "Elevated" "UserName" "$G_WINUSERNAME ($G_WINUSERTYPE)"
+
+  ; Ensure the 'real' user (assumed to be a standard user) can write to the "comms" file
+
+  AccessControl::GrantOnFile "$G_COMMS_FILE" "(BU)" "GenericRead + GenericWrite"
 
   ; Pass the full path to the "comms" file to the 'outer' instance
   ; and call the 'GetRealUserSettings' function in the 'outer' instance
@@ -1254,7 +1257,6 @@ create_comms_file:
   ; same Nihongo parser as defined in the "real" user's 'popfile.cfg' file.
 
   Call ShowOrHideNihongoParser
-
 
   Pop ${L_RESERVED}
 
