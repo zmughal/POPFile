@@ -139,7 +139,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.1.4"
+  !define C_VERSION   "0.1.5"
 
   ; Specify the icon file for the utility
 
@@ -176,6 +176,7 @@
   !define ONDEMAND
 
   !include "..\pfi-library.nsh"
+  !include "..\pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 
@@ -202,6 +203,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -492,7 +496,7 @@ done:
   FileClose ${L_CFG}
 
   Push ${L_NEW_GUI}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_NEW_GUI}
 
   StrCmp ${L_NEW_GUI} "" manual_shutdown

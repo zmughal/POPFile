@@ -270,7 +270,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.3.9"
+  !define C_PFI_VERSION  "0.3.10"
 
   ; Mention the wizard's version number in the window title
 
@@ -328,7 +328,7 @@
   !define ADDSSL
 
   !include "..\pfi-library.nsh"
-  !include "..\WriteEnvStr.nsh"
+  !include "..\pfi-nsis-library.nsh"
 
 
 #--------------------------------------------------------------------------
@@ -361,6 +361,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -785,7 +788,7 @@ FunctionEnd
 
 Function CheckInstallDir
 
-  ; Initialise the global user variable used for the main POPFIle program folder location
+  ; Initialise the global user variable used for the main POPFile program folder location
 
   StrCpy $G_ROOTDIR "$INSTDIR"
 
@@ -841,7 +844,7 @@ Function MakeRootDirSafe
   DetailPrint "$(PFI_LANG_PROG_CHECKIFRUNNING)"
   SetDetailsPrint listonly
 
-  ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
+  ; Starting with POPFile 0.21.0 an experimental version of 'popfile-service.exe' was included
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
@@ -910,7 +913,7 @@ done:
   FileClose ${L_CFG}
 
   Push ${L_NEW_GUI}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_NEW_GUI}
 
   StrCmp ${L_NEW_GUI} "" manual_shutdown
