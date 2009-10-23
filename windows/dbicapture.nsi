@@ -88,7 +88,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.11"
+  !define C_VERSION             "0.0.12"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -121,6 +121,7 @@
   !define MSGCAPTURE
 
   !include "pfi-library.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the utility's EXE file)
@@ -146,6 +147,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -326,7 +330,7 @@ Function .onInit
 
   StrCpy $G_MODE_FLAG "command-line"
 
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop $G_TRACELEVEL
   StrCmp $G_TRACELEVEL "" default
   StrCmp $G_TRACELEVEL "/TIMEOUT=0" default

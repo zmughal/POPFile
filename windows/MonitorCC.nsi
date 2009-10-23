@@ -113,7 +113,7 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.3.2"
+  !define C_PFI_VERSION  "0.3.3"
 
   !define C_OUTFILE      "monitorcc.exe"
 
@@ -148,6 +148,7 @@
   !define MONITORCC
 
   !include "pfi-library.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the utility's EXE file)
@@ -176,6 +177,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -385,7 +389,7 @@ Function PFIGUIInit
   Abort
 
 continue:
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop $G_INIFILE_PATH
   StrCmp $G_INIFILE_PATH "" 0 got_param
   MessageBox MB_OK|MB_ICONINFORMATION "$(PFI_LANG_CONVERT_PRIVATE)"

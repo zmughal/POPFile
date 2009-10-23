@@ -125,7 +125,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.6.11"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.6.12"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
@@ -167,6 +167,7 @@
   !define STOP_POPFILE
 
   !include "pfi-library.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 
@@ -192,6 +193,9 @@
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
   !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
+  !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
 #----------------------------------------------------------------------------------------
@@ -212,7 +216,7 @@ Section Shutdown
 
   ; It does not matter if the first command-line parameter uses uppercase or lowercase
 
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop ${L_PARAMS}
   StrCmp ${L_PARAMS} "" usage
   StrCmp ${L_PARAMS} "/?" usage

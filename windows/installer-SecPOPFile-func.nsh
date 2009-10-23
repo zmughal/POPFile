@@ -90,7 +90,7 @@ loop:
   StrCpy ${L_TEMP} ${L_LINE} 10
   StrCmp ${L_TEMP} "127.0.0.1 " 0 loop
   Push ${L_LINE}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Push " localhost"
   Call PFI_StrStr
   Pop ${L_TEMP}
@@ -448,11 +448,11 @@ FunctionEnd
     FileClose ${L_CFG}
 
     Push ${L_NEW_GUI}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_NEW_GUI}
 
     Push ${L_OLD_GUI}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_OLD_GUI}
 
     StrCmp ${L_NEW_GUI} "" try_old_style

@@ -46,9 +46,10 @@
 # (14) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
 # (15) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
 # (16) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (17) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (18) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (19) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+# (17) SHUTDOWN         defined in portable\POPFilePortableShutdown.nsi (shutdown POPFile Portable)
+# (18) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (19) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (20) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -62,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.29"
+  !define C_PFI_LIBRARY_VERSION     "0.3.30"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -416,7 +417,6 @@
 # Functions used only during 'installation' (i.e. not used by any 'uninstall' operations):
 #
 #    Installer Function: PFI_GetIEVersion
-#    Installer Function: PFI_GetRoot
 #    Installer Function: PFI_GetSeparator
 #    Installer Function: PFI_GetSFNStatus
 #    Installer Function: PFI_SetTrayIconMode
@@ -461,18 +461,19 @@
       ; Internet Explorer 4.0 or later is installed. The 'Version' value is a string with the
       ; following format: major-version.minor-version.build-number.sub-build-number
 
-      ; According to MSDN, the 'Version' string under 'HKLM\Software\Microsoft\Internet Explorer'
-      ; can have the following values:
+      ; According to Microsoft's Help and Support site (http://support.microsoft.com/kb/969393/)
+      ; the 'Version' string under 'HKLM\Software\Microsoft\Internet Explorer' can be used to
+      ; determine which version of Internet Explorer is installed. For our purposes there is no
+      ; need to worry about ever possible value (the Help and Support page lists over 50 versions)
       ;
-      ; Internet Explorer Version     'Version' string
-      ;    4.0                          4.71.1712.6
-      ;    4.01                         4.72.2106.8
-      ;    4.01 SP1                     4.72.3110.3
-      ;    5                            5.00.2014.0216
-      ;    5.5                          5.50.4134.0100
-      ;    6.0 Public Preview           6.0.2462.0000
-      ;    6.0 Public Preview Refresh   6.0.2479.0006
-      ;    6.0 RTM                      6.0.2600.0000
+      ; Internet Explorer Version         'Version' string
+      ;    4.0                               4.71.1712.6
+      ;    4.01                              4.72.2106.8
+      ;    5                                 5.00.2014.0216
+      ;    5.5                               5.50.4134.0600
+      ;    6.0 (XP)                          6.0.2600.0000
+      ;    7 (Vista)                         7.00.6000.16386
+      ;    8 (XP,Vista,Server 2003 & 2008)   8.00.6001.18702
 
       StrCpy ${L_TEMP} ${L_REGDATA} 1
       StrCmp ${L_TEMP} "4" ie_4
@@ -527,71 +528,6 @@
       !undef L_REGDATA
       !undef L_TEMP
 
-    FunctionEnd
-!endif
-
-
-!ifdef ADDUSER | INSTALLER | PORTABLE | RESTORE
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_GetRoot
-    #
-    # This function returns the root directory of a given path.
-    # The given path must be a full path. Normal paths and UNC paths are supported.
-    #
-    # NB: The path is assumed to use backslashes (\)
-    #
-    # Inputs:
-    #         (top of stack)          - input path
-    #
-    # Outputs:
-    #         (top of stack)          - the root part of the path (eg "X:" or "\\server\share")
-    #
-    # Usage:
-    #
-    #         Push "C:\Program Files\Directory\Whatever"
-    #         Call PFI_GetRoot
-    #         Pop $R0
-    #
-    #         ($R0 at this point is ""C:")
-    #
-    #--------------------------------------------------------------------------
-
-    Function PFI_GetRoot
-      Exch $0
-      Push $1
-      Push $2
-      Push $3
-      Push $4
-
-      StrCpy $1 $0 2
-      StrCmp $1 "\\" UNC
-      StrCpy $0 $1
-      Goto done
-
-    UNC:
-      StrCpy $2 3
-      StrLen $3 $0
-
-    loop:
-      IntCmp $2 $3 "" "" loopend
-      StrCpy $1 $0 1 $2
-      IntOp $2 $2 + 1
-      StrCmp $1 "\" loopend loop
-
-    loopend:
-      StrCmp $4 "1" +3
-      StrCpy $4 1
-      Goto loop
-
-      IntOp $2 $2 - 1
-      StrCpy $0 $0 $2
-
-    done:
-      Pop $4
-      Pop $3
-      Pop $2
-      Pop $1
-      Exch $0
     FunctionEnd
 !endif
 
@@ -734,7 +670,7 @@
 
     getroot:
       Push ${L_FOLDERPATH}
-      Call PFI_GetRoot              ; extract the "X:" or "\\server\share" part of the path
+      Call NSIS_GetRoot             ; extract the "X:" or "\\server\share" part of the path
       Pop ${L_FOLDERPATH}
       StrCpy ${L_FILESYSTEM} ""     ; volume's file system type, eg FAT32, NTFS, CDFS, UDF, ""
       StrCpy ${L_RESULT} ""         ; return code 1 = success, 0 = fail
@@ -905,6 +841,182 @@
 
 #==============================================================================================
 #
+# Functions used only during 'uninstallation' (i.e. not used by any 'install' operations):
+#
+#    Installer Function: un.PFI_DeleteEnvStr
+#    Installer Function: un.PFI_DeleteEnvStrNTAU
+#
+#==============================================================================================
+
+
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_DeleteEnvStr
+    #
+    # Removes an environment variable defined for the current user on a modern OS.
+    # On Win9x systems, AUTOEXEC.BAT is updated and the Reboot flag is set to request a reboot.
+    #
+    # Inputs:
+    #         (top of stack)       - name of the environment variable to be removed
+    #
+    # Outputs:
+    #         none
+    #
+    # Usage:
+    #         Push "HOMEDIR"
+    #         Call un.PFI_DeleteEnvStr
+    #
+    #--------------------------------------------------------------------------
+
+    Function un.PFI_DeleteEnvStr
+      Exch $0       ; $0 now has the name of the variable
+      Push $1
+      Push $2
+      Push $3
+      Push $4
+      Push $5
+
+      Call un.NSIS_IsNT
+      Pop $1
+      StrCmp $1 1 DeleteEnvStr_NT
+
+      ; On Win9x system, so we have to update AUTOEXEC.BAT
+
+      StrCpy $1 $WINDIR 2
+      FileOpen $1 "$1\autoexec.bat" r
+      GetTempFileName $4
+      FileOpen $2 $4 w
+      StrCpy $0 "SET $0="
+      SetRebootFlag true
+
+    DeleteEnvStr_dosLoop:
+      FileRead $1 $3
+      StrLen $5 $0
+      StrCpy $5 $3 $5
+      StrCmp $5 $0 0 no_match
+
+      ; Have found the line which defines the environment variable, so we do not copy it
+      ; and we also ignore the following line if it is just a CRLF sequence
+
+      FileRead $1 $3
+      StrCmp $3 "${MB_NL}" DeleteEnvStr_dosLoop
+
+    no_match:
+      StrCmp $5 "" DeleteEnvStr_dosLoopEnd
+      FileWrite $2 $3
+      Goto DeleteEnvStr_dosLoop
+
+    DeleteEnvStr_dosLoopEnd:
+      FileClose $2
+      FileClose $1
+      StrCpy $1 $WINDIR 2
+      Delete "$1\autoexec.bat"
+      CopyFiles /SILENT $4 "$1\autoexec.bat"
+      Delete $4
+      Goto DeleteEnvStr_done
+
+      ; More modern OS case (AUTOEXEC.BAT not relevant)
+
+    DeleteEnvStr_NT:
+      DeleteRegValue HKCU "Environment" $0
+      SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
+          0 "STR:Environment" /TIMEOUT=5000
+
+    DeleteEnvStr_done:
+      Pop $5
+      Pop $4
+      Pop $3
+      Pop $2
+      Pop $1
+      Pop $0
+    FunctionEnd
+
+
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_DeleteEnvStrNTAU
+    #
+    # Removes an environment variable defined for all users on a modern OS.
+    # On Win9x systems, AUTOEXEC.BAT is updated and the Reboot flag is set to request a reboot.
+    #
+    # Inputs:
+    #         (top of stack)       - name of the environment variable to be removed
+    #
+    # Outputs:
+    #         none
+    #
+    # Usage:
+    #         Push "HOMEDIR"
+    #         Call un.PFI_DeleteEnvStrNTAU
+    #
+    #--------------------------------------------------------------------------
+
+    Function un.PFI_DeleteEnvStrNTAU
+      Exch $0       ; $0 now has the name of the variable
+      Push $1
+      Push $2
+      Push $3
+      Push $4
+      Push $5
+
+      Call un.NSIS_IsNT
+      Pop $1
+      StrCmp $1 1 DeleteEnvStr_NT
+
+      ; On Win9x system, so we have to update AUTOEXEC.BAT
+
+      StrCpy $1 $WINDIR 2
+      FileOpen $1 "$1\autoexec.bat" r
+      GetTempFileName $4
+      FileOpen $2 $4 w
+      StrCpy $0 "SET $0="
+      SetRebootFlag true
+
+    DeleteEnvStr_dosLoop:
+      FileRead $1 $3
+      StrLen $5 $0
+      StrCpy $5 $3 $5
+      StrCmp $5 $0 0 no_match
+
+      ; Have found the line which defines the environment variable, so we do not copy it
+      ; and we also ignore the following line if it is just a CRLF sequence
+
+      FileRead $1 $3
+      StrCmp $3 "${MB_NL}" DeleteEnvStr_dosLoop
+
+    no_match:
+      StrCmp $5 "" DeleteEnvStr_dosLoopEnd
+      FileWrite $2 $3
+      Goto DeleteEnvStr_dosLoop
+
+    DeleteEnvStr_dosLoopEnd:
+      FileClose $2
+      FileClose $1
+      StrCpy $1 $WINDIR 2
+      Delete "$1\autoexec.bat"
+      CopyFiles /SILENT $4 "$1\autoexec.bat"
+      Delete $4
+      Goto DeleteEnvStr_done
+
+      ; More modern OS case (AUTOEXEC.BAT not relevant)
+
+    DeleteEnvStr_NT:
+      DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" $0
+      SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
+          0 "STR:Environment" /TIMEOUT=5000
+
+    DeleteEnvStr_done:
+      Pop $5
+      Pop $4
+      Pop $3
+      Pop $2
+      Pop $1
+      Pop $0
+    FunctionEnd
+!endif
+
+
+#==============================================================================================
+#
 # Macro-based Functions which may be used by the installer and uninstaller (in alphabetic order)
 #
 #    Macro:                PFI_AtLeastWin2K
@@ -914,6 +1026,18 @@
 #    Macro:                PFI_AtLeastWinNT4
 #    Installer Function:   PFI_AtLeastWinNT4
 #    Uninstaller Function: un.PFI_AtLeastWinNT4
+#
+#    Macro:                PFI_CfgSettingRead
+#    Installer Function:   PFI_CfgSettingRead
+#    Uninstaller Function: un.PFI_CfgSettingRead
+#
+#    Macro:                PFI_CfgSettingWrite_with_backup
+#    Installer Function:   PFI_CfgSettingWrite_with_backup
+#    Uninstaller Function: un.PFI_CfgSettingWrite_with_backup
+#
+#    Macro:                PFI_CfgSettingWrite_without_backup
+#    Installer Function:   PFI_CfgSettingWrite_without_backup
+#    Uninstaller Function: un.PFI_CfgSettingWrite_without_backup
 #
 #    Macro:                PFI_CheckIfLocked
 #    Installer Function:   PFI_CheckIfLocked
@@ -947,10 +1071,6 @@
 #    Installer Function:   PFI_GetDataPath
 #    Uninstaller Function: un.PFI_GetDataPath
 #
-#    Macro:                PFI_GetDateStamp
-#    Installer Function:   PFI_GetDateStamp
-#    Uninstaller Function: un.PFI_GetDateStamp
-#
 #    Macro:                PFI_GetDateTimeStamp
 #    Installer Function:   PFI_GetDateTimeStamp
 #    Uninstaller Function: un.PFI_GetDateTimeStamp
@@ -966,14 +1086,6 @@
 #    Macro:                PFI_GetMessagesPath
 #    Installer Function:   PFI_GetMessagesPath
 #    Uninstaller Function: un.PFI_GetMessagesPath
-#
-#    Macro:                PFI_GetParameters
-#    Installer Function:   PFI_GetParameters
-#    Uninstaller Function: un.PFI_GetParameters
-#
-#    Macro:                PFI_GetParent
-#    Installer Function:   PFI_GetParent
-#    Uninstaller Function: un.PFI_GetParent
 #
 #    Macro:                PFI_GetPOPFileSchemaVersion
 #    Installer Function:   PFI_GetPOPFileSchemaVersion
@@ -1034,10 +1146,6 @@
 #    Macro:                PFI_StrStr
 #    Installer Function:   PFI_StrStr
 #    Uninstaller Function: un.PFI_StrStr
-#
-#    Macro:                PFI_TrimNewlines
-#    Installer Function:   PFI_TrimNewlines
-#    Uninstaller Function: un.PFI_TrimNewlines
 #
 #    Macro:                PFI_WaitUntilUnlocked
 #    Installer Function:   PFI_WaitUntilUnlocked
@@ -1200,6 +1308,436 @@
 
 
 #--------------------------------------------------------------------------
+# Macro: PFI_CfgSettingRead
+#
+# The installation process and the uninstall process may both require a function
+# to read the value of a setting from POPFile's configuration file. This macro
+# makes maintenance easier by ensuring that both processes use identical functions,
+# with the only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_CfgSettingRead "" and !insertmacro PFI_CfgSettingRead "un."
+# commands are included here so the NSIS script can use 'Call PFI_CfgSettingRead' and
+# 'Call un.PFI_CfgSettingRead' without additional preparation.
+#
+# This function is used to read the value of one of the settings in the
+# POPFile configuration file (popfile.cfg). Although POPFile always uses
+# the 'popfile.cfg' filename for its configuration data, some NSIS-based
+# programs work with local copies so the filename and location is always
+# passed as a parameter to this function.
+#
+# Note that the entire file is scanned and we return the last match found!
+# Early versions of POPFile did not clean the file so there can be more
+# than one line setting the same value (POPFile uses the last one found)
+#
+# Inputs:
+#         (top of stack)        - the configuration setting to be read
+#         (top of stack - 1)    - full path to the configuration file
+#
+# Outputs:
+#         (top of stack)        - current value of the configuration setting
+#                                (empty string returned if error detected)
+#
+#         ErrorFlag             - clear if no errors detected,
+#                                 set if file not found, or
+#                                 set if setting not found
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "C:\User\Data\POPFile\popfile.cfg"
+#         Push "html_port"
+#         Call PFI_CfgSettingRead
+#         Pop $R0
+#
+#         ($R0 at this point is "8080" if the default UI port is being used.
+#          The Error flag will also be clear now).
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_CfgSettingRead UN
+  Function ${UN}PFI_CfgSettingRead
+
+    !define L_CFG       $R9     ; handle for the configuration file
+    !define L_LINE      $R8     ; a line from the configuration file
+    !define L_MATCHLEN  $R7     ; length (incl terminator space) of setting
+    !define L_PARAM     $R6     ; possible match from configuration file
+    !define L_RESULT    $R5
+    !define L_SETTING   $R4     ; the configuration setting to be read
+    !define L_TEXTEND   $R3     ; helps ensure correct handling of lines over 1023 chars long
+
+    Exch ${L_SETTING}           ; get the name of the setting to be found
+    Exch
+    Exch ${L_CFG}               ; get the full path to the configuration file
+    Push ${L_LINE}
+    Push ${L_MATCHLEN}
+    Push ${L_PARAM}
+    Push ${L_RESULT}
+    Push ${L_TEXTEND}
+
+    StrCpy ${L_RESULT} ""
+    StrCmp ${L_SETTING} "" error_exit
+
+    StrCpy ${L_SETTING} "${L_SETTING} "   ; include the terminating space
+    StrLen ${L_MATCHLEN} ${L_SETTING}
+
+    ClearErrors
+    FileOpen  ${L_CFG} "${L_CFG}" r
+    IfErrors error_exit
+
+  found_eol:
+    StrCpy ${L_TEXTEND} "<eol>"
+
+  loop:
+    FileRead ${L_CFG} ${L_LINE}
+    StrCmp ${L_LINE} "" done
+    StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
+    StrCmp ${L_LINE} "$\n" loop
+
+    StrCpy ${L_PARAM} ${L_LINE} ${L_MATCHLEN}
+    StrCmp ${L_PARAM} ${L_SETTING} 0 check_eol
+    StrCpy ${L_RESULT} ${L_LINE} "" ${L_MATCHLEN}
+
+  check_eol:
+
+    ; Now read file until we get to end of the current line
+    ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
+
+    StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
+    StrCmp ${L_TEXTEND} "$\n" found_eol
+    StrCmp ${L_TEXTEND} "$\r" found_eol loop
+
+  done:
+    FileClose ${L_CFG}
+    StrCmp ${L_RESULT} "" error_exit
+    Push ${L_RESULT}
+    Call ${UN}NSIS_TrimNewlines
+    Pop ${L_RESULT}
+    ClearErrors
+    StrCmp ${L_RESULT} "" 0 exit
+
+  error_exit:
+    SetErrors
+
+  exit:
+    StrCpy ${L_SETTING} ${L_RESULT}
+    Pop ${L_TEXTEND}
+    Pop ${L_RESULT}
+    Pop ${L_PARAM}
+    Pop ${L_MATCHLEN}
+    Pop ${L_LINE}
+    Pop ${L_CFG}
+    Exch ${L_SETTING}
+
+    !undef L_CFG
+    !undef L_LINE
+    !undef L_MATCHLEN
+    !undef L_PARAM
+    !undef L_RESULT
+    !undef L_SETTING
+    !undef L_TEXTEND
+
+  FunctionEnd
+!macroend
+
+!ifdef CREATEUSER | PORTABLE | SHUTDOWN
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_CfgSettingRead
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_CfgSettingRead ""
+!endif
+
+;    #--------------------------------------------------------------------------
+;    # Uninstaller Function: un.PFI_CfgSettingRead
+;    #
+;    # This function is used during the uninstall process
+;    #--------------------------------------------------------------------------
+;
+;    !insertmacro PFI_CfgSettingRead "un."
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_CfgSettingWrite_with_backup/PFI_CfgSettingWrite_without_backup
+#
+# The installation process and the uninstall process may both require a function
+# to write a new setting value to POPFile's configuration file. This macro
+# makes maintenance easier by ensuring that both processes use identical functions,
+# with the only difference being their names.
+#
+# This function is used to write a value for one of the settings in the
+# POPFile configuration file (popfile.cfg). Although POPFile always uses
+# the 'popfile.cfg' filename for its configuration data, some NSIS-based
+# programs work with local copies so the absolute path location is always
+# passed as a parameter to this function.
+#
+# Note that if an empty string is supplied as the value then the named setting
+# will be deleted from the configuration file.
+#
+# The 'with_backup' variants use the standard 1-2-3 backup naming sequence. For
+# cases where several values are being set the "without_backup' variants may be
+# more useful (since only three backups are maintained the original file could
+# easily be lost).
+#
+# Inputs:
+#         (top of stack)        - the value to be set (if "" setting will be deleted)
+#         (top of stack - 1)    - the configuration setting's name
+#         (top of stack - 2)    - full path to the configuration file
+#
+# Outputs:
+#         (top of stack)        - operation result:
+#                                    CHANGED - the setting has been changed,
+#                                    DELETED - entry deleted from the file,
+#                                    ADDED   - new entry added at end of file,
+#                                    SAME    - file left unchanged,
+#                                 or ERROR   - an error was detected
+#
+#         ErrorFlag             - clear if no errors detected,
+#                                 set if file not found, or
+#                                 set if setting not found
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Push "C:\User\Data\POPFile\popfile.cfg"
+#         Push "html_port"
+#         Push "8080"
+#         Call PFI_CfgSettingWrite_with_backup
+#         Pop $R0
+#
+#         ($R0 at this point is "SAME" if the configuration file currently
+#          uses the value 8080; in this case the file is not re-written so
+#          a backup copy of the original file is _not_ made)
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_CfgSettingWrite UN BACKUP
+
+  !if '${BACKUP}' == 'backup'
+      Function ${UN}PFI_CfgSettingWrite_with_backup
+  !else
+      Function ${UN}PFI_CfgSettingWrite_without_backup
+  !endif
+
+    !ifndef C_CFG_WRITE
+      !define C_CFG_WRITE
+      !define C_CFG_WRITE_CHANGED   "CHANGED"
+      !define C_CFG_WRITE_DELETED   "DELETED"
+      !define C_CFG_WRITE_ADDED     "ADDED"
+      !define C_CFG_WRITE_SAME      "SAME"
+      !define C_CFG_WRITE_ERROR     "ERROR"
+
+      !define C_FALSE               "FALSE"
+      !define C_TRUE                "TRUE"
+    !endif
+
+    !define L_FOUND       $R9   ; TRUE | FALSE
+    !define L_LINE        $R8   ; a line from the configuration file
+    !define L_MATCHLEN    $R7   ; length (incl terminator space) of setting
+    !define L_NEW_HANDLE  $R6   ; handle for the new configuration file
+    !define L_OLD_CFG     $R5   ; the full path to the configuration file
+    !define L_OLD_HANDLE  $R4   ; handle for the original configuration file
+    !define L_PARAM       $R3   ; possible match from configuration file
+    !define L_SETTING     $R2   ; the configuration setting to be written
+    !define L_STATUS      $R1   ; holds one of the C_CFG_WRITE_* constants listed above
+    !define L_TEMP        $R0
+    !define L_TEXTEND     $9    ; helps ensure correct handling of lines over 1023 chars long
+    !define L_VALUE       $8    ; the new value for the configuration setting
+
+    Exch ${L_VALUE}             ; get the new value to be set
+    Exch
+    Exch ${L_SETTING}           ; get the name of the configuration setting
+    Exch 2
+    Exch ${L_OLD_CFG}           ; get the full path to the configuration file
+    Push ${L_FOUND}
+    Push ${L_LINE}
+    Push ${L_MATCHLEN}
+    Push ${L_NEW_HANDLE}
+    Push ${L_OLD_HANDLE}
+    Push ${L_PARAM}
+    Push ${L_STATUS}
+    Push ${L_TEMP}
+    Push ${L_TEXTEND}
+
+    StrCpy ${L_FOUND} "${C_FALSE}"
+    StrCpy ${L_STATUS} ""
+
+    StrCmp ${L_SETTING} "" error_exit
+
+    StrCpy ${L_SETTING} "${L_SETTING} "   ; include the terminating space
+    StrLen ${L_MATCHLEN} ${L_SETTING}
+
+    ClearErrors
+    FileOpen  ${L_NEW_HANDLE} "$PLUGINSDIR\new.cfg" w
+    IfFileExists "${L_OLD_CFG}" 0 add_setting
+    FileOpen  ${L_OLD_HANDLE} "${L_OLD_CFG}" r
+    IfErrors error_exit
+
+  found_eol:
+    StrCpy ${L_TEXTEND} "<eol>"
+
+  loop:
+    FileRead ${L_OLD_HANDLE} ${L_LINE}
+    StrCmp ${L_LINE} "" copy_done
+    StrCmp ${L_TEXTEND} "<eol>" 0 copy_line
+    StrCmp ${L_LINE} "$\n" copy_line
+
+    StrCpy ${L_PARAM} ${L_LINE} ${L_MATCHLEN}
+    StrCmp ${L_PARAM} ${L_SETTING} 0 copy_line
+
+    ; Setting found: can now change or delete it
+
+    StrCpy ${L_FOUND} "${C_TRUE}"
+
+    StrCmp ${L_VALUE} "" delete_it
+
+    StrCpy ${L_TEMP} ${L_LINE} "" ${L_MATCHLEN}
+    Push ${L_TEMP}
+    Call ${UN}NSIS_TrimNewlines
+    Pop ${L_TEMP}
+    StrCmp ${L_VALUE} ${L_TEMP} 0 change_it
+    StrCmp ${L_STATUS} "${C_CFG_WRITE_CHANGED}" copy_line
+    StrCpy ${L_STATUS} "${C_CFG_WRITE_SAME}"
+    Goto copy_line
+
+  delete_it:
+    StrCpy ${L_STATUS} "${C_CFG_WRITE_DELETED}"
+    Goto loop
+
+  change_it:
+    FileWrite ${L_NEW_HANDLE} "${L_SETTING}${L_VALUE}${MB_NL}"
+    StrCpy ${L_STATUS} "${C_CFG_WRITE_CHANGED}"
+    Goto loop
+
+  copy_line:
+    FileWrite ${L_NEW_HANDLE} ${L_LINE}
+
+  ; Now read file until we get to end of the current line
+  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
+
+    StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
+    StrCmp ${L_TEXTEND} "$\n" found_eol
+    StrCmp ${L_TEXTEND} "$\r" found_eol loop
+
+  copy_done:
+    FileClose ${L_OLD_HANDLE}
+    StrCmp ${L_FOUND} "TRUE" close_new_file
+
+    ; Setting not found in file so we add it at the end
+    ; (or create a new file with just this single entry)
+
+  add_setting:
+    FileWrite ${L_NEW_HANDLE} "${L_SETTING}${L_VALUE}${MB_NL}"
+    StrCpy ${L_STATUS} ${C_CFG_WRITE_ADDED}
+
+  close_new_file:
+    FileClose ${L_NEW_HANDLE}
+
+    StrCmp ${L_STATUS} ${C_CFG_WRITE_SAME} success_exit
+    Push ${L_OLD_CFG}
+    Call ${UN}NSIS_GetParent
+    Pop ${L_TEMP}
+    StrCmp ${L_TEMP} "" 0 path_supplied
+    StrCpy ${L_TEMP} "."
+    Goto update_file
+
+  path_supplied:
+    StrLen ${L_VALUE} ${L_TEMP}
+    IntOp ${L_VALUE} ${L_VALUE} + 1
+    StrCpy ${L_OLD_CFG} ${L_OLD_CFG} "" ${L_VALUE}
+
+  update_file:
+    !if '${BACKUP}' == 'backup'
+        !insertmacro PFI_BACKUP_123 "${L_TEMP}" "${L_OLD_CFG}"
+    !else
+        Delete "$PLUGINSDIR\old.cfg"
+        Rename "${L_TEMP}\${L_OLD_CFG}"  "$PLUGINSDIR\old.cfg"
+    !endif
+    ClearErrors
+    Rename "$PLUGINSDIR\new.cfg" "${L_TEMP}\${L_OLD_CFG}"
+    IfErrors error_exit
+
+  success_exit:
+    ClearErrors
+    Goto exit
+
+  error_exit:
+    StrCpy ${L_STATUS} ${C_CFG_WRITE_ERROR}
+    SetErrors
+
+  exit:
+    StrCpy ${L_SETTING} ${L_STATUS}
+    Pop ${L_TEXTEND}
+    Pop ${L_TEMP}
+    Pop ${L_STATUS}
+    Pop ${L_PARAM}
+    Pop ${L_OLD_HANDLE}
+    Pop ${L_NEW_HANDLE}
+    Pop ${L_MATCHLEN}
+    Pop ${L_LINE}
+    Pop ${L_FOUND}
+    Pop ${L_OLD_CFG}
+    Pop ${L_VALUE}
+    Exch ${L_SETTING}
+
+    !undef L_FOUND
+    !undef L_LINE
+    !undef L_MATCHLEN
+    !undef L_NEW_HANDLE
+    !undef L_OLD_CFG
+    !undef L_OLD_HANDLE
+    !undef L_PARAM
+    !undef L_SETTING
+    !undef L_STATUS
+    !undef L_TEMP
+    !undef L_TEXTEND
+    !undef L_VALUE
+
+  FunctionEnd
+!macroend
+
+!macro PFI_CfgSettingWrite_with_backup UN
+  !insertmacro PFI_CfgSettingWrite "${UN}" "backup"
+!macroend
+
+!macro PFI_CfgSettingWrite_without_backup UN
+  !insertmacro PFI_CfgSettingWrite "${UN}" "no_backup"
+!macroend
+
+;#--------------------------------------------------------------------------
+;# Installer Function: PFI_CfgSettingWrite_with_backup
+;#
+;# This function is used during the installation process
+;#--------------------------------------------------------------------------
+;
+;!insertmacro PFI_CfgSettingWrite_with_backup ""
+
+;#--------------------------------------------------------------------------
+;# Uninstaller Function: un.PFI_CfgSettingWrite_with_backup
+;#
+;# This function is used during the uninstallation process
+;#--------------------------------------------------------------------------
+;
+;!insertmacro PFI_CfgSettingWrite_with_backup "un."
+
+;#--------------------------------------------------------------------------
+;# Uninstaller Function: un.PFI_CfgSettingWrite_without_backup
+;#
+;# This function is used during the uninstallation process
+;#--------------------------------------------------------------------------
+;
+;!insertmacro PFI_CfgSettingWrite_without_backup "un."
+
+;#--------------------------------------------------------------------------
+;# Installer Function: PFI_CfgSettingWrite_without_backup
+;#
+;# This function is used during the installation process
+;#--------------------------------------------------------------------------
+;
+;!insertmacro PFI_CfgSettingWrite_without_backup ""
+
+
+#--------------------------------------------------------------------------
 # Macro: PFI_CheckIfLocked
 #
 # The installation process and the uninstall process may both require a function
@@ -1334,7 +1872,7 @@
     Call ${UN}PFI_GetCompleteFPN
     Pop $G_CIL_FILE
     Push $G_CIL_FILE
-    Call ${UN}PFI_GetParent
+    Call ${UN}NSIS_GetParent
     Pop $G_CIL_PATH
     StrLen $G_CIL_TEMP $G_CIL_PATH
     IntOp $G_CIL_TEMP $G_CIL_TEMP + 1
@@ -1757,7 +2295,7 @@
       StrCmp $2 '.' finished_unc  ; If last char of result is '.' then the path was a UNC one
       StrCpy $0 $3                ; Set path we are working on to the 'GetFullPathName' result
       Push $0
-      Call ${UN}PFI_GetParent
+      Call ${UN}NSIS_GetParent
       Pop $2
       StrLen $3 $2
       StrCpy $3 $0 "" $3          ; Get the last part of the path, including the leading '\'
@@ -1905,7 +2443,7 @@
   cfg_file_done:
     FileClose ${L_FILE_HANDLE}
     Push ${L_CORPUS}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_CORPUS}
     StrCmp ${L_CORPUS} "" use_default_locn use_cfg_data
 
@@ -2046,7 +2584,7 @@
 
     StrCmp ${L_RESULT} "" use_default
     Push ${L_RESULT}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" use_default got_result
 
@@ -2208,7 +2746,7 @@
   relative_again:
     StrCpy ${L_DATA} ${L_DATA} "" 3
     Push ${L_RESULT}
-    Call ${UN}PFI_GetParent
+    Call ${UN}NSIS_GetParent
     Pop ${L_RESULT}
     StrCpy ${L_TEMP} ${L_DATA} 3
     StrCmp ${L_TEMP} "..\" relative_again
@@ -2252,138 +2790,6 @@
 
     !insertmacro PFI_GetDataPath "un."
 !endif
-
-
-#--------------------------------------------------------------------------
-# Macro: PFI_GetDateStamp
-#
-# The installation process and the uninstall process may need a function which uses the
-# local time from Windows to generate a date stamp (eg '08-Dec-2003'). This macro makes
-# maintenance easier by ensuring that both processes use identical functions, with
-# the only difference being their names.
-#
-# NOTE:
-# The !insertmacro PFI_GetDateStamp "" and !insertmacro PFI_GetDateStamp "un." commands are included
-# in this file so the NSIS script and/or other library functions in 'pfi-library.nsh' can use
-# 'Call PFI_GetDateStamp' and 'Call un.PFI_GetDateStamp' without additional preparation.
-#
-# Inputs:
-#         (none)
-# Outputs:
-#         (top of stack)     - string holding current date (eg '07-Dec-2003')
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Call un.PFI_GetDateStamp
-#         Pop $R9
-#
-#         ($R9 now holds a string like '07-Dec-2003')
-#--------------------------------------------------------------------------
-
-!macro PFI_GetDateStamp UN
-  Function ${UN}PFI_GetDateStamp
-
-    !define L_DATESTAMP   $R9
-    !define L_DAY         $R8
-    !define L_MONTH       $R7
-    !define L_YEAR        $R6
-
-    Push ${L_DATESTAMP}
-    Push ${L_DAY}
-    Push ${L_MONTH}
-    Push ${L_YEAR}
-
-    Call ${UN}PFI_GetLocalTime
-    Pop ${L_YEAR}
-    Pop ${L_MONTH}
-    Pop ${L_DAY}          ; ignore day of week
-    Pop ${L_DAY}
-    Pop ${L_DATESTAMP}    ; ignore hours
-    Pop ${L_DATESTAMP}    ; ignore minutes
-    Pop ${L_DATESTAMP}    ; ignore seconds
-    Pop ${L_DATESTAMP}    ; ignore milliseconds
-
-    IntCmp ${L_DAY} 10 +2 0 +2
-    StrCpy ${L_DAY} "0${L_DAY}"
-
-    StrCmp ${L_MONTH} 1 0 +3
-    StrCpy ${L_MONTH} Jan
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 2 0 +3
-    StrCpy ${L_MONTH} Feb
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 3 0 +3
-    StrCpy ${L_MONTH} Mar
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 4 0 +3
-    StrCpy ${L_MONTH} Apr
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 5 0 +3
-    StrCpy ${L_MONTH} May
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 6 0 +3
-    StrCpy ${L_MONTH} Jun
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 7 0 +3
-    StrCpy ${L_MONTH} Jul
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 8 0 +3
-    StrCpy ${L_MONTH} Aug
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 9 0 +3
-    StrCpy ${L_MONTH} Sep
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 10 0 +3
-    StrCpy ${L_MONTH} Oct
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 11 0 +3
-    StrCpy ${L_MONTH} Nov
-    Goto AssembleStamp
-
-    StrCmp ${L_MONTH} 12 0 +2
-    StrCpy ${L_MONTH} Dec
-
-  AssembleStamp:
-    StrCpy ${L_DATESTAMP} "${L_DAY}-${L_MONTH}-${L_YEAR}"
-
-    Pop ${L_YEAR}
-    Pop ${L_MONTH}
-    Pop ${L_DAY}
-    Exch ${L_DATESTAMP}
-
-    !undef L_DATESTAMP
-    !undef L_DAY
-    !undef L_MONTH
-    !undef L_YEAR
-
-  FunctionEnd
-!macroend
-
-#--------------------------------------------------------------------------
-# Installer Function: PFI_GetDateStamp
-#
-# This function is used during the installation process
-#--------------------------------------------------------------------------
-
-;!insertmacro PFI_GetDateStamp ""
-
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.PFI_GetDateStamp
-#
-# This function is used during the uninstall process
-#--------------------------------------------------------------------------
-
-;!insertmacro PFI_GetDateStamp "un."
 
 
 #--------------------------------------------------------------------------
@@ -2441,67 +2847,19 @@
     Pop ${L_SECONDS}
     Pop ${L_DATETIMESTAMP}    ; ignore milliseconds
 
-    IntCmp ${L_DAY} 10 +2 0 +2
-    StrCpy ${L_DAY} "0${L_DAY}"
+    StrCpy ${L_DAY} "0${L_DAY}" "" -2
 
-    StrCmp ${L_MONTH} 1 0 +3
-    StrCpy ${L_MONTH} Jan
-    Goto DoubleDigitTime
+    IntOp ${L_MONTH} ${L_MONTH} & 0xF
+    IntOp ${L_MONTH} ${L_MONTH} << 2
+    StrCpy ${L_MONTH} \
+      "??? Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec ??? ??? ???" 3 ${L_MONTH}
 
-    StrCmp ${L_MONTH} 2 0 +3
-    StrCpy ${L_MONTH} Feb
-    Goto DoubleDigitTime
+    StrCpy ${L_HOURS} "0${L_HOURS}" "" -2
+    StrCpy ${L_MINUTES} "0${L_MINUTES}" "" -2
+    StrCpy ${L_SECONDS} "0${L_SECONDS}" "" -2
 
-    StrCmp ${L_MONTH} 3 0 +3
-    StrCpy ${L_MONTH} Mar
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 4 0 +3
-    StrCpy ${L_MONTH} Apr
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 5 0 +3
-    StrCpy ${L_MONTH} May
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 6 0 +3
-    StrCpy ${L_MONTH} Jun
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 7 0 +3
-    StrCpy ${L_MONTH} Jul
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 8 0 +3
-    StrCpy ${L_MONTH} Aug
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 9 0 +3
-    StrCpy ${L_MONTH} Sep
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 10 0 +3
-    StrCpy ${L_MONTH} Oct
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 11 0 +3
-    StrCpy ${L_MONTH} Nov
-    Goto DoubleDigitTime
-
-    StrCmp ${L_MONTH} 12 0 +2
-    StrCpy ${L_MONTH} Dec
-
-  DoubleDigitTime:
-    IntCmp ${L_HOURS} 10 +2 0 +2
-    StrCpy ${L_HOURS} "0${L_HOURS}"
-
-    IntCmp ${L_MINUTES} 10 +2 0 +2
-    StrCpy ${L_MINUTES} "0${L_MINUTES}"
-
-    IntCmp ${L_SECONDS} 10 +2 0 +2
-    StrCpy ${L_SECONDS} "0${L_SECONDS}"
-
-    StrCpy ${L_DATETIMESTAMP} "${L_DAY}-${L_MONTH}-${L_YEAR} @ ${L_HOURS}:${L_MINUTES}:${L_SECONDS}"
+    StrCpy ${L_DATETIMESTAMP} \
+      "${L_DAY}-${L_MONTH}-${L_YEAR} @ ${L_HOURS}:${L_MINUTES}:${L_SECONDS}"
 
     Pop ${L_SECONDS}
     Pop ${L_MINUTES}
@@ -2674,8 +3032,6 @@
 !macro PFI_GetLocalTime UN
   Function ${UN}PFI_GetLocalTime
 
-    # Preparing Variables
-
     Push $1
     Push $2
     Push $3
@@ -2685,13 +3041,10 @@
     Push $7
     Push $8
 
-    # Calling the Function GetLocalTime from Kernel32.dll
-
     System::Call '*(&i2, &i2, &i2, &i2, &i2, &i2, &i2, &i2) i .r1'
     System::Call 'kernel32::GetLocalTime(i) i(r1)'
-    System::Call '*$1(&i2, &i2, &i2, &i2, &i2, &i2, &i2, &i2)(.r8, .r7, .r6, .r5, .r4, .r3, .r2, .r1)'
-
-    # Returning to User
+    System::Call \
+      '*$1(&i2, &i2, &i2, &i2, &i2, &i2, &i2, &i2)(.r8, .r7, .r6, .r5, .r4, .r3, .r2, .r1)'
 
     Exch $8
     Exch
@@ -2839,7 +3192,7 @@
   cfg_file_done:
     FileClose ${L_FILE_HANDLE}
     Push ${L_MSG_HISTORY}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_MSG_HISTORY}
     StrCmp ${L_MSG_HISTORY} "" use_default_locn use_cfg_data
 
@@ -2889,173 +3242,6 @@
     #--------------------------------------------------------------------------
 
     !insertmacro PFI_GetMessagesPath "un."
-!endif
-
-
-#--------------------------------------------------------------------------
-# Macro: PFI_GetParameters
-#
-# The installation process and the uninstall process may need a function which extracts
-# the parameters (if any) supplied on the command-line. This macro makes maintenance
-# easier by ensuring that both processes use identical functions, with the only difference
-# being their names.
-#
-# NOTE:
-# The !insertmacro PFI_GetParameters "" and !insertmacro PFI_GetParameters "un." commands are
-# included in this file so the NSIS script can use 'Call PFI_GetParameters' and
-# 'Call un.PFI_GetParameters' without additional preparation.
-#
-# Inputs:
-#         none
-#
-# Outputs:
-#         top of stack)     - all of the parameters supplied on the command line (may be "")
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Call PFI_GetParameters
-#         Pop $R0
-#
-#         (if 'setup.exe /SSL' was used to start the installer, $R0 will hold '/SSL')
-#--------------------------------------------------------------------------
-
-!macro PFI_GetParameters UN
-  Function ${UN}PFI_GetParameters
-
-      Push $R0
-      Push $R1
-      Push $R2
-      Push $R3
-
-      StrCpy $R2 1
-      StrLen $R3 $CMDLINE
-
-      ; Check for quote or space
-
-      StrCpy $R0 $CMDLINE $R2
-      StrCmp $R0 '"' 0 +3
-      StrCpy $R1 '"'
-      Goto loop
-
-      StrCpy $R1 " "
-
-    loop:
-      IntOp $R2 $R2 + 1
-      StrCpy $R0 $CMDLINE 1 $R2
-      StrCmp $R0 $R1 get
-      StrCmp $R2 $R3 get
-      Goto loop
-
-    get:
-      IntOp $R2 $R2 + 1
-      StrCpy $R0 $CMDLINE 1 $R2
-      StrCmp $R0 " " get
-      StrCpy $R0 $CMDLINE "" $R2
-
-      Pop $R3
-      Pop $R2
-      Pop $R1
-      Exch $R0
-
-    FunctionEnd
-!macroend
-
-!ifndef CREATEUSER & ONDEMAND
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_GetParameters
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PFI_GetParameters ""
-!endif
-
-!ifdef INSTALLER
-    #--------------------------------------------------------------------------
-    # Uninstaller Function: un.PFI_GetParameters
-    #
-    # This function is used during the uninstall process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PFI_GetParameters "un."
-!endif
-
-
-#--------------------------------------------------------------------------
-# Macro: PFI_GetParent
-#
-# The installation process and the uninstall process may both use a function which extracts the
-# parent directory from a given path. This macro makes maintenance easier by ensuring that both
-# processes use identical functions, with the only difference being their names.
-#
-# NB: The path is assumed to use backslashes (\)
-#
-# NOTE:
-# The !insertmacro PFI_GetParent "" and !insertmacro PFI_GetParent "un." commands are included
-# in this file so the NSIS script can use 'Call PFI_GetParent' and 'Call un.PFI_GetParent'
-# without additional preparation.
-#
-# Inputs:
-#         (top of stack)          - string containing a path (e.g. C:\A\B\C)
-#
-# Outputs:
-#         (top of stack)          - the parent part of the input string (e.g. C:\A\B)
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Push "C:\Program Files\Directory\Whatever"
-#         Call un.PFI_GetParent
-#         Pop $R0
-#
-#         ($R0 at this point is ""C:\Program Files\Directory")
-#
-#--------------------------------------------------------------------------
-
-!macro PFI_GetParent UN
-  Function ${UN}PFI_GetParent
-    Exch $R0
-    Push $R1
-    Push $R2
-    Push $R3
-
-    StrCpy $R1 0
-    StrLen $R2 $R0
-
-  loop:
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 $R2 get 0 get
-    StrCpy $R3 $R0 1 -$R1
-    StrCmp $R3 "\" get
-    Goto loop
-
-  get:
-    StrCpy $R0 $R0 -$R1
-
-    Pop $R3
-    Pop $R2
-    Pop $R1
-    Exch $R0
-  FunctionEnd
-!macroend
-
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | LFNFIXER | MONITORCC | ONDEMAND | PORTABLE | RESTORE | RUNPOPFILE | RUNSQLITE
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_GetParent
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PFI_GetParent ""
-!endif
-
-!ifdef ADDUSER | INSTALLER
-    #--------------------------------------------------------------------------
-    # Uninstaller Function: un.PFI_GetParent
-    #
-    # This function is used during the uninstall process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PFI_GetParent "un."
 !endif
 
 
@@ -3123,7 +3309,7 @@
 
     StrCmp ${L_RESULT} "" error_exit
     Push ${L_RESULT}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} "" error_exit
 
@@ -3295,14 +3481,14 @@
     ; is using an alternative SQL database (such as MySQL) so there is no SQLite database
 
     Push ${L_SQL_CONNECT}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_SQL_CONNECT}
     StrCmp ${L_SQL_CONNECT} "" no_sql_set
     StrCpy ${L_SQL_CONNECT} ${L_SQL_CONNECT} 10
     StrCmp ${L_SQL_CONNECT} "dbi:SQLite" 0 not_sqlite
 
     Push ${L_SQL_CORPUS}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_SQL_CORPUS}
     StrCmp ${L_SQL_CORPUS} "" no_sql_set use_cfg_data
 
@@ -3383,7 +3569,7 @@
 #                              (c) (<format>)            - <format> is what was found in file
 #                              (d) (unable to open file) - if file is locked or non-existent
 #
-#                              If the result is enclosed in parentheses then an error occurred.
+#                              If result is enclosed in parentheses then an error occurred.
 #
 # Usage (after macro has been 'inserted'):
 #
@@ -3398,7 +3584,7 @@
   Function ${UN}PFI_GetSQLiteFormat
 
     !define L_BYTE       $R9  ; byte read from the database file
-    !define L_COUNTER    $R8  ; expect a null-terminated string, but use a length limit as well
+    !define L_COUNTER    $R8  ; expects null-terminated string, but also uses a length limit
     !define L_FILENAME   $R7  ; name of the SQLite database file
     !define L_HANDLE     $R6  ; used to access the database file
     !define L_RESULT     $R5  ; string returned on top of the stack
@@ -3434,7 +3620,7 @@
     StrCpy ${L_COUNTER} ${L_RESULT} 15
     StrCmp ${L_COUNTER} "SQLite format 3" sqlite_3
 
-    ; Unrecognized format string found, so return it enclosed in parentheses (to indicate error)
+    ; Unrecognized format string found, return it enclosed in parentheses (to indicate error)
 
     StrCpy ${L_RESULT} "(${L_RESULT})"
     Goto exit
@@ -3860,7 +4046,7 @@
     GetFullPathName ${L_WORKINGDIR} ".\"
 
     Push "${L_DATABASE}"
-    Call ${UN}PFI_GetParent
+    Call ${UN}NSIS_GetParent
     Pop ${L_STATUS}
     StrCmp ${L_STATUS} "" run_it_now
 
@@ -3878,7 +4064,7 @@
   run_it_now:
     nsExec::ExecToStack '"${L_SQLITEPATH}\${L_SQLITEUTIL}" "${L_DATABASE}" "${L_COMMAND}"'
     Pop ${L_STATUS}
-    Call ${UN}PFI_TrimNewlines
+    Call ${UN}NSIS_TrimNewlines
     Pop ${L_RESULT}
     SetOutPath ${L_WORKINGDIR}
     StrCmp ${L_STATUS} "0" exit
@@ -3972,7 +4158,7 @@
 
     ; The SimpleSC plugin (and popfile-service.exe) cannot be used on Win9x systems
 
-    Call ${UN}PFI_IsNT
+    Call ${UN}NSIS_IsNT
     Pop ${L_RESULT}
     StrCmp ${L_RESULT} 0 error_exit
 
@@ -4035,7 +4221,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | INSTALLER | RESTORE
+!ifdef ADDSSL | ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Installer Function: PFI_ServiceActive
     #
@@ -4207,13 +4393,15 @@
   FunctionEnd
 !macroend
 
-#--------------------------------------------------------------------------
-# Installer Function: PFI_ServiceCall
-#
-# This function is used during the installation process
-#--------------------------------------------------------------------------
+!ifdef BACKUP | RESTORE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_ServiceCall
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
 
-;!insertmacro PFI_ServiceCall ""
+    !insertmacro PFI_ServiceCall ""
+!endif
 
 #--------------------------------------------------------------------------
 # Uninstaller Function: un.PFI_ServiceCall
@@ -4280,13 +4468,15 @@
   FunctionEnd
 !macroend
 
-#--------------------------------------------------------------------------
-# Installer Function: PFI_ServiceRunning
-#
-# This function is used during the installation process
-#--------------------------------------------------------------------------
+!ifdef BACKUP | RESTORE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_ServiceRunning
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
 
-;!insertmacro PFI_ServiceRunning ""
+    !insertmacro PFI_ServiceRunning ""
+!endif
 
 #--------------------------------------------------------------------------
 # Uninstaller Function: un.PFI_ServiceRunning
@@ -4611,12 +4801,14 @@
     !define BAD_OFFSET      10             ; length of DECIMAL_DIGIT string
 
     !define L_STRING        $0   ; The input string
-    !define L_RESULT        $1   ; Holds the result: either "" (if input is invalid) or the input string (if valid)
+    !define L_RESULT        $1   ; Holds the result: either "" (if input is invalid) or
+                                 ; the input string (if the input is valid)
     !define L_CURRENT       $2   ; A character from the input string
     !define L_OFFSET        $3   ; The offset to a character in the "validity check" string
     !define L_VALIDCHAR     $4   ; A character from the "validity check" string
     !define L_VALIDLIST     $5   ; Holds the current "validity check" string
-    !define L_CHARSLEFT     $6   ; To cater for MBCS input strings, terminate when end of string reached, not when a null byte reached
+    !define L_CHARSLEFT     $6   ; To cater for MBCS input strings, terminate when end of
+                                 ; string reached, not when a null byte reached
 
     Exch ${L_STRING}
     Push ${L_RESULT}
@@ -4631,17 +4823,20 @@
   next_input_char:
     StrLen ${L_CHARSLEFT} ${L_STRING}
     StrCmp ${L_CHARSLEFT} 0 done
-    StrCpy ${L_CURRENT} ${L_STRING} 1                   ; Get the next character from the input string
-    StrCpy ${L_VALIDLIST} ${DECIMAL_DIGIT}${L_CURRENT}  ; Add it to end of "validity check" to guarantee a match
+    StrCpy ${L_CURRENT} ${L_STRING} 1                   ; Get the next char from input string
+    StrCpy ${L_VALIDLIST} ${DECIMAL_DIGIT}${L_CURRENT}  ; Add it to end of "validity check"
+                                                        ; to guarantee a match
     StrCpy ${L_STRING} ${L_STRING} "" 1
     StrCpy ${L_OFFSET} -1
 
   next_valid_char:
     IntOp ${L_OFFSET} ${L_OFFSET} + 1
-    StrCpy ${L_VALIDCHAR} ${L_VALIDLIST} 1 ${L_OFFSET}    ; Extract next "valid" char (from "validity check" string)
+    StrCpy ${L_VALIDCHAR} ${L_VALIDLIST} 1 ${L_OFFSET}    ; Extract next "valid" char
+                                                          ; (from "validity check" string)
     StrCmp ${L_CURRENT} ${L_VALIDCHAR} 0 next_valid_char
-    IntCmp ${L_OFFSET} ${BAD_OFFSET} invalid 0 invalid    ; If match is with the char we added, input is bad
-    StrCpy ${L_RESULT} ${L_RESULT}${L_VALIDCHAR}          ; Add "valid" character to the result
+    IntCmp ${L_OFFSET} ${BAD_OFFSET} invalid 0 invalid    ; If match is with the char we
+                                                          ; added, input is bad
+    StrCpy ${L_RESULT} ${L_RESULT}${L_VALIDCHAR}          ; Add "valid" character to result
     goto next_input_char
 
   invalid:
@@ -4809,76 +5004,6 @@
 
 
 #--------------------------------------------------------------------------
-# Macro: PFI_TrimNewlines
-#
-# The installation process and the uninstall process may both use a function to trim newlines
-# from lines of text. This macro makes maintenance easier by ensuring that both processes use
-# identical functions, with the only difference being their names.
-#
-# NOTE:
-# The !insertmacro PFI_TrimNewlines "" and !insertmacro PFI_TrimNewlines "un." commands are
-# included in this file so the NSIS script can use 'Call PFI_TrimNewlines' and
-# 'Call un.PFI_TrimNewlines' without additional preparation.
-#
-# Inputs:
-#         (top of stack)   - string which may end with one or more newlines
-#
-# Outputs:
-#         (top of stack)   - the input string with the trailing newlines (if any) removed
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Push "whatever$\r$\n"
-#         Call un.PFI_TrimNewlines
-#         Pop $R0
-#         ($R0 at this point is "whatever")
-#
-#--------------------------------------------------------------------------
-
-!macro PFI_TrimNewlines UN
-  Function ${UN}PFI_TrimNewlines
-    Exch $R0
-    Push $R1
-    Push $R2
-    StrCpy $R1 0
-
-  loop:
-    IntOp $R1 $R1 - 1
-    StrCpy $R2 $R0 1 $R1
-    StrCmp $R2 "$\r" loop
-    StrCmp $R2 "$\n" loop
-    IntOp $R1 $R1 + 1
-    IntCmp $R1 0 no_trim_needed
-    StrCpy $R0 $R0 $R1
-
-  no_trim_needed:
-    Pop $R2
-    Pop $R1
-    Exch $R0
-  FunctionEnd
-!macroend
-
-!ifndef LFNFIXER & MONITORCC & MSGCAPTURE & PFIDIAG & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR_AUW
-    #--------------------------------------------------------------------------
-    # Installer Function: PFI_TrimNewlines
-    #
-    # This function is used during the installation process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PFI_TrimNewlines ""
-!endif
-
-!ifdef ADDUSER | INSTALLER
-    #--------------------------------------------------------------------------
-    # Uninstaller Function: un.PFI_TrimNewlines
-    #
-    # This function is used during the uninstall process
-    #--------------------------------------------------------------------------
-
-    !insertmacro PFI_TrimNewlines "un."
-!endif
-
-#--------------------------------------------------------------------------
 # Macro: PFI_WaitUntilUnlocked
 #
 # The installation process and the uninstall process may both use a function which waits until
@@ -4975,6 +5100,357 @@
     #--------------------------------------------------------------------------
 
     !insertmacro PFI_WaitUntilUnlocked "un."
+!endif
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_WriteEnvStr
+#
+# The installation process and the uninstall process both use a function which
+# writes an environment variable which is available to the 'current user' on a
+# modern OS. On Win9x systems, AUTOEXEC.BAT is updated and the Reboot flag is set
+# to request a reboot to make the new variable available for use. This macro makes
+# maintenance easier by ensuring that both processes use identical functions, with
+# the only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_WriteEnvStr "" and !insertmacro PFI_WriteEnvStr "un." commands
+# are included in this file so 'installer.nsi' can use 'Call PFI_WriteEnvStr' and
+# 'Call un.PFI_WriteEnvStr' without additional preparation.
+#
+# Inputs:
+#         (top of stack)       - value for the new environment variable
+#         (top of stack - 1)   - name of the new environment variable
+#
+# Outputs:
+#         none
+#
+#  Usage (after macro has been 'inserted'):
+#
+#         Push "HOMEDIR"
+#         Push "C:\New Home Dir"
+#         Call PFI_WriteEnvStr
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_WriteEnvStr UN
+  Function ${UN}PFI_WriteEnvStr
+
+    ; Registers common to Win9x and non-Win9x processing
+
+    !define ENV_NAME        $R9   ; name of the environment variable
+    !define ENV_VALUE       $R8   ; value of the environment variable
+    !define TEMP            $R7
+
+    ; Registers used only for Win9x processing
+
+    !define DESTN           $R6   ; used to access the revised AUTOEXEC.BAT file
+    !define ENV_FOUND       $R5   ; 0 = variable not found, 1 = variable found in AUTOEXEC.BAT
+    !define ENV_SETLEN      $R4   ; length of the string in ${ENV_SETNAME}
+    !define ENV_SETNAME     $R3   ; left-hand side of SET command for the variable, incl '='
+    !define LINE            $R2   ; a line from AUTOEXEC.BAT
+    !define SOURCE          $R1   ; used to access original AUTOEXEC.BAT file
+    !define TEMPFILE        $R0   ; name of file used to build the revised AUTOEXEC.BAT file
+
+    Exch ${ENV_VALUE}
+    Exch
+    Exch ${ENV_NAME}
+    Push ${TEMP}
+
+    Call ${UN}NSIS_IsNT
+    Pop ${TEMP}
+    StrCmp ${TEMP} 1 WriteEnvStr_NT
+
+    ; On Win9x system, so we add the new data to AUTOEXEC.BAT if it is not already there
+
+    Push ${DESTN}
+    Push ${ENV_FOUND}
+    Push ${ENV_SETLEN}
+    Push ${ENV_SETNAME}
+    Push ${LINE}
+    Push ${SOURCE}
+    Push ${TEMPFILE}
+
+    StrCpy ${ENV_SETNAME} "SET ${ENV_NAME}="
+    StrLen ${ENV_SETLEN} ${ENV_SETNAME}
+
+    StrCpy ${SOURCE} $WINDIR 2            ; Get the drive used for Windows (usually 'C:')
+    FileOpen ${SOURCE} "${SOURCE}\autoexec.bat" r
+    GetTempFileName ${TEMPFILE}
+    FileOpen ${DESTN} ${TEMPFILE} w
+
+    StrCpy ${ENV_FOUND} 0
+
+  loop:
+    FileRead ${SOURCE} ${LINE}            ; Read line from AUTOEXEC.BAT
+    StrCmp ${LINE} "" eof_found
+    Push ${LINE}
+    Call ${UN}NSIS_TrimNewlines
+    Pop ${LINE}
+    StrCmp ${LINE} "" copy_line           ; Blank lines are preserved in the copy we make
+    StrCpy ${TEMP} ${LINE} ${ENV_SETLEN}
+    StrCmp ${TEMP} ${ENV_SETNAME} 0 copy_line
+    StrCpy ${ENV_FOUND} 1                 ; Have found a match. Now check the value it defines.
+    StrCpy ${TEMP} ${LINE} "" ${ENV_SETLEN}
+    StrCmp ${TEMP} ${ENV_VALUE} 0 different_value
+    ReadEnvStr ${TEMP} ${ENV_NAME}        ; Identical value found. Now see if it currently exists.
+    StrCmp ${TEMP} ${ENV_VALUE} copy_line
+    SetRebootFlag true                    ; Value does not exist, so we need to reboot
+
+  copy_line:
+    FileWrite ${DESTN} "${LINE}${MB_NL}"
+    Goto loop
+
+  different_value:
+    FileWrite ${DESTN} "REM ${LINE}${MB_NL}"    ; 'Comment out' the incorrect value
+    FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"
+    SetRebootFlag true
+    Goto loop
+
+  eof_found:
+    StrCmp ${ENV_FOUND} 1 autoexec_done
+    FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"   ; Append line for the new variable
+    SetRebootFlag true
+
+  autoexec_done:
+    FileClose ${SOURCE}
+    FileClose ${DESTN}
+
+    IfRebootFlag 0 win9x_done
+    StrCpy ${SOURCE} $WINDIR 2
+    Delete "${SOURCE}\autoexec.bat"
+    CopyFiles /SILENT ${TEMPFILE} "${SOURCE}\autoexec.bat"
+    Delete ${TEMPFILE}
+
+  win9x_done:
+    Pop ${TEMPFILE}
+    Pop ${SOURCE}
+    Pop ${LINE}
+    Pop ${ENV_SETNAME}
+    Pop ${ENV_SETLEN}
+    Pop ${ENV_FOUND}
+    Pop ${DESTN}
+    Goto WriteEnvStr_done
+
+    ; More modern OS case (AUTOEXEC.BAT not relevant)
+
+  WriteEnvStr_NT:
+    WriteRegExpandStr HKCU "Environment" ${ENV_NAME} ${ENV_VALUE}
+    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
+          0 "STR:Environment" /TIMEOUT=5000
+
+  WriteEnvStr_done:
+    Pop ${TEMP}
+    Pop ${ENV_NAME}
+    Pop ${ENV_VALUE}
+
+    !undef ENV_NAME
+    !undef ENV_VALUE
+    !undef TEMP
+
+    !undef DESTN
+    !undef ENV_FOUND
+    !undef ENV_SETLEN
+    !undef ENV_SETNAME
+    !undef LINE
+    !undef SOURCE
+    !undef TEMPFILE
+
+  FunctionEnd
+!macroend
+
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_WriteEnvStr
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_WriteEnvStr ""
+
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_WriteEnvStr
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_WriteEnvStr "un."
+!endif
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_WriteEnvStrNTAU
+#
+# The installation process and the uninstall process both use a function which
+# writes an environment variable which is available to all users on a modern OS.
+# On Win9x systems, AUTOEXEC.BAT is updated and the Reboot flag is set to request
+# a reboot to make the new variable available for use. This macro is used to make
+# maintenance easier by ensuring that both processes use identical functions, with
+# the only difference being their names.
+#
+# NOTE:
+# The !insertmacro PFI_WriteEnvStrNTAU "" and !insertmacro PFI_WriteEnvStrNTAU "un."
+# commands are included in this file so 'installer.nsi' can use 'Call PFI_WriteEnvStrNTAU'
+# and 'Call un.PFI_WriteEnvStrNTAU' without additional preparation.
+#
+# Inputs:
+#         (top of stack)       - value for the new environment variable
+#         (top of stack - 1)   - name of the new environment variable
+#
+# Outputs:
+#         none
+#
+#  Usage (after macro has been 'inserted'):
+#
+#         Push "HOMEDIR"
+#         Push "C:\New Home Dir"
+#         Call PFI_WriteEnvStrNTAU
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_WriteEnvStrNTAU UN
+  Function ${UN}PFI_WriteEnvStrNTAU
+
+    ; Registers common to Win9x and non-Win9x processing
+
+    !define ENV_NAME        $R9   ; name of the environment variable
+    !define ENV_VALUE       $R8   ; value of the environment variable
+    !define TEMP            $R7
+
+    ; Registers used only for Win9x processing
+
+    !define DESTN           $R6   ; used to access the revised AUTOEXEC.BAT file
+    !define ENV_FOUND       $R5   ; 0 = variable not found, 1 = variable found in AUTOEXEC.BAT
+    !define ENV_SETLEN      $R4   ; length of the string in ${ENV_SETNAME}
+    !define ENV_SETNAME     $R3   ; left-hand side of SET command for the variable, incl '='
+    !define LINE            $R2   ; a line from AUTOEXEC.BAT
+    !define SOURCE          $R1   ; used to access original AUTOEXEC.BAT file
+    !define TEMPFILE        $R0   ; name of file used to build the revised AUTOEXEC.BAT file
+
+    Exch ${ENV_VALUE}
+    Exch
+    Exch ${ENV_NAME}
+    Push ${TEMP}
+
+    Call ${UN}NSIS_IsNT
+    Pop ${TEMP}
+    StrCmp ${TEMP} 1 WriteEnvStr_NT
+
+    ; On Win9x system, so we add the new data to AUTOEXEC.BAT if it is not already there
+
+    Push ${DESTN}
+    Push ${ENV_FOUND}
+    Push ${ENV_SETLEN}
+    Push ${ENV_SETNAME}
+    Push ${LINE}
+    Push ${SOURCE}
+    Push ${TEMPFILE}
+
+    StrCpy ${ENV_SETNAME} "SET ${ENV_NAME}="
+    StrLen ${ENV_SETLEN} ${ENV_SETNAME}
+
+    StrCpy ${SOURCE} $WINDIR 2            ; Get the drive used for Windows (usually 'C:')
+    FileOpen ${SOURCE} "${SOURCE}\autoexec.bat" r
+    GetTempFileName ${TEMPFILE}
+    FileOpen ${DESTN} ${TEMPFILE} w
+
+    StrCpy ${ENV_FOUND} 0
+
+  loop:
+    FileRead ${SOURCE} ${LINE}            ; Read line from AUTOEXEC.BAT
+    StrCmp ${LINE} "" eof_found
+    Push ${LINE}
+    Call ${UN}NSIS_TrimNewlines
+    Pop ${LINE}
+    StrCmp ${LINE} "" copy_line           ; Blank lines are preserved in the copy we make
+    StrCpy ${TEMP} ${LINE} ${ENV_SETLEN}
+    StrCmp ${TEMP} ${ENV_SETNAME} 0 copy_line
+    StrCpy ${ENV_FOUND} 1                 ; Have found a match. Now check the value it defines.
+    StrCpy ${TEMP} ${LINE} "" ${ENV_SETLEN}
+    StrCmp ${TEMP} ${ENV_VALUE} 0 different_value
+    ReadEnvStr ${TEMP} ${ENV_NAME}        ; Identical value found. Now see if it currently exists.
+    StrCmp ${TEMP} ${ENV_VALUE} copy_line
+    SetRebootFlag true                    ; Value does not exist, so we need to reboot
+
+  copy_line:
+    FileWrite ${DESTN} "${LINE}${MB_NL}"
+    Goto loop
+
+  different_value:
+    FileWrite ${DESTN} "REM ${LINE}${MB_NL}"    ; 'Comment out' the incorrect value
+    FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"
+    SetRebootFlag true
+    Goto loop
+
+  eof_found:
+    StrCmp ${ENV_FOUND} 1 autoexec_done
+    FileWrite ${DESTN} "${ENV_SETNAME}${ENV_VALUE}${MB_NL}"   ; Append line for the new variable
+    SetRebootFlag true
+
+  autoexec_done:
+    FileClose ${SOURCE}
+    FileClose ${DESTN}
+
+    IfRebootFlag 0 win9x_done
+    StrCpy ${SOURCE} $WINDIR 2
+    Delete "${SOURCE}\autoexec.bat"
+    CopyFiles /SILENT ${TEMPFILE} "${SOURCE}\autoexec.bat"
+    Delete ${TEMPFILE}
+
+  win9x_done:
+    Pop ${TEMPFILE}
+    Pop ${SOURCE}
+    Pop ${LINE}
+    Pop ${ENV_SETNAME}
+    Pop ${ENV_SETLEN}
+    Pop ${ENV_FOUND}
+    Pop ${DESTN}
+    Goto WriteEnvStr_done
+
+    ; More modern OS case (AUTOEXEC.BAT not relevant)
+
+  WriteEnvStr_NT:
+    WriteRegExpandStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" \
+          ${ENV_NAME} ${ENV_VALUE}
+    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} \
+          0 "STR:Environment" /TIMEOUT=5000
+
+  WriteEnvStr_done:
+    Pop ${TEMP}
+    Pop ${ENV_NAME}
+    Pop ${ENV_VALUE}
+
+    !undef ENV_NAME
+    !undef ENV_VALUE
+    !undef TEMP
+
+    !undef DESTN
+    !undef ENV_FOUND
+    !undef ENV_SETLEN
+    !undef ENV_SETNAME
+    !undef LINE
+    !undef SOURCE
+    !undef TEMPFILE
+
+  FunctionEnd
+!macroend
+
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_WriteEnvStrNTAU
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_WriteEnvStrNTAU ""
+
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_WriteEnvStrNTAU
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_WriteEnvStrNTAU "un."
 !endif
 
 #--------------------------------------------------------------------------

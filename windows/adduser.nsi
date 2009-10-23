@@ -340,7 +340,7 @@
   !define ADDUSER
 
   !include "pfi-library.nsh"
-  !include "WriteEnvStr.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the installer EXE and uninstaller EXE)
@@ -372,6 +372,9 @@
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -760,7 +763,7 @@ Function .onInit
   ; of POPFile. The '/restore="path to restored data"' switch performs a similar function when
   ; this wizard is called from the POPFile 'User Data' Restore wizard.
 
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop $G_PFISETUP
   StrCpy $G_PFIFLAG $G_PFISETUP 9
   StrCmp $G_PFIFLAG "/restore=" restore_case
@@ -1047,7 +1050,7 @@ save_user_sfn:
 check_root_env:
   ReadEnvStr ${L_TEMP} "POPFILE_ROOT"
   StrCmp ${L_POPFILE_ROOT} ${L_TEMP} root_set_ok
-  Call PFI_IsNT
+  Call NSIS_IsNT
   Pop ${L_RESERVED}
   StrCmp ${L_RESERVED} 0 set_root_now
   WriteRegStr HKCU "Environment" "POPFILE_ROOT" ${L_POPFILE_ROOT}
@@ -1066,7 +1069,7 @@ root_set_ok:
 check_user_env:
   ReadEnvStr ${L_TEMP} "POPFILE_USER"
   StrCmp ${L_POPFILE_USER} ${L_TEMP} continue
-  Call PFI_IsNT
+  Call NSIS_IsNT
   Pop ${L_RESERVED}
   StrCmp ${L_RESERVED} 0 set_user_now
   WriteRegStr HKCU "Environment" "POPFILE_USER" ${L_POPFILE_USER}
@@ -1488,7 +1491,7 @@ got_schemas:
   WriteINIStr "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "DatabasePath" "${L_SQL_DB}"
 
   Push ${L_SQL_DB}
-  Call PFI_GetParent
+  Call NSIS_GetParent
   Pop ${L_TEMP}
   WriteINIStr "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "ParentPath" "${L_TEMP}"
   StrLen ${L_TEMP} ${L_TEMP}
@@ -1668,7 +1671,7 @@ check_bucket_count:
 
   StrCpy ${L_TEMP} ${L_CORPUS_PATH}
   Push ${L_TEMP}
-  Call PFI_GetParent
+  Call NSIS_GetParent
   Pop ${L_TEMP}
   WriteINIStr "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "ParentPath" "${L_TEMP}"
   StrLen ${L_TEMP} ${L_TEMP}
@@ -2074,7 +2077,7 @@ upgrade_install:
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" check_config_data
   Push $G_USERDIR
-  Call PFI_GetRoot
+  Call NSIS_GetRoot
   Pop $G_PLS_FIELD_1
   MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_DIRSELECT_MBNOSFN)"
   Pop ${L_RESULT}
@@ -2226,7 +2229,7 @@ Function CheckExistingDataDir
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" check_locn
   Push $G_USERDIR
-  Call PFI_GetRoot
+  Call NSIS_GetRoot
   Pop $G_PLS_FIELD_1
   MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_DIRSELECT_MBNOSFN)"
 
@@ -2448,7 +2451,7 @@ got_skin_new:
 
 got_skin:
   Push ${L_SKIN}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_SKIN}
 
   ; Originally the skins were all defined in a single 'skins'
@@ -2566,14 +2569,14 @@ close_cleancopy:
   ; saved settings will not be used (any existing settings were copied to the new 'popfile.cfg')
 
   Push ${L_LANG_NEW}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_LANG_NEW}
   StrCmp ${L_LANG_NEW} "" 0 check_lang_old
   StrCpy ${L_LANG_NEW} "?"
 
 check_lang_old:
   Push ${L_LANG_OLD}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_LANG_OLD}
   StrCmp ${L_LANG_OLD} "" 0 save_langs
   StrCpy ${L_LANG_OLD} "?"
@@ -2583,15 +2586,15 @@ save_langs:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "language" "${L_LANG_OLD}"
 
   Push $G_POP3
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop $G_POP3
 
   Push $G_GUI
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop $G_GUI
 
   Push ${L_OLDUI}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_OLDUI}
 
   ; Save the UI port settings (from popfile.cfg) for later use by the 'MakeUserDirSafe' function
@@ -3033,11 +3036,11 @@ Function CompareStopwords
 loop:
   FileRead ${L_STD_FILE} ${L_STD_WORD}
   Push ${L_STD_WORD}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_STD_WORD}
   FileRead ${L_USR_FILE} ${L_USR_WORD}
   Push ${L_USR_WORD}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_USR_WORD}
   StrCmp ${L_STD_WORD} ${L_USR_WORD} 0 close_files
   StrCmp ${L_STD_WORD} "" 0 loop
@@ -3485,7 +3488,7 @@ check_if_banner_needed:
     ; but East Asian versions of Windows 9x do not support this so in these cases
     ; we use "English" text for the banner (otherwise the text would be unreadable garbage).
 
-    Call PFI_IsNT
+    Call NSIS_IsNT
     Pop ${L_TEMP}
     StrCmp ${L_TEMP} "1" show_banner
 
@@ -3598,7 +3601,7 @@ calc_page_delay:
   StrCmp $G_PLS_FIELD_2 "Not SQLite" use_default
   IfFileExists "$G_PLS_FIELD_2" 0 use_default
   Push $G_PLS_FIELD_2
-  Call PFI_GetParent
+  Call NSIS_GetParent
   Pop $G_PLS_FIELD_1
   StrLen ${L_TEMP} $G_PLS_FIELD_1
   IntOp ${L_TEMP} ${L_TEMP} + 1
@@ -3878,11 +3881,11 @@ FunctionEnd
       ; East Asian versions of Windows 9x do not support this so in these cases we use
       ; "English" text for the banner (otherwise the text would be unreadable garbage).
 
-      !define L_RESULT    $R9   ; The 'PFI_IsNT' function returns 0 if Win9x was detected
+      !define L_RESULT    $R9   ; The 'NSIS_IsNT' function returns 0 if Win9x was detected
 
       Push ${L_RESULT}
 
-      Call PFI_IsNT
+      Call NSIS_IsNT
       Pop ${L_RESULT}
       StrCmp ${L_RESULT} "1" show_banner
 
