@@ -1240,7 +1240,45 @@ create_comms_file:
 
   ; Ensure the 'real' user (assumed to be a standard user) can write to the "comms" file
 
+  Call NSIS_IsNT
+  Pop ${L_RESERVED}
+  StrCmp ${L_RESERVED} "1" access_control
+  WriteINIStr "$G_COMMS_FILE" "PluginStatus" "AccessControl" "not applicable (Win9x detected)"
+  Goto get_real_user_settings
+
+access_control:
+  WriteINIStr "$G_COMMS_FILE" "PluginStatus" "AccessControl" "applicable"
+
+  !define L_STACKDATA     $R9   ; used to detect AccessControl errors
+  !define L_STACKLOOP     $R8   ; plugin will leave zero or more strings on the stack
+
+  Push ${L_STACKDATA}
+  Push ${L_STACKLOOP}
+
+  StrCpy ${L_STACKLOOP} "1"
+
+  StrCpy $G_PLS_FIELD_1 "ACP_BOOKMARK"
+  Push $G_PLS_FIELD_1
   AccessControl::GrantOnFile "$G_COMMS_FILE" "(BU)" "GenericRead + GenericWrite"
+
+find_bookmark:
+  Pop ${L_STACKDATA}
+  StrCmp $G_PLS_FIELD_1 ${L_STACKDATA} bookmark_found
+  WriteINIStr "$G_COMMS_FILE" "PluginStatus" "StackData-${L_STACKLOOP}" "${L_STACKDATA}"
+  MessageBox MB_OK|MB_ICONINFORMATION "Unexpected plugin response (${L_STACKLOOP}):${MB_NL}${MB_NL}${L_STACKDATA}"
+  IntOp ${L_STACKLOOP} ${L_STACKLOOP} + 1
+  Goto find_bookmark
+
+bookmark_found:
+  WriteINIStr "$G_COMMS_FILE" "PluginStatus" "StackData-${L_STACKLOOP}" "OK (found '${L_STACKDATA}')"
+
+  Pop ${L_STACKLOOP}
+  Pop ${L_STACKDATA}
+
+  !undef L_STACKDATA
+  !undef L_STACKLOOP
+
+get_real_user_settings:
 
   ; Pass the full path to the "comms" file to the 'outer' instance
   ; and call the 'GetRealUserSettings' function in the 'outer' instance
