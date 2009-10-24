@@ -198,6 +198,18 @@ if ( $pid == 0 ) {
 
     # TODO: Test whether the message is correctly stored in history
 
+    # API.handle_message with message does not exist
+
+    $bucket = $xml
+        -> call ( 'POPFile/API.handle_message', $session, "TestMails/NotExist.msg", $out_file )
+        -> result;
+    test_assert_equal( $bucket, "" );
+
+    $bucket = $xml
+        -> call ( 'POPFile/API.handle_message', "invalid session", $file, $out_file )
+        -> result;
+    test_assert_equal( $bucket, "" );
+
     # API.get_buckets
 
     my $buckets = $xml

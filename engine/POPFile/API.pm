@@ -126,6 +126,13 @@ sub handle_message
 {
     my ( $self, $session, $in, $out ) = @_;
 
+    return undef unless ( -f $in );
+
+    # Examine the session key is valid
+
+    my @buckets = $self->{c}->get_buckets( $session );
+    return undef if ( !defined( $buckets[0] ) );
+
     # Convert the two files into streams that can be passed to the
     # classifier
 
