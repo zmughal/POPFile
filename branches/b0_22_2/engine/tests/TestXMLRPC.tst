@@ -204,11 +204,13 @@ if ( $pid == 0 ) {
         -> call ( 'POPFile/API.handle_message', $session, "TestMails/NotExist.msg", $out_file )
         -> result;
     test_assert_equal( $bucket, "" );
+    test_assert( !( -e $out_file ) );
 
     $bucket = $xml
         -> call ( 'POPFile/API.handle_message', "invalid session", $file, $out_file )
         -> result;
     test_assert_equal( $bucket, "" );
+    test_assert( !( -e $out_file ) );
 
     # API.get_buckets
 
