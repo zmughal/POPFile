@@ -72,7 +72,7 @@ $(SETUP): $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGI
 $(SETUP): $(STOP_PF) $(ENGINE)/popfile.exe $(ENGINE)/popfileb.exe $(ENGINE)/popfileib.exe $(ENGINE)/popfilef.exe $(ENGINE)/popfileif.exe $(ENGINE)/popfile-service.exe
 $(SETUP): $(RUNPOPFILE) $(ADDUSER) $(MONITORCC) $(STOP_PF) $(MSGCAPTURE)
 $(SETUP): $(APVERCHECK)
-$(SETUP): ioG.ini WriteEnvStr.nsh
+$(SETUP): ioG.ini
 $(SETUP): languages/*-pfi.nsh hdr-common.bmp special.bmp remove.ico
 $(SETUP): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
 $(SETUP): test/pfidbstatus.exe test/pfidiag.exe $(RUNSQLITE)
@@ -81,13 +81,13 @@ $(RUNPOPFILE): $(patsubst %.exe,%.nsi,$(RUNPOPFILE))
 $(RUNPOPFILE): languages/English-pfi.nsh
 
 $(MONITORCC): $(patsubst %.exe,%.nsi,$(MONITORCC))
-$(MONITORCC): WriteEnvStr.nsh pfi-languages.nsh
+$(MONITORCC): pfi-languages.nsh
 $(MONITORCC): languages/*-pfi.nsh hdr-common.bmp
 $(MONITORCC): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
 
 $(ADDUSER): $(patsubst %.exe,%.nsi,$(ADDUSER))
 $(ADDUSER): $(MONITORCC) ioA.ini ioB.ini ioC.ini ioE.ini ioF.ini
-$(ADDUSER): WriteEnvStr.nsh pfi-languages.nsh
+$(ADDUSER): pfi-languages.nsh
 $(ADDUSER): languages/*-pfi.nsh hdr-common.bmp special.bmp remove.ico
 $(ADDUSER): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
 
