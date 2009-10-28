@@ -139,7 +139,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.1.5"
+  !define C_VERSION   "0.1.6"
 
   ; Specify the icon file for the utility
 
@@ -418,25 +418,21 @@ FunctionEnd
 
 Function Shutdown_POPFile
 
-  !define L_CFG      $R9    ; file handle
-  !define L_EXE      $R8    ; name of EXE file to be monitored
-  !define L_LINE     $R7    ; data read from popfile.cfg
-  !define L_NEW_GUI  $R6    ; POPFile UI port number (extracted from popfile.cfg)
-  !define L_PARAM    $R5    ; current popfile.cfg parameter
+  !define L_CFG      $R9    ; path to the configuration file (popfile.cfg)
+  !define L_CHARPOS  $R8    ; used when extracting filename from the full path
+  !define L_EXE      $R7    ; name of EXE file to be monitored
+  !define L_LIMIT    $R6    ; length of full path to the locked file
+  !define L_NEW_GUI  $R5    ; POPFile UI port number (extracted from popfile.cfg)
   !define L_RESULT   $R4
   !define L_STOP_PF  $R3    ; StopPOPFile setting extracted from the utility's INI file
-  !define L_TEXTEND  $R2    ; used to ensure correct handling of lines longer than 1023 chars
-                            ; (the standard NSIS compiler has a limit of 1023 characters;
-                            ; if a higher limit is required there is a special build available)
 
   Push ${L_CFG}
+  Push ${L_CHARPOS}
   Push ${L_EXE}
-  Push ${L_LINE}
+  Push ${L_LIMIT}
   Push ${L_NEW_GUI}
-  Push ${L_PARAM}
   Push ${L_RESULT}
   Push ${L_STOP_PF}
-  Push ${L_TEXTEND}
 
   ReadINIStr ${L_STOP_PF} "$EXEDIR\${C_INIFILE}" "Settings" "StopPOPFile"
   StrCmp ${L_STOP_PF} "" stop_popfile
@@ -464,41 +460,10 @@ try_root_dir:
   StrCpy ${L_CFG} "$INSTDIR"
 
 check_cfg_file:
-  StrCpy ${L_NEW_GUI} ""
-
-  ; See if we can get the current gui port from an existing configuration.
-  ; There may be more than one entry for this port in the file - use the last one found
-
-  FileOpen  ${L_CFG} "${L_CFG}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LINE}
-  StrCmp ${L_LINE} "" done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LINE} "$\n" loop
-
-  StrCpy ${L_PARAM} ${L_LINE} 10
-  StrCmp ${L_PARAM} "html_port " 0 check_eol
-  StrCpy ${L_NEW_GUI} ${L_LINE} 5 10
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-done:
-  FileClose ${L_CFG}
-
-  Push ${L_NEW_GUI}
-  Call NSIS_TrimNewlines
+  Push "${L_CFG}\popfile.cfg"
+  Push "html_port"
+  Call PFI_CfgSettingRead
   Pop ${L_NEW_GUI}
-
   StrCmp ${L_NEW_GUI} "" manual_shutdown
   Push ${L_NEW_GUI}
   Call PFI_ShutdownViaUI
@@ -517,17 +482,17 @@ check_exe:
   Call PFI_CheckIfLocked
   Pop ${L_EXE}
   StrCmp ${L_EXE} "" exit
-  StrCpy ${L_PARAM} 0
+  StrCpy ${L_CHARPOS} 0
   StrCpy ${L_RESULT} ""
-  StrLen ${L_TEXTEND} ${L_EXE}
+  StrLen ${L_LIMIT} ${L_EXE}
 
 nameloop:
-  IntOp ${L_PARAM} ${L_PARAM} + 1
-  IntCmp ${L_PARAM} ${L_TEXTEND} 0 0 gotname
-  StrCpy ${L_RESULT} ${L_EXE} 1 -${L_PARAM}
+  IntOp ${L_CHARPOS} ${L_CHARPOS} + 1
+  IntCmp ${L_CHARPOS} ${L_LIMIT} 0 0 gotname
+  StrCpy ${L_RESULT} ${L_EXE} 1 -${L_CHARPOS}
   StrCmp ${L_RESULT} "\" 0 nameloop
-  IntOp ${L_PARAM} ${L_PARAM} - 1
-  StrCpy ${L_EXE} ${L_EXE} "" -${L_PARAM}
+  IntOp ${L_CHARPOS} ${L_CHARPOS} - 1
+  StrCpy ${L_EXE} ${L_EXE} "" -${L_CHARPOS}
 
 gotname:
   Push "$INSTDIR\${L_EXE}"
@@ -542,23 +507,21 @@ manual_shutdown:
   MessageBox MB_OK|MB_ICONEXCLAMATION "Unable to shutdown POPFile automatically"
 
 exit:
-  Pop ${L_TEXTEND}
   Pop ${L_STOP_PF}
   Pop ${L_RESULT}
-  Pop ${L_PARAM}
   Pop ${L_NEW_GUI}
-  Pop ${L_LINE}
+  Pop ${L_LIMIT}
   Pop ${L_EXE}
+  Pop ${L_CHARPOS}
   Pop ${L_CFG}
 
   !undef L_CFG
+  !undef L_CHARPOS
   !undef L_EXE
-  !undef L_LINE
+  !undef L_LIMIT
   !undef L_NEW_GUI
-  !undef L_PARAM
   !undef L_RESULT
   !undef L_STOP_PF
-  !undef L_TEXTEND
 
 FunctionEnd
 
