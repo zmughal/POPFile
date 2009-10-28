@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.30"
+  !define C_PFI_LIBRARY_VERSION     "0.3.33"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -554,73 +554,28 @@
 
     Function PFI_GetSeparator
 
-      !define L_CFG         $R9   ; file handle
-      !define L_LNE         $R8   ; a line from the popfile.cfg file
-      !define L_PARAM       $R7
-      !define L_SEPARATOR   $R6   ; character used to separate the pop3 server from the username
-      !define L_TEXTEND     $R5   ; helps ensure correct handling of lines over 1023 chars long
+      !define L_SEPARATOR   $R9   ; character used to separate the pop3 server from the username
 
       Push ${L_SEPARATOR}
-      Push ${L_CFG}
-      Push ${L_LNE}
-      Push ${L_PARAM}
-      Push ${L_TEXTEND}
 
-      StrCpy ${L_SEPARATOR} ""
+      Push "$G_USERDIR\popfile.cfg"
+      Push "pop3_separator"               ; used by POPFile 0.19.0 or later
+      Call PFI_CfgSettingRead
+      Pop ${L_SEPARATOR}
+      StrCmp ${L_SEPARATOR} "" 0 exit
 
-      FileOpen  ${L_CFG} "$G_USERDIR\popfile.cfg" r
+      Push "$G_USERDIR\popfile.cfg"
+      Push "separator"                    ;  used by POPFile 0.18.x or earlier
+      Call PFI_CfgSettingRead
+      Pop ${L_SEPARATOR}
+      StrCmp ${L_SEPARATOR} "" 0 exit
 
-    found_eol:
-      StrCpy ${L_TEXTEND} "<eol>"
-
-    loop:
-      FileRead ${L_CFG} ${L_LNE}
-      StrCmp ${L_LNE} "" separator_done
-      StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-      StrCmp ${L_LNE} "$\n" loop
-
-      StrCpy ${L_PARAM} ${L_LNE} 10
-      StrCmp ${L_PARAM} "separator " old_separator
-      StrCpy ${L_PARAM} ${L_LNE} 15
-      StrCmp ${L_PARAM} "pop3_separator " new_separator
-      Goto check_eol
-
-    old_separator:
-      StrCpy ${L_SEPARATOR} ${L_LNE} 1 10
-      Goto check_eol
-
-    new_separator:
-      StrCpy ${L_SEPARATOR} ${L_LNE} 1 15
-
-      ; Now read file until we get to end of the current line
-      ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-    check_eol:
-      StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-      StrCmp ${L_TEXTEND} "$\n" found_eol
-      StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-    separator_done:
-      FileClose ${L_CFG}
-      StrCmp ${L_SEPARATOR} "" default
-      StrCmp ${L_SEPARATOR} "$\r" default
-      StrCmp ${L_SEPARATOR} "$\n" 0 exit
-
-    default:
       StrCpy ${L_SEPARATOR} ":"
 
     exit:
-      Pop ${L_TEXTEND}
-      Pop ${L_PARAM}
-      Pop ${L_LNE}
-      Pop ${L_CFG}
       Exch ${L_SEPARATOR}
 
-      !undef L_CFG
-      !undef L_LNE
-      !undef L_PARAM
       !undef L_SEPARATOR
-      !undef L_TEXTEND
 
     FunctionEnd
 !endif
@@ -718,67 +673,24 @@
 
     Function PFI_SetTrayIconMode
 
-      !define L_NEW_CFG     $R9   ; file handle used for clean copy
-      !define L_OLD_CFG     $R8   ; file handle for old version
-      !define L_LNE         $R7   ; a line from the popfile.cfg file
-      !define L_MODE        $R6   ; new console mode
-      !define L_PARAM       $R5
-      !define L_TEXTEND     $R4   ; helps ensure correct handling of lines over 1023 chars long
+      !define L_MODE        $R9   ; new console mode
+      !define L_RESULT      $R8   ; operation result
 
       Exch ${L_MODE}
-      Push ${L_NEW_CFG}
-      Push ${L_OLD_CFG}
-      Push ${L_LNE}
-      Push ${L_PARAM}
-      Push ${L_TEXTEND}
+      Push ${L_RESULT}
 
-      FileOpen  ${L_OLD_CFG} "$G_USERDIR\popfile.cfg" r
-      FileOpen  ${L_NEW_CFG} "$PLUGINSDIR\new.cfg" w
+      Push "$G_USERDIR\popfile.cfg"
+      Push "windows_trayicon"             ;  used by POPFile 0.19.0 or later
+      Push ${L_MODE}
+      Call PFI_CfgSettingWrite_without_backup
+      Pop ${L_RESULT}
+;;;      MessageBox MB_OK "Set tray icon to '${L_MODE}' result = ${L_RESULT}"
 
-    found_eol:
-      StrCpy ${L_TEXTEND} "<eol>"
-
-    loop:
-      FileRead ${L_OLD_CFG} ${L_LNE}
-      StrCmp ${L_LNE} "" copy_done
-      StrCmp ${L_TEXTEND} "<eol>" 0 copy_lne
-      StrCmp ${L_LNE} "$\n" copy_lne
-
-      StrCpy ${L_PARAM} ${L_LNE} 17
-      StrCmp ${L_PARAM} "windows_trayicon " 0 copy_lne
-      FileWrite ${L_NEW_CFG} "windows_trayicon ${L_MODE}${MB_NL}"
-      Goto loop
-
-    copy_lne:
-      FileWrite ${L_NEW_CFG} ${L_LNE}
-
-    ; Now read file until we get to end of the current line
-    ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-      StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-      StrCmp ${L_TEXTEND} "$\n" found_eol
-      StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-   copy_done:
-      FileClose ${L_OLD_CFG}
-      FileClose ${L_NEW_CFG}
-
-      Delete "$G_USERDIR\popfile.cfg"
-      Rename "$PLUGINSDIR\new.cfg" "$G_USERDIR\popfile.cfg"
-
-      Pop ${L_TEXTEND}
-      Pop ${L_PARAM}
-      Pop ${L_LNE}
-      Pop ${L_OLD_CFG}
-      Pop ${L_NEW_CFG}
+      Pop ${L_RESULT}
       Pop ${L_MODE}
 
-      !undef L_NEW_CFG
-      !undef L_OLD_CFG
-      !undef L_LNE
       !undef L_MODE
-      !undef L_PARAM
-      !undef L_TEXTEND
+      !undef L_RESULT
 
     FunctionEnd
 !endif
@@ -1439,7 +1351,7 @@
   FunctionEnd
 !macroend
 
-!ifdef CREATEUSER | PORTABLE | SHUTDOWN
+!ifdef ADDUSER | CREATEUSER | DBSTATUS | ONDEMAND | PORTABLE | SHUTDOWN | TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_CfgSettingRead
     #
@@ -1449,13 +1361,15 @@
     !insertmacro PFI_CfgSettingRead ""
 !endif
 
-;    #--------------------------------------------------------------------------
-;    # Uninstaller Function: un.PFI_CfgSettingRead
-;    #
-;    # This function is used during the uninstall process
-;    #--------------------------------------------------------------------------
-;
-;    !insertmacro PFI_CfgSettingRead "un."
+!ifdef ADDUSER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_CfgSettingRead
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_CfgSettingRead "un."
+!endif
 
 
 #--------------------------------------------------------------------------
@@ -1720,6 +1634,16 @@
 ;
 ;!insertmacro PFI_CfgSettingWrite_with_backup "un."
 
+!ifdef ADDUSER
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_CfgSettingWrite_without_backup
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_CfgSettingWrite_without_backup ""
+!endif
+
 ;#--------------------------------------------------------------------------
 ;# Uninstaller Function: un.PFI_CfgSettingWrite_without_backup
 ;#
@@ -1727,14 +1651,6 @@
 ;#--------------------------------------------------------------------------
 ;
 ;!insertmacro PFI_CfgSettingWrite_without_backup "un."
-
-;#--------------------------------------------------------------------------
-;# Installer Function: PFI_CfgSettingWrite_without_backup
-;#
-;# This function is used during the installation process
-;#--------------------------------------------------------------------------
-;
-;!insertmacro PFI_CfgSettingWrite_without_backup ""
 
 
 #--------------------------------------------------------------------------
@@ -2389,88 +2305,43 @@
 !macro PFI_GetCorpusPath UN
   Function ${UN}PFI_GetCorpusPath
 
-    !define L_CORPUS        $R9
-    !define L_FILE_HANDLE   $R8
-    !define L_RESULT        $R7
-    !define L_SOURCE        $R6
-    !define L_TEMP          $R5
-    !define L_TEXTEND       $R4   ; helps ensure correct handling of lines over 1023 chars long
+    !define L_RESULT        $R9
+    !define L_SOURCE        $R8
 
-    Exch ${L_SOURCE}          ; where we are supposed to look for the 'popfile.cfg' file
+    Exch ${L_SOURCE}                            ; path to the folder holding 'popfile.cfg'
     Push ${L_RESULT}
     Exch
-    Push ${L_CORPUS}
-    Push ${L_FILE_HANDLE}
-    Push ${L_TEMP}
-    Push ${L_TEXTEND}
-
-    StrCpy ${L_CORPUS} ""
 
     IfFileExists "${L_SOURCE}\popfile.cfg" 0 use_default_locn
 
-    FileOpen ${L_FILE_HANDLE} "${L_SOURCE}\popfile.cfg" r
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "bayes_corpus"                         ; used by POPFile 0.19.0 or later
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "" 0 use_cfg_data
 
-  found_eol:
-    StrCpy ${L_TEXTEND} "<eol>"
-
-  loop:
-    FileRead ${L_FILE_HANDLE} ${L_TEMP}
-    StrCmp ${L_TEMP} "" cfg_file_done
-    StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-    StrCmp ${L_TEMP} "$\n" loop
-
-    StrCpy ${L_RESULT} ${L_TEMP} 7
-    StrCmp ${L_RESULT} "corpus " got_old_corpus
-    StrCpy ${L_RESULT} ${L_TEMP} 13
-    StrCmp ${L_RESULT} "bayes_corpus " got_new_corpus
-    Goto check_eol
-
-  got_old_corpus:
-    StrCpy ${L_CORPUS} ${L_TEMP} "" 7
-    Goto check_eol
-
-  got_new_corpus:
-    StrCpy ${L_CORPUS} ${L_TEMP} "" 13
-
-    ; Now read file until we get to end of the current line
-    ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-  check_eol:
-    StrCpy ${L_TEXTEND} ${L_TEMP} 1 -1
-    StrCmp ${L_TEXTEND} "$\n" found_eol
-    StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-  cfg_file_done:
-    FileClose ${L_FILE_HANDLE}
-    Push ${L_CORPUS}
-    Call ${UN}NSIS_TrimNewlines
-    Pop ${L_CORPUS}
-    StrCmp ${L_CORPUS} "" use_default_locn use_cfg_data
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "corpus"                               ; used by POPFile 0.18.x or earlier
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "" 0 use_cfg_data
 
   use_default_locn:
-    StrCpy ${L_RESULT} ${L_SOURCE}\corpus
+    StrCpy ${L_RESULT} "${L_SOURCE}\corpus"     ; this is the 'flat-file' default location
     Goto got_result
 
   use_cfg_data:
     Push ${L_SOURCE}
-    Push ${L_CORPUS}
+    Push ${L_RESULT}
     Call ${UN}PFI_GetDataPath
     Pop ${L_RESULT}
 
   got_result:
-    Pop ${L_TEXTEND}
-    Pop ${L_TEMP}
-    Pop ${L_FILE_HANDLE}
-    Pop ${L_CORPUS}
     Pop ${L_SOURCE}
     Exch ${L_RESULT}  ; place full path of 'corpus' directory on top of the stack
 
-    !undef L_CORPUS
-    !undef L_FILE_HANDLE
     !undef L_RESULT
     !undef L_SOURCE
-    !undef L_TEMP
-    !undef L_TEXTEND
 
   FunctionEnd
 !macroend
@@ -2531,80 +2402,36 @@
 !macro PFI_GetDatabaseName UN
   Function ${UN}PFI_GetDatabaseName
 
-    !define L_FILE_HANDLE   $R9   ; used to access the configuration file (popfile.cfg)
-    !define L_PARAM         $R8   ; parameter from the configuration file
-    !define L_RESULT        $R7
-    !define L_SOURCE        $R6   ; folder containing the configuration file
-    !define L_TEMP          $R5
-    !define L_TEXTEND       $R4   ; helps ensure correct handling of lines over 1023 chars long
+    !define L_RESULT        $R9
+    !define L_SOURCE        $R8
 
-    Exch ${L_SOURCE}          ; where we are supposed to look for the 'popfile.cfg' file
+    Exch ${L_SOURCE}              ; where we are supposed to find the 'popfile.cfg' file
     Push ${L_RESULT}
     Exch
-    Push ${L_FILE_HANDLE}
-     Push ${L_PARAM}
-    Push ${L_TEMP}
-    Push ${L_TEXTEND}
-
-    StrCpy ${L_RESULT} ""
 
     IfFileExists "${L_SOURCE}\popfile.cfg" 0 use_default
 
-    FileOpen ${L_FILE_HANDLE} "${L_SOURCE}\popfile.cfg" r
-
-  found_eol:
-    StrCpy ${L_TEXTEND} "<eol>"
-
-  loop:
-    FileRead ${L_FILE_HANDLE} ${L_PARAM}
-    StrCmp ${L_PARAM} "" cfg_file_done
-    StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-    StrCmp ${L_PARAM} "$\n" loop
-
-    StrCpy ${L_TEMP} ${L_PARAM} 18
-    StrCmp ${L_TEMP} "database_database " 0 check_old_value
-    StrCpy ${L_RESULT} ${L_PARAM} "" 18
-    Goto check_eol
-
-  check_old_value:
-    StrCpy ${L_TEMP} ${L_PARAM} 15
-    StrCmp ${L_TEMP} "bayes_database " 0 check_eol
-    StrCpy ${L_RESULT} ${L_PARAM} "" 15
-
-    ; Now read file until we get to end of the current line
-    ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-  check_eol:
-    StrCpy ${L_TEXTEND} ${L_PARAM} 1 -1
-    StrCmp ${L_TEXTEND} "$\n" found_eol
-    StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-  cfg_file_done:
-    FileClose ${L_FILE_HANDLE}
-
-    StrCmp ${L_RESULT} "" use_default
-    Push ${L_RESULT}
-    Call ${UN}NSIS_TrimNewlines
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "bayes_database"                     ; used by POPFile 0.21.0 or later
+    Call ${UN}PFI_CfgSettingRead
     Pop ${L_RESULT}
-    StrCmp ${L_RESULT} "" use_default got_result
+    StrCmp ${L_RESULT} "" 0 got_result
+
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "database_database"                  ; used by unreleased 'trunk' code (0.23/2.x)
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "" 0 got_result
 
   use_default:
     StrCpy ${L_RESULT} "popfile.db"
 
   got_result:
-    Pop ${L_TEXTEND}
-    Pop ${L_TEMP}
-    Pop ${L_PARAM}
-    Pop ${L_FILE_HANDLE}
     Pop ${L_SOURCE}
     Exch ${L_RESULT}
 
-    !undef L_FILE_HANDLE
-    !undef L_PARAM
     !undef L_RESULT
     !undef L_SOURCE
-    !undef L_TEMP
-    !undef L_TEXTEND
 
   FunctionEnd
 !macroend
@@ -3138,88 +2965,43 @@
 !macro PFI_GetMessagesPath UN
   Function ${UN}PFI_GetMessagesPath
 
-    !define L_FILE_HANDLE   $R9
-    !define L_MSG_HISTORY   $R8
-    !define L_RESULT        $R7
-    !define L_SOURCE        $R6
-    !define L_TEMP          $R5
-    !define L_TEXTEND       $R4   ; helps ensure correct handling of lines over 1023 chars long
+    !define L_RESULT        $R9
+    !define L_SOURCE        $R8
 
-    Exch ${L_SOURCE}          ; where we are supposed to look for the 'popfile.cfg' file
+    Exch ${L_SOURCE}              ; path to folder holding the configuration file
     Push ${L_RESULT}
     Exch
-    Push ${L_FILE_HANDLE}
-    Push ${L_MSG_HISTORY}
-    Push ${L_TEMP}
-    Push ${L_TEXTEND}
-
-    StrCpy ${L_MSG_HISTORY} ""
 
     IfFileExists "${L_SOURCE}\popfile.cfg" 0 use_default_locn
 
-    FileOpen ${L_FILE_HANDLE} "${L_SOURCE}\popfile.cfg" r
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "GLOBAL_msgdir"                      ; used by POPFile 0.19.0 or later
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "" 0 use_cfg_data
 
-  found_eol:
-    StrCpy ${L_TEXTEND} "<eol>"
-
-  loop:
-    FileRead ${L_FILE_HANDLE} ${L_TEMP}
-    StrCmp ${L_TEMP} "" cfg_file_done
-    StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-    StrCmp ${L_TEMP} "$\n" loop
-
-    StrCpy ${L_RESULT} ${L_TEMP} 7
-    StrCmp ${L_RESULT} "msgdir " got_old_msgdir
-    StrCpy ${L_RESULT} ${L_TEMP} 14
-    StrCmp ${L_RESULT} "GLOBAL_msgdir " got_new_msgdir
-    Goto check_eol
-
-  got_old_msgdir:
-    StrCpy ${L_MSG_HISTORY} ${L_TEMP} "" 7
-    Goto check_eol
-
-  got_new_msgdir:
-    StrCpy ${L_MSG_HISTORY} ${L_TEMP} "" 14
-
-    ; Now read file until we get to end of the current line
-    ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-  check_eol:
-    StrCpy ${L_TEXTEND} ${L_TEMP} 1 -1
-    StrCmp ${L_TEXTEND} "$\n" found_eol
-    StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-  cfg_file_done:
-    FileClose ${L_FILE_HANDLE}
-    Push ${L_MSG_HISTORY}
-    Call ${UN}NSIS_TrimNewlines
-    Pop ${L_MSG_HISTORY}
-    StrCmp ${L_MSG_HISTORY} "" use_default_locn use_cfg_data
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "msgdir"                             ; used by POPFile 0.18.x
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_RESULT}
+    StrCmp ${L_RESULT} "" 0 use_cfg_data
 
   use_default_locn:
-    StrCpy ${L_RESULT} ${L_SOURCE}\messages
+    StrCpy ${L_RESULT} "${L_SOURCE}\messages"
     Goto got_result
 
   use_cfg_data:
     Push ${L_SOURCE}
-    Push ${L_MSG_HISTORY}
+    Push ${L_RESULT}
     Call ${UN}PFI_GetDataPath
     Pop ${L_RESULT}
 
   got_result:
-    Pop ${L_TEXTEND}
-    Pop ${L_TEMP}
-    Pop ${L_MSG_HISTORY}
-    Pop ${L_FILE_HANDLE}
     Pop ${L_SOURCE}
     Exch ${L_RESULT}  ; place full path of 'messages' folder on top of the stack
 
-    !undef L_FILE_HANDLE
-    !undef L_MSG_HISTORY
     !undef L_RESULT
     !undef L_SOURCE
-    !undef L_TEMP
-    !undef L_TEXTEND
 
   FunctionEnd
 !macroend
@@ -3407,90 +3189,51 @@
 !macro PFI_GetSQLdbPathName UN
   Function ${UN}PFI_GetSQLdbPathName
 
-    !define L_FILE_HANDLE   $R9
-    !define L_RESULT        $R8
-    !define L_SOURCE        $R7
-    !define L_SQL_CONNECT   $R6
-    !define L_SQL_CORPUS    $R5
-    !define L_TEMP          $R4
-    !define L_TEXTEND       $R3   ; helps ensure correct handling of lines over 1023 chars long
+    !define L_RESULT        $R9
+    !define L_SOURCE        $R8
+    !define L_SQL_CONNECT   $R7
+    !define L_SQL_CORPUS    $R6
 
-    Exch ${L_SOURCE}          ; where we are supposed to look for the 'popfile.cfg' file
+    Exch ${L_SOURCE}              ; where we are supposed to find the 'popfile.cfg' file
     Push ${L_RESULT}
     Exch
-    Push ${L_FILE_HANDLE}
     Push ${L_SQL_CONNECT}
     Push ${L_SQL_CORPUS}
-    Push ${L_TEMP}
-    Push ${L_TEXTEND}
-
-    StrCpy ${L_SQL_CORPUS} ""
-    StrCpy ${L_SQL_CONNECT} ""
 
     IfFileExists "${L_SOURCE}\popfile.cfg" 0 no_sql_set
 
-    FileOpen ${L_FILE_HANDLE} "${L_SOURCE}\popfile.cfg" r
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "bayes_dbconnect"              ; used by POPFile 0.21.0 or later
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_SQL_CONNECT}
+    StrCmp ${L_SQL_CONNECT} "" 0 get_database_name
 
-  found_eol:
-    StrCpy ${L_TEXTEND} "<eol>"
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "database_dbconnect"           ; used by unreleased 'trunk' code (0.23/2.x)
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_SQL_CONNECT}
+    StrCmp ${L_SQL_CONNECT} "" no_sql_set
 
-  loop:
-    FileRead ${L_FILE_HANDLE} ${L_TEMP}
-    StrCmp ${L_TEMP} "" cfg_file_done
-    StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-    StrCmp ${L_TEMP} "$\n" loop
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "database_database"            ; used by unreleased 'trunk' code (0.23/2.x)
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_SQL_CORPUS}
+    Goto check_sql_settings
 
-    StrCpy ${L_RESULT} ${L_TEMP} 18
-    StrCmp ${L_RESULT} "database_database " got_sql_corpus
-    StrCpy ${L_RESULT} ${L_TEMP} 19
-    StrCmp ${L_RESULT} "database_dbconnect " got_sql_connect
+  get_database_name:
+    Push "${L_SOURCE}\popfile.cfg"
+    Push "bayes_database"               ; used by POPFile 0.21.0 or later
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_SQL_CORPUS}
 
-    StrCpy ${L_RESULT} ${L_TEMP} 15
-    StrCmp ${L_RESULT} "bayes_database " got_sql_old_corpus
-    StrCpy ${L_RESULT} ${L_TEMP} 16
-    StrCmp ${L_RESULT} "bayes_dbconnect " got_sql_old_connect
-    Goto check_eol
-
-  got_sql_old_corpus:
-    StrCpy ${L_SQL_CORPUS} ${L_TEMP} "" 15
-    Goto check_eol
-
-  got_sql_old_connect:
-    StrCpy ${L_SQL_CONNECT} ${L_TEMP} "" 16
-    Goto check_eol
-
-  got_sql_corpus:
-    StrCpy ${L_SQL_CORPUS} ${L_TEMP} "" 18
-    Goto check_eol
-
-  got_sql_connect:
-    StrCpy ${L_SQL_CONNECT} ${L_TEMP} "" 19
-
-    ; Now read file until we get to end of the current line
-    ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-  check_eol:
-    StrCpy ${L_TEXTEND} ${L_TEMP} 1 -1
-    StrCmp ${L_TEXTEND} "$\n" found_eol
-    StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-  cfg_file_done:
-    FileClose ${L_FILE_HANDLE}
+  check_sql_settings:
 
     ; If a SQL setting other than the default SQLite one is found, assume existing system
     ; is using an alternative SQL database (such as MySQL) so there is no SQLite database
 
-    Push ${L_SQL_CONNECT}
-    Call ${UN}NSIS_TrimNewlines
-    Pop ${L_SQL_CONNECT}
-    StrCmp ${L_SQL_CONNECT} "" no_sql_set
     StrCpy ${L_SQL_CONNECT} ${L_SQL_CONNECT} 10
     StrCmp ${L_SQL_CONNECT} "dbi:SQLite" 0 not_sqlite
-
-    Push ${L_SQL_CORPUS}
-    Call ${UN}NSIS_TrimNewlines
-    Pop ${L_SQL_CORPUS}
-    StrCmp ${L_SQL_CORPUS} "" no_sql_set use_cfg_data
+    StrCmp ${L_SQL_CORPUS} "" no_sql_set got_sql_corpus
 
   not_sqlite:
     StrCpy ${L_RESULT} "Not SQLite"
@@ -3500,28 +3243,22 @@
     StrCpy ${L_RESULT} ""
     Goto got_result
 
-  use_cfg_data:
+  got_sql_corpus:
     Push ${L_SOURCE}
     Push ${L_SQL_CORPUS}
     Call ${UN}PFI_GetDataPath
     Pop ${L_RESULT}
 
   got_result:
-    Pop ${L_TEXTEND}
-    Pop ${L_TEMP}
     Pop ${L_SQL_CORPUS}
     Pop ${L_SQL_CONNECT}
-    Pop ${L_FILE_HANDLE}
     Pop ${L_SOURCE}
     Exch ${L_RESULT}
 
-    !undef L_FILE_HANDLE
     !undef L_RESULT
     !undef L_SOURCE
     !undef L_SQL_CONNECT
     !undef L_SQL_CORPUS
-    !undef L_TEMP
-    !undef L_TEXTEND
 
   FunctionEnd
 !macroend
