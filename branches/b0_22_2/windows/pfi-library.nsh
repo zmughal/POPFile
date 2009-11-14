@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.33"
+  !define C_PFI_LIBRARY_VERSION     "0.3.34"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -464,7 +464,7 @@
       ; According to Microsoft's Help and Support site (http://support.microsoft.com/kb/969393/)
       ; the 'Version' string under 'HKLM\Software\Microsoft\Internet Explorer' can be used to
       ; determine which version of Internet Explorer is installed. For our purposes there is no
-      ; need to worry about ever possible value (the Help and Support page lists over 50 versions)
+      ; need to worry about every possible value (the Help and Support page lists over 50 versions)
       ;
       ; Internet Explorer Version         'Version' string
       ;    4.0                               4.71.1712.6
@@ -3519,15 +3519,9 @@
     Pop ${L_SECONDS}
     Pop ${L_TIMESTAMP}    ; ignore milliseconds
 
-    IntCmp ${L_HOURS} 10 +2 0 +2
-    StrCpy ${L_HOURS} "0${L_HOURS}"
-
-    IntCmp ${L_MINUTES} 10 +2 0 +2
-    StrCpy ${L_MINUTES} "0${L_MINUTES}"
-
-    IntCmp ${L_SECONDS} 10 +2 0 +2
-    StrCpy ${L_SECONDS} "0${L_SECONDS}"
-
+    StrCpy ${L_HOURS} "0${L_HOURS}" "" -2
+    StrCpy ${L_MINUTES} "0${L_MINUTES}" "" -2
+    StrCpy ${L_SECONDS} "0${L_SECONDS}" "" -2
     StrCpy ${L_TIMESTAMP} "${L_HOURS}:${L_MINUTES}:${L_SECONDS}"
 
     Pop ${L_SECONDS}
