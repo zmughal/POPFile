@@ -24,7 +24,7 @@
 #                      Pop $R0
 #--------------------------------------------------------------------------
 
-  !define C_NSIS_LIBRARY_VERSION     "0.1.0"
+  !define C_NSIS_LIBRARY_VERSION     "0.1.1"
 
   ;----------------------------------------------
   ; Use the following standard NSIS header files:
@@ -295,7 +295,7 @@
   FunctionEnd
 !macroend
 
-!ifndef BACKUP & DBSTATUS & MONITORCC & MSGCAPTURE & ONDEMAND & PFIDIAG & RESTORE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE
+!ifndef BACKUP & DBSTATUS & MONITORCC & MSGCAPTURE & ONDEMAND & RESTORE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE
     #--------------------------------------------------------------------------
     # Installer Function: NSIS_IsNT
     #

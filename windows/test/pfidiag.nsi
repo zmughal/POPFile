@@ -119,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.15"
+  !define C_VERSION   "0.1.16"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -478,7 +478,7 @@ set_default:
   StrCpy $G_DIAG_MODE "simple"
 
 get_os_type:
-  Call IsNT
+  Call NSIS_IsNT
   Pop $G_WIN_OS_TYPE
 
   Pop ${L_TEMP}
@@ -831,6 +831,12 @@ short_HKLM_root:
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   GetFullPathName /SHORT $G_EXPECTED_ROOT $G_EXPECTED_ROOT
+  StrCmp $G_EXPECTED_ROOT "" 0 compare_HKLM_root_lfn_sfn
+  DetailPrint "^^^^^ Error ^^^^^"
+  DetailPrint "***** Unable to verify SFN because the LFN path does not exist"
+  Goto end_HKLM_root
+
+compare_HKLM_root_lfn_sfn:
   StrCpy ${L_TEMP} $G_EXPECTED_ROOT 1 -1
   StrCmp ${L_TEMP} "\" end_HKLM_root
   StrCmp $G_EXPECTED_ROOT ${L_REGDATA} end_HKLM_root
@@ -883,6 +889,12 @@ short_HKCU_root:
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   GetFullPathName /SHORT $G_EXPECTED_ROOT $G_EXPECTED_ROOT
+  StrCmp $G_EXPECTED_ROOT "" 0 compare_HKCU_root_lfn_sfn
+  DetailPrint "^^^^^ Error ^^^^^"
+  DetailPrint "***** Unable to verify SFN because the LFN path does not exist"
+  Goto end_HKCU_root
+
+compare_HKCU_root_lfn_sfn:
   StrCpy ${L_TEMP} $G_EXPECTED_ROOT 1 -1
   StrCmp ${L_TEMP} "\" end_HKCU_root
   StrCmp $G_EXPECTED_ROOT ${L_REGDATA} end_HKCU_root
@@ -920,6 +932,12 @@ short_HKCU_user:
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   GetFullPathName /SHORT $G_EXPECTED_USER $G_EXPECTED_USER
+  StrCmp $G_EXPECTED_USER "" 0 compare_user_lfn_sfn
+  DetailPrint "^^^^^ Error ^^^^^"
+  DetailPrint "***** Unable to verify SFN because the LFN path does not exist"
+  Goto end_HKCU_user
+
+compare_user_lfn_sfn:
   StrCpy ${L_TEMP} $G_EXPECTED_USER 1 -1
   StrCmp ${L_TEMP} "\" end_HKCU_user
   StrCmp $G_EXPECTED_USER ${L_REGDATA} end_HKCU_user
@@ -1074,6 +1092,12 @@ short_simple_root:
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   GetFullPathName /SHORT $G_EXPECTED_ROOT $G_EXPECTED_ROOT
+  StrCmp $G_EXPECTED_ROOT "" 0 compare_root_lfn_sfn
+  DetailPrint "^^^^^ Error ^^^^^"
+  DetailPrint "***** Unable to verify SFN because the LFN path does not exist"
+  Goto end_simple_root
+
+compare_root_lfn_sfn:
   StrCpy ${L_TEMP} $G_EXPECTED_ROOT 1 -1
   StrCmp ${L_TEMP} "\" end_simple_root
   StrCmp $G_EXPECTED_ROOT ${L_REGDATA} end_simple_root
@@ -1110,6 +1134,12 @@ short_simple_user:
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   GetFullPathName /SHORT $G_EXPECTED_USER $G_EXPECTED_USER
+  StrCmp $G_EXPECTED_USER "" 0 compare_user_lfn_sfn
+  DetailPrint "^^^^^ Error ^^^^^"
+  DetailPrint "***** Unable to verify SFN because the LFN path does not exist"
+  Goto end_simple_user
+
+compare_user_lfn_sfn:
   StrCpy ${L_TEMP} $G_EXPECTED_USER 1 -1
   StrCmp ${L_TEMP} "\" end_simple_user
   StrCmp $G_EXPECTED_USER ${L_REGDATA} end_simple_user
@@ -1436,48 +1466,6 @@ SectionEnd
 
 
 #--------------------------------------------------------------------------
-# Installer Function: IsNT
-#
-# This function performs a simple check to determine if the utility is running on
-# a Win9x system or a more modern OS. (This function is also used by the installer,
-# uninstaller, 'Add POPFile User' wizard and runpopfile.exe)
-#
-# Returns 0 if running on a Win9x system, otherwise returns 1
-#
-# Inputs:
-#         None
-#
-# Outputs:
-#         (top of stack)   - 0 (running on Win9x system) or 1 (running on a more modern OS)
-#
-# Usage:
-#
-#         Call IsNT
-#         Pop $R0
-#
-#         ($R0 at this point is 0 if installer is running on a Win9x system)
-#
-#--------------------------------------------------------------------------
-
-Function IsNT
-
-  Push $0
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-  StrCmp $0 "" 0 IsNT_yes
-
-  ; we are not NT.
-
-  Pop $0
-  Push 0
-  Return
-
-IsNT_yes:
-  Pop $0
-  Push 1
-FunctionEnd
-
-
-#--------------------------------------------------------------------------
 # Installer Function: AnalyseShortcuts
 #
 # The Windows installer (setup.exe) and the "Add POPFile User" wizard (adduser.exe) only check
@@ -1758,6 +1746,12 @@ Function CheckExeFilesExist
       lbl_b_${PFI_UNIQUE_ID}:
   !macroend
 
+  IfFileExists "$INSTDIR\*.*" check_files
+  DetailPrint "${L_SOURCE}: non-existent path specified ($INSTDIR)"
+  DetailPrint "${L_SOURCE}: unable to search for 'popfile*.exe' files"
+  Goto done
+
+check_files:
   !insertmacro CHECK_EXE_EXISTS "popfile.exe"
   !insertmacro CHECK_EXE_EXISTS "popfileb.exe"
   !insertmacro CHECK_EXE_EXISTS "popfilef.exe"
