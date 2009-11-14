@@ -119,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.16"
+  !define C_VERSION   "0.1.17"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -1746,7 +1746,10 @@ Function CheckExeFilesExist
       lbl_b_${PFI_UNIQUE_ID}:
   !macroend
 
+  StrCmp $INSTDIR "" unable_to_search
   IfFileExists "$INSTDIR\*.*" check_files
+
+unable_to_search:
   DetailPrint "${L_SOURCE}: non-existent path specified ($INSTDIR)"
   DetailPrint "${L_SOURCE}: unable to search for 'popfile*.exe' files"
   Goto done
