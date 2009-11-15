@@ -853,7 +853,10 @@ Function PFIGUIInit
 
 try_registry:
   ReadRegStr $G_ROOTDIR HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
-  StrCmp $G_ROOTDIR "" 0 compatible
+  StrCmp $G_ROOTDIR "" not_found
+  IfFileExists "$G_ROOTDIR\*.*" compatible
+  
+not_found:
   MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_COMPAT_NOTFOUND)"
   Abort
 
