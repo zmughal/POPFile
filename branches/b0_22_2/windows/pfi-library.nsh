@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.3.34"
+  !define C_PFI_LIBRARY_VERSION     "0.4.0"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1351,7 +1351,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | CREATEUSER | DBSTATUS | ONDEMAND | PORTABLE | SHUTDOWN | TRANSLATOR_AUW
+!ifdef ADDSSL | ADDUSER | CREATEUSER | DBSTATUS | INSTALLER | MSGCAPTURE | ONDEMAND | PORTABLE | RUNPOPFILE | SHUTDOWN | TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_CfgSettingRead
     #
@@ -1361,7 +1361,7 @@
     !insertmacro PFI_CfgSettingRead ""
 !endif
 
-!ifdef ADDUSER
+!ifdef ADDUSER | INSTALLER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_CfgSettingRead
     #
@@ -1644,13 +1644,15 @@
     !insertmacro PFI_CfgSettingWrite_without_backup ""
 !endif
 
-;#--------------------------------------------------------------------------
-;# Uninstaller Function: un.PFI_CfgSettingWrite_without_backup
-;#
-;# This function is used during the uninstallation process
-;#--------------------------------------------------------------------------
-;
-;!insertmacro PFI_CfgSettingWrite_without_backup "un."
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_CfgSettingWrite_without_backup
+    #
+    # This function is used during the uninstallation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_CfgSettingWrite_without_backup "un."
+!endif
 
 
 #--------------------------------------------------------------------------
