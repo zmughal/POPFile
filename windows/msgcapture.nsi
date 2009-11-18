@@ -118,7 +118,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.1.16"
+  !define C_VERSION             "0.2.0"
 
   !define C_OUTFILE             "msgcapture.exe"
 
@@ -490,11 +490,18 @@ fatal_error_exit:
   Abort
 
 found_cfg:
-  Push ${L_PFI_USER}        ; 'User Data' folder location
-  Push "1"                  ; assume system tray icon is enabled (the current default setting)
-  Call GetTrayIconSetting
-  Pop ${L_TRAYICON}         ; "i" if system tray icon enabled, "" if it is disabled
+  Push "${L_PFI_USER}\popfile.cfg"
+  Push "windows_trayicon"
+  Call PFI_CfgSettingRead
+  Pop ${L_TRAYICON}
+  StrCmp ${L_TRAYICON} "0" icon_disabled
+  StrCpy ${L_TRAYICON} "i"                ; use the icon if enabled or if not defined in popfile.cfg
+  Goto report_env_vars
 
+icon_disabled:
+  StrCpy ${L_TRAYICON} ""
+
+report_env_vars:
   DetailPrint "POPFILE_ROOT   = ${L_PFI_ROOT}"
 
   ; POPFile Portable uses relative paths for POPFILE_ROOT and POPFILE_USER
@@ -610,82 +617,6 @@ exit:
   !undef L_TRAYICON
 
 SectionEnd
-
-#--------------------------------------------------------------------------
-# Installer Function: GetTrayIconSetting
-#
-# Returns "i" if the system tray icon is enabled in popfile.cfg or "" if it is disabled.
-# If the setting is not found in popfile.cfg, use the input parameter to determine the result.
-#
-# This function avoids the progress bar flicker seen when similar code was in the "Section" body
-#--------------------------------------------------------------------------
-
-Function GetTrayIconSetting
-
-  !define L_CFG           $R9   ; file handle used to access 'popfile.cfg'
-  !define L_ICONSETTING   $R8   ; 1 (or "i") = system tray icon enabled, 0 (or "") = disabled
-  !define L_LINE          $R7   ; line (or part of line) read from 'popfile.cfg'
-  !define L_TEMP          $R6
-  !define L_TEXTEND       $R5   ; helps ensure correct handling of lines over 1023 chars long
-  !define L_USERDATA      $R4   ; location of 'User Data'
-
-  Exch ${L_ICONSETTING}         ; get the setting to be used if value not found in 'popfile.cfg'
-  Exch
-  Exch ${L_USERDATA}            ; get location where 'popfile.cfg' should be found
-  Push ${L_CFG}
-  Push ${L_LINE}
-  Push ${L_TEMP}
-  Push ${L_TEXTEND}
-
-  FileOpen ${L_CFG} "${L_USERDATA}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LINE}
-  StrCmp ${L_LINE} "" options_done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LINE} "$\n" loop
-
-  StrCpy ${L_TEMP} ${L_LINE} 17
-  StrCmp ${L_TEMP} "windows_trayicon " got_icon_option
-  Goto check_eol
-
-got_icon_option:
-  StrCpy ${L_ICONSETTING} ${L_LINE} 1 17
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-options_done:
-  FileClose ${L_CFG}
-
-  StrCmp ${L_ICONSETTING} "1" enabled
-  StrCpy ${L_ICONSETTING} ""
-  Goto exit
-
-enabled:
-  StrCpy ${L_ICONSETTING} "i"
-
-exit:
-  Pop ${L_TEXTEND}
-  Pop ${L_TEMP}
-  Pop ${L_LINE}
-  Pop ${L_CFG}
-  Pop ${L_USERDATA}
-  Exch ${L_ICONSETTING}
-
-  !undef L_CFG
-  !undef L_ICONSETTING
-  !undef L_LINE
-  !undef L_TEMP
-  !undef L_TEXTEND
-  !undef L_USERDATA
-
-FunctionEnd
 
 #--------------------------------------------------------------------------
 # End of 'msgcapture.nsi'

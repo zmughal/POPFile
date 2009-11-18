@@ -341,23 +341,15 @@ FunctionEnd
 
     IfFileExists "$G_ROOTDIR\*.exe" 0 nothing_to_check
 
-    !define L_CFG      $R9    ; file handle
+    !define L_CFG      $R9    ; folder where the configuration file (popfile.cfg) may be found
     !define L_EXE      $R8    ; name of EXE file to be monitored
-    !define L_LINE     $R7
-    !define L_NEW_GUI  $R6
-    !define L_OLD_GUI  $R5
-    !define L_PARAM    $R4
-    !define L_RESULT   $R3
-    !define L_TEXTEND  $R2    ; used to ensure correct handling of lines longer than 1023 chars
+    !define L_GUI      $R7    ; port number used for the UI
+    !define L_RESULT   $R6
 
     Push ${L_CFG}
     Push ${L_EXE}
-    Push ${L_LINE}
-    Push ${L_NEW_GUI}
-    Push ${L_OLD_GUI}
-    Push ${L_PARAM}
+    Push ${L_GUI}
     Push ${L_RESULT}
-    Push ${L_TEXTEND}
 
     ; Starting with POPFile 0.21.0 an experimental version of 'popfile-service.exe' was included
     ; to allow POPFile to be run as a Windows service.
@@ -404,61 +396,15 @@ FunctionEnd
     StrCpy ${L_CFG} "$G_ROOTDIR"
 
   check_cfg_file:
-    StrCpy ${L_NEW_GUI} ""
-    StrCpy ${L_OLD_GUI} ""
+    Push "${L_CFG}\popfile.cfg"
+    Push "html_port"
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_GUI}
 
-    ; See if we can get the current gui port from an existing configuration.
-    ; There may be more than one entry for this port in the file - use the last one found
-    ; (but give priority to any "html_port" entry).
-
-    FileOpen  ${L_CFG} "${L_CFG}\popfile.cfg" r
-
-  found_eol:
-    StrCpy ${L_TEXTEND} "<eol>"
-
-  loop:
-    FileRead ${L_CFG} ${L_LINE}
-    StrCmp ${L_LINE} "" done
-    StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-    StrCmp ${L_LINE} "$\n" loop
-
-    StrCpy ${L_PARAM} ${L_LINE} 10
-    StrCmp ${L_PARAM} "html_port " got_html_port
-
-    StrCpy ${L_PARAM} ${L_LINE} 8
-    StrCmp ${L_PARAM} "ui_port " got_ui_port
-    Goto check_eol
-
-  got_ui_port:
-    StrCpy ${L_OLD_GUI} ${L_LINE} 5 8
-    Goto check_eol
-
-  got_html_port:
-    StrCpy ${L_NEW_GUI} ${L_LINE} 5 10
-
-    ; Now read file until we get to end of the current line
-    ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-  check_eol:
-    StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
-    StrCmp ${L_TEXTEND} "$\n" found_eol
-    StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-  done:
-    FileClose ${L_CFG}
-
-    Push ${L_NEW_GUI}
-    Call ${UN}NSIS_TrimNewlines
-    Pop ${L_NEW_GUI}
-
-    Push ${L_OLD_GUI}
-    Call ${UN}NSIS_TrimNewlines
-    Pop ${L_OLD_GUI}
-
-    StrCmp ${L_NEW_GUI} "" try_old_style
-    DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_NEW_GUI} [new style port]"
+    StrCmp ${L_GUI} "" try_old_style
+    DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_GUI} [new style port]"
     DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-    Push ${L_NEW_GUI}
+    Push ${L_GUI}
     Call ${UN}PFI_ShutdownViaUI
     Pop ${L_RESULT}
     DetailPrint "PFI_ShutdownViaUI result: ${L_RESULT}"
@@ -466,10 +412,15 @@ FunctionEnd
     StrCmp ${L_RESULT} "password?" manual_shutdown
 
   try_old_style:
-    StrCmp ${L_OLD_GUI} "" manual_shutdown
-    DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_OLD_GUI} [old style port]"
+    Push "${L_CFG}\popfile.cfg"
+    Push "ui_port"
+    Call ${UN}PFI_CfgSettingRead
+    Pop ${L_GUI}
+
+    StrCmp ${L_GUI} "" manual_shutdown
+    DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_GUI} [old style port]"
     DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
-    Push ${L_OLD_GUI}
+    Push ${L_GUI}
     Call ${UN}PFI_ShutdownViaUI
     Pop ${L_RESULT}
     DetailPrint "PFI_ShutdownViaUI result: ${L_RESULT}"
@@ -505,23 +456,15 @@ FunctionEnd
     Push $G_ROOTDIR
     Call ${UN}PFI_RequestPFIUtilsShutdown
 
-    Pop ${L_TEXTEND}
     Pop ${L_RESULT}
-    Pop ${L_PARAM}
-    Pop ${L_OLD_GUI}
-    Pop ${L_NEW_GUI}
-    Pop ${L_LINE}
+    Pop ${L_GUI}
     Pop ${L_EXE}
     Pop ${L_CFG}
 
     !undef L_CFG
     !undef L_EXE
-    !undef L_LINE
-    !undef L_NEW_GUI
-    !undef L_OLD_GUI
-    !undef L_PARAM
+    !undef L_GUI
     !undef L_RESULT
-    !undef L_TEXTEND
 
   nothing_to_check:
     Pop $G_ROOTDIR

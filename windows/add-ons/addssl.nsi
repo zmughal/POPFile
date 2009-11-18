@@ -270,7 +270,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.3.10"
+  !define C_PFI_VERSION  "0.4.0"
 
   ; Mention the wizard's version number in the window title
 
@@ -825,19 +825,13 @@ Function MakeRootDirSafe
 
   !define L_CFG      $R9    ; file handle
   !define L_EXE      $R8    ; name of EXE file to be monitored
-  !define L_LINE     $R7
-  !define L_NEW_GUI  $R6
-  !define L_PARAM    $R5
-  !define L_RESULT   $R4
-  !define L_TEXTEND  $R3    ; used to ensure correct handling of lines longer than 1023 chars
+  !define L_NEW_GUI  $R7
+  !define L_RESULT   $R6
 
   Push ${L_CFG}
   Push ${L_EXE}
-  Push ${L_LINE}
   Push ${L_NEW_GUI}
-  Push ${L_PARAM}
   Push ${L_RESULT}
-  Push ${L_TEXTEND}
 
   DetailPrint ""
   SetDetailsPrint both
@@ -886,34 +880,9 @@ check_cfg_file:
   ; See if we can get the current gui port from an existing configuration.
   ; There may be more than one entry for this port in the file - use the last one found
 
-  FileOpen  ${L_CFG} "${L_CFG}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LINE}
-  StrCmp ${L_LINE} "" done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LINE} "$\n" loop
-
-  StrCpy ${L_PARAM} ${L_LINE} 10
-  StrCmp ${L_PARAM} "html_port " 0 check_eol
-  StrCpy ${L_NEW_GUI} ${L_LINE} 5 10
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-done:
-  FileClose ${L_CFG}
-
-  Push ${L_NEW_GUI}
-  Call NSIS_TrimNewlines
+  Push "${L_CFG}\popfile.cfg"
+  Push "html_port"
+  Call PFI_CfgSettingRead
   Pop ${L_NEW_GUI}
 
   StrCmp ${L_NEW_GUI} "" manual_shutdown
@@ -951,21 +920,15 @@ unlocked_now:
   DetailPrint "File is now unlocked"
 
 exit:
-  Pop ${L_TEXTEND}
   Pop ${L_RESULT}
-  Pop ${L_PARAM}
   Pop ${L_NEW_GUI}
-  Pop ${L_LINE}
   Pop ${L_EXE}
   Pop ${L_CFG}
 
   !undef L_CFG
   !undef L_EXE
-  !undef L_LINE
   !undef L_NEW_GUI
-  !undef L_PARAM
   !undef L_RESULT
-  !undef L_TEXTEND
 
 nothing_to_check:
 FunctionEnd

@@ -139,7 +139,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.1.6"
+  !define C_VERSION   "0.2.0"
 
   ; Specify the icon file for the utility
 
@@ -421,16 +421,16 @@ Function Shutdown_POPFile
   !define L_CFG      $R9    ; path to the configuration file (popfile.cfg)
   !define L_CHARPOS  $R8    ; used when extracting filename from the full path
   !define L_EXE      $R7    ; name of EXE file to be monitored
-  !define L_LIMIT    $R6    ; length of full path to the locked file
-  !define L_NEW_GUI  $R5    ; POPFile UI port number (extracted from popfile.cfg)
+  !define L_GUI      $R6    ; POPFile UI port number (extracted from popfile.cfg)
+  !define L_LIMIT    $R5    ; length of full path to the locked file
   !define L_RESULT   $R4
   !define L_STOP_PF  $R3    ; StopPOPFile setting extracted from the utility's INI file
 
   Push ${L_CFG}
   Push ${L_CHARPOS}
   Push ${L_EXE}
+  Push ${L_GUI}
   Push ${L_LIMIT}
-  Push ${L_NEW_GUI}
   Push ${L_RESULT}
   Push ${L_STOP_PF}
 
@@ -463,9 +463,9 @@ check_cfg_file:
   Push "${L_CFG}\popfile.cfg"
   Push "html_port"
   Call PFI_CfgSettingRead
-  Pop ${L_NEW_GUI}
-  StrCmp ${L_NEW_GUI} "" manual_shutdown
-  Push ${L_NEW_GUI}
+  Pop ${L_GUI}
+  StrCmp ${L_GUI} "" manual_shutdown
+  Push ${L_GUI}
   Call PFI_ShutdownViaUI
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "success" check_exe
@@ -509,8 +509,8 @@ manual_shutdown:
 exit:
   Pop ${L_STOP_PF}
   Pop ${L_RESULT}
-  Pop ${L_NEW_GUI}
   Pop ${L_LIMIT}
+  Pop ${L_GUI}
   Pop ${L_EXE}
   Pop ${L_CHARPOS}
   Pop ${L_CFG}
@@ -518,8 +518,8 @@ exit:
   !undef L_CFG
   !undef L_CHARPOS
   !undef L_EXE
+  !undef L_GUI
   !undef L_LIMIT
-  !undef L_NEW_GUI
   !undef L_RESULT
   !undef L_STOP_PF
 

@@ -1436,61 +1436,11 @@ config_missing:
 check_parser_setting:
   WriteINIStr "$G_COMMS_FILE" "RealUser" "popfile.cfg" "found"
 
-  !define L_CFG       $R9     ; handle for "popfile.cfg"
-  !define L_CMPRE     $R8     ; config param name
-  !define L_LNE       $R7     ; a line from popfile.cfg
-  !define L_PARSER    $R6     ; current Nihongo parser setting (introduced in 1.0.0 release)
-  !define L_TEXTEND   $R5     ; used to ensure correct handling of lines longer than 1023 chars
-
-  Push ${L_CFG}
-  Push ${L_CMPRE}
-  Push ${L_LNE}
-  Push ${L_PARSER}
-  Push ${L_TEXTEND}
-
-  StrCpy ${L_PARSER} ""
-
-  FileOpen  ${L_CFG} "${L_EXISTING_USER}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LNE}
-  StrCmp ${L_LNE} "" done
-  StrCmp ${L_TEXTEND} "<eol>" 0 next_lne
-  StrCmp ${L_LNE} "$\n" next_lne
-
-  StrCpy ${L_CMPRE} ${L_LNE} 21
-  StrCmp ${L_CMPRE} "bayes_nihongo_parser " 0 next_lne
-  StrCpy ${L_PARSER} ${L_LNE} "" 21
-  Goto done
-
-next_lne:
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-done:
-  FileClose ${L_CFG}
-
-  WriteINIStr "$G_COMMS_FILE" "RealUser" "Parser" "${L_PARSER}"
-
-  Pop ${L_TEXTEND}
-  Pop ${L_PARSER}
-  Pop ${L_LNE}
-  Pop ${L_CMPRE}
-  Pop ${L_CFG}
-
-  !undef L_CFG
-  !undef L_CMPRE
-  !undef L_LNE
-  !undef L_PARSER
-  !undef L_TEXTEND
+  Push "${L_EXISTING_USER}\popfile.cfg"
+  Push "bayes_nihongo_parser"
+  Call PFI_CfgSettingRead
+  Pop ${L_TEMP}
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "Parser" "${L_TEMP}"
 
 exit:
   Pop ${L_TEMP}

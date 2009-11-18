@@ -465,61 +465,11 @@ config_missing:
 check_parser_setting:
   WriteINIStr "$G_COMMS_FILE" "RealUser" "popfile.cfg" "found"
 
-  !define L_CFG       $R9     ; handle for "popfile.cfg"
-  !define L_CMPRE     $R8     ; config param name
-  !define L_LNE       $R7     ; a line from popfile.cfg
-  !define L_PARSER    $R6     ; current Nihongo parser setting (introduced in 1.0.0 release)
-  !define L_TEXTEND   $R5     ; used to ensure correct handling of lines longer than 1023 chars
-
-  Push ${L_CFG}
-  Push ${L_CMPRE}
-  Push ${L_LNE}
-  Push ${L_PARSER}
-  Push ${L_TEXTEND}
-
-  StrCpy ${L_PARSER} ""
-
-  FileOpen  ${L_CFG} "${L_EXISTING_USER}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LNE}
-  StrCmp ${L_LNE} "" done
-  StrCmp ${L_TEXTEND} "<eol>" 0 next_lne
-  StrCmp ${L_LNE} "$\n" next_lne
-
-  StrCpy ${L_CMPRE} ${L_LNE} 21
-  StrCmp ${L_CMPRE} "bayes_nihongo_parser " 0 next_lne
-  StrCpy ${L_PARSER} ${L_LNE} "" 21
-  Goto done
-
-next_lne:
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-done:
-  FileClose ${L_CFG}
-
-  WriteINIStr "$G_COMMS_FILE" "RealUser" "Parser" "${L_PARSER}"
-
-  Pop ${L_TEXTEND}
-  Pop ${L_PARSER}
-  Pop ${L_LNE}
-  Pop ${L_CMPRE}
-  Pop ${L_CFG}
-
-  !undef L_CFG
-  !undef L_CMPRE
-  !undef L_LNE
-  !undef L_PARSER
-  !undef L_TEXTEND
+  Push "${L_EXISTING_USER}\popfile.cfg"
+  Push "bayes_nihongo_parser"
+  Call un.PFI_CfgSettingRead
+  Pop ${L_TEMP}
+  WriteINIStr "$G_COMMS_FILE" "RealUser" "Parser" "${L_TEMP}"
 
 exit:
   Pop ${L_TEMP}
@@ -1686,15 +1636,9 @@ FunctionEnd
 
 Function un.Shutdown_POPFile
 
-  !define L_CFG         $R9   ; used as file handle
-  !define L_LNE         $R8   ; a line from popfile.cfg
-  !define L_TEMP        $R7
-  !define L_TEXTEND     $R6   ; used to ensure correct handling of lines longer than 1023 chars
+  !define L_TEMP        $R9
 
-  Push ${L_CFG}
-  Push ${L_LNE}
   Push ${L_TEMP}
-  Push ${L_TEXTEND}
 
   ; Ensure we access the data belonging to the user who started the uninstaller
 
@@ -1706,37 +1650,13 @@ Function un.Shutdown_POPFile
 
   ; Use the UI port setting in the configuration file to shutdown POPFile
 
-  StrCpy $G_GUI ""
-
-  FileOpen ${L_CFG} "$G_USERDIR\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LNE}
-  StrCmp ${L_LNE} "" ui_port_done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LNE} "$\n" loop
-
-  StrCpy ${L_TEMP} ${L_LNE} 10
-  StrCmp ${L_TEMP} "html_port " 0 check_eol
-  StrCpy $G_GUI ${L_LNE} 5 10
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-ui_port_done:
-  FileClose ${L_CFG}
+  Push "$G_USERDIR\popfile.cfg"
+  Push "html_port"
+  Call un.PFI_CfgSettingRead
+  Pop $G_GUI
 
   StrCmp $G_GUI "" manual_shutdown
   Push $G_GUI
-  Call un.NSIS_TrimNewlines
   Call un.PFI_StrCheckDecimal
   Pop $G_GUI
   StrCmp $G_GUI "" manual_shutdown
@@ -1753,15 +1673,9 @@ manual_shutdown:
   ; Assume user has managed to shutdown POPFile
 
 function_exit:
-  Pop ${L_TEXTEND}
   Pop ${L_TEMP}
-  Pop ${L_LNE}
-  Pop ${L_CFG}
 
-  !undef L_CFG
-  !undef L_LNE
   !undef L_TEMP
-  !undef L_TEXTEND
 
 FunctionEnd
 
@@ -1800,67 +1714,24 @@ FunctionEnd
 
 Function un.SetNihongoConfig
 
-  !define L_NEW_CFG     $R9   ; file handle used for clean copy
-  !define L_OLD_CFG     $R8   ; file handle for old version
-  !define L_LNE         $R7   ; a line from the popfile.cfg file
-  !define L_NIHONGO     $R6   ; new Nihongo parser setting
-  !define L_PARAM       $R5
-  !define L_TEXTEND     $R4   ; helps ensure correct handling of lines over 1023 chars long
+  !define L_NIHONGO     $R9   ; new Nihongo parser setting
+  !define L_RESULT      $R8
 
   Exch ${L_NIHONGO}
-  Push ${L_NEW_CFG}
-  Push ${L_OLD_CFG}
-  Push ${L_LNE}
-  Push ${L_PARAM}
-  Push ${L_TEXTEND}
+  Push ${L_RESULT}
 
-  FileOpen  ${L_OLD_CFG} "$G_USERDIR\popfile.cfg" r
-  FileOpen  ${L_NEW_CFG} "$PLUGINSDIR\new.cfg" w
+  Push "$G_USERDIR\popfile.cfg"
+  Push "bayes_nihongo_parser"
+  Push ${L_NIHONGO}
+  Call un.PFI_CfgSettingWrite_without_backup
+  Pop ${L_RESULT}            ; ignore the result, for now
+;;; MessageBox MB_OK "Set nihongo parser to '${L_NIHONGO}' result = ${L_RESULT}"
 
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_OLD_CFG} ${L_LNE}
-  StrCmp ${L_LNE} "" copy_done
-  StrCmp ${L_TEXTEND} "<eol>" 0 copy_lne
-  StrCmp ${L_LNE} "$\n" copy_lne
-
-  StrCpy ${L_PARAM} ${L_LNE} 21
-  StrCmp ${L_PARAM} "bayes_nihongo_parser " 0 copy_lne
-  FileWrite ${L_NEW_CFG} "bayes_nihongo_parser ${L_NIHONGO}${MB_NL}"
-  Goto loop
-
-copy_lne:
-  FileWrite ${L_NEW_CFG} ${L_LNE}
-
-; Now read file until we get to end of the current line
-; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-copy_done:
-  FileClose ${L_OLD_CFG}
-  FileClose ${L_NEW_CFG}
-
-  Delete "$G_USERDIR\popfile.cfg"
-  Rename "$PLUGINSDIR\new.cfg" "$G_USERDIR\popfile.cfg"
-
-  Pop ${L_TEXTEND}
-  Pop ${L_PARAM}
-  Pop ${L_LNE}
-  Pop ${L_OLD_CFG}
-  Pop ${L_NEW_CFG}
+  Pop ${L_RESULT}
   Pop ${L_NIHONGO}
 
-  !undef L_NEW_CFG
-  !undef L_OLD_CFG
-  !undef L_LNE
   !undef L_NIHONGO
-  !undef L_PARAM
-  !undef L_TEXTEND
+  !undef L_RESULT
 
 FunctionEnd
 

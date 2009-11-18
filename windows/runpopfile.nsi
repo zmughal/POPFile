@@ -119,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.2.12"
+  !define C_PFI_VERSION   "0.3.0"
 
   !define C_OUTFILE       "runpopfile.exe"
 
@@ -203,17 +203,13 @@
 
 Section default
 
-  !define L_CFG           $R9   ; file handle used to access 'popfile.cfg'
-  !define L_CONSOLE       $R8   ; 1 = console mode selected, 0 = background mode selected
-  !define L_EXEFILE       $R7   ; where we expect to find popfile.exe and (perhaps) adduser.exe
-  !define L_LINE          $R6   ; a line (or part of line) from 'popfile.cfg'
-  !define L_PARAMS        $R5   ; command-line parameters (everything after 'runpopfile' part)
-  !define L_PFI_ROOT      $R4   ; path to the POPFile program (popfile.pl, and other files)
-  !define L_PFI_USER      $R3   ; path to user's 'popfile.cfg' file
-  !define L_TEMP          $R2
-  !define L_TEXTEND       $R1   ; helps ensure correct handling of lines over 1023 chars long
-  !define L_WINOS_FLAG    $R0   ; 1 = modern Windows system, 0 = Win9x system
-  !define L_WINUSERNAME   $9    ; Windows login name used to confirm validity of HKCU data
+  !define L_EXEFILE       $R9   ; where we expect to find popfile.exe and (perhaps) adduser.exe
+  !define L_PARAMS        $R8   ; command-line parameters (everything after 'runpopfile' part)
+  !define L_PFI_ROOT      $R7   ; path to the POPFile program (popfile.pl, and other files)
+  !define L_PFI_USER      $R6   ; path to user's 'popfile.cfg' file
+  !define L_TEMP          $R5
+  !define L_WINOS_FLAG    $R4   ; 1 = modern Windows system, 0 = Win9x system
+  !define L_WINUSERNAME   $R3   ; Windows login name used to confirm validity of HKCU data
 
   !define L_RESERVED      $0    ; used in system.dll calls
 
@@ -380,7 +376,7 @@ check_root_data:
   IfFileExists "${L_PFI_ROOT}\popfile.pl" 0 bad_root_error
   ReadEnvStr ${L_TEMP} "POPFILE_ROOT"
   StrCmp ${L_TEMP} ${L_PFI_ROOT} check_user
-  Call IsNT
+  Call NSIS_IsNT
   Pop ${L_WINOS_FLAG}
   StrCmp ${L_WINOS_FLAG} 0 set_root_now
   WriteRegStr HKCU "Environment" "POPFILE_ROOT" ${L_PFI_ROOT}
@@ -402,7 +398,7 @@ check_user_data:
   IfFileExists "${L_PFI_USER}\*.*" 0 bad_user_error
   ReadEnvStr ${L_TEMP} "POPFILE_USER"
   StrCmp ${L_TEMP} ${L_PFI_USER} start_popfile
-  Call IsNT
+  Call NSIS_IsNT
   Pop ${L_WINOS_FLAG}
   StrCmp ${L_WINOS_FLAG} 0 set_user_now
   WriteRegStr HKCU "Environment" "POPFILE_USER" ${L_PFI_USER}
@@ -432,33 +428,11 @@ start_popfile:
 look_for_pfimsgcapture:
   IfFileExists "${L_EXEFILE}\pfimsgcapture.exe" 0 run_normal_mode
   IfFileExists "${L_PFI_USER}\popfile.cfg" 0 run_normal_mode
-  StrCpy ${L_CONSOLE} "0"
-  FileOpen ${L_CFG} "${L_PFI_USER}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LINE}
-  StrCmp ${L_LINE} "" options_done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LINE} "$\n" loop
-
-  StrCpy ${L_TEMP} ${L_LINE} 16
-  StrCmp ${L_TEMP} "windows_console " got_console_option
-  Goto check_eol
-
-got_console_option:
-  StrCpy ${L_CONSOLE} ${L_LINE} 1 16
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-options_done:
-  FileClose ${L_CFG}
-  StrCmp ${L_CONSOLE} "1" run_debug_mode
+  Push "${L_PFI_USER}\popfile.cfg"
+  Push "windows_console"
+  Call PFI_CfgSettingRead
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "1" run_debug_mode
 
 run_normal_mode:
   Exec '"${L_EXEFILE}\popfile.exe"'
@@ -527,56 +501,17 @@ run_adduser:
 
 exit:
 
-  !undef L_CFG
-  !undef L_CONSOLE
   !undef L_EXEFILE
-  !undef L_LINE
   !undef L_PARAMS
   !undef L_PFI_ROOT
   !undef L_PFI_USER
   !undef L_TEMP
-  !undef L_TEXTEND
   !undef L_WINOS_FLAG
   !undef L_WINUSERNAME
 
   !undef L_RESERVED
 
 SectionEnd
-
-#--------------------------------------------------------------------------
-# Function: IsNT
-#
-# Returns 0 if running on a Win9x system, otherwise returns 1
-#
-# Inputs:
-#         None
-#
-# Outputs:
-#         (top of stack)   - 0 (running on Win9x system) or 1 (running on a more modern OS)
-#
-#  Usage:
-#
-#         Call IsNT
-#         Pop $R0
-#
-#         ($R0 at this point is 0 if installer is running on a Win9x system)
-#
-#--------------------------------------------------------------------------
-
-Function IsNT
-  Push $0
-  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-  StrCmp $0 "" 0 IsNT_yes
-  ; we are not NT.
-  Pop $0
-  Push 0
-  Return
-
-IsNT_yes:
-    ; NT!!!
-    Pop $0
-    Push 1
-FunctionEnd
 
 ;-------------
 ; end-of-file
