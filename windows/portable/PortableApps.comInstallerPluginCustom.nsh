@@ -69,7 +69,7 @@
     Push "mecab"
 
     #------------------------------------------------
-    #   Call PPL_CfgSettingWrite_with_backup (start)
+    #   Call PFI_CfgSettingWrite_with_backup (start)
     #------------------------------------------------
 
     !ifndef C_CFG_WRITE
@@ -252,7 +252,7 @@
     !undef L_VALUE
 
   #------------------------------------------------
-  #   Call PPL_CfgSettingWrite_with_backup (end)
+  #   Call PFI_CfgSettingWrite_with_backup (end)
   #------------------------------------------------
 
     Pop ${L_RESULT}

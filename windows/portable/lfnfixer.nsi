@@ -66,7 +66,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.24"
+  !define C_VERSION             "0.1.0"
 
   !define C_OUTFILE             "lfnfixer.exe"
 
@@ -92,9 +92,9 @@
 
   !define LFNFIXER
 
-  !include "ppl-library.nsh"
+  !include "..\pfi-library.nsh"
 
-  !include "nsis-library.nsh"
+  !include "..\pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the utility's EXE file)
@@ -118,8 +118,11 @@
 
   VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
-  !ifdef C_PPL_LIBRARY_VERSION
-    VIAddVersionKey "PPL Library Version"   "${C_PPL_LIBRARY_VERSION}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -175,7 +178,7 @@ Section default
   DetailPrint "$(^Name) v${C_VERSION}"
   DetailPrint "Intended for use with the portable version of POPFile 1.1.1"
   DetailPrint "------------------------------------------------------------"
-  Call PPL_GetDateTimeStamp
+  Call PFI_GetDateTimeStamp
   Pop ${L_TEMP}
   DetailPrint "(report started ${L_TEMP})"
   DetailPrint "------------------------------------------------------------"
@@ -189,20 +192,20 @@ Section default
 
   !macro SFN2LFN SFN_FORMAT LFN_FORMAT
 
-      !insertmacro PPL_UNIQUE_ID
+      !insertmacro PFI_UNIQUE_ID
 
-      IfFileExists "$G_ROOTDIR\${SFN_FORMAT}" adjust_${PPL_UNIQUE_ID}
+      IfFileExists "$G_ROOTDIR\${SFN_FORMAT}" adjust_${PFI_UNIQUE_ID}
       DetailPrint "${LFN_FORMAT} not found"
-      Goto continue_${PPL_UNIQUE_ID}
+      Goto continue_${PFI_UNIQUE_ID}
 
-    adjust_${PPL_UNIQUE_ID}:
+    adjust_${PFI_UNIQUE_ID}:
       IntOp ${L_COUNT} ${L_COUNT} + 1
       SetDetailsPrint none
       Rename "$G_ROOTDIR\${SFN_FORMAT}" "$G_ROOTDIR\${LFN_FORMAT}"
       SetDetailsPrint listonly
       DetailPrint "LFN fix applied to ${LFN_FORMAT}"
 
-    continue_${PPL_UNIQUE_ID}:
+    continue_${PFI_UNIQUE_ID}:
   !macroend
 
   !insertmacro SFN2LFN  "BAYES.PL"                                  "bayes.pl"
@@ -533,7 +536,7 @@ Section default
   DetailPrint "${L_COUNT} fixes applied"
   SetDetailsPrint listonly
 
-  Call PPL_GetDateTimeStamp
+  Call PFI_GetDateTimeStamp
   Pop ${L_TEMP}
   DetailPrint ""
   DetailPrint "------------------------------------------------------------"

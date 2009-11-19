@@ -68,7 +68,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.6"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.0"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE   "POPFilePortableMenu.exe"
 
@@ -117,8 +117,11 @@
 
   VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
-  !ifdef C_PPL_LIBRARY_VERSION
-    VIAddVersionKey "PPL Library Version"   "${C_PPL_LIBRARY_VERSION}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
