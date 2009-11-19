@@ -194,7 +194,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.0.45"
+  !define C_PFI_VERSION   "0.1.0"
 
   !define C_OUTFILE       "POPFilePortable.exe"
 
@@ -233,9 +233,9 @@
 
   !define PORTABLE
 
-  !include "ppl-library.nsh"
+  !include "..\pfi-library.nsh"
 
-  !include "nsis-library.nsh"
+  !include "..\pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings
@@ -263,11 +263,14 @@
 
   VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
-  !ifdef C_PPL_LIBRARY_VERSION
-    VIAddVersionKey "PPL Library Version"   "${C_PPL_LIBRARY_VERSION}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}\
-  (${__TIMESTAMP__})"
+                                            (${__TIMESTAMP__})"
 
 #--------------------------------------------------------------------------
 # User Registers (Global)
@@ -673,15 +676,15 @@ FunctionEnd
 
 !macro SET_TEMP_ENVIRONMENT_VARIABLE NAME VALUE
 
-      !insertmacro PPL_UNIQUE_ID
+      !insertmacro PFI_UNIQUE_ID
 
       System::Call \
       'Kernel32::SetEnvironmentVariableA(t, t) i("${NAME}", "${VALUE}").r0'
-      StrCmp ${L_RESERVED} 0 0 continue_${PPL_UNIQUE_ID}
+      StrCmp ${L_RESERVED} 0 0 continue_${PFI_UNIQUE_ID}
       MessageBox MB_OK|MB_ICONSTOP "$(PFPL_MSG_ENVSETERROR)"
       Goto exit
 
-  continue_${PPL_UNIQUE_ID}:
+  continue_${PFI_UNIQUE_ID}:
 !macroend
 
 #--------------------------------------------------------------------------
@@ -805,7 +808,7 @@ run_sqlite_util:
 
 choose_sqlite_util:
   Push "$G_DATABASE"
-  Call PPL_GetSQLiteFormat
+  Call PFI_GetSQLiteFormat
   Pop $G_PLS_FIELD_1
   StrCpy ${L_SQLITEUTIL} "sqlite3.exe"
   StrCmp $G_PLS_FIELD_1 "3.x" check_util_exists
@@ -956,7 +959,7 @@ set_temp_mecab:
 
   Push "$EXEDIR\Data\popfile.cfg"
   Push "windows_console"
-  Call PPL_CfgSettingRead
+  Call PFI_CfgSettingRead
   Pop ${L_TEMP}
   IfErrors get_trayicon_setting
   StrCpy ${L_CONSOLE} ${L_TEMP}
@@ -964,7 +967,7 @@ set_temp_mecab:
 get_trayicon_setting:
   Push "$EXEDIR\Data\popfile.cfg"
   Push "windows_trayicon"
-  Call PPL_CfgSettingRead
+  Call PFI_CfgSettingRead
   Pop ${L_TEMP}
   IfErrors use_the_settings
   StrCpy ${L_ICONSETTING} ${L_TEMP}
@@ -1052,42 +1055,6 @@ exit:
 SectionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: PPL_CfgSettingWrite_with_backup
-#
-# Inputs:
-#         (top of stack)        - the value to be set (if "" setting will be deleted)
-#         (top of stack - 1)    - the configuration setting's name
-#         (top of stack - 2)    - full path to the configuration file
-#
-# Outputs:
-#         (top of stack)        - operation result:
-#                                    CHANGED - the setting has been changed,
-#                                    DELETED - entry deleted from the file,
-#                                    ADDED   - new entry added at end of file,
-#                                    SAME    - file left unchanged,
-#                                 or ERROR   - an error was detected
-#
-#         ErrorFlag             - clear if no errors detected,
-#                                 set if file not found, or
-#                                 set if setting not found
-#
-# Usage (after macro has been 'inserted'):
-#
-#         Push "C:\User\Data\POPFile\popfile.cfg"
-#         Push "html_port"
-#         Push "8080"
-#         Call PPL_CfgSettingWrite_with_backup
-#         Pop $R0
-#
-#         ($R0 at this point is "SAME" if the configuration file currently
-#          uses the value 8080; in this case the file is not re-written so
-#          a backup copy of the original file is _not_ made)
-#
-#--------------------------------------------------------------------------
-
-  !insertmacro PPL_CfgSettingWrite_with_backup ""
-
-#--------------------------------------------------------------------------
 # Installer Function: SetPortablePIDdir
 #
 # Used to ensure the 'portable-popfile.pid' file gets stored in the host's TEMP folder
@@ -1142,11 +1109,11 @@ check_dir_exists:
 dir_exists:
   Push ${L_PID_DIR}
   Push ' '
-  Call PPL_StrStr
+  Call PFI_StrStr
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" update_cfg_file
   Push ${L_PID_DIR}
-  Call PPL_GetSFNStatus
+  Call PFI_GetSFNStatus
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "1" useSFNformat
   StrCpy ${L_PID_DIR} "."
@@ -1165,9 +1132,9 @@ update_cfg_file:
   Push "$EXEDIR\Data\popfile.cfg"
   Push "config_piddir"
   Push "${L_PID_DIR}/portable-"
-  Call PPL_CfgSettingWrite_with_backup
+  Call PFI_CfgSettingWrite_with_backup
   Pop ${L_RESULT}
-;;;  MessageBox MB_OK "PPL_CfgSettingWrite_with_backup status: ${L_RESULT}"
+;;;  MessageBox MB_OK "PFI_CfgSettingWrite_with_backup status: ${L_RESULT}"
   StrCmp ${L_RESULT} ${C_CFG_WRITE_ERROR} 0 exit
   MessageBox MB_OK|MB_ICONSTOP "*** Internal error ***\
       ${MB_NL}\

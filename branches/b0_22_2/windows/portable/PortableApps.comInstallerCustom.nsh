@@ -68,7 +68,7 @@
     Push "html_language"
 
     #------------------------------------------------
-    #   Call PPL_CfgSettingRead (start)
+    #   Call PFI_CfgSettingRead (start)
     #------------------------------------------------
 
     !define L_CFG       $R9   ; handle for the configuration file
@@ -149,7 +149,7 @@
     !undef L_TEXTEND
 
   #------------------------------------------------
-  #   Call PPL_CfgSettingRead (end)
+  #   Call PFI_CfgSettingRead (end)
   #------------------------------------------------
 
     Pop ${L_UI_LANG}
@@ -265,7 +265,7 @@
     Push "${L_UI_LANG}"
 
     #------------------------------------------------
-    #   Call PPL_CfgSettingWrite_with_backup (start)
+    #   Call PFI_CfgSettingWrite_with_backup (start)
     #------------------------------------------------
 
     !ifndef C_CFG_WRITE
@@ -448,7 +448,7 @@
     !undef L_VALUE
 
   #------------------------------------------------
-  #   Call PPL_CfgSettingWrite_with_backup (end)
+  #   Call PFI_CfgSettingWrite_with_backup (end)
   #------------------------------------------------
 
     Pop ${L_CFG_RESULT}

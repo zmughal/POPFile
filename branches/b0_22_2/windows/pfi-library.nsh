@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.4.0"
+  !define C_PFI_LIBRARY_VERSION     "0.4.1"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1618,13 +1618,15 @@
   !insertmacro PFI_CfgSettingWrite "${UN}" "no_backup"
 !macroend
 
-;#--------------------------------------------------------------------------
-;# Installer Function: PFI_CfgSettingWrite_with_backup
-;#
-;# This function is used during the installation process
-;#--------------------------------------------------------------------------
-;
-;!insertmacro PFI_CfgSettingWrite_with_backup ""
+!ifdef PORTABLE
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_CfgSettingWrite_with_backup
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+    
+    !insertmacro PFI_CfgSettingWrite_with_backup ""
+!endif
 
 ;#--------------------------------------------------------------------------
 ;# Uninstaller Function: un.PFI_CfgSettingWrite_with_backup
@@ -1634,7 +1636,7 @@
 ;
 ;!insertmacro PFI_CfgSettingWrite_with_backup "un."
 
-!ifdef ADDUSER
+!ifdef ADDUSER | CREATEUSER
     #--------------------------------------------------------------------------
     # Installer Function: PFI_CfgSettingWrite_without_backup
     #
@@ -2709,7 +2711,7 @@
   FunctionEnd
 !macroend
 
-!ifndef CREATEUSER & MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef CREATEUSER & MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDateTimeStamp
     #
@@ -2901,7 +2903,7 @@
   FunctionEnd
 !macroend
 
-!ifndef CREATEUSER & MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef CREATEUSER & MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetLocalTime
     #
@@ -4599,7 +4601,7 @@
   FunctionEnd
 !macroend
 
-!ifndef LFNFIXER & MONITORCC & PFIDIAG & PORTABLE & RUNPOPFILE & RUNSQLITE & TRANSLATOR
+!ifndef LFNFIXER & MONITORCC & PFIDIAG & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckDecimal
     #
@@ -4715,7 +4717,7 @@
     FunctionEnd
 !macroend
 
-!ifndef DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & STOP_POPFILE & TRANSLATOR
+!ifndef DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #

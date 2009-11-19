@@ -70,7 +70,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.0.20"
+  !define C_PFI_VERSION   "0.1.0"
 
   !define C_OUTFILE       "CreateUserData.exe"
 
@@ -125,9 +125,9 @@
 
   !define CREATEUSER
 
-  !include "ppl-library.nsh"
+  !include "..\pfi-library.nsh"
 
-  !include "nsis-library.nsh"
+  !include "..\pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for runpopfile.exe)
@@ -155,11 +155,14 @@
 
   VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
-  !ifdef C_PPL_LIBRARY_VERSION
-    VIAddVersionKey "PPL Library Version"   "${C_PPL_LIBRARY_VERSION}"
+  !ifdef C_PFI_LIBRARY_VERSION
+    VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}\
-  (${__TIMESTAMP__})"
+                                            (${__TIMESTAMP__})"
 
 #----------------------------------------------------------------------------------------
 # CBP Configuration Data (to override defaults, un-comment the lines below and modify them)
@@ -421,25 +424,25 @@ Function CheckExistingConfigData
 extract_settings:
   Push $G_CFG_DATA
   Push "pop3_port"
-  Call PPL_CfgSettingRead
+  Call PFI_CfgSettingRead
   Pop $G_POP3
 
   Push $G_CFG_DATA
   Push "html_port"
-  Call PPL_CfgSettingRead
+  Call PFI_CfgSettingRead
   Pop $G_GUI
 
   ; Set 'simplyblue' skin if no skin is defined
 
   Push $G_CFG_DATA
   Push "html_skin"
-  Call PPL_CfgSettingRead
+  Call PFI_CfgSettingRead
   Pop ${L_SKIN}
   IfErrors 0 check_validity
   Push $G_CFG_DATA
   Push "html_skin"
   Push "simplyblue"
-  Call PPL_CfgSettingWrite_without_backup
+  Call PFI_CfgSettingWrite_without_backup
   Pop ${L_SKIN}
 
 check_validity:
@@ -457,7 +460,7 @@ check_validity:
 ports_differ:
   StrCmp $G_POP3 "" default_pop3
   Push $G_POP3
-  Call PPL_StrCheckDecimal
+  Call PFI_StrCheckDecimal
   Pop $G_POP3
   StrCmp $G_POP3 "" default_pop3
   IntCmp $G_POP3 1 pop3_ok default_pop3
@@ -471,7 +474,7 @@ default_pop3:
 pop3_ok:
   StrCmp $G_GUI "" default_gui
   Push $G_GUI
-  Call PPL_StrCheckDecimal
+  Call PFI_StrCheckDecimal
   Pop $G_GUI
   StrCmp $G_GUI "" default_gui
   IntCmp $G_GUI 1 ports_ok default_gui
@@ -534,7 +537,7 @@ Function SetOptionsPage
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_PORTLIST} "ioA.ini" "Field 2" "ListItems"
   Push "|${L_PORTLIST}|"
   Push "|$G_POP3|"
-  Call PPL_StrStr
+  Call PFI_StrStr
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" 0 POP3_is_in_list
   StrCpy ${L_PORTLIST} "${L_PORTLIST}|$G_POP3"
@@ -544,7 +547,7 @@ POP3_is_in_list:
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_PORTLIST} "ioA.ini" "Field 4" "ListItems"
   Push "|${L_PORTLIST}|"
   Push "|$G_GUI|"
-  Call PPL_StrStr
+  Call PFI_StrStr
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" 0 GUI_is_in_list
   StrCpy ${L_PORTLIST} "${L_PORTLIST}|$G_GUI"
@@ -574,13 +577,13 @@ GUI_is_in_list:
   Push $G_CFG_DATA
   Push "pop3_port"
   Push $G_POP3
-  Call PPL_CfgSettingWrite_without_backup
+  Call PFI_CfgSettingWrite_without_backup
   Pop ${L_RESULT}
 
   Push $G_CFG_DATA
   Push "html_port"
   Push $G_GUI
-  Call PPL_CfgSettingWrite_without_backup
+  Call PFI_CfgSettingWrite_without_backup
   Pop ${L_RESULT}
 
   StrCmp $G_CFG_DATA "$G_USERDIR\popfile.cfg" 0 exit
@@ -590,13 +593,13 @@ GUI_is_in_list:
   Push ${L_DEFAULT_CFG}
   Push "pop3_port"
   Push $G_POP3
-  Call PPL_CfgSettingWrite_without_backup
+  Call PFI_CfgSettingWrite_without_backup
   Pop ${L_RESULT}
 
   Push ${L_DEFAULT_CFG}
   Push "html_port"
   Push $G_GUI
-  Call PPL_CfgSettingWrite_without_backup
+  Call PFI_CfgSettingWrite_without_backup
   Pop ${L_RESULT}
 
 exit:
@@ -630,15 +633,15 @@ Function CheckPortOptions
   ; strip leading zeroes and spaces from user input
 
   Push $G_POP3
-  Call PPL_StrStripLZS
+  Call PFI_StrStripLZS
   Pop $G_POP3
   Push $G_GUI
-  Call PPL_StrStripLZS
+  Call PFI_StrStripLZS
   Pop $G_GUI
 
   StrCmp $G_POP3 $G_GUI ports_must_differ
   Push $G_POP3
-  Call PPL_StrCheckDecimal
+  Call PFI_StrCheckDecimal
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" bad_pop3
   IntCmp $G_POP3 1 pop3_ok bad_pop3
@@ -655,7 +658,7 @@ bad_pop3:
 
 pop3_ok:
   Push $G_GUI
-  Call PPL_StrCheckDecimal
+  Call PFI_StrCheckDecimal
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" bad_gui
   IntCmp $G_GUI 1 good_exit bad_gui
@@ -745,14 +748,6 @@ nothing_to_do:
   !undef L_FOLDER_PATH
 
 FunctionEnd
-
-#--------------------------------------------------------------------------
-# Installer Function: PPL_CfgSettingWrite_without_backup
-#
-# This function is used during the installation process
-#--------------------------------------------------------------------------
-
-  !insertmacro PPL_CfgSettingWrite_without_backup ""
 
 #--------------------------------------------------------------------------
 # Section: default
