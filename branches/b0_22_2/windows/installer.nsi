@@ -1930,11 +1930,13 @@ SubSectionEnd
 # Installer Section: StopLog (this must be the very last section)
 #
 # Finishes the log file and saves it (making backups of up to 3 previous logs)
+#
+# Now that we have finished writing to the POPFile program folder, update
+# the size estimate for the program's "Add/Remove Programs" entry
 #--------------------------------------------------------------------------
 
 Section "-StopLog"
-
-  SetDetailsPrint textonly
+   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_PROG_SAVELOG)"
   SetDetailsPrint listonly
   Call PFI_GetDateTimeStamp
@@ -1967,6 +1969,29 @@ save_log:
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
+
+  ; Update the size estimate in the Control Panel's "Add/Remove Programs" list.
+  ; The installer runs with admin rights so normally HKLM is used but on Vista HKCU is used
+  ; in order to avoid problems with UAC (if HKLM is used then Vista elevates the uninstaller
+  ; _before_ the UAC plugin gets a chance!)
+
+  SetShellVarContext current
+  Call PFI_AtLeastVista
+  Pop $G_PLS_FIELD_1
+  StrCmp $G_PLS_FIELD_1 "1" update_arp_entry
+  SetShellVarContext all
+
+update_arp_entry:
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "$G_ROOTDIR" "/S=Kb" .r0 .r1 .r2
+  WriteRegDWord SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "EstimatedSize" $0
+  Pop $2
+  Pop $1
+  Pop $0
+  SetShellVarContext current
 
 SectionEnd
 

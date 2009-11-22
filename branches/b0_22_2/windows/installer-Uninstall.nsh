@@ -1383,11 +1383,9 @@ Section "-un.Registry Entries" UnSecRegistry
 
   ; Only remove registry data if it matches what we are uninstalling
 
-  ClearErrors
-  ReadRegStr ${L_REGDATA} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-  IfErrors check_HKLM_data
-  StrCpy ${L_REGDATA} ${L_REGDATA} 1
-  StrCmp ${L_REGDATA} '6' 0 check_HKLM_data
+  Call un.PFI_AtLeastVista
+  Pop ${L_REGDATA}
+  StrCmp ${L_REGDATA} "0" check_HKLM_data
 
   ; Uninstalluser.exe deletes all HKCU registry data except for the 'Add/Remove Programs' entry
 
@@ -1496,6 +1494,9 @@ SectionEnd
 # Uninstaller Section: StopLog (this must be the very last section)
 #
 # Finishes the log file and saves it (making backups of up to 3 previous logs)
+#
+# Now that we have finished writing to the POPFile program folder, update
+# the size estimate for the program's "Add/Remove Programs" entry
 #--------------------------------------------------------------------------
 
 Section "-un.StopLog"
@@ -1521,8 +1522,66 @@ Section "-un.StopLog"
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
 
+  ; Update the size estimate in the Control Panel's "Add/Remove Programs" list.
+  ; The uninstaller runs with admin rights so normally HKLM is used but on Vista HKCU is used
+  ; in order to avoid problems with UAC (if HKLM is used then Vista elevates the uninstaller
+  ; _before_ the UAC plugin gets a chance!)
+
+  SetShellVarContext current
+  Call un.PFI_AtLeastVista
+  Pop $G_PLS_FIELD_1
+  StrCmp $G_PLS_FIELD_1 "0" use_HKLM
+  GetFunctionAddress $G_PLS_FIELD_1 un.UpdateSizeForRealUser
+  UAC::ExecCodeSegment $G_PLS_FIELD_1
+  Goto update_arp_entry
+
+use_HKLM:
+  SetShellVarContext all
+
+update_arp_entry:
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "$G_ROOTDIR" "/S=Kb" .r0 .r1 .r2
+  WriteRegDWord SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "EstimatedSize" $0
+  Pop $2
+  Pop $1
+  Pop $0
+  SetShellVarContext current
+
 skip_Section:
 SectionEnd
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: 'un.UpdateSizeForRealUser'
+#--------------------------------------------------------------------------
+
+Function un.UpdateSizeForRealUser
+
+  !define L_REGDATA $R9
+
+  Push ${L_REGDATA}
+
+  ReadRegStr ${L_REGDATA} HKCU \
+      "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
+  StrCmp ${L_REGDATA} '"$G_ROOTDIR\uninstall.exe" /UNINSTALL' 0 exit
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "$G_ROOTDIR" "/S=Kb" .r0 .r1 .r2
+  WriteRegDWord HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "EstimatedSize" $0
+  Pop $2
+  Pop $1
+  Pop $0
+
+exit:
+  Pop ${L_REGDATA}
+
+  !undef L_REGDATA
+
+FunctionEnd
 
 #--------------------------------------------------------------------------
 # Component-selection page descriptions

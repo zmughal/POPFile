@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.4.1"
+  !define C_PFI_LIBRARY_VERSION     "0.4.2"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -931,6 +931,10 @@
 #
 # Macro-based Functions which may be used by the installer and uninstaller (in alphabetic order)
 #
+#    Macro:                PFI_AtLeastVista
+#    Installer Function:   PFI_AtLeastVista
+#    Uninstaller Function: un.PFI_AtLeastVista
+#
 #    Macro:                PFI_AtLeastWin2K
 #    Installer Function:   PFI_AtLeastWin2K
 #    Uninstaller Function: un.PFI_AtLeastWin2K
@@ -1064,6 +1068,84 @@
 #    Uninstaller Function: un.PFI_WaitUntilUnlocked
 #
 #==============================================================================================
+
+#--------------------------------------------------------------------------
+# Macro: PFI_AtLeastVista
+#
+# The installation process and the uninstall process may both need a function which
+# detects if we are running on Windows Vista or later. This macro makes maintenance easier
+# by ensuring that both processes use identical functions, with the only difference being
+# their names.
+#
+# NOTE:
+# The !insertmacro PFI_AtLeastVista "" and !insertmacro PFI_AtLeastVista "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_AtLeastVista'
+# and 'Call un.PFI_AtLeastVista' without additional preparation.
+#
+# Inputs:
+#         (none)
+#
+# Outputs:
+#         (top of stack)   - 1 if Vista or later, 0 if WinXP or earlier
+#
+# Usage (after macro has been 'inserted'):
+#
+#         Call PFI_AtLeastVista
+#         Pop $R0
+#
+#         ($R0 at this point is "0" if running on, say, Windows 2000)
+#--------------------------------------------------------------------------
+
+!macro PFI_AtLeastVista UN
+  Function ${UN}PFI_AtLeastVista
+
+    !define L_RESULT  $R9
+    !define L_TEMP    $R8
+
+    Push ${L_RESULT}
+    Push ${L_TEMP}
+
+    ClearErrors
+    ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
+    IfErrors preVistasystem
+    StrCpy ${L_TEMP} ${L_RESULT} 1
+    IntCmp ${L_TEMP} 5 preVistasystem preVistasystem 0
+    StrCpy ${L_RESULT} "1"
+    Goto exit
+
+  preVistasystem:
+    StrCpy ${L_RESULT} "0"
+
+  exit:
+    Pop ${L_TEMP}
+    Exch ${L_RESULT}
+
+    !undef L_RESULT
+    !undef L_TEMP
+
+  FunctionEnd
+!macroend
+
+!ifdef ADDUSER | INSTALLER
+      #--------------------------------------------------------------------------
+      # Installer Function: PFI_AtLeastVista
+      #
+      # This function is used during the installation process
+      #--------------------------------------------------------------------------
+
+      !insertmacro PFI_AtLeastVista ""
+!endif
+
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_AtLeastVista
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_AtLeastVista "un."
+!endif
+
 
 #--------------------------------------------------------------------------
 # Macro: PFI_AtLeastWin2K
@@ -1624,7 +1706,7 @@
     #
     # This function is used during the installation process
     #--------------------------------------------------------------------------
-    
+
     !insertmacro PFI_CfgSettingWrite_with_backup ""
 !endif
 

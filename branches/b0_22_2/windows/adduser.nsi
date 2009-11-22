@@ -628,6 +628,7 @@
   ; Use a "leave" function for the 'FINISH' page to remove any empty corpus folders left
   ; behind after POPFile has converted the buckets (if any) created by the CBP package.
   ; (If the user doesn't run POPFile from the installer, these corpus folders will not be empty)
+  ; This function will also update the estimated size used for the "Add/Remove Programs" entry.
 
   !define MUI_PAGE_CUSTOMFUNCTION_LEAVE       "RemoveEmptyCBPCorpus"
 
@@ -855,7 +856,7 @@ try_registry:
   ReadRegStr $G_ROOTDIR HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
   StrCmp $G_ROOTDIR "" not_found
   IfFileExists "$G_ROOTDIR\*.*" compatible
-  
+
 not_found:
   MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_COMPAT_NOTFOUND)"
   Abort
@@ -966,13 +967,9 @@ save_HKLM_root_sfn:
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" 0 update_HKCU_data
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" 0 update_HKCU_data
   IfFileExists "$G_ROOTDIR\uninstall.exe" 0 update_HKCU_data
-  ClearErrors
-  ReadRegStr ${L_TEMP} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-  IfErrors update_AllUsers_uninstall
-  StrCpy ${L_TEMP} ${L_TEMP} 1
-  StrCmp ${L_TEMP} '6' update_HKCU_data
-
-update_AllUsers_uninstall:
+  Call PFI_AtLeastVista
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "1" update_HKCU_data
   SetShellVarContext all
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" NORMAL
@@ -1346,6 +1343,8 @@ end_autostart_set:
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "DisplayName" "${C_PFI_PRODUCT} Data ($G_WINUSERNAME)"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "DisplayIcon" "$G_USERDIR\uninstalluser.exe,0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "UninstallString" "$G_USERDIR\uninstalluser.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "InstallLocation" "$G_USERDIR"
@@ -1357,20 +1356,28 @@ end_autostart_set:
   ; Create "POPFile" (program) entry in "Add/Remove Programs" list (if target is Vista)
 
   IfFileExists "$G_ROOTDIR\uninstall.exe" 0 all_done
-  ClearErrors
-  ReadRegStr ${L_TEMP} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-  IfErrors all_done
-  StrCpy ${L_TEMP} ${L_TEMP} 1
-  StrCmp ${L_TEMP} '6' 0 all_done
-
+  Call PFI_AtLeastVista
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "0" all_done
   MoreInfo::GetFileVersion "$G_ROOTDIR\uninstall.exe"
   Pop ${L_TEMP}
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayName" "${C_PFI_PRODUCT} ${L_TEMP}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayIcon" "$G_ROOTDIR\uninstall.exe,0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "InstallLocation" "$G_ROOTDIR"
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "$G_ROOTDIR" "/S=Kb" .r0 .r1 .r2
+  WriteRegDWord HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "EstimatedSize" $0
+  Pop $2
+  Pop $1
+  Pop $0
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "NoModify" "0"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
@@ -3810,11 +3817,14 @@ FunctionEnd
 # If the wizard used the CBP package to create some buckets, there may be
 # some empty corpus folders left behind (after POPFile has converted the
 # buckets to the new SQL format) so we remove these useless empty folders.
+#
+# The size estimate used in the "Add/Remove Programs" entry is updated
+# to match the current size of the User Data folder.
 #--------------------------------------------------------------------------
 
 Function RemoveEmptyCBPCorpus
 
-  IfFileExists "$PLUGINSDIR\${CBP_C_INIFILE}" 0 nothing_to_do
+  IfFileExists "$PLUGINSDIR\${CBP_C_INIFILE}" 0 update_arp_entry
 
   !define L_FOLDER_COUNT  $R9
   !define L_FOLDER_PATH   $R8
@@ -3826,7 +3836,7 @@ Function RemoveEmptyCBPCorpus
   ; (if any) created by the CBP package.
 
   ReadINIStr ${L_FOLDER_COUNT} "$PLUGINSDIR\${CBP_C_INIFILE}" "FolderList" "MaxNum"
-  StrCmp  ${L_FOLDER_COUNT} "" exit
+  StrCmp  ${L_FOLDER_COUNT} "" update_arp_entry
 
 loop:
   ReadINIStr ${L_FOLDER_PATH} "$PLUGINSDIR\${CBP_C_INIFILE}" "FolderList" "Path-${L_FOLDER_COUNT}"
@@ -3847,14 +3857,25 @@ corpus_root:
   ReadINIStr ${L_FOLDER_PATH} "$PLUGINSDIR\${CBP_C_INIFILE}" "CBP Data" "CorpusPath"
   RMDir ${L_FOLDER_PATH}
 
-exit:
+update_arp_entry:
+  ReadRegStr ${L_FOLDER_PATH} HKCU \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" "InstallLocation"
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "${L_FOLDER_PATH}" "/S=Kb" .r0 .r1 .r2
+  WriteRegDWord HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "EstimatedSize" $0
+  Pop $2
+  Pop $1
+  Pop $0
+
   Pop ${L_FOLDER_PATH}
   Pop ${L_FOLDER_COUNT}
 
   !undef L_FOLDER_COUNT
   !undef L_FOLDER_PATH
 
-nothing_to_do:
 FunctionEnd
 
 
