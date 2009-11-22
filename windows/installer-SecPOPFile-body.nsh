@@ -460,11 +460,9 @@ add_remove_programs:
   ; with UAC (if HKLM is used then Vista elevates the uninstaller _before_ the UAC plugin gets
   ; a chance!)
 
-  ClearErrors
-  ReadRegStr ${L_RESULT} HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-  IfErrors use_HKLM
-  StrCpy ${L_TEMP} ${L_RESULT} 1
-  IntCmp ${L_TEMP} 5 use_HKLM use_HKLM
+  Call PFI_AtLeastVista
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "0" use_HKLM
   ReadRegStr ${L_RESULT} HKLM \
       "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" "UninstallString"
   StrCmp ${L_RESULT} "$G_ROOTDIR\uninstall.exe" delete_HKLM_entry
@@ -480,6 +478,8 @@ use_HKLM:
 create_arp_entry:
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayIcon" "$G_ROOTDIR\uninstall.exe,0"
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
