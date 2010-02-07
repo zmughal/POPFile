@@ -1489,6 +1489,10 @@ GET /advanced?session=123456&dummy=foo&dummy=bar
 MATCH Enter password:
 SETSUBMIT password secret
 MATCH All POPFile Parameters
+GET /password
+MATCH Enter password:
+SETSUBMIT password secret
+MATCH Recent Messages
 GET /security
 
 # Check shutdown operation
