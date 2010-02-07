@@ -431,8 +431,9 @@ sub url_handler__
     # Check the password
 
     if ( $url eq '/password' )  {
-        if ( md5_hex( '__popfile__' . $self->{form_}{password} ) eq  # PROFILE BLOCK START
-             $self->config_( 'password' ) )  {                       # PROFILE BLOCK STOP
+        if ( defined( $self->{form_}{password} ) &&                  # PROFILE BLOCK START
+             ( md5_hex( '__popfile__' . $self->{form_}{password} ) eq
+               $self->config_( 'password' ) ) ) {                    # PROFILE BLOCK STOP
             $self->change_session_key__( $self );
             delete $self->{form_}{password};
             $self->{form_}{session} = $self->{session_key__};
@@ -443,7 +444,7 @@ sub url_handler__
                 }
             }
         } else {
-            $self->password_page( $client, 1, '/' );
+            $self->password_page( $client, defined( $self->{form_}{password} ), '/' );
             return 1;
         }
     }
