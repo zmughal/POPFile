@@ -4,7 +4,7 @@
 #                 to assist in solving problems with POPFile installations created
 #                 by the Windows installer for POPFile v0.21.0 (or later).
 #
-# Copyright (c) 2004-2009  John Graham-Cumming
+# Copyright (c) 2004-2010  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -59,7 +59,7 @@
   ; (${NSISDIR}\Plugins\). The 'GetVersion' source and example files can be unzipped to the
   ; appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
   ;
-  ; This script requires v0.9 (or later) of the GetVersion plugin
+  ; This script requires v1.0 (or later) of the GetVersion plugin in order to detect Windows 7.
 
   ;------------------------------------------------
   ; This script requires the 'ShellLink' NSIS plugin
@@ -119,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.17"
+  !define C_VERSION   "0.1.18"
 
   !define C_OUTFILE   "pfidiag.exe"
 
