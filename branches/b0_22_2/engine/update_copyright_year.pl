@@ -43,15 +43,22 @@ sub wanted
 
     my $filename = $_;
 
-    if ( $filename =~ /[.]pl$|[.]pm$|[.]sql$|[.]msg$|Makefile$|[.]tst$|[.]script$/ ) {
-        print $File::Find::name, "\n";
+    if ( $filename =~ /[.]pl$ |
+                       [.]pm$ |
+                       [.]sql$ |
+                       [.]msg$ |
+                       Makefile$ |
+                       vars.mak$ |
+                       [.]tst$ |
+                       [.]script$/x ) {
+#        print $File::Find::name, "\n";
 
         open my $file, "<$filename" or die $!;
         open my $temp, ">$filename.temp" or die $!;
         my $updated = 0;
 
         while ( <$file> ) {
-            $updated |= ( $_ =~ s/[-]$prev_year/-$current_year/ );
+            $updated |= ( $_ =~ s/([-=])$prev_year/$1$current_year/ );
             print $temp $_;
         }
         close $file;
