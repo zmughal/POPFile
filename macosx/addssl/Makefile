@@ -97,7 +97,7 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 	if test ! -d $(RESOURCES)/Japanese.lproj; then mkdir $(RESOURCES)/Japanese.lproj ; fi
 	cp $(ENGINE)/v$(POPFILE_VERSION).change $(RESOURCES)/English.lproj/ReadMe.txt
 	cp $(ENGINE)/v$(POPFILE_VERSION).change.nihongo $(RESOURCES)/Japanese.lproj/ReadMe.txt
-	if test `sw_vers -productVersion` = "10.6"; \
+	if test `sw_vers -productVersion | awk -F "." '{print $$2}'` = "6"; \
 	then \
 		cp ../InstallationCheck-SnowLeopard $(RESOURCES)/InstallationCheck; \
 	else \

@@ -40,7 +40,7 @@ DBI = DBI-1.609
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.25
+SQLITE = DBD-SQLite-1.29
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
 SQLITE_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(SQLITE_ARCHIVE)
 
@@ -56,7 +56,7 @@ TEMPLATE = HTML-Template-2.9
 TEMPLATE_ARCHIVE = $(TEMPLATE).tar.gz
 TEMPLATE_URL = http://search.cpan.org/CPAN/authors/id/S/SA/SAMTREGAR/$(TEMPLATE_ARCHIVE)
 
-TIMEDATE = TimeDate-1.16
+TIMEDATE = TimeDate-1.20
 TIMEDATE_ARCHIVE = $(TIMEDATE).tar.gz
 TIMEDATE_URL = http://search.cpan.org/CPAN/authors/id/G/GB/GBARR/$(TIMEDATE_ARCHIVE)
 
@@ -82,11 +82,11 @@ TEXTKAKASI_URL = http://search.cpan.org/CPAN/authors/id/D/DA/DANKOGAI/$(TEXTKAKA
 
 # SSL support
 
-NETSSLEAY = Net-SSLeay-1.35
+NETSSLEAY = Net-SSLeay-1.36
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
 NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/F/FL/FLORA/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-1.30
+IOSOCKETSSL = IO-Socket-SSL-1.31
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
