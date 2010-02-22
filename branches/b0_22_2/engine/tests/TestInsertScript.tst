@@ -98,6 +98,10 @@ $line = shift @stdout;
 
 test_assert_regexp( $line, 'Added 1 files to `personal\'' );
 
+# Check if the configuration file is not created
+
+test_assert( !-e 'popfile.cfg', "availability of popfile.cfg" );
+
 use Classifier::Bayes;
 use POPFile::Configuration;
 use POPFile::MQ;
