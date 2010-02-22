@@ -67,9 +67,6 @@ if ( $#ARGV > 0 ) {
 
         $POPFile->CORE_start();
 
-        # TODO: interface violation
-        $c->{save_needed__} = 0;
-
         my $b = $POPFile->get_module( 'Classifier::Bayes' );
         my $session = $b->get_session_key( 'admin', '' );
 
@@ -95,6 +92,11 @@ if ( $#ARGV > 0 ) {
         }
 
         $c->config_( 'piddir', $current_piddir );
+
+        # Reload configuration file ( to avoid updating configurations )
+
+        $c->load_configuration();
+
         $b->release_session_key( $session );
         $POPFile->CORE_stop();
     }
