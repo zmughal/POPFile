@@ -119,7 +119,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.18"
+  !define C_VERSION   "0.1.19"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -1038,6 +1038,109 @@ section_end:
   Pop ${L_STATUS_USER}
 
   !undef L_STATUS_USER
+  !undef L_TEMP
+
+next_section:
+SectionEnd
+
+
+;--------------------------------------------------------------------------
+; Section: POPFile Logger Settings
+;--------------------------------------------------------------------------
+
+!macro READ_CONFIG VARIABLE SETTING
+
+  Push "$G_POPFILE_USER\popfile.cfg"
+  Push "${SETTING}"
+  Call PFI_CfgSettingRead
+  Pop ${VARIABLE}
+
+!macroend
+
+Section "POPFile Logger Settings"
+
+  StrCmp $G_DIAG_MODE "full" enter_section next_section
+
+enter_section:
+
+  !define L_CFG_SETTING     $R9
+  !define L_TEMP            $R8
+
+  Push ${L_CFG_SETTING}
+  Push ${L_TEMP}
+
+  IfFileExists  "$G_POPFILE_USER\popfile.cfg" 0 section_end
+
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "POPFile Logger Settings"
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint ""
+
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "GLOBAL_debug"
+  IfErrors 0 check_log_mode
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "debug"
+  IfErrors 0 check_log_mode
+  DetailPrint "Logger output     = ><"
+  Goto get_log_format
+
+check_log_mode:
+  StrCpy ${L_TEMP} "To File"
+  StrCmp ${L_CFG_SETTING} "1" show_log_mode
+  StrCpy ${L_TEMP} "None"
+  StrCmp ${L_CFG_SETTING} "0" show_log_mode
+  StrCpy ${L_TEMP} "To Screen (console)"
+  StrCmp ${L_CFG_SETTING} "2" show_log_mode
+  StrCpy ${L_TEMP} "To Screen and File"
+  StrCmp ${L_CFG_SETTING} "3" show_log_mode
+  StrCpy ${L_TEMP} "** invalid **"
+
+show_log_mode:
+  DetailPrint "Logger output     = < ${L_CFG_SETTING} > (${L_TEMP})"
+
+get_log_format:
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "logger_format"
+  IfErrors 0 show_log_format
+  DetailPrint "Logger format     = ><"
+  Goto get_log_level
+
+show_log_format:
+  DetailPrint "Logger format     = < ${L_CFG_SETTING} >"
+
+get_log_level:
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "logger_level"
+  IfErrors 0 show_log_level
+  DetailPrint "Logger level      = ><"
+  Goto get_log_dir
+
+show_log_level:
+  DetailPrint "Logger level      = < ${L_CFG_SETTING} >"
+
+get_log_dir:
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "logger_logdir"
+  IfErrors 0 check_log_dir
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "logdir"
+  IfErrors 0 check_log_dir
+  DetailPrint "Logger directory  = ><"
+  Goto logger_end
+
+check_log_dir:
+  Push $G_POPFILE_USER
+  Push "${L_CFG_SETTING}"
+  Call PFI_GetDataPath
+  Pop ${L_TEMP}
+  DetailPrint "Logger directory  = < ${L_CFG_SETTING} > (${L_TEMP})"
+  IfFileExists "${L_TEMP}\*.*" logger_end
+  DetailPrint "^^^^^ Error ^^^^^"
+  DetailPrint "***** '${L_TEMP}' directory does not exist"
+
+logger_end:
+  DetailPrint ""
+
+section_end:
+  Pop ${L_TEMP}
+  Pop ${L_CFG_SETTING}
+
+  !undef L_CFG_SETTING
   !undef L_TEMP
 
 next_section:

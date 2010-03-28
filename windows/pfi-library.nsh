@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2009 John Graham-Cumming
+# Copyright (c) 2003-2010 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.4.2"
+  !define C_PFI_LIBRARY_VERSION     "0.4.3"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1433,7 +1433,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | CREATEUSER | DBSTATUS | INSTALLER | MSGCAPTURE | ONDEMAND | PORTABLE | RUNPOPFILE | SHUTDOWN | TRANSLATOR_AUW
+!ifdef ADDSSL | ADDUSER | CREATEUSER | DBSTATUS | PFIDIAG | INSTALLER | MSGCAPTURE | ONDEMAND | PORTABLE | RUNPOPFILE | SHUTDOWN | TRANSLATOR_AUW
     #--------------------------------------------------------------------------
     # Installer Function: PFI_CfgSettingRead
     #
@@ -2619,9 +2619,12 @@
 
     StrCmp ${L_DATA} ".\" source_folder
 
-    ; Strip trailing slash (so we always return a result without a trailing slash)
+    ; If data path does not end in "..\" strip any trailing slash
+    ; (so we always return a result without a trailing slash)
 
-    StrCpy ${L_TEMP} ${L_DATA} 1 -1
+    StrCpy ${L_TEMP} ${L_DATA} 3 -3
+    StrCmp ${L_TEMP} "..\" analyse_data
+    StrCpy ${L_TEMP} ${L_TEMP} 1 -1
     StrCmp ${L_TEMP} '\' 0 analyse_data
     StrCpy ${L_DATA} ${L_DATA} -1
 
@@ -2664,6 +2667,12 @@
     StrCpy ${L_TEMP} ${L_DATA} 3
     StrCmp ${L_TEMP} "..\" relative_again
     StrCpy ${L_DATA} ${L_RESULT}\${L_DATA}
+
+    ; Strip trailing slash (so we always return a result without a trailing slash)
+
+    StrCpy ${L_TEMP} ${L_DATA} 1 -1
+    StrCmp ${L_TEMP} '\' 0 got_path
+    StrCpy ${L_DATA} ${L_DATA} -1
     Goto got_path
 
   basedir_drive:
@@ -2684,7 +2693,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | DBSTATUS | RESTORE | RUNPOPFILE
+!ifdef ADDUSER | BACKUP | DBSTATUS | PFIDIAG | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDataPath
     #
@@ -4560,7 +4569,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | PFIDIAG | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrBackSlash
     #
