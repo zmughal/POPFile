@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.4.3"
+  !define C_PFI_LIBRARY_VERSION     "0.4.5"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1753,13 +1753,39 @@
 # passed via the stack, with a marker string being used to mark the list's end.
 #
 # Normally the LockedList plugin will be used to check if any of the specified
-# executable files is in use. This plugin returns its results on the stack,
-# sandwiched between "/start" and "/end" markers ("/start" appears at the top
-# of the stack). If no files are locked, the plugin simply returns both of these
-# markers on the stack, like this:
+# executable files is in use. This plugin returns its results on the stack:
+#
+# (a) if no matches are found then only one value is left on the stack:
+#
+#         (top of stack)            /end
+#
+#    Note: some earlier versions of the plugin return _two_ values when
+#    no matches are found:
 #
 #         (top of stack)            /start
 #         (top of stack - 1)        /end
+#
+# (b) if one match is found then three values are left on the stack,
+#     sandwiched between a pair of "markers":
+#
+#         (top of stack)            /start
+#         (top of stack - 1)           process ID
+#         (top of stack - 2)           full path to the locked file
+#         (top of stack - 3)           window caption
+#         (top of stack - 4)        /end
+#
+# (c) if more than one result is found they are separated by an extra
+#     marker (/next). For example if two matches are found:
+#
+#         (top of stack)            /start
+#         (top of stack - 1)           process ID
+#         (top of stack - 2)           full path to the locked file
+#         (top of stack - 3)           window caption
+#         (top of stack - 4)        /next
+#         (top of stack - 5)           process ID
+#         (top of stack - 6)           full path to the locked file
+#         (top of stack - 7)           window caption
+#         (top of stack - 8)        /end
 #
 # Note that the format of the path supplied to the plugin is important. If a program
 # was started from a 'hybrid' path using a mixture of SFN and LFN names, such as
@@ -1787,9 +1813,7 @@
 # unzipped to the appropriate ${NSISDIR} sub-folders if you wish, but this step is
 # entirely optional.
 #
-# Tested using LockedList plugin v0.4 (RC2) timestamped 27 September 2007 19:42
-# (this is the first version to support the new "filename only" mode which we use)
-# and LockedList plugin v0.7 (RC2) timestamped 26 February 2008 17:49:24.
+# Tested using LockedList plugin v1.5 timestamped 28 April 2010 21:52:16
 #
 # The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
 #------------------------------------------------------------------------------------
@@ -1850,13 +1874,13 @@
 
     StrCpy $G_CIL_FLAG ""
 
-  get_exe_path:
+  get_next_input_param:
     ClearErrors
     Pop $G_CIL_PATH
     IfErrors panic
-    StrCmp $G_CIL_PATH "${C_EXE_END_MARKER}" list_exhausted
-    StrCmp $G_CIL_FLAG "" 0 get_exe_path
-    IfFileExists "$G_CIL_PATH" 0 get_exe_path
+    StrCmp $G_CIL_PATH "${C_EXE_END_MARKER}" input_exhausted
+    StrCmp $G_CIL_FLAG "" 0 get_next_input_param
+    IfFileExists "$G_CIL_PATH" 0 get_next_input_param
 
     ; Normally the POPFile programs are started using a hybrid path, where the filename
     ; is given in LFN rather than SFN form but the remainder of the path is in SFN form.
@@ -1890,14 +1914,15 @@
     ClearErrors
     FileOpen $G_CIL_TEMP "$G_CIL_PATH\$G_CIL_FILE" a
     FileClose $G_CIL_TEMP
-    IfErrors 0 get_exe_path
+    IfErrors 0 get_next_input_param
     StrCpy $G_CIL_FLAG "$G_CIL_PATH\$G_CIL_FILE"
-    Goto get_exe_path
+    Goto get_next_input_param
 
   check_module:
     LockedList::AddModule /NOUNLOAD "\$G_CIL_FILE"
     LockedList::SilentSearch
     Pop $G_CIL_TEMP
+    StrCmp $G_CIL_TEMP "/end" get_next_input_param
     StrCmp $G_CIL_TEMP "/start" get_search_result
     MessageBox MB_OK|MB_ICONSTOP "Unexpected result from LockedList plugin\
         ${MB_NL}${MB_NL}\
@@ -1905,26 +1930,24 @@
     Abort "Unexpected result from LockedList plugin ($G_CIL_TEMP)"
 
   get_search_result:
-    Pop $G_CIL_TEMP           ; get "process ID" (or "/end" marker, if no more data)
-    StrCmp $G_CIL_TEMP "/end" end_of_locked_list
+    Pop $G_CIL_TEMP           ; "process ID" if a match was found
+    StrCmp $G_CIL_TEMP "/end" get_next_input_param
+    StrCmp $G_CIL_TEMP "/next" get_search_result
     StrCmp $G_CIL_FLAG "" 0 skip_result
     Call ${UN}PFI_GetCompleteFPN
-    Pop $G_CIL_TEMP           ; get the full "path to executable"
+    Pop $G_CIL_TEMP           ; get "full path to the locked file"
     StrCmp $G_CIL_TEMP "$G_CIL_PATH\$G_CIL_FILE" 0 skip_window_caption
     StrCpy $G_CIL_FLAG $G_CIL_TEMP
     Goto skip_window_caption
 
   skip_result:
-    Pop $G_CIL_TEMP           ; ignore the "path to executable" result
+    Pop $G_CIL_TEMP           ; ignore the "full path to the locked file" data
 
   skip_window_caption:
-    Pop $G_CIL_TEMP           ; ignore the "window caption" result
+    Pop $G_CIL_TEMP           ; ignore the "window caption" data
     Goto get_search_result
 
-  end_of_locked_list:
-    Goto get_exe_path
-
-  list_exhausted:
+  input_exhausted:
     Push $G_CIL_FLAG
     Goto exit
 
