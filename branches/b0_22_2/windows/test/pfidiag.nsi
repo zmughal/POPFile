@@ -59,7 +59,8 @@
   ; (${NSISDIR}\Plugins\). The 'GetVersion' source and example files can be unzipped to the
   ; appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
   ;
-  ; This script requires v1.0 (or later) of the GetVersion plugin in order to detect Windows 7.
+  ; This script requires v1.3 (or later) of the GetVersion plugin in order to correctly identify
+  ; the different versions of Windows 7.
 
   ;------------------------------------------------
   ; This script requires the 'ShellLink' NSIS plugin
@@ -75,7 +76,7 @@
   ; (${NSISDIR}\Plugins\). The 'ShellLink' source and example files can be unzipped to the
   ; ${NSISDIR}\Contrib\ShellLink\ folder if you wish, but this step is entirely optional.
   ;
-  ; This script requires v1.1 (or later) of the ShellLink plugin
+  ; Tested with v1.2 of the ShellLink plugin (timestamped 3 June 2010 17:23:24)
 
 #--------------------------------------------------------------------------
 # Run-time command-line switch (used by 'pfidiag.exe')
@@ -119,7 +120,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.19"
+  !define C_VERSION   "0.2.0"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -580,18 +581,23 @@ Section "OS Type and IE Version"
 
 enter_section:
 
-  !define L_OSNAME    $R9
-  !define L_VERSION   $R8
+  !define L_OSARCH    $R9
+  !define L_OSNAME    $R8
+  !define L_OSTYPE    $R7
+  !define L_VERSION   $R6
 
+  Push ${L_OSARCH}
   Push ${L_OSNAME}
+  Push ${L_OSTYPE}
   Push ${L_VERSION}
 
   GetVersion::WindowsName
   Pop ${L_OSNAME}
   GetVersion::WindowsType
-  Pop ${L_VERSION}
-  DetailPrint "Windows version   = ${L_OSNAME} ${L_VERSION}"
-
+  Pop ${L_OSTYPE}
+  GetVersion::WindowsPlatformArchitecture
+  Pop ${L_OSARCH}
+  DetailPrint "Operating System  = Windows ${L_OSNAME} ${L_OSTYPE} (${L_OSARCH}-bit)"
   DetailPrint "IsNT return code  = $G_WIN_OS_TYPE"
 
   Call PFI_GetIEVersion
@@ -600,9 +606,13 @@ enter_section:
   DetailPrint ""
 
   Pop ${L_VERSION}
+  Pop ${L_OSTYPE}
   Pop ${L_OSNAME}
+  Pop ${L_OSARCH}
 
+  !undef L_OSARCH
   !undef L_OSNAME
+  !undef L_OSTYPE
   !undef L_VERSION
 
 next_section:
@@ -1438,6 +1448,71 @@ section_end:
   !undef L_MECABRC
   !undef L_POPFILE_ROOT
   !undef L_TEMP
+
+next_section:
+SectionEnd
+
+
+;--------------------------------------------------------------------------
+; Section: Some important POPFile Configuration Settings
+;          (to avoid the need to ask users to report them)
+;--------------------------------------------------------------------------
+
+Section "POPFile Port Settings"
+
+  StrCmp $G_DIAG_MODE "simple" enter_section
+  StrCmp $G_DIAG_MODE "full" enter_section next_section
+
+enter_section:
+
+  !define L_CFG_SETTING     $R9
+
+  Push ${L_CFG_SETTING}
+
+  IfFileExists  "$G_POPFILE_USER\popfile.cfg" 0 section_end
+
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint "POPFile UI/POP3 Settings (subset)"
+  DetailPrint "------------------------------------------------------------"
+  DetailPrint ""
+
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "html_port"
+  IfErrors 0 report_html_port
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "ui_port"
+  IfErrors 0 report_html_port
+  DetailPrint "POPFile UI port   = ><"
+  Goto check_pop3_listen_port
+
+report_html_port:
+  DetailPrint "POPFile UI port   = < ${L_CFG_SETTING} >"
+
+check_pop3_listen_port:
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "pop3_port"
+  IfErrors 0 report_pop3_listen_port
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "port"
+  IfErrors 0 report_pop3_listen_port
+  DetailPrint "POP3 Listen port  = ><"
+  Goto check_concurrent_pop3
+
+report_pop3_listen_port:
+  DetailPrint "POP3 Listen port  = < ${L_CFG_SETTING} >"
+
+check_concurrent_pop3:
+  !insertmacro READ_CONFIG ${L_CFG_SETTING} "pop3_force_fork"
+  IfErrors 0 report_concurrent_pop3
+  DetailPrint "Concurrent POP3   = ><"
+  Goto settings_done
+
+report_concurrent_pop3:
+  DetailPrint "Concurrent POP3   = < ${L_CFG_SETTING} >"
+
+settings_done:
+  DetailPrint ""
+
+section_end:
+  Pop ${L_CFG_SETTING}
+
+  !undef L_CFG_SETTING
 
 next_section:
 SectionEnd
