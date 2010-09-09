@@ -793,10 +793,10 @@ SETINPUT type0 from
 SETSUBMIT bucket0 personal
 MATCH Magnet 'from: foo' already exists in bucket 'personal'
 
-SETINPUT text0 fo
+SETINPUT text0 foo bar
 SETINPUT type0 from
 SETSUBMIT bucket0 personal
-MATCH New magnet 'from: fo' clashes with magnet 'from: foo' in bucket 'personal' and could cause ambiguous results.
+MATCH New magnet 'from: foo bar' clashes with magnet 'from: foo' in bucket 'personal' and could cause ambiguous results.
 
 # Check magnet change value
 
