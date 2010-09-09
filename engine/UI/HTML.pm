@@ -1350,7 +1350,8 @@ sub magnet_page
                             @magnets{ $self->{c__}->get_magnets( $self->{api_session__}, $bucket, $mtype )} = ();
 
                             for my $from (keys %magnets)  {
-                                if ( ( $mtext =~ /\Q$from\E/ ) || ( $from =~ /\Q$mtext\E/ ) )  {
+                                if ( ( $self->{c__}->single_magnet_match( $mtext,  $from, $mtype ) ) ||   # PROFILE BLOCK START
+                                     ( $self->{c__}->single_magnet_match(  $from, $mtext, $mtype ) ) ) {  # PROFILE BLOCK STOP
                                     $found = 1;
                                     $magnet_message .=               # PROFILE BLOCK START
                                         sprintf( $self->{language__}{Magnet_Error2},
