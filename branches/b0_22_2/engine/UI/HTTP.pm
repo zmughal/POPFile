@@ -152,7 +152,7 @@ sub service
                 if ( ( defined( $client ) ) &&                      # PROFILE BLOCK START
                      ( my $request = $self->slurp_( $client ) ) ) { # PROFILE BLOCK STOP
                     my $content_length = 0;
-                    my $content;
+                    my $content = '';
 
                     $self->log_( 2, $request );
 
@@ -247,6 +247,8 @@ sub parse_form_
     # something like http://127.0.0.1/history?session=foo&amp;filter=bar
     # which would mess things up in the argument splitter so this code
     # just changes &amp; to & for safety
+
+    return if ( !defined $arguments );
 
     $arguments =~ s/&amp;/&/g;
 
