@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2010 John Graham-Cumming
+# Copyright (c) 2003-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.4.5"
+  !define C_PFI_LIBRARY_VERSION     "0.5.0"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1030,6 +1030,10 @@
 #    Macro:                PFI_RunSQLiteCommand
 #    Installer Function:   PFI_RunSQLiteCommand
 #    Uninstaller Function: un.PFI_RunSQLiteCommand
+#
+#    Macro:                PFI_SendToRecycleBin
+#    Installer Function:   PFI_SendToRecycleBin
+#    Uninstaller Function: un.PFI_SendToRecycleBin
 #
 #    Macro:                PFI_ServiceActive
 #    Installer Function:   PFI_ServiceActive
@@ -3956,6 +3960,110 @@
 #--------------------------------------------------------------------------
 
 ;!insertmacro PFI_RunSQLiteCommand "un."
+
+
+#--------------------------------------------------------------------------
+# Macro: PFI_SendToRecycleBin
+#
+# The installation process and the uninstall process may both need a function which silently
+# sends one or more files (or folders) to the Recycle Bin instead of permanently deleting
+# them. The standard Windows wildcards can be used to define what is to be deleted. A non-zero
+# return value indicates an error occurred (e.g. file not found).
+#
+# This macro makes maintenance easier by ensuring that both processes use identical functions,
+# with the only difference being their names.
+#
+# NOTES:
+# (1) NSIS strings are terminated by a single NULL character. The SHFileOperation function
+#     requires _two_ NULL characters at the end of the string specifying the file(s) to be
+#     sent to the Recycle Bin
+#
+# (2) The !insertmacro PFI_SendToRecycleBin "" and !insertmacro PFI_SendToRecycleBin "un."
+#     commands are included in this file so the NSIS script can use 'Call PFI_SendToRecycleBin'
+#     and 'Call un.PFI_SendToRecycleBin' without additional preparation.
+#
+# Input:
+#       (top of stack)          - full path of file/files/directory to be sent to Recycle Bin
+#
+# Output:
+#       (top of stack)          - operation return code (0 = success)
+#
+# Usage (after macro has been 'inserted'):
+#
+#       Push "C:\Program Files\My Program\config.dat"
+#       Call PFI_SendToRecycleBin
+#       Pop $R0
+#
+#       ($R0 will be "0" if the file was successfully sent to the Recycle Bin)
+#       ($R0 will be "1026" if the specified file cannot be found)
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_SendToRecycleBin UN
+
+    !define FO_DELETE             0x3
+
+    !define FOF_SILENT            0x4
+    !define FOF_NOCONFIRMATION    0x10
+    !define FOF_ALLOWUNDO         0x40
+
+    !define USE_RECYCLEBIN        ${FOF_ALLOWUNDO}|${FOF_SILENT}|${FOF_NOCONFIRMATION}
+
+  Function ${UN}PFI_SendToRecycleBin
+
+    Exch $R0    ; the input data (the full path to the file to be sent to the Recycle Bin)
+    Push $R1
+    Push $R2
+    Push $R3
+
+    ; Create a structure holding a string terminated by two NULL characters
+
+    System::Call "*(&t${NSIS_MAX_STRLEN}) i.R3"
+
+    StrCpy $R1 $R3                       ; Get start address of buffer for pFrom parameter
+    StrLen $R2 $R0
+    IntOp $R2 $R2 + 1
+    System::Call "*$R1(&t$R2 '$R0')"     ; Transfer string and its NULL terminator to the buffer
+    IntOp $R1 $R1 + $R2
+    System::Call "*$R1(&t1 '')"          ; Place the second terminating NULL in the buffer
+
+    ; Create the SHFILEOPSTRUCT structure required by the SHFileOperation function
+
+    System::Call "*(i $HWNDPARENT, i ${FO_DELETE}, i R3, t '', &i2 ${USE_RECYCLEBIN},i 0, i 0, t '') i.R1"
+
+    ; Send the specified file(s) to the Recycle Bin
+
+    System::Call "shell32::SHFileOperationA(i R1)i.R2"
+
+    System::Free $R3      ; Free the string terminated by two NULL characters
+    System::Free $R1      ; Free the SHFILEOPSTRUCT structure
+    StrCpy $R0 $R2        ; Prepare to return the SHFileOperation function result code
+
+    Pop $R3
+    Pop $R2
+    Pop $R1
+    Exch $R0
+
+  FunctionEnd
+!macroend
+
+!ifdef BACKUP
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_SendToRecycleBin
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_SendToRecycleBin ""
+!endif
+
+#--------------------------------------------------------------------------
+# Uninstaller Function: un.PFI_SendToRecycleBin
+#
+# This function is used during the uninstall process
+#--------------------------------------------------------------------------
+
+;!insertmacro PFI_SendToRecycleBin "un."
 
 
 #--------------------------------------------------------------------------
