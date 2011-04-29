@@ -20,7 +20,7 @@
 #                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
 #                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2009 John Graham-Cumming
+# Copyright (c) 2002-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -326,7 +326,7 @@
 
   !define C_PERL_DIR      "C:\Perl"
   !define C_PERL_VERSION  "5.8.9"
-  !define C_PERL_BUILD    "826"
+  !define C_PERL_BUILD    "829"
 
   ;----------------------------------------------------------------------
   ; Recently there have been some significant changes to the structure and
@@ -1789,11 +1789,22 @@ Section /o "XMLRPC" SecXMLRPC
   SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\bytes.pm"
   File "${C_PERL_DIR}\lib\bytes_heavy.pl"
+  File "${C_PERL_DIR}\lib\Encode.pm"
   File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\re.pm"
   File "${C_PERL_DIR}\site\lib\URI.pm"
   File "${C_PERL_DIR}\lib\utf8.pm"
   File "${C_PERL_DIR}\lib\utf8_heavy.pl"
+
+  SetOutPath "$G_MPLIBDIR\Class"
+  File "${C_PERL_DIR}\site\lib\Class\Inspector.pm"
+
+  SetOutPath "$G_MPLIBDIR\Encode"
+  File "${C_PERL_DIR}\lib\Encode\Alias.pm"
+  File "${C_PERL_DIR}\lib\Encode\Config.pm"
+  File "${C_PERL_DIR}\lib\Encode\Encoding.pm"
+        SetOutPath "$G_MPLIBDIR\auto\Encode"
+        File "${C_PERL_DIR}\lib\auto\Encode\Encode.dll"
 
   SetOutPath "$G_MPLIBDIR\HTTP"
   File /r "${C_PERL_DIR}\lib\HTTP\*"
@@ -1808,7 +1819,29 @@ Section /o "XMLRPC" SecXMLRPC
   File "${C_PERL_DIR}\lib\Net\HTTP\*"
 
   SetOutPath "$G_MPLIBDIR\SOAP"
-  File /r "${C_PERL_DIR}\site\lib\SOAP\*"
+  File "${C_PERL_DIR}\site\lib\SOAP\Constants.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Lite.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Packager.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Test.pm"
+
+  SetOutPath "$G_MPLIBDIR\SOAP\Lite"
+  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Packager.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Utils.pm"
+
+  SetOutPath "$G_MPLIBDIR\SOAP\Lite\Deserializer"
+  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Deserializer\XMLSchema1999.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Deserializer\XMLSchema2001.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Deserializer\XMLSchemaSOAP1_1.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Deserializer\XMLSchemaSOAP1_2.pm"
+
+  SetOutPath "$G_MPLIBDIR\SOAP\Transport"
+  File "${C_PERL_DIR}\site\lib\SOAP\Transport\HTTP.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Transport\IO.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Transport\LOCAL.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Transport\LOOPBACK.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Transport\MAILTO.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Transport\POP3.pm"
+  File "${C_PERL_DIR}\site\lib\SOAP\Transport\TCP.pm"
 
   SetOutPath "$G_MPLIBDIR\Time"
   File /r "${C_PERL_DIR}\lib\Time\*"
@@ -1829,16 +1862,17 @@ Section /o "XMLRPC" SecXMLRPC
   SetOutPath "$G_MPLIBDIR\URI"
   File /r "${C_PERL_DIR}\site\lib\URI\*"
 
-  SetOutPath "$G_MPLIBDIR\XML"
-  File /r "${C_PERL_DIR}\lib\XML\*"
-  SetOutPath "$G_MPLIBDIR\auto\XML\Parser\Expat"
-  File "${C_PERL_DIR}\lib\auto\XML\Parser\Expat\Expat.dll"
-
   SetOutPath "$G_MPLIBDIR\XML\Parser"
   File "${C_PERL_DIR}\site\lib\XML\Parser\Lite.pm"
 
   SetOutPath "$G_MPLIBDIR\XMLRPC"
-  File /r "${C_PERL_DIR}\site\lib\XMLRPC\*"
+  File "${C_PERL_DIR}\site\lib\XMLRPC\Lite.pm"
+  File "${C_PERL_DIR}\site\lib\XMLRPC\Test.pm"
+
+  SetOutPath "$G_MPLIBDIR\XMLRPC\Transport"
+  File "${C_PERL_DIR}\site\lib\XMLRPC\Transport\HTTP.pm"
+  File "${C_PERL_DIR}\site\lib\XMLRPC\Transport\POP3.pm"
+  File "${C_PERL_DIR}\site\lib\XMLRPC\Transport\TCP.pm"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
