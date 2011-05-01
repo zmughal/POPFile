@@ -210,6 +210,7 @@ History_RemoveChecked                   Remove Checked
 History_Remove                          To remove entries in the history click
 History_SearchMessage                   Search From/Subject
 History_NoMessages                      No messages
+History_NoMatchingMessages              No matching messages
 History_ShowMagnet                      magnetized
 History_Negate_Search                   Invert search/filter
 History_Magnet                          &nbsp;(just showing magnet classified messages)
