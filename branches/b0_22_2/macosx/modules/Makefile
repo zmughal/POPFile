@@ -36,11 +36,11 @@ FAKECONFIG = ExtUtils-FakeConfig-0.12
 FAKECONFIG_ARCHIVE = $(FAKECONFIG).zip
 FAKECONFIG_URL = http://search.cpan.org/CPAN/authors/id/M/MB/MBARBON/$(FAKECONFIG_ARCHIVE)
 
-DBI = DBI-1.609
+DBI = DBI-1.616
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.29
+SQLITE = DBD-SQLite-1.31
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
 SQLITE_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(SQLITE_ARCHIVE)
 
@@ -66,7 +66,7 @@ SOAPLITE = SOAP-Lite-0.60
 SOAPLITE_ARCHIVE = $(SOAPLITE)a.tar.gz
 SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/B/BY/BYRNE/SOAP/$(SOAPLITE_ARCHIVE)
 
-VERSION_MODULE = version-0.76
+VERSION_MODULE = version-0.88
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
 VERSION_URL = http://search.cpan.org/CPAN/authors/id/J/JP/JPEACOCK/$(VERSION_ARCHIVE)
 
@@ -86,7 +86,7 @@ NETSSLEAY = Net-SSLeay-1.36
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
 NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/F/FL/FLORA/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-1.31
+IOSOCKETSSL = IO-Socket-SSL-1.39
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
