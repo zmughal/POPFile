@@ -406,3 +406,7 @@ td.top20 td.historyNavigatorTop a + a {
   font-size: 98%;
 }
 */
+
+div.historySearchFilterActive {
+ background-color: lightgrey;
+}

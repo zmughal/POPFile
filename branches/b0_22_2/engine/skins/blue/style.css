@@ -293,3 +293,7 @@ div.helpMessage form {
   font-size:80%;
   vertical-align: middle;
 }
+
+div.historySearchFilterActive {
+  background-color: #363E68;
+}

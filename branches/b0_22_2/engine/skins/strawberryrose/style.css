@@ -553,3 +553,8 @@ div.helpMessage form {
 .checkLabel {
   border: 1px solid #DB6479;
 }
+
+div.historySearchFilterActive {
+  color: black;
+  background-color: #C2DC87;
+}

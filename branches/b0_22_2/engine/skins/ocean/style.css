@@ -239,3 +239,7 @@ input {
   font-size:80%;
   vertical-align: middle;
 }
+
+div.historySearchFilterActive {
+ background-color: #eaa;
+}

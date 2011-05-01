@@ -406,3 +406,9 @@ div.helpMessage form {
 .historyMagnetUsed span {
   font-size:90%;
   vertical-align: middle;
+}
+
+div.historySearchFilterActive {
+ border: 2px #cccccc solid;
+ background-color: #eeeeee;
+}

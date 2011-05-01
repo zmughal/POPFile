@@ -543,3 +543,8 @@ div.helpMessage form {
 th.historyLabel {
   text-align: left;
 }
+
+div.historySearchFilterActive {
+ border: 2px #ddddff solid;
+ background-color: #eeeeee;
+}

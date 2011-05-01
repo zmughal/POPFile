@@ -222,6 +222,10 @@ sub initialize
     $self->config_( 'show_training_help', 0 );
     $self->config_( 'show_bucket_help', 1 );
 
+    # If you want to highlight active search or filter settings
+
+    $self->config_( 'search_filter_highlight', 0 );
+
     # Load skins
 
     $self->load_skins__();
@@ -2403,6 +2407,7 @@ sub history_page
     $templ->param( 'History_Field_Sort'    => $self->{form_}{sort} );
     $templ->param( 'History_Field_Filter'  => $self->{form_}{filter} );
     $templ->param( 'History_If_MultiPage'  => $page_size <= $query_size );
+    $templ->param( 'History_Search_Filter_Highlight'  => $self->config_( 'search_filter_highlight' ) );
 
     my @buckets = $self->{c__}->get_buckets( $session );
 
