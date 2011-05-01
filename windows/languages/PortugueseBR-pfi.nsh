@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2003-2009 John Graham-Cumming
+# Copyright (c) 2003-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -275,7 +275,7 @@
 !insertmacro PFI_LANG_STRING DESC_SecNNTP                  "Instala o proxy NNTP do POPFile"
 !insertmacro PFI_LANG_STRING DESC_SecSMTP                  "Instala o proxy SMTP do POPFile"
 !insertmacro PFI_LANG_STRING DESC_SecSOCKS                 "Instala componentes extras do Perl que permitem aos proxies do POPFile usar SOCKS"
-!insertmacro PFI_LANG_STRING DESC_SecSSL                   "Baixa e instala os componentes do Perl e bibliotecas SSL que permitem ao POPFile se conectar a servidores de e-mail"
+!insertmacro PFI_LANG_STRING DESC_SecSSL                   "Instala os componentes do Perl e bibliotecas SSL que permitem ao POPFile se conectar a servidores de e-mail"
 !insertmacro PFI_LANG_STRING DESC_SecXMLRPC                "Instala o módulo XMLRPC do POPFile (para acessar a API do POPFile) e o suporte do Perl requerido."
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -370,7 +370,7 @@
 ; Text for the MODIFY mode radio-button and the label underneath it
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "Modify the existing POPFile installation"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(e.g. add SSL Support)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(disabled)"
 
 ; Text for the UNINSTALL mode radio-button and the label underneath it
 

@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.5.0"
+  !define C_PFI_LIBRARY_VERSION     "0.5.1"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1062,6 +1062,10 @@
 #    Macro:                PFI_StrCheckDecimal
 #    Installer Function:   PFI_StrCheckDecimal
 #    Uninstaller Function: un.PFI_StrCheckDecimal
+#
+#    Macro:                PFI_StrCheckHexadecimal
+#    Installer Function:   PFI_StrCheckHexadecimal
+#    Uninstaller Function: un.PFI_StrCheckHexadecimal
 #
 #    Macro:                PFI_StrStr
 #    Installer Function:   PFI_StrStr
@@ -4845,6 +4849,132 @@
 
 
 #--------------------------------------------------------------------------
+# Macro: PFI_StrCheckHexadecimal
+#
+# The installation process and the uninstall process may both need a function
+# which checks if a given string contains only hexadecimal digits. This macro
+# makes maintenance easier by ensuring that both processes use identical functions,
+# with the only difference being their names.
+#
+# The 'PFI_StrCheckHexadecimal' and 'un.PFI_StrCheckHexadecimal' functions check that
+# a given string contains only the digits 0 to 9 and/or letters A to F (in upper or
+# lowercase). If the string contains any invalid characters, "" is returned.
+#
+# NOTE:
+# The !insertmacro PFI_StrCheckHexadecimal "" and !insertmacro PFI_StrCheckHexadecimal "un."
+# commands are included in this file so the NSIS script can use 'Call PFI_StrCheckHexadecimal'
+# and 'Call un.PFI_StrCheckHexadecimal' without additional preparation.
+#
+# Inputs:
+#         (top of stack)   - string which may contain a hexadecimal number
+#
+# Outputs:
+#         (top of stack)   - the input string (if valid) or "" (if invalid)
+#
+# Usage (after the macro has been inserted):
+#
+#         Push "123abc"
+#         Call PFI_StrCheckHexadecimal
+#         Pop $R0
+#
+#         ($R0 at this point is "123abc")
+#
+#--------------------------------------------------------------------------
+
+!macro PFI_StrCheckHexadecimal UN
+  Function ${UN}PFI_StrCheckHexadecimal
+
+    !define VALID_DIGIT     "0123456789abcdef"    ; accept only these digits
+    !define BAD_OFFSET      16                    ; length of VALID_DIGIT string
+
+    !define L_STRING        $0   ; The input string
+    !define L_RESULT        $1   ; Holds the result: either "" (if input is invalid)
+                                 ; or the input string (if valid)
+    !define L_CURRENT       $2   ; A character from the input string
+    !define L_OFFSET        $3   ; The offset to a char in the "validity check" string
+    !define L_VALIDCHAR     $4   ; A character from the "validity check" string
+    !define L_VALIDLIST     $5   ; Holds the current "validity check" string
+    !define L_CHARSLEFT     $6   ; To cater for MBCS input strings, terminate when end
+                                 ; of string reached, not when a null byte reached
+
+    Exch ${L_STRING}
+    Push ${L_RESULT}
+    Push ${L_CURRENT}
+    Push ${L_OFFSET}
+    Push ${L_VALIDCHAR}
+    Push ${L_VALIDLIST}
+    Push ${L_CHARSLEFT}
+
+    StrCpy ${L_RESULT} ""
+
+  next_input_char:
+    StrLen ${L_CHARSLEFT} ${L_STRING}
+    StrCmp ${L_CHARSLEFT} 0 done
+    StrCpy ${L_CURRENT} ${L_STRING} 1                 ; Get next char from input string
+    StrCpy ${L_VALIDLIST} ${VALID_DIGIT}${L_CURRENT}  ; Add it to end of "validity
+                                                      ; check" to guarantee a match
+    StrCpy ${L_STRING} ${L_STRING} "" 1
+    StrCpy ${L_OFFSET} -1
+
+  next_valid_char:
+    IntOp ${L_OFFSET} ${L_OFFSET} + 1
+    StrCpy ${L_VALIDCHAR} ${L_VALIDLIST} 1 ${L_OFFSET} ; Extract next "valid" char
+                                                       ; (from "validity check" string)
+    StrCmp ${L_CURRENT} ${L_VALIDCHAR} 0 next_valid_char
+    IntCmp ${L_OFFSET} ${BAD_OFFSET} invalid 0 invalid ; If match is with the char
+                                                       ; we added, input is bad
+    StrCpy ${L_RESULT} ${L_RESULT}${L_VALIDCHAR}       ; Add "valid" char to result
+    goto next_input_char
+
+  invalid:
+    StrCpy ${L_RESULT} ""
+
+  done:
+    StrCpy ${L_STRING} ${L_RESULT}  ; Result is a string of hexadecimal digits or ""
+    Pop ${L_CHARSLEFT}
+    Pop ${L_VALIDLIST}
+    Pop ${L_VALIDCHAR}
+    Pop ${L_OFFSET}
+    Pop ${L_CURRENT}
+    Pop ${L_RESULT}
+    Exch ${L_STRING}                ; Place result on top of the stack
+
+    !undef VALID_DIGIT
+    !undef BAD_OFFSET
+
+    !undef L_STRING
+    !undef L_RESULT
+    !undef L_CURRENT
+    !undef L_OFFSET
+    !undef L_VALIDCHAR
+    !undef L_VALIDLIST
+    !undef L_CHARSLEFT
+
+  FunctionEnd
+!macroend
+
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Installer Function: PFI_StrCheckHexadecimal
+    #
+    # This function is used during the installation process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_StrCheckHexadecimal ""
+!endif
+
+!ifdef INSTALLER
+    #--------------------------------------------------------------------------
+    # Uninstaller Function: un.PFI_StrCheckHexadecimal
+    #
+    # This function is used during the uninstall process
+    #--------------------------------------------------------------------------
+
+    !insertmacro PFI_StrCheckHexadecimal "un."
+!endif
+
+
+#--------------------------------------------------------------------------
 # Macro: PFI_StrStr
 #
 # The installation process and the uninstall process may both use a function which checks if
@@ -5049,7 +5179,7 @@
     !insertmacro PFI_WaitUntilUnlocked ""
 !endif
 
-!ifdef ADDUSER | INSTALLER
+!ifdef ADDUSER
     #--------------------------------------------------------------------------
     # Uninstaller Function: un.PFI_WaitUntilUnlocked
     #

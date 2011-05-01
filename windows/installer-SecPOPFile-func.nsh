@@ -3,7 +3,7 @@
 # installer-SecPOPFile-func.nsh --- This 'include' file contains the non-library functions
 #                                   used by the 'installer-SecPOPFile-body.nsh' file.
 #
-# Copyright (c) 2005-2009 John Graham-Cumming
+# Copyright (c) 2005-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -428,11 +428,11 @@ FunctionEnd
     Goto manual_shutdown
 
   check_exe:
-    DetailPrint "Waiting for '${L_EXE}' to unlock after NSISdl request..."
+    DetailPrint "Waiting for '${L_EXE}' to unlock after the shutdown request..."
     DetailPrint "Please be patient, this may take more than 30 seconds"
     Push ${L_EXE}
     Call ${UN}PFI_WaitUntilUnlocked
-    DetailPrint "Checking if '${L_EXE}' is still locked after NSISdl request..."
+    DetailPrint "Checking if '${L_EXE}' is still locked after the shutdown request..."
     Push "${C_EXE_END_MARKER}"
     Push ${L_EXE}
     Call ${UN}PFI_CheckIfLocked
@@ -473,7 +473,7 @@ FunctionEnd
 
   !insertmacro MAKE_ROOTDIR_SAFE ""
 
-  !insertmacro MAKE_ROOTDIR_SAFE "un."
+;;;  !insertmacro MAKE_ROOTDIR_SAFE "un."
 
 #--------------------------------------------------------------------------
 # End of 'installer-SecPOPFile-func.nsh'

@@ -38,15 +38,14 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 #--------------------------------------------------------------------------
-# The original 'installer.nsi' script has been divided into several files:
+# The main POPFile installer is built from the following files:
 #
 #  (1) installer.nsi                 - master script which uses the following 'include' files
 #  (2) installer-SecPOPFile-body.nsh - body of section used to install the POPFile program
 #  (3) installer-SecPOPFile-func.nsh - functions used by the above 'include' file
 #  (4) installer-SecMinPerl-body.nsh - body of section used to install the basic minimal Perl
 #  (5) installer-Uninstall.nsh       - source for the POPFile uninstaller (uninstall.exe)
-#  (6) getssl.nsh                    - section & functions used to download the SSL support files
-#  (7) getparser.nsh                 - macro-based sections and functions to install the Nihongo Parser
+#  (6) getparser.nsh                 - macro-based sections and functions to install the Nihongo Parser
 #--------------------------------------------------------------------------
 
   ; This version of the script has been tested with the "NSIS v2.45" compiler,
@@ -168,21 +167,6 @@
 # of the non-English *-pfi.nsh files are up-to-date), supply the command-line switch
 # /DENGLISH_MODE when compiling the installer. This switch only affects the language used by
 # the installer, it does not affect which files get installed.
-#
-#--------------------------------------------------------------------------
-
-#--------------------------------------------------------------------------
-# Run-time command-line switch (used by 'setup.exe')
-#--------------------------------------------------------------------------
-#
-# /SSL
-#
-# If there are problems downloading the optional SSL support files from the Internet, the
-# installer will skip this part of the installation. If SSL support is required, the SSL
-# files can be added by re-running the installer with the /SSL command-line switch to make
-# it skip everything except the downloading and installation of the SSL support files.
-#
-# The /SSL switch can use uppercase or lowercase.
 #
 #--------------------------------------------------------------------------
 
@@ -422,8 +406,6 @@
                            ; (1) Internal, (2) Kakasi (the default), or (3) MeCab
                            ; (if "MeCab" is selected then it will be downloaded during the install)
 
-  Var G_SSL_ONLY           ; 1 = SSL-only installation, 0 = normal installation
-
   Var G_PLS_FIELD_1        ; used to customize translated text strings
 
   Var G_DLGITEM            ; HWND of the UI dialog field we are going to modify
@@ -508,7 +490,7 @@
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
   VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Automatic email classification"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -688,10 +670,10 @@
   ; Installer Page - Select Components to be installed
   ;---------------------------------------------------
 
-  ; Use a "pre" function to check if only the SSL Support files are to be installed
-  ; and if not then check if upgrading and pre-select appropriate components.
+  ; Use a "pre" function to pre-select appropriate components
+  ; if we are upgrading an existing POPFile installation.
 
-  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "CheckIfSSLOnlyOrUpgrade"
+  !define MUI_PAGE_CUSTOMFUNCTION_PRE         "CheckIfUpgrade"
 
   !insertmacro MUI_PAGE_COMPONENTS
 
@@ -901,7 +883,7 @@
 
   OutFile "${C_OUTFILE}"
 
-  ; Ensure CRC checking cannot be turned off using the /NCRC command-line switch
+  ; Ensure the /NCRC command-line switch cannot be used to turn off CRC checking
 
   CRCcheck Force
 
@@ -943,11 +925,11 @@
   ReserveFile "${NSISDIR}\Plugins\AccessControl.dll"
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
   ReserveFile "${NSISDIR}\Plugins\DumpLog.dll"
+  ReserveFile "${NSISDIR}\Plugins\getsize.dll"
   ReserveFile "${NSISDIR}\Plugins\GetVersion.dll"
   ReserveFile "${NSISDIR}\Plugins\inetc.dll"
   ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
   ReserveFile "${NSISDIR}\Plugins\md5dll.dll"
-  ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
   ReserveFile "${NSISDIR}\Plugins\nsUnzip.dll"
   ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
   ReserveFile "${NSISDIR}\Plugins\SimpleSC.dll"
@@ -955,15 +937,11 @@
   ReserveFile "${NSISDIR}\Plugins\UAC.dll"
   ReserveFile "${NSISDIR}\Plugins\untgz.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
-  ReserveFile "${NSISDIR}\Plugins\vpatch.dll"
   ReserveFile "ioG.ini"
   ReserveFile "ioP.ini"
   ReserveFile "ioUM.ini"
   ReserveFile "${C_RELEASE_NOTES}"
   ReserveFile /nonfatal "${C_JAPANESE_RELEASE_NOTES}"
-  ReserveFile "${C_POPFILE_MAJOR_VERSION}.${C_POPFILE_MINOR_VERSION}.${C_POPFILE_REVISION}.pcf"
-
-;  ReserveFile "SSL_pm.pat"     ; 0.22.5 (and later releases) do not need any SSL patches (yet)
 
 #--------------------------------------------------------------------------
 # Installer Function: .onInit - installer starts by offering a choice of languages
@@ -1209,20 +1187,6 @@ notes_ignored:
   Call ShowPleaseWaitBanner
 
 continue:
-  StrCpy $G_SSL_ONLY "0"    ; assume a full installation is required
-  Call NSIS_GetParameters   ; The UAC plugin may modify the command-line
-  Push "/SSL"               ; so we need to check for "/SSL" anywhere on
-  Call PFI_StrStr           ; the command-line (instead of assuming the
-  Pop ${L_RESERVED}         ; command-line is either /SSL or empty)
-  StrCmp ${L_RESERVED} "" create_comms_file
-  StrCpy ${L_RESERVED} ${L_RESERVED} 5
-  StrCmp ${L_RESERVED} "/SSL" sslonly
-  StrCmp ${L_RESERVED} "/SSL " 0 create_comms_file
-
-sslonly:
-  StrCpy $G_SSL_ONLY "1"    ; just download and install the SSL support files
-
-create_comms_file:
   SetShellVarContext all
   GetTempFileName $G_COMMS_FILE $APPDATA
   SetShellVarContext current
@@ -1397,13 +1361,6 @@ report_socks_status:
   WriteINIStr "$G_COMMS_FILE" "RealUser" "Socks" "${L_TEMP}"
 
   StrCpy ${L_TEMP} "found"
-  IfFileExists "${L_EXISTING_ROOT}\lib\Net\SSLeay.pm" report_ssl_status
-  StrCpy ${L_TEMP} "missing"
-
-report_ssl_status:
-  WriteINIStr "$G_COMMS_FILE" "RealUser" "SSL" "${L_TEMP}"
-
-  StrCpy ${L_TEMP} "found"
   IfFileExists "${L_EXISTING_ROOT}\UI\XMLRPC.pm" report_xmlrpc_status
   StrCpy ${L_TEMP} "missing"
 
@@ -1502,6 +1459,46 @@ SectionEnd
 
 Section "-Minimal Perl" SecMinPerl
   !include "installer-SecMinPerl-body.nsh"
+SectionEnd
+
+#--------------------------------------------------------------------------
+# Installer Section: SSL Support for POPFile (always installed)
+#
+# This section installs the extra Perl modules and the OpenSSL code library
+# required for SSL access to mail servers such as Gmail's POP3 & IMAP servers.
+#
+# Before the POPFile 1.1.2 release this used to be an optional section
+# which downloaded the SSL support files. Starting with the POPFile 1.1.2
+# release a more up-to-date (and much smaller) Perl package is used so all
+# of the SSL support files are now included in the installer.
+#--------------------------------------------------------------------------
+
+Section "SSL Support" SecSSL
+
+  SectionIn RO
+
+  !insertmacro SECTIONLOG_ENTER "SSL Support"
+
+  SetOutPath "$G_MPLIBDIR\IO\Socket"
+  File "${C_PERL_DIR}\site\lib\IO\Socket\SSL.pm"
+
+  SetOutPath "$G_MPLIBDIR\Net"
+  File "${C_PERL_DIR}\site\lib\Net\SSLeay.pm"
+
+  SetOutPath "$G_MPLIBDIR\Net\SSLeay"
+  File "${C_PERL_DIR}\site\lib\Net\SSLeay\Handle.pm"
+
+  SetOutPath "$G_MPLIBDIR\auto\Net\SSLeay"
+  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\SSLeay.dll"
+  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\autosplit.ix"
+  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\*.al"
+
+  SetDetailsPrint textonly
+  DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
+  SetDetailsPrint listonly
+
+  !insertmacro SECTIONLOG_EXIT "SSL Support"
+
 SectionEnd
 
 #--------------------------------------------------------------------------
@@ -1936,28 +1933,6 @@ Section /o "SOCKS" SecSOCKS
 
 SectionEnd
 
-#--------------------------------------------------------------------------
-# Installer Section: (optional) SSL Support for POPFile (default = not selected)
-#
-# If this component is selected, the installer downloads and installs the extra
-# Perl modules and the necessary OpenSSL libraries required to support SSL access
-# access to mail servers. The installer waits until all of these extra files have
-# been downloaded before installing any of them. If the download attempt fails, the
-# installation will continue (since SSL support is an optional feature). A later
-# attempt can be made by running the stand-alone 'SSL Setup' wizard to download
-# and install only these extra SSL support files.
-#
-# Note: The 'getssl.nsh' file includes more than just the 'Section' code.
-#
-# The 'getssl.nsh' file is used by the 'SSL Setup' wizard to ensure it
-# handles the downloading and installation of the SSL support files in the
-# same way as the main POPFile installer.
-#--------------------------------------------------------------------------
-
-  !include "getssl.nsh"
-
-  !insertmacro SSL_SUPPORT_FOR_INSTALLER
-
 SubSectionEnd
 
 #--------------------------------------------------------------------------
@@ -1975,13 +1950,6 @@ Section "-StopLog"
   SetDetailsPrint listonly
   Call PFI_GetDateTimeStamp
   Pop $G_PLS_FIELD_1
-  StrCmp $G_SSL_ONLY "0" normal_log
-  DetailPrint "------------------------------------------------------------"
-  DetailPrint "SSL Support installation finished $G_PLS_FIELD_1"
-  DetailPrint "------------------------------------------------------------"
-  Goto save_log
-
-normal_log:
   DetailPrint "------------------------------------------------------------"
   DetailPrint "'Add POPFile User' will be called to configure POPFile"
   IfRebootFlag 0 close_log
@@ -1991,8 +1959,6 @@ close_log:
   DetailPrint "------------------------------------------------------------"
   DetailPrint "Main program installation finished $G_PLS_FIELD_1"
   DetailPrint "------------------------------------------------------------"
-
-save_log:
 
   ; Save a log showing what was installed
 
@@ -2035,6 +2001,7 @@ SectionEnd
 
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT ${SecPOPFile}     $(DESC_SecPOPFile)
+    !insertmacro MUI_DESCRIPTION_TEXT ${SecSSL}         $(DESC_SecSSL)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSkins}       $(DESC_SecSkins)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecLangs}       $(DESC_SecLangs)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecParser}      "${C_NPLS_DESC_SecParser}"
@@ -2044,7 +2011,6 @@ SectionEnd
     !insertmacro MUI_DESCRIPTION_TEXT ${SecXMLRPC}      $(DESC_SecXMLRPC)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecIMAP}        $(DESC_SecIMAP)
     !insertmacro MUI_DESCRIPTION_TEXT ${SecSOCKS}       $(DESC_SecSOCKS)
-    !insertmacro MUI_DESCRIPTION_TEXT ${SecSSL}         $(DESC_SecSSL)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 #--------------------------------------------------------------------------
@@ -2254,9 +2220,14 @@ start_summary:
           $(PFI_LANG_SUMMARY_DEFAULTLANG)"
 
 check_min_perl:
-  !insertmacro PFI_SectionNotSelected ${SecMinPerl} check_skins
+  !insertmacro PFI_SectionNotSelected ${SecMinPerl} check_ssl
   StrCpy ${L_TEMP} ""
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_MINPERL)"
+
+check_ssl:
+  !insertmacro PFI_SectionNotSelected ${SecSSL} check_skins
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SSL)"
 
 check_skins:
   !insertmacro PFI_SectionNotSelected ${SecSkins} check_langs
@@ -2306,14 +2277,9 @@ check_smtp:
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SMTP)"
 
 check_socks:
-  !insertmacro PFI_SectionNotSelected ${SecSOCKS} check_ssl
+  !insertmacro PFI_SectionNotSelected ${SecSOCKS} check_xmlrpc
   StrCpy ${L_TEMP} ""
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SOCKS)"
-
-check_ssl:
-  !insertmacro PFI_SectionNotSelected ${SecSSL} check_xmlrpc
-  StrCpy ${L_TEMP} ""
-  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SSL)"
 
 check_xmlrpc:
   !insertmacro PFI_SectionNotSelected ${SecXMLRPC} end_optional
@@ -2368,41 +2334,16 @@ FunctionEnd
   !insertmacro FUNCTION_HANDLE_PARSER_SELECTION ""
 
 #--------------------------------------------------------------------------
-# Installer Function: CheckIfSSLOnlyOrUpgrade
+# Installer Function: CheckIfUpgrade
 # (the "pre" function for the COMPONENTS selection page)
 #
-# If only the SSL Support files are to be installed, disable the other
-# POPFile-component sections and skip the COMPONENTS page
-#
-# Otherwise pre-select the same optional components as the existing
+# Pre-select the same optional components as found in the existing
 # installation (assuming we are upgrading POPFile). The user is free
 # to change the selection, pre-selection just helps save time etc.
 #--------------------------------------------------------------------------
 
-Function CheckIfSSLOnlyOrUpgrade
+Function CheckIfUpgrade
 
-  StrCmp $G_SSL_ONLY "0" check_existing_selections
-
-  !insertmacro UnselectSection ${SecPOPFile}
-  !insertmacro UnselectSection ${SecMinPerl}
-  !insertmacro UnselectSection ${SecSkins}
-  !insertmacro UnselectSection ${SecLangs}
-  !insertmacro UnselectSection ${SecKakasi}
-  !insertmacro UnselectSection ${SecMeCab}
-  !insertmacro UnselectSection ${SecInternalParser}
-  !insertmacro UnselectSection ${SecNNTP}
-  !insertmacro UnselectSection ${SecSMTP}
-  !insertmacro UnselectSection ${SecXMLRPC}
-  !insertmacro UnselectSection ${SecIMAP}
-  !insertmacro UnselectSection ${SecSOCKS}
-
-  !insertmacro SelectSection ${SecSSL}
-
-  ; Do not display the COMPONENTS page
-
-  Abort
-
-check_existing_selections:
   !define L_TEMP  $R9
 
   Push ${L_TEMP}
@@ -2423,13 +2364,8 @@ check_smtp:
 
 check_socks:
   ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "Socks"
-  StrCmp ${L_TEMP} "found" 0 check_ssl
-  !insertmacro SelectSection ${SecSOCKS}
-
-check_ssl:
-  ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "SSL"
   StrCmp ${L_TEMP} "found" 0 check_xmlrpc
-  !insertmacro SelectSection ${SecSSL}
+  !insertmacro SelectSection ${SecSOCKS}
 
 check_xmlrpc:
   ReadINIStr ${L_TEMP} "$G_COMMS_FILE" "RealUser" "XMLRPC"
@@ -2440,8 +2376,6 @@ exit:
   Pop ${L_TEMP}
 
   !undef L_TEMP
-
-  ; Display the COMPONENTS page
 
 FunctionEnd
 
@@ -2586,10 +2520,6 @@ warning:
 
 check_options:
 
-  ; If we are only installing the SSL support files, there is no need to check the options
-
-  StrCmp $G_SSL_ONLY "1" continue
-
   ; If user has NOT selected a program component on the COMPONENTS page and we find that the
   ; version we are about to upgrade includes that program component then the user is asked for
   ; permission to upgrade the component [To do: disable the component if user says 'No' ??]
@@ -2632,26 +2562,15 @@ look_for_smtp:
   !insertmacro SelectSection ${SecSMTP}
 
 check_socks:
-  !insertmacro SectionFlagIsSet ${SecSOCKS} ${SF_SELECTED} check_ssl look_for_socks
+  !insertmacro SectionFlagIsSet ${SecSOCKS} ${SF_SELECTED} check_xmlrpc look_for_socks
 
 look_for_socks:
-  IfFileExists "$G_ROOTDIR\lib\IO\Socket\Socks.pm" 0 check_ssl
+  IfFileExists "$G_ROOTDIR\lib\IO\Socket\Socks.pm" 0 check_xmlrpc
   StrCpy $G_PLS_FIELD_1 "SOCKS support"
   MessageBox MB_YESNO|MB_ICONQUESTION "$(MBCOMPONENT_PROB_1)\
       ${MB_NL}${MB_NL}\
-      $(MBCOMPONENT_PROB_2)" IDNO check_ssl
-  !insertmacro SelectSection ${SecSOCKS}
-
-check_ssl:
-  !insertmacro SectionFlagIsSet ${SecSSL} ${SF_SELECTED} check_xmlrpc look_for_ssl
-
-look_for_ssl:
-  IfFileExists "$G_ROOTDIR\lib\Net\SSLeay.pm" 0 check_xmlrpc
-  StrCpy $G_PLS_FIELD_1 "SSL Support"
-  MessageBox MB_YESNO|MB_ICONQUESTION "$(MBCOMPONENT_PROB_1)\
-      ${MB_NL}${MB_NL}\
       $(MBCOMPONENT_PROB_2)" IDNO check_xmlrpc
-  !insertmacro SelectSection ${SecSSL}
+  !insertmacro SelectSection ${SecSOCKS}
 
 check_xmlrpc:
   !insertmacro SectionFlagIsSet ${SecXMLRPC} ${SF_SELECTED} continue look_for_xmlrpc
@@ -2681,10 +2600,6 @@ Function InstallUserData
 
   !define L_UAC_0   $0
 
-  ; If we are only downloading and installing the SSL support files, display the FINISH page
-
-  StrCmp $G_SSL_ONLY "1" exit
-
   ; For normal installations, skip our own FINISH page and disable the "Add POPFile User"
   ; wizard's language selection dialog to make the wizard appear as an extension of the main
   ; 'setup.exe' installer.
@@ -2706,10 +2621,6 @@ special_case:
   UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/installreboot" ""
   Pop ${L_UAC_0}
   Abort
-
-exit:
-
-  ; Display the FINISH page
 
   !undef L_UAC_0
 
