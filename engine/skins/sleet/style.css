@@ -411,3 +411,8 @@ div.helpMessage form {
   display: block;
   width: 100%;
 }
+
+div.historySearchFilterActive {
+  color: black;
+  background-image: url(menu.gif);
+}

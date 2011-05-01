@@ -346,3 +346,7 @@ td.top20 td.historyNavigatorTop a + a {
   font-size:80%;
   vertical-align: middle;
 }
+
+div.historySearchFilterActive {
+  background-color: #66ff66;
+}

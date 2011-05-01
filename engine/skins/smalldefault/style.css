@@ -449,3 +449,6 @@ tt {
   font-weight: normal;
 }
 
+div.historySearchFilterActive {
+ background-color: #CCCC99;
+}

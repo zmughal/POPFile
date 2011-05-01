@@ -310,3 +310,7 @@ h2.history, h2.buckets, h2.magnets, h2.users {
   font-size:80%;
   vertical-align: middle;
 }
+
+div.historySearchFilterActive {
+  background-color: #88b5dd;
+}

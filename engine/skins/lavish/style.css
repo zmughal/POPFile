@@ -366,4 +366,8 @@ h2.history {		// optional
   font-size:80%;
   vertical-align: middle;
 }
+
+div.historySearchFilterActive {
+  color: black;
+  background-color: #EFEFF7;
 }

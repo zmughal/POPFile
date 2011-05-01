@@ -310,6 +310,6 @@ h2.history {
   vertical-align: middle;
 }
 
-
-
-
+div.historySearchFilterActive {
+  background-color: #3A8643;
+}
