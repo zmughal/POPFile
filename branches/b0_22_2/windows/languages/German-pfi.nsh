@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2003-2009 John Graham-Cumming
+# Copyright (c) 2003-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -372,7 +372,7 @@
 ; Text for the MODIFY mode radio-button and the label underneath it
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "Die bestehende POPFile Installation verändern"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(z.B. SSL-Unterstützung hinzufügen)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(deaktiviert)"
 
 ; Text for the UNINSTALL mode radio-button and the label underneath it
 

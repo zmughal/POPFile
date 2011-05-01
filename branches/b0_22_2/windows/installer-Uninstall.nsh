@@ -3,7 +3,7 @@
 # installer-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the main
 #                             NSIS 'installer.nsi' script used to create the POPFile installer.
 #
-# Copyright (c) 2005-2009 John Graham-Cumming
+# Copyright (c) 2005-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -260,6 +260,7 @@ mutex_ok:
   ; the user who first started the uninstaller.
 
   WriteINIStr "$G_COMMS_FILE" "POPFile" "AddRemove" "${C_PFI_VERSION}"
+  WriteINIStr "$G_COMMS_FILE" "POPFile" "Language" "$LANGUAGE"
   Call un.PFI_GetDateTimeStamp
   Pop ${L_RESERVED}
   WriteINIStr "$G_COMMS_FILE" "POPFile" "StartTime" "${L_RESERVED}"
@@ -316,12 +317,22 @@ get_real_user_settings:
   GetFunctionAddress ${L_RESERVED} un.GetRealUserSettings
   UAC::ExecCodeSegment ${L_RESERVED}
 
-  ; If 'Nihongo' (Japanese) language has been selected for the installer, ensure the
+  ; If 'Nihongo' (Japanese) language has been selected for the uninstaller, ensure the
   ; 'Nihongo Parser' entry is shown on the COMPONENTS page to confirm that a parser will
   ; be installed. The "Nihongo Parser Selection" page appears immediately before the
   ; COMPONENTS page.
 
   Call un.ShowOrHideNihongoParser
+
+  !ifndef ENGLISH_MODE
+      ; Starting with the POPFile 1.1.2 release the SSL support files are
+      ; installed by default so the "/MODIFY" option's only function now is
+      ; to modify POPFile's Nihongo/Japanese parser. If the language isn't
+      ; set to Japanese then only the "/UNINSTALL" option is offered here.
+
+      ReadINIStr ${L_PARAMETER} "$G_COMMS_FILE" "POPFile" "Language"
+      StrCmp ${L_PARAMETER} ${LANG_JAPANESE} 0 permit_only_uninstall
+  !endif
 
   ; If the mode option has been supplied on the command-line
   ; preset the appropriate radiobutton, otherwise deselect both.
@@ -362,6 +373,10 @@ modify_mode:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 1" "State" 1
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 2" "State" 0
   Goto insert_lang_strings
+
+permit_only_uninstall:
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 1" "Flags" "DISABLED"
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 3" "Flags" "DISABLED"
 
 uninstall_mode:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioUM.ini" "Field 1" "State" 0
@@ -528,7 +543,7 @@ FunctionEnd
 # Uninstaller Function: un.SelectMode
 #
 # Starting with the 1.0.0 release the POPFile uninstaller offers two modes:
-# (1) Change the existing installation (add SSL Support, change the Nihongo parser)
+# (1) Change the existing installation (change the Nihongo parser)
 # (2) Uninstall the POPFile program
 #--------------------------------------------------------------------------
 
@@ -629,12 +644,11 @@ FunctionEnd
 #  (1) un.Uninstall Begin    - requests confirmation if appropriate
 #  (2) un.StartLog           - generates a log showing the actions performed
 #  (3) un.Shutdown POPFile   - shutdown POPFile if necessary (to avoid the need to reboot)
-#  (4) un.AddSSLSupport      - downloads and installs the SSL support files
-#  (5) un.Nihongo Parser     - offers a choice of 3 parsers (Kakasi, MeCab and internal)
-#  (6) un.Kakasi             - installs Kakasi package and creates its environment variables
-#  (7) un.MeCab              - downloads and installs MeCab package and its environment variables
-#  (8) un.Internal           - installs support for the internal parser
-#  (9) un.StopLog            - saves the log file (up to 3 previous versions retained)
+#  (4) un.Nihongo Parser     - offers a choice of 3 parsers (Kakasi, MeCab and internal)
+#  (5) un.Kakasi             - installs Kakasi package and creates its environment variables
+#  (6) un.MeCab              - downloads and installs MeCab package and its environment variables
+#  (7) un.Internal           - installs support for the internal parser
+#  (8) un.StopLog            - saves the log file (up to 3 previous versions retained)
 #
 # Note: Only one of the three Nihongo parsers can be added at a time (re-run to add more)
 #--------------------------------------------------------------------------
@@ -829,12 +843,6 @@ check_pfi_utils:
   !undef L_TEMP
 
 SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Section: 'un.SecSSL'
-#--------------------------------------------------------------------------
-
-  !insertmacro HANDLE_ADDING_SSL_SUPPORT
 
 #--------------------------------------------------------------------------
 # Uninstaller Section: 'un.Nihongo Parser'
@@ -1588,7 +1596,6 @@ FunctionEnd
 #--------------------------------------------------------------------------
 
   !insertmacro MUI_UNFUNCTION_DESCRIPTION_BEGIN
-    !insertmacro MUI_DESCRIPTION_TEXT ${un.SecSSL}         $(DESC_SecSSL)
     !insertmacro MUI_DESCRIPTION_TEXT ${un.SecParser}      "${C_NPLS_DESC_SecParser}"
   !insertmacro MUI_UNFUNCTION_DESCRIPTION_END
 

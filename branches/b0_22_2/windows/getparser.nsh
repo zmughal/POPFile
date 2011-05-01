@@ -19,7 +19,7 @@
 #                   INCLUDE file contains macro-based SECTION and FUNCTION definitions
 #                   to make future maintenance easier.
 #
-# Copyright (c) 2007-2009 John Graham-Cumming
+# Copyright (c) 2007-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -422,6 +422,100 @@
 # installer or uninstaller is used), the individual parser components are never
 # shown on the COMPONENTS page.
 #--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# Macro: FUNCTION_EXTRACTMD5SUM
+#
+# The installation process and the uninstall process may both need a function which
+# extracts the MD5 sum for a particular file from the list of MD5 sums downloaded
+# from the POPFile website. This macro makes maintenance easier by ensuring that
+# both processes use identical functions, with the only difference being their names.
+#
+# The MD5SUMS file contains the MD5 sums for the files in the patch directory.
+# This function searches for the MD5 sum for the specified filename and returns
+# either a 32-hexdigit string (if a matching entry is found in the MD5SUMS file)
+# or an empty string (if the specified filename is not found in the file)
+#
+# Lines starting with '#' or ';' in the MD5SUMS file are ignored, as are empty lines.
+#
+# Lines in MD5SUMS which contain MD5 sums are assumed to be in this format:
+# (a) positions 1 to 32 contain a 32 character hexadecimal number
+#     (line starts in column 1)
+# (b) column 33 is a space character
+# (c) column 34 is the text/binary flag (' ' = text, '*' = binary)
+# (d) column 35 is the first character of the filename
+#     filename terminates with end-of-line)
+#
+# Inputs:
+#         (top of stack)     - name (without the path) of the file whose MD5 sum
+#                              we seek (the MD5 sums file has already been downloaded
+#                              to $PLUGINSDIR)
+#
+# Outputs:
+#         (top of stack)     - the 32-digit MD5 sum (=success) or an empty string
+#                              (meaning "failure")
+#
+#--------------------------------------------------------------------------
+
+!macro FUNCTION_EXTRACTMD5SUM UN
+  Function ${UN}ExtractMD5sum
+
+    !define L_DATA      $R9
+    !define L_HANDLE    $R8   ; handle used to access the MD5SUMS file
+    !define L_MD5NAME   $R7   ; name of file in which we are interested
+    !define L_RESULT    $R6
+
+    Exch ${L_RESULT}
+
+    IfFileExists "$PLUGINSDIR\${C_MD5SUMS_FILE}" examine_file
+    StrCpy ${L_RESULT} ""
+    Goto quick_exit
+
+  examine_file:
+    Push ${L_DATA}
+    Push ${L_HANDLE}
+    Push ${L_MD5NAME}
+    StrCpy ${L_MD5NAME} ${L_RESULT}
+
+    FileOpen ${L_HANDLE} "$PLUGINSDIR\${C_MD5SUMS_FILE}" r
+
+  read_next_line:
+    FileRead ${L_HANDLE} ${L_RESULT}
+    StrCmp ${L_RESULT} "" stop_searching
+    StrCpy ${L_DATA} ${L_RESULT} 1
+    StrCmp ${L_DATA} '#' read_next_line
+    StrCmp ${L_DATA} ';' read_next_line
+    Push ${L_RESULT}
+    Call ${UN}NSIS_TrimNewlines
+    Pop ${L_DATA}
+    StrCmp ${L_DATA} "" read_next_line
+    StrCpy ${L_RESULT} ${L_DATA} "" 34       ; NSIS strings start at position 0 not 1
+    StrCmp ${L_RESULT} ${L_MD5NAME} 0 read_next_line
+    StrCpy ${L_RESULT} ${L_DATA} 32
+    Push ${L_RESULT}
+    Call ${UN}PFI_StrCheckHexadecimal
+    Pop ${L_RESULT}
+
+  stop_searching:
+    FileClose ${L_HANDLE}
+
+    Pop ${L_MD5NAME}
+    Pop ${L_HANDLE}
+    Pop ${L_DATA}
+
+  quick_exit:
+    Exch ${L_RESULT}
+
+    !undef L_DATA
+    !undef L_HANDLE
+    !undef L_MD5NAME
+    !undef L_RESULT
+
+  FunctionEnd
+!macroend
+
+!insertmacro FUNCTION_EXTRACTMD5SUM       ""
+!insertmacro FUNCTION_EXTRACTMD5SUM       "un."
 
 !macro CODEBLOCK_CHECK_MD5SUM_FOR_FILE FILENAME
 
@@ -835,7 +929,7 @@
   get_expected_MD5:
     StrCpy ${L_EXPECTED_MD5} ${L_DATA} 32
     Push ${L_EXPECTED_MD5}
-    Call ${UN}StrCheckHexadecimal
+    Call ${UN}PFI_StrCheckHexadecimal
     Pop ${L_EXPECTED_MD5}
     md5dll::GetMD5File "${L_FILEPATH}"
     Pop ${L_TEMP}
@@ -1226,8 +1320,6 @@
       choose_parser:
 
     !endif
-
-    StrCmp $G_SSL_ONLY "1" exit    ; if we are only installing SSL support there is no need to display this page
 
     !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 1" "Text" "${C_NPLS_Option_Kakasi}"
     !insertmacro MUI_INSTALLOPTIONS_WRITE "ioP.ini" "Field 2" "Text" "${C_NPLS_Option_MeCab}"
