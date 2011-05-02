@@ -7,7 +7,7 @@
 #                                   The non-library functions used in this file are contained
 #                                   in a separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005-2009 John Graham-Cumming
+# Copyright (c) 2005-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -456,9 +456,21 @@ add_remove_programs:
   SetShellVarContext current
 
   ; Create an entry in the Control Panel's "Add/Remove Programs" list. The installer runs with
-  ; admin rights so normally HKLM is used but on Vista HKCU is used in order to avoid problems
-  ; with UAC (if HKLM is used then Vista elevates the uninstaller _before_ the UAC plugin gets
-  ; a chance!)
+  ; admin rights so normally HKLM is used but on Vista/Windows 7 systems HKCU is used in order
+  ; to avoid problems with UAC ~ if HKLM is used then Windows elevates the uninstaller _before_
+  ; the UAC plugin gets a chance to do its stuff!
+  ;
+  ; On Vista or Windows 7 systems the 'HKCU' data at this point belongs to the 'administrator'
+  ; account used to obtain permission for the installer to write to the $PROGFAMFILES area etc.
+  ;
+  ; In these cases the second stage of the POPFile installer (adduser.exe) will create entries
+  ; in the "Add/Remove Programs" list for the POPFile User Data and POPFile program using the
+  ; 'HKCU' data belonging to the account used to start the installer (usually a 'standard' or
+  ; 'limited' account).
+  ;
+  ; Since the user may terminate the second stage of the installer before it has created the
+  ; "Add/Remove Programs" list entries, the code below ensures that at least the 'administrator'
+  ; will be able to use the "Add/Remove Programs" list to uninstall POPFile.
 
   Call PFI_AtLeastVista
   Pop ${L_RESULT}
@@ -477,9 +489,13 @@ use_HKLM:
 
 create_arp_entry:
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
-              "DisplayName" "${C_PFI_PRODUCT} ${C_PFI_VERSION}"
+              "DisplayName" "${C_PFI_PRODUCT}"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayVersion" "${C_PFI_VERSION}"
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayIcon" "$G_ROOTDIR\uninstall.exe,0"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "URLInfoAbout" "http://getpopfile.org"
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \

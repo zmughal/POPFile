@@ -2618,7 +2618,7 @@ Function InstallUserData
 
 special_case:
   Push ${L_UAC_0}
-  UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/installreboot" ""
+  UAC::Exec "" "$G_ROOTDIR\adduser.exe" "/restart" ""
   Pop ${L_UAC_0}
   Abort
 
