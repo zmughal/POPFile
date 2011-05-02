@@ -7,7 +7,7 @@
 #                 to run POPFile for the first time. Some simple "repair work" can also
 #                 be done using this wizard.
 #
-# Copyright (c) 2004-2009 John Graham-Cumming
+# Copyright (c) 2004-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -87,7 +87,7 @@
 # DIRECTORY page is displayed with the normal default 'User Data' location as the default folder
 # (the user is free to select an alternative location).
 #
-# /installreboot
+# /restart
 #
 # This command-line switch behaves like /install but also makes the wizard set the reboot flag
 # to force a reboot. When the Kakasi package is installed on a Win9x system, a reboot is usually
@@ -268,6 +268,9 @@
 
   Var G_PFISETUP           ; parameter passed from main installer (setup.exe)
                            ; or the 'User Data' Restore utility (pfi-restore (<username>).exe)
+
+  Var G_PFIMODE            ; mode requested via the command-line (extracted from $G_PFISETUP)
+                           ; (/install, /restart or /restore)
 
   Var G_ROOTDIR            ; full path to the folder used for the POPFile program files
   Var G_USERDIR            ; full path to the folder containing the 'popfile.cfg' file
@@ -759,17 +762,19 @@
 
 Function .onInit
 
-  ; The command-line switch '/install' (or '/installreboot') is used to suppress this wizard's
+  ; The command-line switch '/install' (or '/restart') is used to suppress this wizard's
   ; language selection dialog when the wizard is called from 'setup.exe' during installation
   ; of POPFile. The '/restore="path to restored data"' switch performs a similar function when
   ; this wizard is called from the POPFile 'User Data' Restore wizard.
 
+  StrCpy $G_PFIMODE ""
+
   Call NSIS_GetParameters
   Pop $G_PFISETUP
-  StrCpy $G_PFIFLAG $G_PFISETUP 9
-  StrCmp $G_PFIFLAG "/restore=" restore_case
-  StrCmp $G_PFISETUP "/install" install_case
-  StrCmp $G_PFISETUP "/installreboot" 0 normal_startup
+  StrCpy $G_PFIMODE $G_PFISETUP 9
+  StrCmp $G_PFIMODE "/restore=" restore_case
+  StrCmp $G_PFIMODE "/install" install_case
+  StrCmp $G_PFIMODE "/restart" 0 normal_startup
   SetRebootFlag true
 
 install_case:
@@ -778,6 +783,7 @@ install_case:
   Goto extract_files
 
 restore_case:
+  StrCpy $G_PFIMODE "/restore"
   ReadRegStr $G_PFIFLAG \
              "HKCU" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
   StrCmp $G_PFIFLAG "" try_installer_language
@@ -1115,8 +1121,7 @@ stopwords:
   ; do not touch the 'stopwords' file in case it has just been restored (but we still
   ; update the default 'stopwords' file to the one distributed with 'our' version of POPFile)
 
-  StrCpy ${L_TEMP} $G_PFISETUP 9
-  StrCmp ${L_TEMP} "/restore=" copy_default_stopwords
+  StrCmp $G_PFIMODE "/restore" copy_default_stopwords
 
   ; If we are upgrading and the user did not have a 'stopwords' file then do not install one
   ; (but still update the default file to the one distributed with 'our' version of POPFile)
@@ -1343,7 +1348,11 @@ end_autostart_set:
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "DisplayName" "${C_PFI_PRODUCT} Data ($G_WINUSERNAME)"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "DisplayVersion" "${C_PFI_PRODUCT} Data for '$G_WINUSERNAME'"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "DisplayIcon" "$G_USERDIR\uninstalluser.exe,0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "URLInfoAbout" "http://getpopfile.org"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "UninstallString" "$G_USERDIR\uninstalluser.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
@@ -1353,7 +1362,13 @@ end_autostart_set:
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "NoRepair" "1"
 
-  ; Create "POPFile" (program) entry in "Add/Remove Programs" list (if target is Vista)
+  ; Create a "POPFile (program)" entry in "Add/Remove Programs" list if the target is Vista or
+  ; later. HKCU is used here (instead of HKLM) to avoid UAC problems which stop the UAC plugin
+  ; from working properly.
+  ;
+  ; The main installer (setup.exe) creates a similar HKCU entry in the "Add/Remove Programs"
+  ; list for the 'admin' account used to give the installer administrator rights. This is done
+  ; to cover the case where the user terminates adduser.exe prematurely.
 
   IfFileExists "$G_ROOTDIR\uninstall.exe" 0 all_done
   Call PFI_AtLeastVista
@@ -1364,7 +1379,11 @@ end_autostart_set:
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayName" "${C_PFI_PRODUCT} ${L_TEMP}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayVersion" "${L_TEMP}"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "DisplayIcon" "$G_ROOTDIR\uninstall.exe,0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "URLInfoAbout" "http://getpopfile.org"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
               "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
@@ -2045,14 +2064,11 @@ Function CheckUserDirStatus
 
   !define L_RESULT    $R9
 
-  Push ${L_RESULT}
-  StrCpy ${L_RESULT} $G_PFISETUP 9
-  StrCmp ${L_RESULT} "/restore=" restore_install
-  Pop ${L_RESULT}
+  StrCmp $G_PFIMODE "/restore" restore_install
 
   IfFileExists "$INSTDIR\popfile.cfg" 0 exit
-  StrCmp $G_PFISETUP "/install" upgrade_install
-  StrCmp $G_PFISETUP "/installreboot" 0 exit
+  StrCmp $G_PFIMODE "/install" upgrade_install
+  StrCmp $G_PFIMODE "/restart" 0 exit
 
 upgrade_install:
   GetDlgItem $G_DLGITEM $HWNDPARENT 1037
@@ -2805,8 +2821,7 @@ show_defaults:
   ; 'User Data', remind the user by changing the text on the "Install" button to "Upgrade" or
   ; "Restore" as appropriate
 
-  StrCpy ${L_RESULT} $G_PFISETUP 9
-  StrCmp ${L_RESULT} "/restore=" restore
+  StrCmp $G_PFIMODE "/restore" restore
 
   IfFileExists "$G_USERDIR\popfile.cfg" upgrade
   GetDlgItem $G_DLGITEM $HWNDPARENT 1           ; "Next" button, also used for "Install"
@@ -2934,8 +2949,8 @@ FunctionEnd
 
 Function MakeUserDirSafe
 
-  StrCmp $G_PFISETUP "/install" nothing_to_check
-  StrCmp $G_PFISETUP "/installreboot" nothing_to_check
+  StrCmp $G_PFIMODE "/install" nothing_to_check
+  StrCmp $G_PFIMODE "/restart" nothing_to_check
   IfFileExists "$G_USERDIR\popfile.cfg" 0 nothing_to_check
 
   !define L_GUI_PORT  $R9
