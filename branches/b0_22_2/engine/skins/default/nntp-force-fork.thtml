@@ -13,7 +13,7 @@
                 <span class="securityWidgetStateOn">
                     <TMPL_VAR NAME="Localize_Yes">
                 </span>
-                <input type="submit" class="toggleOff" id="windowTrayIconOff" name="toggle" value="<TMPL_VAR NAME="Localize_ChangeToNo">" />
+                <input type="submit" class="toggleOff" id="nntpForceForkOff" name="toggle" value="<TMPL_VAR NAME="Localize_ChangeToNo">" />
                 <input type="hidden" name="nntp_force_fork" value="0" />
 
                 <TMPL_ELSE>
@@ -21,7 +21,7 @@
                 <span class="securityWidgetStateOff">
                     <TMPL_VAR NAME="Localize_No">
                 </span>
-                <input type="submit" class="toggleOn" id="windowTrayIconOn" name="toggle" value="<TMPL_VAR NAME="Localize_ChangeToYes">" />
+                <input type="submit" class="toggleOn" id="nntpForceForkOn" name="toggle" value="<TMPL_VAR NAME="Localize_ChangeToYes">" />
                 <input type="hidden" name="nntp_force_fork" value="1" />
 
                 </TMPL_IF>
