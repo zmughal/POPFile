@@ -339,22 +339,26 @@ sub configure_item
     if ( $name eq 'smtp_fork_and_port' ) {
         $templ->param( 'smtp_port' => $self->config_( 'port' ) );
         $templ->param( 'smtp_force_fork_on' => $self->config_( 'force_fork' ) );
+        return;
     }
 
     if ( $name eq 'smtp_local' ) {
         $templ->param( 'smtp_local_on' => $self->config_( 'local' ) );
+        return;
      }
 
     if ( $name eq 'smtp_server' ) {
         $templ->param( 'smtp_chain_server' => $self->config_( 'chain_server' ) );
+        return;
     }
 
     if ( $name eq 'smtp_server_port' ) {
         $templ->param( 'smtp_chain_port' => $self->config_( 'chain_port' ) );
+        return;
     }
 
 
-    #$self->SUPER::configure_item( $name, $templ, $language );
+    $self->SUPER::configure_item( $name, $templ, $language );
 }
 
 # ----------------------------------------------------------------------------
@@ -387,12 +391,14 @@ sub validate_item
                 $templ->param( 'smtp_port_feedback' => "<div class=\"error01\">$$language{Configuration_Error3}</div>" );
              }
         }
+        return;
     }
 
     if ( $name eq 'smtp_local' ) {
         if ( defined $$form{smtp_local} ) {
             $self->config_( 'local', $$form{smtp_local} );
         }
+        return;
     }
 
     if ( $name eq 'smtp_server' ) {
@@ -400,6 +406,7 @@ sub validate_item
             $self->config_( 'chain_server', $$form{smtp_chain_server} );
             $templ->param( 'smtp_server_feedback' => sprintf $$language{Security_SMTPServerUpdate}, $self->config_( 'chain_server' ) ) ;
         }
+        return;
     }
 
     if ( $name eq 'smtp_server_port' ) {
@@ -413,10 +420,11 @@ sub validate_item
                 $templ->param( 'smtp_port_feedback' => "<div class=\"error01\">$$language{Security_Error1}</div>" );
             }
         }
+        return;
     }
 
 
-    #$self->SUPER::validate_item( $name, $templ, $language, $form );
+    $self->SUPER::validate_item( $name, $templ, $language, $form );
 }
 
 1;
