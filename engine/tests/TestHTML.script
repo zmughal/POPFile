@@ -379,6 +379,11 @@ NOTMATCH No matching messages.
 MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
 MATCH Jump to page
 
+SETSUBMIT search "
+NOTMATCH """
+MATCH "&quot;"
+CLICK reset_filter_search
+
 # Check search filter highlight
 
 NOTMATCH historySearchFilterActive
@@ -816,12 +821,14 @@ MAGNETIS  spam subject newmagnet
 SETINPUT text0 foo
 SETINPUT type0 from
 SETSUBMIT bucket0 personal
-MATCH Magnet 'from: foo' already exists in bucket 'personal'
+MATCH Magnet &#39;from: foo&#39; already exists in bucket &#39;personal&#39;
+NOTMATCH &lt;br
 
 SETINPUT text0 foo bar
 SETINPUT type0 from
 SETSUBMIT bucket0 personal
-MATCH New magnet 'from: foo bar' clashes with magnet 'from: foo' in bucket 'personal' and could cause ambiguous results.
+MATCH New magnet &#39;from: foo bar&#39; clashes with magnet &#39;from: foo&#39; in bucket &#39;personal&#39; and could cause ambiguous results.  New magnet was not added.
+NOTMATCH &lt;br
 
 # Check magnet change value
 
