@@ -153,6 +153,7 @@ sub service
                      ( my $request = $self->slurp_( $client ) ) ) { # PROFILE BLOCK STOP
                     my $content_length = 0;
                     my $content = '';
+                    my $status_code = 200;
 
                     $self->log_( 2, $request );
 
@@ -176,15 +177,23 @@ sub service
                     if ( $content_length > 0 ) {
                         $content = $self->slurp_buffer_( $client,  # PROFILE BLOCK START
                             $content_length );                     # PROFILE BLOCK STOP
-                        $self->log_( 2, $content );
+                        if ( !defined( $content ) ) {
+                            $status_code = 400;
+                        } else {
+                            $self->log_( 2, $content );
+                        }
                     }
 
-                    if ( $request =~ /^(GET|POST) (.*) HTTP\/1\./i ) {
-                        $code = $self->handle_url( $client, $2, $1, $content );
-                        $self->log_( 2,                                # PROFILE BLOCK START
-                            "HTTP handle_url returned code $code\n" ); # PROFILE BLOCK STOP
+                    if ( $status_code != 200 ) {
+                        $self->http_error_( $client, $status_code );
                     } else {
-                        $self->http_error_( $client, 500 );
+                        if ( $request =~ /^(GET|POST) (.*) HTTP\/1\./i ) {
+                            $code = $self->handle_url( $client, $2, $1, $content );
+                            $self->log_( 2,                                # PROFILE BLOCK START
+                                "HTTP handle_url returned code $code\n" ); # PROFILE BLOCK STOP
+                        } else {
+                            $self->http_error_( $client, 500 );
+                        }
                     }
                 }
             }
@@ -347,7 +356,7 @@ Click <a href=\"/\">here</a> to continue.
     $self->log_( 1, $text );
 
     my $error_code = 500;
-    $error_code = $error if ( $error eq '404' );
+    $error_code = $error if ( $error =~ /^\d{3}$/ );
 
     print $client "HTTP/1.0 $error_code Error$eol";
     print $client "Content-Type: text/html$eol";
