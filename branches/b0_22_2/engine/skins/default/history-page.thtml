@@ -58,12 +58,12 @@
 </table>
 <br />
 <form action="/history" method="post" class="historyForm" name="historyForm">
-    <input type="hidden" name="search" value="<TMPL_VAR NAME="History_Field_Search">" />
-    <input type="hidden" name="sort" value="<TMPL_VAR NAME="History_Field_Sort">" />
-    <input type="hidden" name="negate" value="<TMPL_VAR NAME="History_Field_Not">" />
-    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
-    <input type="hidden" name="start_message" value="<TMPL_VAR NAME="History_Start_Message">" />
-    <input type="hidden" name="filter" value="<TMPL_VAR NAME="History_Field_Filter">" />
+    <input type="hidden" name="search" value="<TMPL_VAR ESCAPE=HTML NAME="History_Field_Search">" />
+    <input type="hidden" name="sort" value="<TMPL_VAR ESCAPE=HTML NAME="History_Field_Sort">" />
+    <input type="hidden" name="negate" value="<TMPL_VAR ESCAPE=HTML NAME="History_Field_Not">" />
+    <input type="hidden" name="session" value="<TMPL_VAR ESCAPE=HTML NAME="Session_Key">" />
+    <input type="hidden" name="start_message" value="<TMPL_VAR ESCAPE=HTML NAME="History_Start_Message">" />
+    <input type="hidden" name="filter" value="<TMPL_VAR ESCAPE=HTML NAME="History_Field_Filter">" />
 
     <input type="submit" class="submit removeButton" name="clearchecked" value="<TMPL_VAR NAME="Localize_History_RemoveChecked">" />
     <input type="submit" class="submit removeButton" name="clearpage" value="<TMPL_VAR NAME="Localize_History_RemovePage">" />

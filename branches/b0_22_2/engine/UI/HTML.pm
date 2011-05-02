@@ -1266,7 +1266,7 @@ sub magnet_page
 {
     my ( $self, $client, $templ ) = @_;
 
-    my $magnet_message = '';
+    my @messages = ();
 
     if ( defined( $self->{form_}{delete} ) ) {
         for my $i ( 1 .. $self->{form_}{count} ) {
@@ -1328,6 +1328,7 @@ sub magnet_page
                 @mtext_hash{@all_mtexts} = ();
                 my @mtexts = keys %mtext_hash;
                 my $found = 0;
+                my %row_data;
 
                 foreach my $current_mtext (@mtexts) {
                     for my $bucket ($self->{c__}->get_buckets_with_magnets(   # PROFILE BLOCK START
@@ -1340,10 +1341,11 @@ sub magnet_page
 
                         if ( exists( $magnets{$current_mtext} ) ) {
                             $found  = 1;
-                            $magnet_message .=                               # PROFILE BLOCK START
+                            $row_data{Magnet_Message} =                      # PROFILE BLOCK START
                                 sprintf( $self->{language__}{Magnet_Error1},
                                          "$mtype: $current_mtext",
-                                         $bucket ) . '<br>';                 # PROFILE BLOCK STOP
+                                         $bucket );                          # PROFILE BLOCK STOP
+                            push( @messages, \%row_data );
                             last;
                         }
                     }
@@ -1357,11 +1359,12 @@ sub magnet_page
                                 if ( ( $self->{c__}->single_magnet_match( $mtext,  $from, $mtype ) ) ||   # PROFILE BLOCK START
                                      ( $self->{c__}->single_magnet_match(  $from, $mtext, $mtype ) ) ) {  # PROFILE BLOCK STOP
                                     $found = 1;
-                                    $magnet_message .=               # PROFILE BLOCK START
+                                    $row_data{Magnet_Message} =               # PROFILE BLOCK START
                                         sprintf( $self->{language__}{Magnet_Error2},
                                                  "$mtype: $current_mtext",
                                                  "$mtype: $from",
-                                                 $bucket ) . '<br>'; # PROFILE BLOCK STOP
+                                                 $bucket );                   # PROFILE BLOCK STOP
+                                    push( @messages, \%row_data );
                                     last;
                                 }
                             }
@@ -1393,10 +1396,11 @@ sub magnet_page
 
                         $self->{c__}->create_magnet( $self->{api_session__}, $mbucket, $mtype, $current_mtext );
                         if ( !defined( $self->{form_}{update} ) ) {
-                            $magnet_message .=                               # PROFILE BLOCK START
+                            $row_data{Magnet_Message} =                      # PROFILE BLOCK START
                                 sprintf( $self->{language__}{Magnet_Error3},
                                          "$mtype: $current_mtext",
-                                         $mbucket )  . '<br>';               # PROFILE BLOCK STOP
+                                         $mbucket );                         # PROFILE BLOCK STOP
+                            push( @messages, \%row_data );
                         }
                     }
                 }
@@ -1404,9 +1408,9 @@ sub magnet_page
         }
     }
 
-    if ( $magnet_message ne '' ) {
+    if ( scalar @messages > 0 ) {
         $templ->param( 'Magnet_If_Message' => 1 );
-        $templ->param( 'Magnet_Message'    => $magnet_message );
+        $templ->param( 'Magnet_Loop_Messages' => \@messages );
     }
 
     # Current Magnets panel

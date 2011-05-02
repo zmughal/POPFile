@@ -152,7 +152,9 @@
     <blockquote>
         <div class="error02">
             <b>
-                <TMPL_VAR NAME="Magnet_Message">
+                <TMPL_LOOP NAME="Magnet_Loop_Messages">
+                    <TMPL_VAR ESCAPE=HTML NAME="Magnet_Message"><br />
+                </TMPL_LOOP>
             </b>
         </div>
     </blockquote>
