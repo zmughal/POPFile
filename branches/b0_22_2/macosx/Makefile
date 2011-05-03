@@ -58,7 +58,7 @@ $(ARCHIVE): $(IMAGE)
 	gzip -c $(IMAGE) > $(ARCHIVE)
 	
 	@echo "...done"
-$(IMAGE): installer ssl_installer utility_scripts
+$(IMAGE): installer utility_scripts
 	@rm -f $@
 	
 	@echo "Creating disk image ..."
@@ -82,7 +82,6 @@ clean:
 	rm -rf $(POPFILE_ROOT)/*.pl $(POPFILE_ROOT)/*.png $(POPFILE_ROOT)/*.gif $(POPFILE_ROOT)/*.pck $(POPFILE_ROOT)/POPFile $(POPFILE_ROOT)/Classifier $(POPFILE_ROOT)/Proxy $(POPFILE_ROOT)/Services $(POPFILE_ROOT)/UI $(POPFILE_ROOT)/languages $(POPFILE_ROOT)/skins $(POPFILE_ROOT)/stopwords $(POPFILE_ROOT)/license $(POPFILE_ROOT)/favicon.ico $(POPFILE_ROOT)/v*.change*
 	rm -rf $(RESOURCES)/License.txt $(RESOURCES)/English.lproj/ReadMe.txt $(RESOURCES)/Japanese.lproj/ReadMe.txt
 
-	$(MAKE) -C ./addssl clean
 	$(MAKE) -C ./modules clean
 
 engine = $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/Services/IMAP.pm $(ENGINE)/Services/IMAP/Client.pm $(ENGINE)/skins/*/*.css $(ENGINE)/skins/*/*.gif $(ENGINE)/skins/*/*.thtml $(ENGINE)/stopwords $(ENGINE)/license $(ENGINE)/favicon.ico $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo
@@ -140,9 +139,6 @@ installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt
 	else \
 		cp ./Readme.txt $(PACKAGE_DIST); \
 	fi
-
-ssl_installer: modules
-	$(MAKE) -C ./addssl
 
 utility_scripts: build-utilities
 	if test ! -d $(PACKAGE_DIST)/utilities; then mkdir $(PACKAGE_DIST)/utilities ; fi

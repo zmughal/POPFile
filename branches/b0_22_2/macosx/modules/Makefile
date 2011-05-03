@@ -86,7 +86,7 @@ NETSSLEAY = Net-SSLeay-1.36
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
 NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/F/FL/FLORA/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-1.39
+IOSOCKETSSL = IO-Socket-SSL-1.40
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
@@ -153,16 +153,11 @@ japanese_modules: japanese_modules_build
 	cp -rf $(TEXTKAKASI)/blib/lib/* $(LIB_ROOT)
 
 ssl_modules: ssl_modules_build
-	if test ! -d $(SSLPACKAGE_ROOT); then mkdir $(SSLPACKAGE_ROOT) ; fi
-	if test ! -d $(SSLPACKAGE_LIBRARY_ROOT); then mkdir $(SSLPACKAGE_LIBRARY_ROOT) ; fi
-	if test ! -d $(SSLPOPFILE_ROOT); then mkdir $(SSLPOPFILE_ROOT) ; fi
-	if test ! -d $(SSLLIB_ROOT); then mkdir $(SSLLIB_ROOT) ; fi
+	cp -rf $(NETSSLEAY)/blib/arch/auto $(LIB_ROOT)
+	cp -rf $(NETSSLEAY)/blib/lib/* $(LIB_ROOT)
 
-	cp -rf $(NETSSLEAY)/blib/arch/auto $(SSLLIB_ROOT)
-	cp -rf $(NETSSLEAY)/blib/lib/* $(SSLLIB_ROOT)
-
-	cp -rf $(IOSOCKETSSL)/blib/arch/auto $(SSLLIB_ROOT)
-	cp -rf $(IOSOCKETSSL)/blib/lib/* $(SSLLIB_ROOT)
+	cp -rf $(IOSOCKETSSL)/blib/arch/auto $(LIB_ROOT)
+	cp -rf $(IOSOCKETSSL)/blib/lib/* $(LIB_ROOT)
 
 
 core_modules_build: $(CORE_ARCHIVES)
