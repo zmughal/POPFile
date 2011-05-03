@@ -149,6 +149,7 @@ my $inserted_time = time - 100;
 my @messages = sort glob 'TestMails/TestMailParse*.msg';
 foreach my $msg (@messages) {
     next if ( $msg =~ /TestMailParse026/ );
+    next if ( $msg =~ /TestMailParse099/ );
     my $cls = $msg;
     $cls =~ s/\.msg$/\.cls/;
     if ( open my $CLS, '<', $cls ) {
