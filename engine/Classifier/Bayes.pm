@@ -93,7 +93,7 @@ sub new
     $self->{db_get_wordid__} = 0;
     $self->{db_get_word_count__} = 0;
     $self->{db_put_word_count__} = 0;
-    $self->{db_get_bucket_unique_counts__} = 0;
+    $self->{db_get_unique_word_count__} = 0;
     $self->{db_get_bucket_word_counts__} = 0;
     $self->{db_get_bucket_word_count__} = 0;
     $self->{db_get_full_total__} = 0;
