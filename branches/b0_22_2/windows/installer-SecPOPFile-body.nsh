@@ -141,7 +141,7 @@ continue:
   ; Starting with 0.21.0, a new structure is used for the minimal Perl (to enable POPFile to
   ; be started from any folder, once POPFILE_ROOT and POPFILE_USER have been initialized)
 
-  Call MinPerlRestructure
+  Call MinPerlCleanup
 
   ; Now that the HTML for the UI is no longer embedded in the Perl code, a new skin system is
   ; used so we attempt to convert the existing skins to work with the new system

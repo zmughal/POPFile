@@ -36,7 +36,7 @@
 # The following functions are only used by the 'installer-SecPOPFile-body.nsh' file:
 #
 #     CheckHostsFile
-#     MinPerlRestructure
+#     MinPerlCleanup
 #     SkinsRestructure
 #--------------------------------------------------------------------------
 
@@ -128,66 +128,134 @@ exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: MinPerlRestructure
+# Installer Function: MinPerlCleanup
 #
-# Prior to POPFile 0.21.0, POPFile really only supported one user so the location of the
-# popfile.cfg configuration file was hard-coded and the minimal Perl files were intermingled
-# with the POPFile files. POPFile 0.21.0 introduced some multi-user support which means that
-# the location of the configuration file is now supplied via an environment variable to allow
-# POPFile to be run from any folder.  As a result, some rearrangement of the minimal Perl files
-# is required (to avoid Perl runtime errors when POPFile is started from a folder other than
-# the one where POPFile is installed).
+# Before POPFile 0.21.0 was released in March 2004, the data files were stored in the
+# same folder as the POPFile program files and the minimal Perl files were intermingled
+# with the POPFile program files.
+#
+# POPFile 0.21.0 introduced some multi-user support which means that the location of the
+# configuration file is now supplied via an environment variable to allow POPFile to be
+# run from any folder. Some rearrangement of the minimal Perl files is required in order
+# to avoid Perl runtime errors when POPFile is started from a folder other than the one
+# where POPFile is installed.
+#
+# Newer versions of the minimal Perl may not be binary-compatible with the minimal Perl
+# used by previous versions of POPFile so some cleanup work has to be performed.
+#
+# This function is based upon an analysis of the following POPFile releases:
+#   0.17.3, 0.17.4, 0.17.5, 0.17.6, 0.17.7, 0.17.8, 0.17.9a,
+#   0.18.0, 0.18.1, 0.18.2, 0.18.3,
+#   0.19.0, 0.19.1,
+#   0.20.0b and 0.20.1a.
 #--------------------------------------------------------------------------
 
-Function MinPerlRestructure
+Function MinPerlCleanup
 
-  ; Since the 0.18.0 release (February 2003), the minimal Perl has used perl58.dll. Earlier
-  ; versions of POPFile used earlier versions of Perl (e.g. the 0.17.8 release (December 2002)
-  ; used perl56.dll)
+  !define L_RESULT    $R9
 
-  Delete "$G_ROOTDIR\perl56.dll"
+  Push ${L_RESULT}
 
-  ; If the minimal Perl folder used by 0.21.0 or later exists and has some Perl files in it,
-  ; assume there are no pre-0.21.0 minimal Perl files to be moved out of the way. However,
-  ; to avoid runtime problems, make sure the old 'Win32' Perl module really has been removed.
+  DetailPrint ""
+  DetailPrint "Remove 'intermingled' minimal Perl files used by 0.17.3 to 0.20.1a releases"
 
-  IfFileExists "$G_MPLIBDIR\*.pm" delete_redundant_mp
+  Delete "$G_ROOTDIR\perl56.dll"          ; used by POPFile 0.17.3 to 0.17.9a
 
-  CreateDirectory "$G_MPLIBDIR"
+  Delete "$G_ROOTDIR\AutoLoader.pm"
+  Delete "$G_ROOTDIR\base.pm"
+  Delete "$G_ROOTDIR\BerkeleyDB.pm"
+  Delete "$G_ROOTDIR\Carp.pm"
+  Delete "$G_ROOTDIR\Config.pm"
+  Delete "$G_ROOTDIR\DynaLoader.pm"
+  Delete "$G_ROOTDIR\Encode.pm"
+  Delete "$G_ROOTDIR\Errno.pm"
+  Delete "$G_ROOTDIR\Exporter.pm"
+  Delete "$G_ROOTDIR\integer.pm"
+  Delete "$G_ROOTDIR\IO.pm"
+  Delete "$G_ROOTDIR\locale.pm"
+  Delete "$G_ROOTDIR\POSIX.pm"
+  Delete "$G_ROOTDIR\SelectSaver.pm"
+  Delete "$G_ROOTDIR\Socket.pm"
+  Delete "$G_ROOTDIR\strict.pm"
+  Delete "$G_ROOTDIR\Symbol.pm"
+  Delete "$G_ROOTDIR\UNIVERSAL.pm"
+  Delete "$G_ROOTDIR\vars.pm"
+  Delete "$G_ROOTDIR\warnings.pm"
+  Delete "$G_ROOTDIR\XSLoader.pm"
 
-  IfFileExists "$G_ROOTDIR\*.pm" 0 move_folders
-  CopyFiles /SILENT /FILESONLY "$G_ROOTDIR\*.pm" "$G_MPLIBDIR\"
-  Delete "$G_ROOTDIR\*.pm"
+  RMDir /r "$G_ROOTDIR\auto"
 
-move_folders:
-  !insertmacro PFI_MinPerlMove "auto"
-  !insertmacro PFI_MinPerlMove "Carp"
-  !insertmacro PFI_MinPerlMove "DBD"
-  !insertmacro PFI_MinPerlMove "Digest"
-  !insertmacro PFI_MinPerlMove "Encode"
-  !insertmacro PFI_MinPerlMove "Exporter"
-  !insertmacro PFI_MinPerlMove "File"
-  !insertmacro PFI_MinPerlMove "Getopt"
-  !insertmacro PFI_MinPerlMove "IO"
-  !insertmacro PFI_MinPerlMove "MIME"
-  !insertmacro PFI_MinPerlMove "String"
-  !insertmacro PFI_MinPerlMove "Sys"
-  !insertmacro PFI_MinPerlMove "Text"
-  !insertmacro PFI_MinPerlMove "warnings"
+  Delete "$G_ROOTDIR\Carp\Heavy.pm"
+  RMDir "$G_ROOTDIR\Carp"
 
-delete_redundant_mp:
+  RMDir /r "$G_ROOTDIR\Encode"
 
-  ; Delete redundant minimal Perl files from earlier installations
+  Delete "$G_ROOTDIR\Exporter\Heavy.pm"
+  RMDir "$G_ROOTDIR\Exporter"
 
-  IfFileExists "$G_ROOTDIR\Win32\*.*" 0 exit
+  Delete "$G_ROOTDIR\File\Glob.pm"
+  RMDir "$G_ROOTDIR\File"
+
+  RMDir /r "$G_ROOTDIR\IO"
+
+  RMDir /r "$G_ROOTDIR\kakasi"
+
+  Delete "$G_ROOTDIR\MIME\Base64.pm"
+  Delete "$G_ROOTDIR\MIME\QuotedPrint.pm"
+  RMDir "$G_ROOTDIR\MIME"
+
+  Delete "$G_ROOTDIR\Sys\Hostname.pm"
+  RMDir "$G_ROOTDIR\Sys"
+
+  Delete "$G_ROOTDIR\Text\Kakasi.pm"
+  Delete "$G_ROOTDIR\Text\ParseWords.pm"
+  RMDir "$G_ROOTDIR\Text"
+
+  Delete "$G_ROOTDIR\warnings\register.pm"
+  RMDir "$G_ROOTDIR\warnings"
+
   Delete "$G_ROOTDIR\Win32\API\Callback.pm"
   Delete "$G_ROOTDIR\Win32\API\Struct.pm"
   Delete "$G_ROOTDIR\Win32\API\Type.pm"
   RMDir "$G_ROOTDIR\Win32\API"
+
   Delete "$G_ROOTDIR\Win32\API.pm"
   RMDir "$G_ROOTDIR\Win32"
 
+  ; The following paths were included in the original "MinPerlRestructure" function code
+  ; which was committed to CVS on 11 February 2004 but after a fresh analysis of the
+  ; 0.17.3, 0.17.4, 0.17.5, 0.17.6, 0.17.7, 0.17.8, 0.17.9a, 0.18.0, 0.18.1, 0.18.2,
+  ; 0.18.3, 0.19.0, 0.19.1, 0.20.0b and 0.20.1a releases no justification has been found.
+  ; Were these paths were added to handle upgrades of installations created by release
+  ; candidates or other 'unofficial' installers?
+
+  RMDir /r "$G_ROOTDIR\DBD"
+  RMDir /r "$G_ROOTDIR\Digest"
+  RMDir /r "$G_ROOTDIR\Getopt"
+  RMDir /r "$G_ROOTDIR\String"
+
+  ; POPFile 1.1.2 uses a new 'slimline' minimal Perl, unlike previous versions,
+  ; so to avoid possible problems the existing minimal Perl 'lib' folder is deleted.
+
+  IfFileExists "$G_ROOTDIR\lib\*.*" 0 exit
+  DetailPrint ""
+  DetailPrint "Sending old minimal Perl folder ($G_ROOTDIR\lib) to the Recycle Bin..."
+  Push "$G_ROOTDIR\lib"
+  Call PFI_SendToRecycleBin
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "0" recycle_ok
+  DetailPrint "Failed to send old minimal Perl 'lib' folder to the Recycle Bin (error: ${L_RESULT})"
+  Goto exit
+
+recycle_ok:
+  DetailPrint "Old minimal Perl folder sent to the Recycle Bin OK"
+
 exit:
+  DetailPrint ""
+  Pop ${L_RESULT}
+
+  !undef L_RESULT
+
 FunctionEnd
 
 #--------------------------------------------------------------------------
