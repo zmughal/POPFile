@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.5.1"
+  !define C_PFI_LIBRARY_VERSION     "0.5.3"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -244,7 +244,6 @@
 #
 # Macros used only by the 'installer.nsi' script (and/or its 'include' files):
 #
-#     PFI_MinPerlMove
 #     PFI_SkinMove
 #     PFI_DeleteSkin
 #     PFI_SectionNotSelected
@@ -253,21 +252,6 @@
 #==============================================================================
 
 !ifdef INSTALLER | TRANSLATOR
-
-  ;--------------------------------------------------------------------------
-  ; 'installer.nsi' macro used when rearranging existing minimal Perl system
-  ;--------------------------------------------------------------------------
-
-    !macro PFI_MinPerlMove SUBFOLDER
-
-        !insertmacro PFI_UNIQUE_ID
-
-        IfFileExists "$G_ROOTDIR\${SUBFOLDER}\*.*" 0 skip_${PFI_UNIQUE_ID}
-        Rename "$G_ROOTDIR\${SUBFOLDER}" "$G_MPLIBDIR\${SUBFOLDER}"
-
-      skip_${PFI_UNIQUE_ID}:
-
-    !macroend
 
   ;--------------------------------------------------------------------------
   ; 'installer.nsi' macro used when rearranging existing skins
@@ -4051,7 +4035,7 @@
   FunctionEnd
 !macroend
 
-!ifdef BACKUP
+!ifdef BACKUP | INSTALLER
     #--------------------------------------------------------------------------
     # Installer Function: PFI_SendToRecycleBin
     #
