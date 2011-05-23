@@ -71,7 +71,10 @@
         SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\DynaLoader.pm"
         SetOutPath "$G_MPLIBDIR\auto\DynaLoader"
-        File "${C_PERL_DIR}\lib\auto\DynaLoader\*"
+        File "${C_PERL_DIR}\lib\auto\DynaLoader\autosplit.ix"
+        File "${C_PERL_DIR}\lib\auto\DynaLoader\dl_expandspec.al"
+        File "${C_PERL_DIR}\lib\auto\DynaLoader\dl_findfile.al"
+        File "${C_PERL_DIR}\lib\auto\DynaLoader\dl_find_symbol_anywhere.al"
         SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\Errno.pm"
   File "${C_PERL_DIR}\lib\Exporter.pm"
@@ -157,7 +160,18 @@
   File "${C_PERL_DIR}\lib\HTTP\Request\Common.pm"
 
   SetOutPath "$G_MPLIBDIR\IO"
-  File "${C_PERL_DIR}\lib\IO\*"
+  File "${C_PERL_DIR}\lib\IO\Dir.pm"
+  File "${C_PERL_DIR}\lib\IO\File.pm"
+  File "${C_PERL_DIR}\lib\IO\Handle.pm"
+  File "${C_PERL_DIR}\lib\IO\Pipe.pm"
+  File "${C_PERL_DIR}\lib\IO\Poll.pm"
+  File "${C_PERL_DIR}\lib\IO\Seekable.pm"
+  File "${C_PERL_DIR}\lib\IO\Select.pm"
+  File "${C_PERL_DIR}\lib\IO\SessionData.pm"
+  File "${C_PERL_DIR}\lib\IO\SessionSet.pm"
+  File "${C_PERL_DIR}\lib\IO\Socket.pm"
+  File "${C_PERL_DIR}\lib\IO\String.pm"
+  File "${C_PERL_DIR}\lib\IO\Zlib.pm"
         SetOutPath "$G_MPLIBDIR\auto\IO"
         File "${C_PERL_DIR}\lib\auto\IO\IO.dll"
 
@@ -180,7 +194,8 @@
   File "${C_PERL_DIR}\lib\LWP\Protocol\http.pm"
 
   SetOutPath "$G_MPLIBDIR\MIME"
-  File "${C_PERL_DIR}\lib\MIME\*"
+  File "${C_PERL_DIR}\lib\MIME\Base64.pm"
+  File "${C_PERL_DIR}\lib\MIME\QuotedPrint.pm"
         SetOutPath "$G_MPLIBDIR\auto\MIME\Base64"
         File "${C_PERL_DIR}\lib\auto\MIME\Base64\Base64.dll"
 
@@ -194,7 +209,7 @@
   File "${C_PERL_DIR}\lib\Scalar\Util.pm"
 
   SetOutPath "$G_MPLIBDIR\Sys"
-  File "${C_PERL_DIR}\lib\Sys\*"
+  File "${C_PERL_DIR}\lib\Sys\Hostname.pm"
         SetOutPath "$G_MPLIBDIR\auto\Sys\Hostname"
         File "${C_PERL_DIR}\lib\auto\Sys\Hostname\Hostname.dll"
         File "${C_PERL_DIR}\lib\auto\Sys\Hostname\autosplit.ix"
@@ -231,7 +246,14 @@
   File "${C_PERL_DIR}\site\lib\Win32\GUI.pm"
 
   SetOutPath "$G_MPLIBDIR\Win32\GUI"
-  File "${C_PERL_DIR}\site\lib\Win32\GUI\*.pm"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\AxWindow.pm"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\BitmapInline.pm"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\Constants.pm"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\DIBitmap.pm"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\DropFiles.pm"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\Grid.pm"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\GridLayout.pm"
+  File "${C_PERL_DIR}\site\lib\Win32\GUI\Scintilla.pm"
         SetOutPath "$G_MPLIBDIR\auto\Win32\GUI"
         File "${C_PERL_DIR}\site\lib\auto\Win32\GUI\GUI.dll"
 
@@ -271,7 +293,7 @@
   SetOutPath "$G_MPLIBDIR\auto\DBI"
   File "${C_PERL_DIR}\lib\auto\DBI\DBI.dll"
 
-  ; POPFile 1.1.0 was the first version of POPFile to work with SQLIte 3.x libraries.
+  ; POPFile 1.1.0 was the first version of POPFile to work with SQLite 3.x libraries.
   ; SQLite databases built using SQLite 3.x are incompatible with those built using
   ; SQLite 2.x so the installer needs to install support for both types of database in
   ; order to allow old POPFile databases to be upgraded to the new SQLite 3.x format.
