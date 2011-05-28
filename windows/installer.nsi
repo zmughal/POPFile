@@ -1859,7 +1859,7 @@ Section /o "XMLRPC" SecXMLRPC
   SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\bytes.pm"
   File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-  File "${C_PERL_DIR}\lib\Encode.pm"
+  File "${C_PERL_DIR}\site\lib\Encode.pm"
   File "${C_PERL_DIR}\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\re.pm"
   File "${C_PERL_DIR}\site\lib\URI.pm"
@@ -1870,11 +1870,11 @@ Section /o "XMLRPC" SecXMLRPC
   File "${C_PERL_DIR}\site\lib\Class\Inspector.pm"
 
   SetOutPath "$G_MPLIBDIR\Encode"
-  File "${C_PERL_DIR}\lib\Encode\Alias.pm"
-  File "${C_PERL_DIR}\lib\Encode\Config.pm"
-  File "${C_PERL_DIR}\lib\Encode\Encoding.pm"
+  File "${C_PERL_DIR}\site\lib\Encode\Alias.pm"
+  File "${C_PERL_DIR}\site\lib\Encode\Config.pm"
+  File "${C_PERL_DIR}\site\lib\Encode\Encoding.pm"
         SetOutPath "$G_MPLIBDIR\auto\Encode"
-        File "${C_PERL_DIR}\lib\auto\Encode\Encode.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\Encode.dll"
 
   SetOutPath "$G_MPLIBDIR\HTTP"
   File "${C_PERL_DIR}\lib\HTTP\Config.pm"
@@ -1968,7 +1968,7 @@ Section /o "XMLRPC" SecXMLRPC
 
   SetOutPath "$G_MPLIBDIR\Time"
   File "${C_PERL_DIR}\lib\Time\gmtime.pm"
-  File "${C_PERL_DIR}\lib\Time\HiRes.pm"
+  File "${C_PERL_DIR}\site\lib\Time\HiRes.pm"
   File "${C_PERL_DIR}\lib\Time\Local.pm"
   File "${C_PERL_DIR}\lib\Time\localtime.pm"
   File "${C_PERL_DIR}\lib\Time\Piece.pm"

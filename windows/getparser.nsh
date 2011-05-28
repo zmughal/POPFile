@@ -233,74 +233,71 @@
         File "${C_PERL_DIR}\lib\base.pm"
         File "${C_PERL_DIR}\lib\bytes.pm"
         File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-        File "${C_PERL_DIR}\lib\Encode.pm"
+        File "${C_PERL_DIR}\site\lib\Encode.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode"
-        File "${C_PERL_DIR}\lib\Encode\Alias.pm"
-        File "${C_PERL_DIR}\lib\Encode\Byte.pm"
-        File "${C_PERL_DIR}\lib\Encode\CJKConstants.pm"
-        File "${C_PERL_DIR}\lib\Encode\CN.pm"
-        File "${C_PERL_DIR}\lib\Encode\Config.pm"
-        File "${C_PERL_DIR}\lib\Encode\EBCDIC.pm"
-        File "${C_PERL_DIR}\lib\Encode\Encoder.pm"
-        File "${C_PERL_DIR}\lib\Encode\Encoding.pm"
-        File "${C_PERL_DIR}\lib\Encode\GSM0338.pm"
-        File "${C_PERL_DIR}\lib\Encode\Guess.pm"
-        File "${C_PERL_DIR}\lib\Encode\JP.pm"
-        File "${C_PERL_DIR}\lib\Encode\KR.pm"
-        File "${C_PERL_DIR}\lib\Encode\Symbol.pm"
-        File "${C_PERL_DIR}\lib\Encode\TW.pm"
-        File "${C_PERL_DIR}\lib\Encode\Unicode.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Alias.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Byte.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\CJKConstants.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\CN.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Config.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\EBCDIC.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Encoder.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Encoding.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\GSM0338.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Guess.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\JP.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\KR.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Symbol.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\TW.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Unicode.pm"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode"
-        File "${C_PERL_DIR}\lib\auto\Encode\Encode.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\Encode.dll"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode\Byte"
-        File "${C_PERL_DIR}\lib\auto\Encode\Byte\Byte.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\Byte\Byte.dll"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode\CN"
-        File "${C_PERL_DIR}\lib\auto\Encode\CN\CN.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\CN\CN.dll"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode\EBCDIC"
-        File "${C_PERL_DIR}\lib\auto\Encode\EBCDIC\EBCDIC.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\EBCDIC\EBCDIC.dll"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode\JP"
-        File "${C_PERL_DIR}\lib\auto\Encode\JP\JP.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\JP\JP.dll"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode\KR"
-        File "${C_PERL_DIR}\lib\auto\Encode\KR\KR.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\KR\KR.dll"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode\Symbol"
-        File "${C_PERL_DIR}\lib\auto\Encode\Symbol\Symbol.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\Symbol\Symbol.dll"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode\TW"
-        File "${C_PERL_DIR}\lib\auto\Encode\TW\TW.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\TW\TW.dll"
 
         SetOutPath "$G_MPLIBDIR\auto\Encode\Unicode"
-        File "${C_PERL_DIR}\lib\auto\Encode\Unicode\Unicode.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Encode\Unicode\Unicode.dll"
 
         SetOutPath "$G_MPLIBDIR\Encode\CN"
-        File "${C_PERL_DIR}\lib\Encode\CN\HZ.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\CN\HZ.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode\JP"
-        File "${C_PERL_DIR}\lib\Encode\JP\H2Z.pm"
-        File "${C_PERL_DIR}\lib\Encode\JP\JIS7.pm"
-
-        SetOutPath "$G_MPLIBDIR\Encode\CN"
-        File "${C_PERL_DIR}\lib\Encode\CN\HZ.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\JP\H2Z.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\JP\JIS7.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode\KR"
-        File "${C_PERL_DIR}\lib\Encode\KR\2022_KR.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\KR\2022_KR.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode\MIME"
-        File "${C_PERL_DIR}\lib\Encode\MIME\Header.pm"
-        File "${C_PERL_DIR}\lib\Encode\MIME\Name.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\MIME\Header.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\MIME\Name.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode\MIME\Header"
-        File "${C_PERL_DIR}\lib\Encode\MIME\Header\ISO_2022_JP.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\MIME\Header\ISO_2022_JP.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode\Unicode"
-        File "${C_PERL_DIR}\lib\Encode\Unicode\UTF7.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Unicode\UTF7.pm"
 
         ;--------------------------------------------------------------------------
         ; For the 1.1.1 release File::Glob::Windows and the necessary support files
@@ -316,17 +313,17 @@
         File "${C_PERL_DIR}\site\lib\File\Glob\Windows.pm"
 
         SetOutPath "$G_MPLIBDIR\Win32\"
-        File "${C_PERL_DIR}\lib\Win32\API.pm"
+        File "${C_PERL_DIR}\site\lib\Win32\API.pm"
 
         SetOutPath "$G_MPLIBDIR\Win32\API"
-        File "${C_PERL_DIR}\lib\Win32\API\Callback.pm"
-        File "${C_PERL_DIR}\lib\Win32\API\Struct.pm"
-        File "${C_PERL_DIR}\lib\Win32\API\Test.pm"
-        File "${C_PERL_DIR}\lib\Win32\API\Type.pm"
+        File "${C_PERL_DIR}\site\lib\Win32\API\Callback.pm"
+        File "${C_PERL_DIR}\site\lib\Win32\API\Struct.pm"
+        File "${C_PERL_DIR}\site\lib\Win32\API\Test.pm"
+        File "${C_PERL_DIR}\site\lib\Win32\API\Type.pm"
               SetOutPath "$G_MPLIBDIR\auto\Win32\API"
-              File "${C_PERL_DIR}\lib\auto\Win32\API\API.dll"
+              File "${C_PERL_DIR}\site\lib\auto\Win32\API\API.dll"
               SetOutPath "$G_MPLIBDIR\auto\Win32\API\Callback"
-              File "${C_PERL_DIR}\lib\auto\Win32\API\Callback\Callback.dll"
+              File "${C_PERL_DIR}\site\lib\auto\Win32\API\Callback\Callback.dll"
               SetOutPath "$G_MPLIBDIR"
 
     !endif
