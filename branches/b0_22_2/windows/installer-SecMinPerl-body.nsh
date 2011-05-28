@@ -49,7 +49,7 @@
   DetailPrint "$(PFI_LANG_INST_PROG_PERL)"
   SetDetailsPrint listonly
 
-  ; Install the minimal Perl "core" based upon ActivePerl 5.8.9 Build 825
+  ; Install the minimal Perl "core" based upon ActivePerl 5.8.9 Build 829
   ; (extra Perl files are added by the "SOCKS" & "XMLRPC" sections in installer.nsi
   ; and by the macro-based "Kakasi", "MeCab" and "InternalParser" sections defined
   ; in getparser.nsh)
@@ -64,7 +64,7 @@
   File "${C_PERL_DIR}\lib\Carp.pm"
   File "${C_PERL_DIR}\lib\Config.pm"
   File "${C_PERL_DIR}\lib\Config_heavy.pl"
-  File "${C_PERL_DIR}\lib\constant.pm"
+  File "${C_PERL_DIR}\site\lib\constant.pm"
   File "${C_PERL_DIR}\lib\Cwd.pm"
         SetOutPath "$G_MPLIBDIR\auto\Cwd"
         File "${C_PERL_DIR}\lib\auto\Cwd\Cwd.dll"
@@ -167,8 +167,8 @@
   File "${C_PERL_DIR}\lib\IO\Poll.pm"
   File "${C_PERL_DIR}\lib\IO\Seekable.pm"
   File "${C_PERL_DIR}\lib\IO\Select.pm"
-  File "${C_PERL_DIR}\lib\IO\SessionData.pm"
-  File "${C_PERL_DIR}\lib\IO\SessionSet.pm"
+  File "${C_PERL_DIR}\site\lib\IO\SessionData.pm"
+  File "${C_PERL_DIR}\site\lib\IO\SessionSet.pm"
   File "${C_PERL_DIR}\lib\IO\Socket.pm"
   File "${C_PERL_DIR}\lib\IO\String.pm"
   File "${C_PERL_DIR}\lib\IO\Zlib.pm"
