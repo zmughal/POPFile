@@ -1,10 +1,10 @@
 <form action="/configuration" method="post">
     <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
-    <label class="configurationLabel" for="configPopPort">
+    <label class="configurationLabel" for="configXmlRpcPort">
         <TMPL_VAR NAME="Localize_Configuration_XMLRPCPort">:
     </label>
     <br />
-    <input name="xmlrpc_port" type="text" id="configPopPort" value="<TMPL_VAR NAME="XMLRPC_Port">" />
+    <input name="xmlrpc_port" type="text" id="configXmlRpcPort" value="<TMPL_VAR NAME="XMLRPC_Port">" />
 
         <TMPL_IF NAME="XMLRPC_port_if_error">
 
