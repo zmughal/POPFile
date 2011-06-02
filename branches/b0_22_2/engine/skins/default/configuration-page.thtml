@@ -120,7 +120,7 @@
             <TMPL_VAR NAME="Configuration_History_Days_Updated">
             <p />
             <form action="/configuration" method="post">
-                <label class="configurationLabel" for="configUIPort">
+                <label class="configurationLabel">
                     <TMPL_VAR NAME="Localize_Configuration_Fields">:
                 </label>
                 <br />

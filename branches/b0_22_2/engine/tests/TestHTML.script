@@ -1245,8 +1245,8 @@ MATCH 1,785 (12.74%)
 MATCH 103 (0.73%)
 MATCH 12,114 (86.51%)
 
-MATCH <td bgcolor="green" title="personal (75.61)" width="75.61%">
-MATCH <td bgcolor="blue" title="spam (24.39)" width="24.39%">
+MATCH <td style="background:green; width:75.61%;" title="personal (75.61)">
+MATCH <td style="background:blue; width:24.39%;" title="spam (24.39)">
 
 # Check Reset Statistics
 
