@@ -5,7 +5,7 @@
 #                    DBI trace feature which generates extra console messages that
 #                    may assist in debugging database problems.
 #
-# Copyright (c) 2009  John Graham-Cumming
+# Copyright (c) 2011  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -88,7 +88,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.1.0"
+  !define C_VERSION             "0.1.1"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -476,7 +476,7 @@ Section default
   !define L_RESULT        $R6
   !define L_TEMP          $R5
   !define L_TRAYICON      $R4   ; system tray icon enabled ("i" ) or disabled ("") flag
-  !define L_OPTIONS       $R3   ; POPFile 0.23.0 no longer displays startup messages by default
+  !define L_OPTIONS       $R3   ; POPFile 2.x no longer displays startup messages by default
                                 ; so we use the --verbose option to turn them back on
 
   !define L_RESERVED      $0    ; used in system.dll calls
@@ -542,10 +542,10 @@ report_env_vars:
   DetailPrint "EnvVar: POPFILE_ROOT = ${L_PFI_ROOT}"
   DetailPrint "EnvVar: POPFILE_USER = ${L_PFI_USER}"
 
-  ; Starting with the 0.23.0 release, POPFile no longer displays startup messages
+  ; Starting with the 2.x release, POPFile no longer displays startup messages
   ; so we use the 'verbose' option to turn them on. Earlier POPFile releases do not
   ; recognize this option and will not run if it is used, so we use the Database.pm
-  ; file as a simple POPFile version test (this file was first used in 0.23.0)
+  ; file as a simple POPFile version test (this file was first used in 2.0.0)
 
   StrCpy ${L_OPTIONS} ""
   IfFileExists "${L_PFI_ROOT}\POPFile\Database.pm" 0 look_for_exe
