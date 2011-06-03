@@ -282,7 +282,7 @@
   !define C_JAPANESE_RELEASE_NOTES "${C_RELEASE_NOTES}.nihongo"
 
   ;--------------------------------------------------------------------------
-  ; Windows Vista expects to find a manifest specifying the execution level
+  ; Windows Vista & Windows 7 expect to find a manifest specifying the execution level
   ;
   ; The POPFile installer has two stages; the first stage (setup.exe) installs the
   ; POPFile program and then calls the second stage (adduser.exe) to configure POPFile

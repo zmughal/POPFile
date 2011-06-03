@@ -52,7 +52,9 @@
   ; (${NSISDIR}\Plugins\). The 'Inetc' documentation, example & source files can be unzipped
   ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with the inetc.dll plugin timestamped 15 July 2008 16:04:42
+  ; Tested with the inetc.dll plugin timestamped 28 April 2011 14:23:12
+  ;
+  ; The plugin's history can be found at http://nsis.sourceforge.net/File:Inetc.zip
 
   ;------------------------------------------------
   ; This script requires the 'md5dll' NSIS plugin
@@ -63,14 +65,13 @@
   ; The 'NSIS Wiki' page for the 'md5dll' plugin (description, example and download links):
   ; http://nsis.sourceforge.net/MD5_plugin
   ;
-  ; Alternative download links can be found at the 'md5dll' author's site:
-  ; http://www.darklogic.org/win32/nsis/plugins/md5dll/
-  ;
   ; To compile this script, copy the 'md5dll.dll' file to the standard NSIS plugins folder
   ; (${NSISDIR}\Plugins\). The 'md5dll' source and example files can be unzipped to the
   ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with version 0.4 of the 'md5dll' plugin.
+  ; Tested with version 0.5 of the 'md5dll' plugin.
+  ;
+  ; The plugin's history can be found at http://nsis.sourceforge.net/File:md5dll.zip
 
   ;------------------------------------------------
   ; This script requires the 'nsUnzip' NSIS plugin
@@ -85,7 +86,9 @@
   ; (${NSISDIR}\Plugins\). The 'nsUnzip'  documentation, example & source files can be unzipped
   ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with version 1.0 of the 'nsUnzip' plugin.
+  ; Tested with version 1.1 of the 'nsUnzip' plugin.
+  ;
+  ; The plugin's history can be found at http://nsis.sourceforge.net/File:nsUnzip.zip
 
   ;------------------------------------------------
   ; This script requires the 'untgz' NSIS plugin
@@ -96,14 +99,13 @@
   ; The 'NSIS Wiki' page for the 'untgz' plugin (description, example and download links):
   ; http://nsis.sourceforge.net/UnTGZ_plug-in
   ;
-  ; Alternative download links can be found at the 'untgz' author's site:
-  ; http://www.darklogic.org/win32/nsis/plugins/
-  ;
   ; To compile this script, copy the 'untgz.dll' file to the standard NSIS plugins folder
   ; (${NSISDIR}\Plugins\). The 'untgz'  documentation, example & source files can be unzipped
   ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
   ;
-  ; Tested with versions 1.0.5, 1.0.6, 1.0.7 and 1.0.8 of the 'untgz' plugin.
+  ; Tested with version 1.17 of the 'untgz' plugin.
+  ;
+  ; The plugin's history can be found at http://nsis.sourceforge.net/File:Untgz.zip
 
 #--------------------------------------------------------------------------
 # URLs used to download the 'MeCab' parser support files from the POPFile
@@ -1242,7 +1244,11 @@
     DetailPrint ""
     DetailPrint "$(PFI_LANG_PROG_STARTDOWNLOAD)"
 
-    inetc::get /CAPTION "Internet Download" /RESUME "${C_NPLS_CHECKINTERNET}" ${C_NSISDL_TRANSLATIONS} "$G_MECAB_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1" /END
+    !ifndef C_DLTIMEOUT
+      !define C_DLTIMEOUT  "/CONNECTTIMEOUT=30 /RECEIVETIMEOUT=30"
+    !endif
+
+    inetc::get ${C_DLTIMEOUT} /CAPTION "Internet Download" /RESUME "${C_NPLS_CHECKINTERNET}" ${C_NSISDL_TRANSLATIONS} "$G_MECAB_FILEURL" "$PLUGINSDIR\$G_PLS_FIELD_1" /END
     Pop $G_PLS_FIELD_2
 
     StrCmp $G_PLS_FIELD_2 "OK" file_received
