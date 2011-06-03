@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.5.3"
+  !define C_PFI_LIBRARY_VERSION     "0.6.0"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1735,7 +1735,7 @@
 # Macro: PFI_CheckIfLocked
 #
 # The installation process and the uninstall process may both require a function
-# which checks if a particular executable file (usually an EXE file) is being used.
+# which checks if a particular POPFile file (usually an EXE file) is being used.
 # This macro makes maintenance easier by ensuring that both processes use identical
 # functions, with the only difference being their names.
 #
@@ -1745,39 +1745,7 @@
 # passed via the stack, with a marker string being used to mark the list's end.
 #
 # Normally the LockedList plugin will be used to check if any of the specified
-# executable files is in use. This plugin returns its results on the stack:
-#
-# (a) if no matches are found then only one value is left on the stack:
-#
-#         (top of stack)            /end
-#
-#    Note: some earlier versions of the plugin return _two_ values when
-#    no matches are found:
-#
-#         (top of stack)            /start
-#         (top of stack - 1)        /end
-#
-# (b) if one match is found then three values are left on the stack,
-#     sandwiched between a pair of "markers":
-#
-#         (top of stack)            /start
-#         (top of stack - 1)           process ID
-#         (top of stack - 2)           full path to the locked file
-#         (top of stack - 3)           window caption
-#         (top of stack - 4)        /end
-#
-# (c) if more than one result is found they are separated by an extra
-#     marker (/next). For example if two matches are found:
-#
-#         (top of stack)            /start
-#         (top of stack - 1)           process ID
-#         (top of stack - 2)           full path to the locked file
-#         (top of stack - 3)           window caption
-#         (top of stack - 4)        /next
-#         (top of stack - 5)           process ID
-#         (top of stack - 6)           full path to the locked file
-#         (top of stack - 7)           window caption
-#         (top of stack - 8)        /end
+# executable files is in use.
 #
 # Note that the format of the path supplied to the plugin is important. If a program
 # was started from a 'hybrid' path using a mixture of SFN and LFN names, such as
@@ -1786,14 +1754,18 @@
 # if this particular executable is locked.
 #
 # To avoid these LFN/SFN problems we use the plugin's special "filename only" mode by
-# supplying the file name without the path. In this mode the plugin returns a list of
-# paths to any running processes that match the filename so all we have to do is loop
-# through the results looking for a match.
+# supplying the file name without the path. In this mode the plugin calls a 'callback'
+# function for each matching locked file found so all we have to do is check if the
+# file found is one of the ones in which we are interested.
 #
 # This function is normally used to check if a particular executable (.exe) file is
 # locked. However to make the function more general purpose it checks if a DLL has
 # been specified and treats that as an executable. All other filenames are assumed
 # to be ordinary files.
+#
+# Note that the 'LockecdList::IsFileLocked' function cannot be used here as under
+# some circumstances (still to be investigated!) it mistakenly reports that a file
+# is locked.
 #
 #------------------------------------------------------------------------------------
 #
@@ -1805,9 +1777,10 @@
 # unzipped to the appropriate ${NSISDIR} sub-folders if you wish, but this step is
 # entirely optional.
 #
-# Tested using LockedList plugin v1.5 timestamped 28 April 2010 21:52:16
+# Tested using LockedList plugin v2.3 timestamped 7 February 2011 18:52:22
 #
 # The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
+#
 #------------------------------------------------------------------------------------
 #
 # Unfortunately the 'LockedList' plugin relies upon OS features only found in
@@ -1845,19 +1818,40 @@
 #--------------------------------------------------------------------------
 
 !macro PFI_CheckIfLocked UN
+
+  !ifndef PFI_CheckIfLocked_Globals
+
+      ; Since the function gets an unknown number of parameters via the stack
+      ; it makes the code much simpler if the function uses GLOBAL variables
+      ; instead of the '!define X/Push X/Pop X/!undef X' sequences normally
+      ; used to preserve any local variables used by the function
+
+      !define PFI_CheckIfLocked_Globals
+      var /GLOBAL G_CIL_FILE
+      var /GLOBAL G_CIL_FLAG
+      var /GLOBAL G_CIL_PATH
+      var /GLOBAL G_CIL_RESULT
+      var /GLOBAL G_CIL_TEMP
+  !endif
+
+  Function ${UN}PFI_CheckIfLocked_Callback
+    Pop $G_CIL_RESULT   ; Get process ID (and ignore it)
+    Exch
+    Pop $G_CIL_RESULT   ; Get description (and ignore it)
+    Call ${UN}PFI_GetCompleteFPN
+    Pop $G_CIL_RESULT   ; Get "full path to the locked file"
+    StrCmp $G_CIL_RESULT "$G_CIL_PATH\$G_CIL_FILE" 0 continue
+    StrCpy $G_CIL_FLAG $G_CIL_RESULT
+    Push false
+    Goto exit
+
+  continue:
+    Push true
+
+  exit:
+  FunctionEnd
+
   Function ${UN}PFI_CheckIfLocked
-
-    !ifndef PFI_CheckIfLocked
-
-        !define PFI_CheckIfLocked
-
-        var /GLOBAL G_CIL_FILE
-        var /GLOBAL G_CIL_FLAG
-        var /GLOBAL G_CIL_PATH
-        var /GLOBAL G_CIL_TEMP
-
-    !endif
-
     Call ${UN}PFI_AtLeastWinNT4
     Pop $G_CIL_FLAG
     StrCmp $G_CIL_FLAG "0" specialcase
@@ -1885,7 +1879,11 @@
     ; an exact match with the specified pathame. As a workaround we use the plugin's
     ; special "filename only" mode to find, for example, "popfileif.exe" and then
     ; analyse the results to see if any match the path in which we are interested.
+    ;
+    ; Note that the 'LockedList::IsFileLocked' function _cannot_ be used here
+    ; because it incorrectly reports some files are locked.
 
+    DetailPrint "Is '$G_CIL_PATH' locked?"
     Push $G_CIL_PATH
     Call ${UN}PFI_GetCompleteFPN
     Pop $G_CIL_FILE
@@ -1912,36 +1910,9 @@
 
   check_module:
     LockedList::AddModule /NOUNLOAD "\$G_CIL_FILE"
-    LockedList::SilentSearch
-    Pop $G_CIL_TEMP
-    StrCmp $G_CIL_TEMP "/end" get_next_input_param
-    StrCmp $G_CIL_TEMP "/start" get_search_result
-    MessageBox MB_OK|MB_ICONSTOP "Unexpected result from LockedList plugin\
-        ${MB_NL}${MB_NL}\
-        ($G_CIL_TEMP)"
-    Abort "Unexpected result from LockedList plugin ($G_CIL_TEMP)"
-
-  get_search_result:
-    Pop $G_CIL_TEMP           ; "process ID" if a match was found
-    StrCmp $G_CIL_TEMP "/end" get_next_input_param
-    StrCmp $G_CIL_TEMP "/next" get_search_result
-    StrCmp $G_CIL_FLAG "" 0 skip_result
-    Call ${UN}PFI_GetCompleteFPN
-    Pop $G_CIL_TEMP           ; get "full path to the locked file"
-    StrCmp $G_CIL_TEMP "$G_CIL_PATH\$G_CIL_FILE" 0 skip_window_caption
-    StrCpy $G_CIL_FLAG $G_CIL_TEMP
-    Goto skip_window_caption
-
-  skip_result:
-    Pop $G_CIL_TEMP           ; ignore the "full path to the locked file" data
-
-  skip_window_caption:
-    Pop $G_CIL_TEMP           ; ignore the "window caption" data
-    Goto get_search_result
-
-  input_exhausted:
-    Push $G_CIL_FLAG
-    Goto exit
+    GetFunctionAddress $G_CIL_TEMP ${UN}PFI_CheckIfLocked_Callback
+    LockedList::SilentSearch $G_CIL_TEMP
+    Goto get_next_input_param
 
   panic:
     MessageBox MB_OK|MB_ICONSTOP "Internal Error:\
@@ -1952,6 +1923,10 @@
     Abort "Internal Error: \
         '${UN}PFI_CheckIfLocked' function did not find the \
         '${C_EXE_END_MARKER}' marker on the stack!"
+
+  input_exhausted:
+    Push $G_CIL_FLAG
+    Goto exit
 
     ; Windows 95, 98, ME and NT3.x are treated as special cases
     ; (because they do not support the LockedList plugin)
@@ -2193,22 +2168,11 @@
 
     Push "${C_EXE_END_MARKER}"
 
-    DetailPrint "Checking '${L_PATH}\popfileb.exe' ..."
     Push "${L_PATH}\popfileb.exe"     ; runs POPFile in the background
-
-    DetailPrint "Checking '${L_PATH}\popfileib.exe' ..."
     Push "${L_PATH}\popfileib.exe"    ; runs POPFile in the background with system tray icon
-
-    DetailPrint "Checking '${L_PATH}\popfilef.exe' ..."
     Push "${L_PATH}\popfilef.exe"     ; runs POPFile in the foreground/console window/DOS box
-
-    DetailPrint "Checking '${L_PATH}\popfileif.exe' ..."
     Push "${L_PATH}\popfileif.exe"    ; runs POPFile in the foreground with system tray icon
-
-    DetailPrint "Checking '${L_PATH}\wperl.exe' ..."
     Push "${L_PATH}\wperl.exe"        ; runs POPFile in the background (using popfile.pl)
-
-    DetailPrint "Checking '${L_PATH}\perl.exe' ..."
     Push "${L_PATH}\perl.exe"         ; runs POPFile in the foreground (using popfile.pl)
 
     Call ${UN}PFI_CheckIfLocked
@@ -4545,10 +4509,10 @@
   Function ${UN}PFI_ShutdownViaUI
 
     ;--------------------------------------------------------------------------
-    ; Override the default timeout for inetc requests (specifies timeout in milliseconds)
+    ; Override the default connection timeout for inetc requests (specifies timeout in seconds)
     ; (20 seconds is used to give the user more time to respond to any firewall prompts)
 
-    !define C_SVU_DLTIMEOUT       /TIMEOUT=20000
+    !define C_SVU_DLTIMEOUT       /CONNECTTIMEOUT=20
 
     ; Delay between the two shutdown requests (in milliseconds)
 
@@ -4688,7 +4652,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | PFIDIAG | RESTORE | RUNPOPFILE
+!ifdef ADDUSER | BACKUP | DBSTATUS | INSTALLER | PFIDIAG | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrBackSlash
     #
@@ -5053,7 +5017,7 @@
     FunctionEnd
 !macroend
 
-!ifndef DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
+!ifndef ADDSSL & DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #
