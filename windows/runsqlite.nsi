@@ -1,15 +1,18 @@
 #-------------------------------------------------------------------------------------------
 #
-# runsqlite.nsi --- A simple front-end to the SQLite command-line utility. By default POPFile
-#                   0.21.x and 0.22.0 used SQLite 2.x format databases. A future release will
-#                   use SQLite 3.x (and POPFile 0.22.x might be patched to work with SQLite 3)
+# runsqlite.nsi --- A simple front-end to the SQLite command-line utility.
+#                   Since the 1.1.0 release (28 November 2008) POPFile has
+#                   used a SQLite 3.x format database by default. The earlier
+#                   POPFile 0.21.x and 0.22.x releases used SQLite 2.x format
+#                   databases by default.
 #
-#                   SQLite 2.x and 3.x database files are not compatible therefore separate
-#                   command-line utilities have to be used: sqlite.exe for 2.x format files
-#                   and sqlite3.exe for 3.x format files. This utility ensures the appropriate
-#                   utility is used to access the specified SQLite database file.
+#                   SQLite 2.x and 3.x database files are not compatible therefore
+#                   separate command-line utilities have to be used: 'sqlite.exe'
+#                   for 2.x format files and 'sqlite3.exe' for 3.x format files.
+#                   This utility ensures the appropriate utility is used to access
+#                   the specified SQLite database file.
 #
-# Copyright (c) 2004-2009  John Graham-Cumming
+# Copyright (c) 2004-2011  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -77,7 +80,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.2.1"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.2.2"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
