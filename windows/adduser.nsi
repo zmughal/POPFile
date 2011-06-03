@@ -1913,11 +1913,9 @@ Section "-MakeBatchFile" SecMakeBatch
   FileWrite ${L_FILEHANDLE} "REM ---------------------------------------------------------------------${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM POPFile program location = $G_ROOTDIR${MB_NL}"
-  FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "set POPFILE_ROOT=${L_POPFILE_ROOT}${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM POPFile User Data folder = $G_USERDIR${MB_NL}"
-  FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "set POPFILE_USER=${L_POPFILE_USER}${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM ---------------------------------------------------------------------${MB_NL}"
@@ -2984,7 +2982,7 @@ Function MakeUserDirSafe
 
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_GUI_PORT} "pfi-cfg.ini" "Inherited" "NewStyleUI"
   StrCmp ${L_GUI_PORT} "" try_old_style
-  DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_GUI_PORT} [new style port]"
+  DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_GUI_PORT}"
   DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
   Push ${L_GUI_PORT}
   Call PFI_ShutdownViaUI
