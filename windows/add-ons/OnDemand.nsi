@@ -9,7 +9,7 @@
 #                   and starting the email client (to avoid problems if the email client looks
 #                   for new mail before POPFile is ready to accept commands).
 #
-# Copyright (c) 2005-2009 John Graham-Cumming
+# Copyright (c) 2005-2011 John Graham-Cumming
 #
 #   This file creates a utility for use with POPFile.
 #
@@ -63,11 +63,14 @@
   ; The 'NSIS Wiki' page for the 'LockedList' plugin (description and download links):
   ; http://nsis.sourceforge.net/LockedList_plug-in
   ;
-  ; To compile this script, copy the 'LockedList.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ; To compile this script, copy the 'LockedList.dll' file to the standard NSIS plugins
+  ; folder (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be
+  ; unzipped to the appropriate ${NSISDIR} sub-folders if you wish, but this step is
+  ; entirely optional.
   ;
-  ; Tested using LockedList plugin v0.7 (RC2) timestamped 26 February 2008 17:49:24
+  ; Tested using LockedList plugin v2.3 timestamped 7 February 2011 18:52:22
+  ;
+  ; The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
 
 #-------------------------------------------------------------------------------------------
 # Parameters are supplied via an INI file stored in the same folder as this utility:
@@ -139,7 +142,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.2.0"
+  !define C_VERSION   "0.3.0"
 
   ; Specify the icon file for the utility
 
@@ -396,6 +399,10 @@ check_client:
   Goto done
 
 run_client:
+  ; This utility is about to sit quietly waiting for the email client to terminate.
+  ; Free up memory to reduce this utility's RAM footprint (until it wakes up again!)
+  System::Call "kernel32::GetCurrentProcess()i.s"
+  System::Call "psapi::EmptyWorkingSet(is)"
   ExecWait '"${L_CLIENT_EXEPATH}" "${L_CLIENT_PARAMS}"'
 
 done:
