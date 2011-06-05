@@ -63,7 +63,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.6.0"
+  !define C_PFI_LIBRARY_VERSION     "0.6.1"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -4652,7 +4652,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDUSER | BACKUP | DBSTATUS | INSTALLER | PFIDIAG | RESTORE | RUNPOPFILE
+!ifdef ADDSSL | ADDUSER | BACKUP | DBSTATUS | INSTALLER | PFIDIAG | RESTORE | RUNPOPFILE
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrBackSlash
     #
@@ -4901,7 +4901,7 @@
   FunctionEnd
 !macroend
 
-!ifdef INSTALLER
+!ifdef ADDSSL | INSTALLER
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckHexadecimal
     #
@@ -5017,7 +5017,7 @@
     FunctionEnd
 !macroend
 
-!ifndef ADDSSL & DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
+!ifndef DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #

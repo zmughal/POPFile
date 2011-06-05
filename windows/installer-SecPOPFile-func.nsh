@@ -42,7 +42,6 @@
 
 #--------------------------------------------------------------------------
 # The following functions are used by the 'installer-SecPOPFile-body.nsh' file
-# and the 'getssl.nsh' file:
 #
 #     MakeRootDirSafe
 #     un.MakeRootDirSafe
