@@ -4,7 +4,7 @@
 #                   POPFile Windows installer when a flat-file or BerkeleyDB corpus
 #                   needs to be converted to the new SQL database format.
 #
-# Copyright (c) 2004-2009 John Graham-Cumming
+# Copyright (c) 2004-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -113,7 +113,7 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.3.3"
+  !define C_PFI_VERSION  "0.3.4"
 
   !define C_OUTFILE      "monitorcc.exe"
 
@@ -869,8 +869,10 @@ wait_for_termination:
   MessageBox MB_OK|MB_ICONSTOP "Error: POPFile has not shutdown yet\
       ${MB_NL}${MB_NL}\
       (waited ${C_TERMINATION_LOOP} x ${C_TERMINATION_DELAY}ms)"
+  DetailPrint ""
 
 exit:
+  !insertmacro DELETE_LAST_ENTRY
 
   ; We must now unload the system.dll (this allows NSIS to delete the DLL from $PLUGINSDIR)
 
