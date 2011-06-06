@@ -1123,10 +1123,26 @@ stopwords:
 
   StrCmp $G_PFIMODE "/restore" copy_default_stopwords
 
-  ; If we are upgrading and the user did not have a 'stopwords' file then do not install one
-  ; (but still update the default file to the one distributed with 'our' version of POPFile)
+  ; If there is no POPFile configuration file in the destination folder then install the
+  ; 'stopwords' file as this is assumed to be a 'clean' installation.
 
   IfFileExists "$G_USERDIR\popfile.cfg" 0 copy_stopwords
+
+  ; If we are upgrading an old system (pre-0.19.0) that did not support the 'stopwords' file
+  ; then we install the current 'stopwords' file so that the upgraded POPFile installation
+  ; can use it. All of the Windows versions of POPFile before the 0.19.0 release used the
+  ; 'ui_port' configuration setting to define the UI port (from 0.19.0 onwards the UI port
+  ; was defined using the 'html_port' setting).
+
+  ; If we are upgrading a system that supported the 'stopwords' file and the user did not
+  ; have a 'stopwords' file then do not install one (but still update the default file to
+  ; the one distributed with 'our' version of POPFile)
+
+  Push "$G_USERDIR\popfile.cfg"
+  Push "ui_port"
+  Call PFI_CfgSettingRead
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "" 0 copy_stopwords
   IfFileExists "$G_USERDIR\stopwords" 0 copy_default_stopwords
 
   ; We are upgrading an existing installation which uses 'stopwords'. If 'our' default list is
