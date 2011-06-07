@@ -233,7 +233,7 @@ Function MinPerlCleanup
   RMDir /r "$G_ROOTDIR\Getopt"
   RMDir /r "$G_ROOTDIR\String"
 
-  DetailPrint "(completed)"
+  DetailPrint "('intermingled' minimal Perl removal completed)"
 
   ; POPFile 1.1.2 uses a new 'slimline' minimal Perl, unlike previous versions,
   ; so to avoid possible problems the existing minimal Perl 'lib' folder is deleted.
