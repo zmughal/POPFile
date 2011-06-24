@@ -7,7 +7,7 @@
 #
 # These strings are grouped according to the page/window and script where they are used
 #
-# Copyright (c) 2003-2009 John Graham-Cumming
+# Copyright (c) 2003-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -27,7 +27,7 @@
 #--------------------------------------------------------------------------
 #
 # Translation created by: Junya Ishihara (UTF-8: E79FB3 E58E9F E6B7B3 E4B99F) (jishiha at users.sourceforge.net)
-# Translation updated by: Naoki IIMURA (UTF-8: E38184 E38184 E38280 E38289 E381AA E3818A E3818D) (amatubu at users.sourceforge.net)
+# Translation updated by: Naoki IIMURA (UTF-8: E38184 E38184 E38280 E38289 E381AA E3818A E3818D) (naoki at getpopfile.org)
 #
 #--------------------------------------------------------------------------
 # String Formatting (applies to PFI_LANG_*_MB* text used for message boxes):
@@ -275,7 +275,7 @@
 !insertmacro PFI_LANG_STRING DESC_SecNNTP                  "POPFile NNTP プロキシーをインストールします。"
 !insertmacro PFI_LANG_STRING DESC_SecSMTP                  "POPFile SMTP プロキシーをインストールします。"
 !insertmacro PFI_LANG_STRING DESC_SecSOCKS                 "POPFile プロキシーが SOCKS を使えるようにするための Perl 追加コンポーネントをインストールします。"
-!insertmacro PFI_LANG_STRING DESC_SecSSL                   "POPFile がメールサーバーに対してSSL接続できるように、関連するPerlコンポーネントとSSLライブラリをダウンロードおよびインストールします。"
+!insertmacro PFI_LANG_STRING DESC_SecSSL                   "POPFile がメールサーバーに対してSSL接続できるように、関連するPerlコンポーネントとSSLライブラリをインストールします。"
 !insertmacro PFI_LANG_STRING DESC_SecXMLRPC                "(POPFile API へのアクセスを可能にする)POPFile XMLRPC モジュールと必要な Perl モジュールをインストールします。"
 
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -370,7 +370,7 @@
 ; Text for the MODIFY mode radio-button and the label underneath it
 
 !insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_RADIO     "インストールされている POPFile の変更"
-!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(例 : SSL サポートを追加したり日本語パーサを変更したりします)"
+!insertmacro PFI_LANG_STRING PFI_LANG_UN_IO_MODE_LABEL     "(例 : 日本語パーサを変更することができます)"
 
 ; Text for the UNINSTALL mode radio-button and the label underneath it
 
