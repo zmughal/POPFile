@@ -30,7 +30,6 @@ KAKASI_DIC_ROOT = $(POPFILE_ROOT)/kakasi
 SSLPACKAGE_ROOT = ../addssl/Package_Root
 SSLPACKAGE_LIBRARY_ROOT = $(SSLPACKAGE_ROOT)/Library
 SSLPOPFILE_ROOT = $(SSLPACKAGE_LIBRARY_ROOT)/POPFile
-SSLLIB_ROOT = $(SSLPOPFILE_ROOT)/lib
 
 FAKECONFIG = ExtUtils-FakeConfig-0.12
 FAKECONFIG_ARCHIVE = $(FAKECONFIG).zip
@@ -66,7 +65,7 @@ SOAPLITE = SOAP-Lite-0.60
 SOAPLITE_ARCHIVE = $(SOAPLITE)a.tar.gz
 SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/B/BY/BYRNE/SOAP/$(SOAPLITE_ARCHIVE)
 
-VERSION_MODULE = version-0.88
+VERSION_MODULE = version-0.91
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
 VERSION_URL = http://search.cpan.org/CPAN/authors/id/J/JP/JPEACOCK/$(VERSION_ARCHIVE)
 
@@ -90,6 +89,12 @@ IOSOCKETSSL = IO-Socket-SSL-1.44
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
+# Socks support
+
+SOCKS = IO-Socket-Socks-0.5
+SOCKS_ARCHIVE = $(SOCKS).tar.gz
+SOCKS_URL = http://search.cpan.org/CPAN/authors/id/O/OL/OLEG/$(SOCKS_ARCHIVE)
+
 
 CORE_ARCHIVES = $(DBI_ARCHIVE) $(SQLITE_ARCHIVE) $(SQLITE2_ARCHIVE) $(TAGSET_ARCHIVE) $(TEMPLATE_ARCHIVE) $(TIMEDATE_ARCHIVE)
 CORE_MODULES = $(DBI) $(SQLITE) $(SQLITE2) $(TAGSET) $(TEMPLATE) $(TIMEDATE)
@@ -103,16 +108,18 @@ XMLRPC_MODULES = $(SOAPLITE) $(VERSION_MODULE)
 SSL_ARCHIVES = $(NETSSLEAY_ARCHIVE) $(IOSOCKETSSL_ARCHIVE)
 SSL_MODULES = $(NETSSLEAY) $(IOSOCKETSSL)
 
+SOCKS_ARCHIVES = $(SOCKS_ARCHIVE)
+SOCKS_MODULES = $(SOCKS)
+
 all: build
-build: core_modules japanese_modules xmlrpc_modules ssl_modules kakasi_dictionary
+build: core_modules japanese_modules xmlrpc_modules ssl_modules socks_modules kakasi_dictionary
 
 all-clean: clean
-	rm -rf $(CORE_ARCHIVES) $(JAPANESESUPPORT_ARCHIVES) $(XMLRPC_ARCHIVES) $(SSL_ARCHIVES)
+	rm -rf $(CORE_ARCHIVES) $(JAPANESESUPPORT_ARCHIVES) $(XMLRPC_ARCHIVES) $(SSL_ARCHIVES) $(SOCKS_ARCHIVES)
 
 clean:
-	rm -rf $(CORE_MODULES) $(JAPANESESUPPORT_MODULES) $(XMLRPC_MODULES) $(SSL_MODULES)
+	rm -rf $(CORE_MODULES) $(JAPANESESUPPORT_MODULES) $(XMLRPC_MODULES) $(SSL_MODULES) $(SOCKS_MODULES)
 	rm -rf $(LIB_ROOT)/*
-	rm -rf $(SSLLIB_ROOT)/*
 	rm -rf $(KAKASI_DIC_ROOT)/*
 
 core_modules:core_modules_build $(CORE_MODULES)
@@ -158,6 +165,10 @@ ssl_modules: ssl_modules_build
 
 	cp -rf $(IOSOCKETSSL)/blib/arch/auto $(LIB_ROOT)
 	cp -rf $(IOSOCKETSSL)/blib/lib/* $(LIB_ROOT)
+
+socks_modules: socks_modules_build
+	cp -rf $(SOCKS)/blib/arch/auto $(LIB_ROOT)
+	cp -rf $(SOCKS)/blib/lib/* $(LIB_ROOT)
 
 
 core_modules_build: $(CORE_ARCHIVES)
@@ -238,6 +249,12 @@ ssl_modules_build: $(SSL_ARCHIVES)
 	if test ! -e Makefile; then perl -I.. -I../$(NETSSLEAY)/blib/lib -MConfig_ub Makefile.PL ; fi ;\
 	make
 
+socks_modules_build: $(SOCKS_ARCHIVES)
+	if test ! -d $(SOCKS); then tar xzf $(SOCKS_ARCHIVE); fi
+	cd $(SOCKS); \
+	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL ; fi ;\
+	make
+
 $(DBI_ARCHIVE):
 	@if test ! -e $(DBI_ARCHIVE); \
 	then \
@@ -297,6 +314,11 @@ $(IOSOCKETSSL_ARCHIVE):
 	@if test ! -e $(IOSOCKETSSL_ARCHIVE); \
 	then \
 	  curl --output $(IOSOCKETSSL_ARCHIVE) --location --silent $(IOSOCKETSSL_URL); \
+	fi
+$(SOCKS_ARCHIVE):
+	@if test ! -e $(SOCKS_ARCHIVE); \
+	then \
+	  curl --output $(SOCKS_ARCHIVE) --location --silent $(SOCKS_URL); \
 	fi
 
 fakeconfig:
