@@ -31,7 +31,7 @@ sub new
     # This will store a reference to the classifier object
 
     $self->{c} = 0;
-        
+
     bless $self, $type;
     return $self;
 }
@@ -126,7 +126,7 @@ sub handle_message
 {
     my ( $self, $session, $in, $out ) = @_;
 
-    return undef unless ( -f $in );
+    return undef if ( !-e $in );
 
     # Examine the session key is valid
 

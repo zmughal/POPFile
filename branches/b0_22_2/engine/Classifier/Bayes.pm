@@ -2320,7 +2320,7 @@ sub classify
     $self->{magnet_detail__} = 0;
 
     if ( defined( $file ) ) {
-        return undef unless ( -f $file );
+        return undef if ( !-e $file );
 
         $self->{parser__}->parse_file( $file,                                           # PROFILE BLOCK START
                                        $self->global_config_( 'message_cutoff'   ) );   # PROFILE BLOCK STOP
