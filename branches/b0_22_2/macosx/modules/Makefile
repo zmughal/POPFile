@@ -222,7 +222,7 @@ xmlrpc_modules_build: $(XMLRPC_ARCHIVES)
 
 	if test ! -d $(SOAPLITE); then tar xzf $(SOAPLITE_ARCHIVE); fi
 	cd $(SOAPLITE) ; \
-	if test ! -e Makefile; then perl -I.. -I../$(CLASS_INSPECTOR)/blib/lib -MConfig_ub Makefile.PL ; fi ;\
+	if test ! -e Makefile; then perl -I.. -I../$(CLASS_INSPECTOR)/blib/lib -MConfig_ub Makefile.PL -noprompt; fi ;\
 	make
 
 japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
