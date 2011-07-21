@@ -87,7 +87,7 @@ clean:
 engine = $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/Services/IMAP.pm $(ENGINE)/Services/IMAP/Client.pm $(ENGINE)/skins/*/*.css $(ENGINE)/skins/*/*.gif $(ENGINE)/skins/*/*.thtml $(ENGINE)/stopwords $(ENGINE)/license $(ENGINE)/favicon.ico $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo
 
 installer: documents engine build_modules
-installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt
+installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Tiger.txt
 	rm -rf $(PACKAGE_DIST)
 	mkdir $(PACKAGE_DIST)
 
@@ -133,12 +133,18 @@ installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt
 	@echo "...done"
 
 	PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
-	if test "$$PERL510" == "1"; \
+	PERL512=`perl -e 'print $$] ge qw{5.012000};'`; \
+	if test "$$PERL512" == "1"; \
 	then \
-		cp ./Readme-SnowLeopard.txt $(PACKAGE_DIST); \
+		cp ./Readme-Tiger.txt $(PACKAGE_DIST); \
 	else \
-		cp ./Readme.txt $(PACKAGE_DIST); \
-	fi
+		if test "$$PERL512" == "1"; \
+		then \
+			cp ./Readme-SnowLeopard.txt $(PACKAGE_DIST); \
+		else \
+			cp ./Readme.txt $(PACKAGE_DIST); \
+		fi; \
+	fi;
 
 utility_scripts: build-utilities
 	if test ! -d $(PACKAGE_DIST)/utilities; then mkdir $(PACKAGE_DIST)/utilities ; fi
@@ -154,7 +160,7 @@ mecab:
 build_modules:
 	$(MAKE) -C ./modules
 
-documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo InstallationCheck InstallationCheck-SnowLeopard
+documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo InstallationCheck InstallationCheck-SnowLeopard InstallationCheck-Tiger
 	cp $(ENGINE)/license $(RESOURCES)/License.txt
 	if test ! -d $(RESOURCES)/English.lproj; then mkdir $(RESOURCES)/English.lproj ; fi
 	if test ! -d $(RESOURCES)/Japanese.lproj; then mkdir $(RESOURCES)/Japanese.lproj ; fi
@@ -164,7 +170,12 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 	then \
 		cp InstallationCheck-SnowLeopard $(RESOURCES)/InstallationCheck; \
 	else \
-		cp InstallationCheck $(RESOURCES)/InstallationCheck; \
+		if test `sw_vers -productVersion | awk -F "." '{print $$2}'` = "7"; \
+		then \
+			cp InstallationCheck-Tiger $(RESOURCES)/InstallationCheck; \
+		else \
+			cp InstallationCheck $(RESOURCES)/InstallationCheck; \
+		fi; \
 	fi;
 
 engine: $(engine)
