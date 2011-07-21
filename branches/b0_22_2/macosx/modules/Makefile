@@ -61,9 +61,13 @@ TIMEDATE_URL = http://search.cpan.org/CPAN/authors/id/G/GB/GBARR/$(TIMEDATE_ARCH
 
 # XMLRCP Support
 
-SOAPLITE = SOAP-Lite-0.60
-SOAPLITE_ARCHIVE = $(SOAPLITE)a.tar.gz
-SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/B/BY/BYRNE/SOAP/$(SOAPLITE_ARCHIVE)
+SOAPLITE = SOAP-Lite-0.712
+SOAPLITE_ARCHIVE = $(SOAPLITE).tar.gz
+SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/M/MK/MKUTTER/$(SOAPLITE_ARCHIVE)
+
+CLASS_INSPECTOR = Class-Inspector-1.25
+CLASS_INSPECTOR_ARCHIVE = $(CLASS_INSPECTOR).tar.gz
+CLASS_INSPECTOR_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(CLASS_INSPECTOR_ARCHIVE)
 
 VERSION_MODULE = version-0.91
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
@@ -102,8 +106,8 @@ CORE_MODULES = $(DBI) $(SQLITE) $(SQLITE2) $(TAGSET) $(TEMPLATE) $(TIMEDATE)
 JAPANESESUPPORT_ARCHIVES = $(KAKASI_ARCHIVE) $(TEXTKAKASI_ARCHIVE)
 JAPANESESUPPORT_MODULES = $(KAKASI) $(TEXTKAKASI)
 
-XMLRPC_ARCHIVES = $(SOAPLITE_ARCHIVE) $(VERSION_ARCHIVE)
-XMLRPC_MODULES = $(SOAPLITE) $(VERSION_MODULE)
+XMLRPC_ARCHIVES = $(SOAPLITE_ARCHIVE) $(VERSION_ARCHIVE) $(CLASS_INSPECTOR_ARCHIVE)
+XMLRPC_MODULES = $(SOAPLITE) $(VERSION_MODULE) $(CLASS_INSPECTOR_MODULE)
 
 SSL_ARCHIVES = $(NETSSLEAY_ARCHIVE) $(IOSOCKETSSL_ARCHIVE)
 SSL_MODULES = $(NETSSLEAY) $(IOSOCKETSSL)
@@ -147,6 +151,8 @@ core_modules:core_modules_build $(CORE_MODULES)
 xmlrpc_modules: xmlrpc_modules_build
 	if test ! -d $(POPFILE_ROOT); then mkdir $(POPFILE_ROOT) ; fi
 	if test ! -d $(LIB_ROOT); then mkdir $(LIB_ROOT) ; fi
+
+	cp -rf $(CLASS_INSPECTOR)/lib/* $(LIB_ROOT)
 
 	cp -rf $(SOAPLITE)/lib/* $(LIB_ROOT)
 
@@ -209,9 +215,14 @@ xmlrpc_modules_build: $(XMLRPC_ARCHIVES)
 	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL --perl_only ; fi ;\
 	make
 
+	if test ! -d $(CLASS_INSPECTOR); then tar xzf $(CLASS_INSPECTOR_ARCHIVE); fi
+	cd $(CLASS_INSPECTOR) ; \
+	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL ; fi ;\
+	make
+
 	if test ! -d $(SOAPLITE); then tar xzf $(SOAPLITE_ARCHIVE); fi
 	cd $(SOAPLITE) ; \
-	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL ; fi ;\
+	if test ! -e Makefile; then perl -I.. -I../$(CLASS_INSPECTOR)/blib/lib -MConfig_ub Makefile.PL ; fi ;\
 	make
 
 japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
@@ -302,6 +313,11 @@ $(VERSION_ARCHIVE):
 	@if test ! -e $(VERSION_ARCHIVE); \
 	then \
 	  curl --output $(VERSION_ARCHIVE) --location --silent $(VERSION_URL); \
+	fi
+$(CLASS_INSPECTOR_ARCHIVE):
+	@if test ! -e $(CLASS_INSPECTOR_ARCHIVE); \
+	then \
+	  curl --output $(CLASS_INSPECTOR_ARCHIVE) --location --silent $(CLASS_INSPECTOR_URL); \
 	fi
 $(KAKASI_ARCHIVE):
 	@if test ! -e $(KAKASI_ARCHIVE); \
