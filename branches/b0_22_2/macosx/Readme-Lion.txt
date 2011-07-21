@@ -1,15 +1,15 @@
-About the POPFile installer for Mac OS X 10.7 (Tiger)
+About the POPFile installer for Mac OS X 10.7 (Lion)
 
 ***NOTE***
 
-  This is the installer package of POPFile for Mac OS X 10.7 (Tiger).
+  This is the installer package of POPFile for Mac OS X 10.7 (Lion).
   If you are using Mac OS X 10.6 or earlier, please download the Snow Leopard or earlier version from here:
 
   http://getpopfile.org/download
 
 Install POPFile
 
-  Open 'POPFile-x.x.x-tiger.pkg' and follow the wizard.
+  Open 'POPFile-x.x.x-lion.pkg' and follow the wizard.
 
 
 Start to use POPFile

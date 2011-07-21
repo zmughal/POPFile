@@ -87,7 +87,7 @@ clean:
 engine = $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/Services/IMAP.pm $(ENGINE)/Services/IMAP/Client.pm $(ENGINE)/skins/*/*.css $(ENGINE)/skins/*/*.gif $(ENGINE)/skins/*/*.thtml $(ENGINE)/stopwords $(ENGINE)/license $(ENGINE)/favicon.ico $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo
 
 installer: documents engine build_modules
-installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Tiger.txt
+installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Lion.txt
 	rm -rf $(PACKAGE_DIST)
 	mkdir $(PACKAGE_DIST)
 
@@ -136,7 +136,7 @@ installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Tiger.txt
 	PERL512=`perl -e 'print $$] ge qw{5.012000};'`; \
 	if test "$$PERL512" == "1"; \
 	then \
-		cp ./Readme-Tiger.txt $(PACKAGE_DIST); \
+		cp ./Readme-Lion.txt $(PACKAGE_DIST); \
 	else \
 		if test "$$PERL512" == "1"; \
 		then \
@@ -160,7 +160,7 @@ mecab:
 build_modules:
 	$(MAKE) -C ./modules
 
-documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo InstallationCheck InstallationCheck-SnowLeopard InstallationCheck-Tiger
+documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo InstallationCheck InstallationCheck-SnowLeopard InstallationCheck-Lion
 	cp $(ENGINE)/license $(RESOURCES)/License.txt
 	if test ! -d $(RESOURCES)/English.lproj; then mkdir $(RESOURCES)/English.lproj ; fi
 	if test ! -d $(RESOURCES)/Japanese.lproj; then mkdir $(RESOURCES)/Japanese.lproj ; fi
@@ -172,7 +172,7 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 	else \
 		if test `sw_vers -productVersion | awk -F "." '{print $$2}'` = "7"; \
 		then \
-			cp InstallationCheck-Tiger $(RESOURCES)/InstallationCheck; \
+			cp InstallationCheck-Lion $(RESOURCES)/InstallationCheck; \
 		else \
 			cp InstallationCheck $(RESOURCES)/InstallationCheck; \
 		fi; \
