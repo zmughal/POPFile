@@ -25,12 +25,19 @@ my $PERL_VERSION = $];
 my ( $SDK, $MIN_VERSION, $ARCH );
 
 if ( $PERL_VERSION ge '5.010000' ) {
-    # Mac OS X 10.6 or later
+    if ( $PERL_VERSION ge '5.012000' ) {
+        # Mac OS X 10.7 or later
 
-    $SDK = '/Developer/SDKs/MacOSX10.6.sdk';
-    $MIN_VERSION = '-mmacosx-version-min=10.6';
-    $ARCH = '-arch i386 -arch ppc7400 -arch x86_64';
+        $SDK = '/Developer/SDKs/MacOSX10.7.sdk';
+        $MIN_VERSION = '-mmacosx-version-min=10.7';
+        $ARCH = '-arch i386 -arch x86_64';
+    } else {
+        # Mac OS X 10.6 or later
 
+        $SDK = '/Developer/SDKs/MacOSX10.6.sdk';
+        $MIN_VERSION = '-mmacosx-version-min=10.6';
+        $ARCH = '-arch i386 -arch ppc7400 -arch x86_64';
+    }
 } else {
     # Mac OS X 10.5.x or earlier
 

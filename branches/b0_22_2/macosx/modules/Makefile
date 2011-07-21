@@ -220,17 +220,25 @@ japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
 	if test ! -e Makefile; \
 	then \
 	  PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
-	  if test "$$PERL510" == "1"; \
+	  PERL512=`perl -e 'print $$] ge qw{5.012000};'`; \
+	  if test "$$PERL512" == "1"; \
 	  then \
-		env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64" \
-		env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64 -mmacosx-version-min=10.6" \
+		env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.7.sdk -arch i386 -arch x86_64" \
+		env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.7.sdk -arch i386 -arch x86_64 -mmacosx-version-min=10.7" \
 		./configure --disable-dependency-tracking --disable-shared ; \
 	  else \
-		env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64" \
-		env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -mmacosx-version-min=10.3" \
-		./configure --disable-dependency-tracking --disable-shared ; \
+		if test "$$PERL510" == "1"; \
+		then \
+		  env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64" \
+		  env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64 -mmacosx-version-min=10.6" \
+		  ./configure --disable-dependency-tracking --disable-shared ; \
+		else \
+		  env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64" \
+		  env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -mmacosx-version-min=10.3" \
+		  ./configure --disable-dependency-tracking --disable-shared ; \
+		fi ; \
 	  fi ; \
-	fi ;\
+	fi ; \
 	make
 
 	if test ! -d $(TEXTKAKASI); then tar xzf $(TEXTKAKASI_ARCHIVE); fi
