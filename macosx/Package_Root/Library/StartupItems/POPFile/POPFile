@@ -36,7 +36,7 @@ export MECABRC="$POPFILEDIR/mecab/etc/mecabrc"
 StartService ()
 {
     pid=$( ps -axww | grep popfile.pl | grep -v grep | awk '{ print $1 }' )
-    if ! [ $pid ]; then
+    if [ "" == "$pid" ]; then
       ConsoleMessage "Starting POPFile POP mail proxy"
       rm -f "$POPFILE_USER"/popfile.pid
       /usr/bin/perl -I"$POPFILE_ROOT"/lib "$POPFILE_ROOT"/popfile.pl > "$POPFILE_USER"/console.log 2>&1 &
@@ -48,7 +48,7 @@ StartService ()
 StopService ()
 {
     pid=$( ps -axww | grep popfile.pl | grep -v grep | awk '{ print $1 }' )
-    if [ $pid ]; then
+    if [ "" != "$pid" ]; then
       ConsoleMessage "Stopping POPFile POP mail proxy"
       kill -6 $pid
       rm -f "$POPFILE_USER"/popfile.pid
@@ -60,7 +60,7 @@ StopService ()
 RestartService ()
 {
     pid=$( ps -axww | grep popfile.pl | grep -v grep | awk '{ print $1 }' )
-    if [ $pid ]; then
+    if [ "" != "$pid" ]; then
       ConsoleMessage "Restarting POPFile POP mail proxy"
       kill -HUP $pid
     else
