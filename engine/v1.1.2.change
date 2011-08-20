@@ -1,14 +1,17 @@
-*** POPFile 1.1.2 (Someday, 2011) ***
-
 Welcome to POPFile v1.1.2
 
 POPFile is an email classification tool with a Naive Bayes classifier, POP3,
 SMTP, NNTP proxies and IMAP filter and a web interface. It runs on most
 platforms and with most email clients.
 
-This upgrade introduces some new features and fixes some bugs. The minimal Perl
-used by the Windows version has been upgraded and as a result Windows 9x,
-Windows Millennium and Windows NT are no longer officially supported.
+This maintenance release provides some minor new features and fixes some bugs.
+
+Installers are provided for Windows XP or later and Mac OS X 10.3.9 to 10.5.x,
+10.6 (Snow Leopard) and 10.7 (Lion).
+
+The minimal Perl used by the Windows version has been upgraded and as a result
+Windows 9x, Windows Millennium, Windows NT and Windows 2000 are no longer
+officially supported.
 
 
 WHAT'S CHANGED SINCE v1.1.1
@@ -43,12 +46,12 @@ including the diagnostic utility.
 
 3. Mac OS X version improvements
 
-The installer for Mac OS X also installs SSL support by default. (ticket #154)
+The installers for Mac OS X also install SSL support by default. (ticket #154)
 
 
 4. Other improvements
 
-( no improvements yet )
+This is a maintenance release so there are no major new features included.
 
 
 5. Bug fixes
@@ -90,11 +93,12 @@ package. As a result the SSL support files are now included in the installer
 and are no longer optional (i.e. they are always installed now).
 
 
-TWO VERSIONS RELEASED FOR MAC OS X
+THREE VERSIONS RELEASED FOR MAC OS X
 
-There are two versions of installer.
-One is for Snow Leopard, and another is for the former versions of Mac OS X.
-The name of Snow Leopard installer will have '-sl' suffix.
+There are three versions of the installer for Mac OS X systems: one for the
+'Lion' release, one for the previous 'Snow Leopard' release and one for the
+the earlier 10.3.9 to 10.5.x releases. The 'Lion' installer has '-lion-' in
+its filename and the 'Snow Leopard' installer has '-sl-' in its filename.
 
 
 I AM USING THE CROSS PLATFORM VERSION
@@ -125,7 +129,7 @@ For more information about how to install them, see the POPFile wiki:
 
 KNOWN ISSUES
 
-POPFile now supports IPv4 only.
+POPFile currently supports IPv4 only.
 (IPv6 is not supported yet.)
 
 
