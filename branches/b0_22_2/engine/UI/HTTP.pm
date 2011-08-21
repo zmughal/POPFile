@@ -73,10 +73,11 @@ sub start
     if ( !defined( $self->{server_} ) ) {
         my $port = $self->config_( 'port' );
         my $name = $self->name();
+        $self->log_( 0, "Couldn't start the $name interface because POPFile could not bind to the listen port $port" );
         print STDERR <<EOM;                                                   # PROFILE BLOCK START
 
-\nCouldn't start the $name HTTP interface because POPFile could not bind to the
-HTTP port $port. This could be because there is another service
+\nCouldn't start the $name interface because POPFile could not bind to the
+listen port $port. This could be because there is another service
 using that port or because you do not have the right privileges on
 your system (On Unix systems this can happen if you are not root
 and the port you specified is less than 1024).
