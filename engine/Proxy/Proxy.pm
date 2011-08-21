@@ -140,6 +140,7 @@ sub start
 
     if ( !defined( $self->{server__} ) ) {
         my $port = $self->config_( 'port' );
+        $self->log_( 0, "Couldn't start the $name proxy because POPFile could not bind to the listen port $port" );
         print STDERR <<EOM; # PROFILE BLOCK START
 
 \nCouldn't start the $name proxy because POPFile could not bind to the
