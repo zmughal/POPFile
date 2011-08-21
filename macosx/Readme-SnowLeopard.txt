@@ -3,7 +3,7 @@ About the POPFile installer for Mac OS X 10.6 (Snow Leopard)
 ***NOTE***
 
   This is the installer package of POPFile for Mac OS X 10.6 (Snow Leopard).
-  If you are using Mac OS X 10.5 or earlier, please download the Leopard or earlier version from here:
+  If you are using Mac OS X 10.5 or earlier / 10.7, please download the Leopard or earlier / Lion version from here:
 
   http://getpopfile.org/download
 
