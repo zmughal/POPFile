@@ -138,7 +138,7 @@ installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Lion.txt
 	then \
 		cp ./Readme-Lion.txt $(PACKAGE_DIST); \
 	else \
-		if test "$$PERL512" == "1"; \
+		if test "$$PERL510" == "1"; \
 		then \
 			cp ./Readme-SnowLeopard.txt $(PACKAGE_DIST); \
 		else \
@@ -165,15 +165,18 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 	if test ! -d $(RESOURCES)/English.lproj; then mkdir $(RESOURCES)/English.lproj ; fi
 	if test ! -d $(RESOURCES)/Japanese.lproj; then mkdir $(RESOURCES)/Japanese.lproj ; fi
 	perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' < $(ENGINE)/v$(POPFILE_VERSION).change > $(RESOURCES)/English.lproj/ReadMe.txt
-	perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt
-	if test `sw_vers -productVersion | awk -F "." '{print $$2}'` = "6"; \
+	SWVER=`sw_vers -productVersion | awk -F "." '{print $$2}'`; \
+	if test "$$SWVER" == "6"; \
 	then \
 		cp InstallationCheck-SnowLeopard $(RESOURCES)/InstallationCheck; \
+		perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 	else \
-		if test `sw_vers -productVersion | awk -F "." '{print $$2}'` = "7"; \
+		if test "$$SWVER" == "7"; \
 		then \
+			perl -MEncode -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;Encode::from_to($$_,"shift_jis","utf8");print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 			cp InstallationCheck-Lion $(RESOURCES)/InstallationCheck; \
 		else \
+			perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 			cp InstallationCheck $(RESOURCES)/InstallationCheck; \
 		fi; \
 	fi;
