@@ -1479,6 +1479,10 @@ Section "SSL Support" SecSSL
 
   !insertmacro SECTIONLOG_ENTER "SSL Support"
 
+  SetOutPath "$G_MPLIBDIR"
+  File "${C_PERL_DIR}\lib\bytes.pm"
+  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
+
   SetOutPath "$G_MPLIBDIR\IO\Socket"
   File "${C_PERL_DIR}\site\lib\IO\Socket\SSL.pm"
 
