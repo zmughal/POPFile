@@ -96,7 +96,7 @@ popfileb.exe: popfile.pl POPFile/Loader.pm $(POPFILE_VERSION_FILE)
 
 SVC_OPTIONS = $(COMMON_EXE_OPTIONS) --lib $(ABSOLUTE_ENGINE_PATH)
 
-popfile-service.exe: popfile-service.pl
+popfile-service.exe: popfile-service.pl $(POPFILE_VERSION_FILE)
 	perlsvc $(SVC_OPTIONS)
 
 # windows builds the Windows installer
