@@ -389,7 +389,7 @@ sub parse_command_line
         push @options, ("-$1");
         if ( defined( $2 ) ) {
             push @options, ($2);
-	}
+        }
     }
 
     push @options, @ARGV;
@@ -564,7 +564,7 @@ sub load_configuration
 
         close CONFIG;
     } else {
-        if ( -e $config_file && -r _ ) {
+        if ( -e $config_file && !-r _ ) {
             $self->log_( 0, "Couldn't load from the configuration file $config_file" );
         }
     }
@@ -591,7 +591,7 @@ sub save_configuration
     my $config_file = $self->get_user_path( 'popfile.cfg' );
     my $config_temp = $self->get_user_path( 'popfile.cfg.tmp' );
 
-    if ( -e $config_file && -w _ ) {
+    if ( -e $config_file && !-w _ ) {
         $self->log_( 0, "Can't write to the configuration file $config_file" );
     }
 
