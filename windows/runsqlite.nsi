@@ -1,15 +1,18 @@
 #-------------------------------------------------------------------------------------------
 #
-# runsqlite.nsi --- A simple front-end to the SQLite command-line utility. By default POPFile
-#                   0.21.x and 0.22.0 used SQLite 2.x format databases. A future release will
-#                   use SQLite 3.x (and POPFile 0.22.x might be patched to work with SQLite 3)
+# runsqlite.nsi --- A simple front-end to the SQLite command-line utility.
+#                   Since the 1.1.0 release (28 November 2008) POPFile has
+#                   used a SQLite 3.x format database by default. The earlier
+#                   POPFile 0.21.x and 0.22.x releases used SQLite 2.x format
+#                   databases by default.
 #
-#                   SQLite 2.x and 3.x database files are not compatible therefore separate
-#                   command-line utilities have to be used: sqlite.exe for 2.x format files
-#                   and sqlite3.exe for 3.x format files. This utility ensures the appropriate
-#                   utility is used to access the specified SQLite database file.
+#                   SQLite 2.x and 3.x database files are not compatible therefore
+#                   separate command-line utilities have to be used: 'sqlite.exe'
+#                   for 2.x format files and 'sqlite3.exe' for 3.x format files.
+#                   This utility ensures the appropriate utility is used to access
+#                   the specified SQLite database file.
 #
-# Copyright (c) 2004-2005  John Graham-Cumming
+# Copyright (c) 2004-2011  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -38,18 +41,20 @@
 #
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.45" compiler,
+  ; released 6 June 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.45"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -57,6 +62,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -74,7 +80,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.5"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.2.2"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -92,6 +98,12 @@
 
   SilentInstall silent
 
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
 #--------------------------------------------------------------------------
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
@@ -101,6 +113,7 @@
   !define RUNSQLITE
 
   !include "pfi-library.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 
@@ -109,17 +122,24 @@
 
   VIProductVersion                          "${C_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "Run SQLite 2.x/3.x utility to examine a POPFile database"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Run SQLite Utility for POPFile"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -164,14 +184,15 @@
 
 Section RunSQLiteUtility
 
-  !define L_TEMP    $R9
+  !define L_PATH    $R9
+  !define L_TEMP    $R8
 
   ; Set OutPath to the working directory (to cope with cases where no database path is supplied)
 
   GetFullPathName ${L_TEMP} ".\"
   SetOutPath "${L_TEMP}"
 
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop $G_DATABASE
   StrCmp $G_DATABASE "" no_file_supplied
 
@@ -195,14 +216,31 @@ continue:
   Goto error_exit
 
 run_sqlite:
-  IfFileExists "$EXEDIR\$G_SQLITEUTIL" run_it
+  IfFileExists "$EXEDIR\$G_SQLITEUTIL" prepare_cmdline
   MessageBox MB_OK|MB_ICONEXCLAMATION \
       "$(RSU_LANG_DBIDENTIFIED)\
       ${MB_NL}${MB_NL}${MB_NL}\
       $(RSU_LANG_UTILNOTFOUND)"
   Goto error_exit
 
-run_it:
+prepare_cmdline:
+  Push $G_DATABASE
+  Call NSIS_GetParent
+  Pop ${L_PATH}
+  StrCmp ${L_PATH} "" run_it_now
+
+  ; The SQLite command-line utility does not handle paths containing non-ASCII characters
+  ; properly. An example where this will cause a problem is when the POPFile 'User Data'
+  ; has been installed in the default location for a user with a Japanese login name.
+  ; As a workaround we change the current working directory to the folder containing the
+  ; database and supply only the database's filename when calling the command-line utility.
+
+  StrLen ${L_TEMP} ${L_PATH}
+  IntOp ${L_TEMP} ${L_TEMP} + 1
+  StrCpy $G_DATABASE $G_DATABASE "" ${L_TEMP}
+  SetOutPath "${L_PATH}"
+
+run_it_now:
   ClearErrors
   Exec '"$EXEDIR\$G_SQLITEUTIL" "$G_DATABASE"'
   IfErrors start_error
@@ -216,6 +254,7 @@ error_exit:
 
 exit:
                                          ; Return error code 0 (success)
+  !undef L_PATH
   !undef L_TEMP
 
 SectionEnd

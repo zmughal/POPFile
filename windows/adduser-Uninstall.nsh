@@ -3,7 +3,7 @@
 # adduser-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the NSIS
 #                           script (adduser.nsi) used to build the 'Add POPFile User' wizard.
 #
-# Copyright (c) 2005 John Graham-Cumming
+# Copyright (c) 2005-2008 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -74,9 +74,9 @@ Function un.onInit
   ; Email settings are stored on a 'per user' basis therefore we need to know which user is
   ; running the uninstaller so we can check if the email settings can be safely restored
 
-	ClearErrors
-	UserInfo::GetName
-	IfErrors 0 got_name
+  ClearErrors
+  UserInfo::GetName
+  IfErrors 0 got_name
 
   ; Assume Win9x system, so user has 'Admin' rights
   ; (UserInfo works on Win98SE so perhaps it is only Win95 that fails ?)
@@ -86,13 +86,13 @@ Function un.onInit
   Goto exit
 
 got_name:
-	Pop $G_WINUSERNAME
+  Pop $G_WINUSERNAME
   StrCmp $G_WINUSERNAME "" 0 get_usertype
   StrCpy $G_WINUSERNAME "UnknownUser"
 
 get_usertype:
   UserInfo::GetAccountType
-	Pop $G_WINUSERTYPE
+  Pop $G_WINUSERTYPE
   StrCmp $G_WINUSERTYPE "Admin" exit
   StrCmp $G_WINUSERTYPE "Power" exit
   StrCmp $G_WINUSERTYPE "User" exit
@@ -193,7 +193,7 @@ Section "un.Shutdown POPFile" UnSecShutdown
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
-  Call un.PFI_ServiceRunning
+  Call un.PFI_ServiceActive
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "true" manual_shutdown
 
@@ -204,10 +204,16 @@ Section "un.Shutdown POPFile" UnSecShutdown
 
   ; Need to shutdown POPFile, so we can remove the SQLite database and other user data
 
-  Call un.GetUIport
+  ; Extract the UI port setting from popfile.cfg and load it into the
+  ; global user variable $G_GUI (if setting is not found $G_GUI is set to "")
+
+  Push "$G_USERDIR\popfile.cfg"
+  Push "html_port"
+  Call un.PFI_CfgSettingRead
+  Pop $G_GUI
+
   StrCmp $G_GUI "" manual_shutdown
   Push $G_GUI
-  Call un.PFI_TrimNewlines
   Call un.PFI_StrCheckDecimal
   Pop $G_GUI
   StrCmp $G_GUI "" manual_shutdown
@@ -219,6 +225,7 @@ Section "un.Shutdown POPFile" UnSecShutdown
 
   Push ${L_EXE}
   Call un.PFI_WaitUntilUnlocked
+  Push "${C_EXE_END_MARKER}"
   Push ${L_EXE}
   Call un.PFI_CheckIfLocked
   Pop ${L_EXE}
@@ -445,6 +452,7 @@ Section "un.User Config" UnSecConfig
   Delete "$G_USERDIR\stopwords.default"
 
   Delete "$G_USERDIR\pfi-run.bat"
+  Delete "$G_USERDIR\pfi-run.bat.bk?"
 
   SetDetailsPrint textonly
   DetailPrint " "
@@ -460,21 +468,76 @@ Section "un.ShortCuts" UnSecShortcuts
 
   StrCmp $G_PFIFLAG "fail" do_nothing
 
+  !define L_TEMP    $R9
+
+  Push ${L_TEMP}
+
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_UN_PROG_SHORT)"
   SetDetailsPrint listonly
 
+  ; Remove the utility shortcuts in the 'User Data' folder
+
   Delete "$G_USERDIR\Check database status.lnk"
   Delete "$G_USERDIR\Run SQLite utility.lnk"
+
+  ; Remove the POPFile shortcuts from the current user's Start Menu
+
+  SetShellVarContext all
+  StrCpy ${L_TEMP} "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\"
+  SetShellVarContext current
+  StrCmp ${L_TEMP} "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\" 0 remove_all_support
+
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" 0 try_full
+  ShellLink::GetShortCutTarget "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk"
+  Pop ${L_TEMP}
+  IfFileExists "${L_TEMP}" skip_system_entries
+
+try_full:
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk" 0 remove_all_support
+  ShellLink::GetShortCutTarget "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk"
+  Pop ${L_TEMP}
+  IfFileExists "${L_TEMP}" skip_system_entries
+
+remove_all_support:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (full).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Home Page.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url"
+
+skip_system_entries:
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Check database status.lnk"
-  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile Data ($G_WINUSERNAME).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk"
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}\Support"
+
+  Call un.NSIS_IsNT
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} 1 remove_all_main
+  IfFileExists "$G_ROOTDIR\uninstall.exe" remove_most
+
+remove_all_main:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Run POPFile.lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Release Notes.lnk"
+
+remove_most:
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile Data ($G_WINUSERNAME).lnk"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\POPFile User Interface.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile.url"
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Shutdown POPFile silently.lnk"
   RMDir "$SMPROGRAMS\${C_PFI_PRODUCT}"
+
+  Delete "$SMSTARTUP\Run POPFile.lnk"
 
   SetDetailsPrint textonly
   DetailPrint " "
   SetDetailsPrint listonly
+
+  Pop ${L_TEMP}
+
+  !undef L_TEMP
 
 do_nothing:
 SectionEnd
@@ -492,7 +555,7 @@ Section "un.Environment" UnSecEnvVars
 
   Push ${L_TEMP}
 
-  Call un.PFI_IsNT
+  Call un.NSIS_IsNT
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} 0 section_exit
 
@@ -643,69 +706,6 @@ exit:
   !undef L_RESULT
 
 SectionEnd
-
-#--------------------------------------------------------------------------
-# Uninstaller Function: un.GetUIport
-#
-# Used to extract the UI port setting from popfile.cfg and load it into the
-# global user variable $G_GUI (if setting is not found $G_GUI is set to "")
-# NB: The "raw" parameter is returned (no trimming is performed).
-#
-# This function is used to avoid the annoying progress bar flicker seen when
-# similar code was used in the "un.Shutdown POPFile" section.
-#--------------------------------------------------------------------------
-
-Function un.GetUIport
-
-  !define L_CFG         $R9   ; used as file handle
-  !define L_LNE         $R8   ; a line from popfile.cfg
-  !define L_TEMP        $R7
-  !define L_TEXTEND     $R6   ; used to ensure correct handling of lines longer than 1023 chars
-
-  Push ${L_CFG}
-  Push ${L_LNE}
-  Push ${L_TEMP}
-  Push ${L_TEXTEND}
-
-  StrCpy $G_GUI ""
-
-  FileOpen ${L_CFG} "$G_USERDIR\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LNE}
-  StrCmp ${L_LNE} "" ui_port_done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LNE} "$\n" loop
-
-  StrCpy ${L_TEMP} ${L_LNE} 10
-  StrCmp ${L_TEMP} "html_port " 0 check_eol
-  StrCpy $G_GUI ${L_LNE} 5 10
-
-  ; Now read file until we get to end of the current line
-  ; (i.e. until we find text ending in <CR><LF>, <CR> or <LF>)
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LNE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-ui_port_done:
-  FileClose ${L_CFG}
-
-  Pop ${L_TEXTEND}
-  Pop ${L_TEMP}
-  Pop ${L_LNE}
-  Pop ${L_CFG}
-
-  !undef L_CFG
-  !undef L_LNE
-  !undef L_TEMP
-  !undef L_TEXTEND
-
-FunctionEnd
 
 #--------------------------------------------------------------------------
 # Uninstaller Function: un.RestoreOOE

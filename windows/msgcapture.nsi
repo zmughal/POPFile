@@ -6,7 +6,7 @@
 #                    the need to display the console window (when the console window was
 #                    used by earlier installers it caused confusion amongst some users).
 #
-# Copyright (c) 2004-2005  John Graham-Cumming
+# Copyright (c) 2004-2009  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -25,18 +25,20 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.45" compiler,
+  ; released 6 June 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.45"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -44,6 +46,7 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
 #--------------------------------------------------------------------------
 # Support provided for this utility by the Windows installer
@@ -89,9 +92,10 @@
 # If /TIMEOUT=0 is specified then the utility will wait until POPFile terminates
 # (this is the default behaviour).
 #
-# When the main POPFile installer (or the 'Add POPFile User' wizard) calls this utility,
-# different header text is required so the installer (and wizard) use /TIMEOUT=PFI to
-# inform the utility.
+# When the main POPFile installer (or the 'Add POPFile User' wizard) calls this utility
+# some different header text is required and the POPFile program has to be started with
+# a special command-line option used only by the installer therefore the installer
+# (and the 'Add POPFile User' wizard) use /TIMEOUT=PFI to inform the utility.
 #
 # Uppercase or lowercase can be used for the command-line switch.
 #
@@ -114,16 +118,9 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.0.63"
+  !define C_VERSION             "0.2.0"
 
   !define C_OUTFILE             "msgcapture.exe"
-
-  ; The timeout (in seconds) used when a pre-0.23.0 version of the installer calls
-  ; this utility to monitor the SQL database upgrade. Note: 30 seconds may not be
-  ; long enough to cope with the upgrade of very large databases (over 100 MB) on
-  ; some systems.
-
-  !define C_INSTALLER_TIMEOUT   30
 
   ;--------------------------------------------------------------------------
   ; The default NSIS caption is "$(^Name) Setup" so we override it here
@@ -131,6 +128,12 @@
 
   Name    "POPFile Message Capture Utility"
   Caption "$(^Name) v${C_VERSION}"
+
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"
@@ -147,6 +150,7 @@
   !define MSGCAPTURE
 
   !include "pfi-library.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the utility's EXE file)
@@ -157,17 +161,24 @@
 
   VIProductVersion                          "${C_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "PFI Message Capture Utility"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Message Capture Utility (0-99 sec timeout)"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -282,7 +293,9 @@
   !insertmacro PFI_MSGCAP_TEXT "PFI_LANG_MSGCAP_CLICKCLOSE"     "Please click 'Close' to continue with the installation"
   !insertmacro PFI_MSGCAP_TEXT "PFI_LANG_MSGCAP_CLICKCANCEL"    "Please click 'Cancel' to continue with the installation"
 
-  !insertmacro PFI_MSGCAP_TEXT "PFI_LANG_MSGCAP_MBOPTIONERROR"  "'$G_TIMEOUT' is not a valid option for this utility${MB_NL}${MB_NL}Usage: $R1 /TIMEOUT=x${MB_NL}where x is in the range 0 to 99 and specifies the timeout in seconds${MB_NL}${MB_NL}(use 0 to make the utility wait for POPFile to exit)"
+  ; This utility's executable file might have been renamed so we need to ensure we use the correct name in the 'usage' message.
+
+  !insertmacro PFI_MSGCAP_TEXT "PFI_LANG_MSGCAP_MBOPTIONERROR"  "'$G_TIMEOUT' is not a valid option for this utility${MB_NL}${MB_NL}Usage: $EXEFILE /TIMEOUT=x${MB_NL}where x is in the range 0 to 99 and specifies the timeout in seconds${MB_NL}${MB_NL}(use 0 to make the utility wait for POPFile to exit)"
 
 #--------------------------------------------------------------------------
 # General settings
@@ -316,7 +329,7 @@ Function .onInit
 
   StrCpy $G_MODE_FLAG ""      ; select 'normal' mode by default
 
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop $G_TIMEOUT
   StrCmp $G_TIMEOUT "" default
   StrCpy ${L_TEMP} $G_TIMEOUT 9
@@ -331,23 +344,11 @@ Function .onInit
   IntCmp ${L_TEMP} 99 exit exit usage_error
 
 usage_error:
-
-  ; This utility is sometimes renamed as 'pfimsgcapture.exe' so we need
-  ; to ensure we use the correct name in the 'usage' message. The first
-  ; system call gets the full pathname (returned in $R0) and the second call
-  ; extracts the filename (and possibly the extension) part (returned in $R1)
-
-  ; No need to worry about corrupting $R0 and $R1 (we abort after displaying the message)
-
-  System::Call 'kernel32::GetModuleFileNameA(i 0, t .R0, i 1024)'
-  System::Call 'comdlg32::GetFileTitleA(t R0, t .R1, i 1024)'
   MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_MSGCAP_MBOPTIONERROR)"
   Abort
 
 installer_mode:
   StrCpy $G_MODE_FLAG "PFI"
-  StrCpy ${L_TEMP} ${C_INSTALLER_TIMEOUT}
-  Goto exit
 
 default:
   StrCpy ${L_TEMP} "0"
@@ -391,13 +392,16 @@ FunctionEnd
 
 Section default
 
-  !define L_PFI_ROOT      $R9   ; path to the POPFile program (popfile.pl, and other files)
-  !define L_PFI_USER      $R8   ; path to user's 'popfile.cfg' file
-  !define L_RESULT        $R7
-  !define L_TEMP          $R6
-  !define L_TRAYICON      $R5   ; system tray icon enabled ("i" ) or disabled ("") flag
-  !define L_OPTIONS       $R4   ; POPFile 0.23.0 no longer displays startup messages by default
-                                ; so we use the --verbose option to turn them back on
+  !define L_NIHONGO_ITAIJI  $R9   ; holds path to one of the two Kakasi dictionaries
+  !define L_NIHONGO_KANWA   $R8   ; holds path to one of the two Kakasi dictionaries
+  !define L_NIHONGO_MECAB   $R7   ; holds path to the MeCab configuration file
+  !define L_OPTIONS         $R6   ; POPFile 2.x no longer displays startup messages by default
+                                  ; so we use the --verbose option to turn them back on
+  !define L_PFI_ROOT        $R5   ; path to the POPFile program (popfile.pl, and other files)
+  !define L_PFI_USER        $R4   ; path to user's 'popfile.cfg' file
+  !define L_RESULT          $R3
+  !define L_TEMP            $R2
+  !define L_TRAYICON        $R1   ; system tray icon enabled ("i" ) or disabled ("") flag
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_MSGCAP_RIGHTCLICK)"
@@ -407,6 +411,45 @@ Section default
   DetailPrint "$(^Name) v${C_VERSION}"
   DetailPrint "------------------------------------------------------------"
 
+  ; For Japanese users POPFile supports two external 'Nihongo' parsers and
+  ; if any of these are installed extra environment variables should exist
+
+  StrCpy ${L_TEMP} ""             ; assume no Nihongo variables are defined
+
+  ReadEnvStr ${L_NIHONGO_ITAIJI} "ITAIJIDICTPATH"
+  StrCmp ${L_NIHONGO_ITAIJI} "" kanwa
+  StrCpy ${L_TEMP} "nihongo"
+  IfFileExists "${L_NIHONGO_ITAIJI}" report_itaiji
+  StrCpy ${L_NIHONGO_ITAIJI} "--- file not found --- (${L_NIHONGO_ITAIJI})"
+
+report_itaiji:
+  DetailPrint "ITAIJIDICTPATH = ${L_NIHONGO_ITAIJI}"
+
+kanwa:
+  ReadEnvStr ${L_NIHONGO_KANWA}  "KANWADICTPATH"
+  StrCmp ${L_NIHONGO_KANWA} "" mecab_var
+  StrCpy ${L_TEMP} "nihongo"
+  IfFileExists "${L_NIHONGO_KANWA}" report_kanwa
+  StrCpy ${L_NIHONGO_KANWA} "--- file not found --- (${L_NIHONGO_KANWA})"
+
+report_kanwa:
+  DetailPrint "KANWADICTPATH  = ${L_NIHONGO_KANWA}"
+
+mecab_var:
+  ReadEnvStr ${L_NIHONGO_MECAB}  "MECABRC"
+  StrCmp ${L_NIHONGO_MECAB} "" finish_nihongo_report
+  StrCpy ${L_TEMP} "nihongo"
+  IfFileExists "${L_NIHONGO_MECAB}" report_mecab
+  StrCpy ${L_NIHONGO_MECAB} "--- file not found --- (${L_NIHONGO_MECAB})"
+
+report_mecab:
+  DetailPrint "MECABRC        = ${L_NIHONGO_MECAB}"
+
+finish_nihongo_report:
+  StrCmp ${L_TEMP} "" report_popfile_vars
+  DetailPrint "------------------------------------------------------------"
+
+report_popfile_vars:
   ReadEnvStr ${L_PFI_ROOT} "POPFILE_ROOT"
   ReadEnvStr ${L_PFI_USER} "POPFILE_USER"
 
@@ -447,17 +490,38 @@ fatal_error_exit:
   Abort
 
 found_cfg:
-  Push ${L_PFI_USER}        ; 'User Data' folder location
-  Push "1"                  ; assume system tray icon is enabled (the current default setting)
-  Call GetTrayIconSetting
-  Pop ${L_TRAYICON}         ; "i" if system tray icon enabled, "" if it is disabled
-  DetailPrint "POPFILE_ROOT = ${L_PFI_ROOT}"
-  DetailPrint "POPFILE_USER = ${L_PFI_USER}"
+  Push "${L_PFI_USER}\popfile.cfg"
+  Push "windows_trayicon"
+  Call PFI_CfgSettingRead
+  Pop ${L_TRAYICON}
+  StrCmp ${L_TRAYICON} "0" icon_disabled
+  StrCpy ${L_TRAYICON} "i"                ; use the icon if enabled or if not defined in popfile.cfg
+  Goto report_env_vars
 
-  ; Starting with the 0.23.0 release, POPFile no longer displays startup messages
-  ; so we use the 'verbose' option to turn them on. Earlier POPFile releases do not
-  ; recognize this option and will not run if it is used, so we use the Database.pm
-  ; file as a simple POPFile version test (this file was first used in 0.23.0)
+icon_disabled:
+  StrCpy ${L_TRAYICON} ""
+
+report_env_vars:
+  DetailPrint "POPFILE_ROOT   = ${L_PFI_ROOT}"
+
+  ; POPFile Portable uses relative paths for POPFILE_ROOT and POPFILE_USER
+  ; so we may need to display the absolute paths to make the report more useful
+
+  GetFullPathName ${L_RESULT} ".\"
+
+  StrCpy ${L_TEMP} ${L_PFI_ROOT} 2
+  StrCmp ${L_TEMP} ".\" 0 print_user_var
+  StrCpy ${L_TEMP} ${L_PFI_ROOT} "" 2
+  DetailPrint "                (${L_RESULT}${L_TEMP})"
+
+print_user_var:
+  DetailPrint "POPFILE_USER   = ${L_PFI_USER}"
+  StrCpy ${L_TEMP} ${L_PFI_USER} 2
+  StrCmp ${L_TEMP} ".\" 0 check_if_verbose_needed
+  StrCpy ${L_TEMP} ${L_PFI_USER} "" 2
+  DetailPrint "                (${L_RESULT}${L_TEMP})"
+
+check_if_verbose_needed:
 
   ; This utility is called by the "Add POPFile User" wizard (adduser.exe) with the option
   ; '/TIMEOUT=PFI' when the installer detects that an existing SQL database is to be upgraded.
@@ -465,17 +529,21 @@ found_cfg:
   ; some cases). During the upgrade this utility is used to display the progress reports as
   ; these are the only indication that POPFile is still working.
   ;
-  ; Since POPFile cannot be used during the upgrade and the installer cannot easily monitor
-  ; the progress of the upgrade, a new POPFile command-line option was added for the 0.23.0
-  ; release.
+  ; Starting with the 1.1.0 release, a new command-line option (--shutdown) causes POPFile
+  ; to shutdown after performing the upgrade so when monitoring a SQL database upgrade we
+  ; simply wait for POPFile to terminate (prior to the 1.1.0 release a less than satisfactory
+  ; 'one-size-fits-all' timeout was used instead).
   ;
-  ; This new option (--shutdown) causes POPFile to shutdown after performing the upgrade so
-  ; when monitoring a SQL database upgrade we simply wait for POPFile to terminate (instead
-  ; of using a less than satisfactory 'one-size-fits-all' timeout).
+  ; Starting with the 2.x release, POPFile no longer displays startup messages
+  ; so we use the 'verbose' option to turn them on. Earlier POPFile releases do not
+  ; recognize this option and will not run if it is used, so we use the Database.pm
+  ; file as a simple POPFile version test (this file was first used in 2.x)
 
   StrCpy ${L_OPTIONS} ""
-  IfFileExists "${L_PFI_ROOT}\POPFile\Database.pm" 0 look_for_exe
+  IfFileExists "${L_PFI_ROOT}\POPFile\Database.pm" 0 check_mode
   StrCpy ${L_OPTIONS} "--verbose"
+
+check_mode:
   StrCmp $G_MODE_FLAG "" look_for_exe
 
   ; The upgrading of an existing SQL database is to be monitored, so we tell POPFile to
@@ -538,6 +606,10 @@ display_status:
 exit:
   SetDetailsPrint none
 
+  !undef L_NIHONGO_ITAIJI
+  !undef L_NIHONGO_KANWA
+  !undef L_NIHONGO_MECAB
+  !undef L_OPTIONS
   !undef L_PFI_ROOT
   !undef L_PFI_USER
   !undef L_RESULT
@@ -545,82 +617,6 @@ exit:
   !undef L_TRAYICON
 
 SectionEnd
-
-#--------------------------------------------------------------------------
-# Installer Function: GetTrayIconSetting
-#
-# Returns "i" if the system tray icon is enabled in popfile.cfg or "" if it is disabled.
-# If the setting is not found in popfile.cfg, use the input parameter to determine the result.
-#
-# This function avoids the progress bar flicker seen when similar code was in the "Section" body
-#--------------------------------------------------------------------------
-
-Function GetTrayIconSetting
-
-  !define L_CFG           $R9   ; file handle used to access 'popfile.cfg'
-  !define L_ICONSETTING   $R8   ; 1 (or "i") = system tray icon enabled, 0 (or "") = disabled
-  !define L_LINE          $R7   ; line (or part of line) read from 'popfile.cfg'
-  !define L_TEMP          $R6
-  !define L_TEXTEND       $R5   ; helps ensure correct handling of lines over 1023 chars long
-  !define L_USERDATA      $R4   ; location of 'User Data'
-
-  Exch ${L_ICONSETTING}         ; get the setting to be used if value not found in 'popfile.cfg'
-  Exch
-  Exch ${L_USERDATA}            ; get location where 'popfile.cfg' should be found
-  Push ${L_CFG}
-  Push ${L_LINE}
-  Push ${L_TEMP}
-  Push ${L_TEXTEND}
-
-  FileOpen ${L_CFG} "${L_USERDATA}\popfile.cfg" r
-
-found_eol:
-  StrCpy ${L_TEXTEND} "<eol>"
-
-loop:
-  FileRead ${L_CFG} ${L_LINE}
-  StrCmp ${L_LINE} "" options_done
-  StrCmp ${L_TEXTEND} "<eol>" 0 check_eol
-  StrCmp ${L_LINE} "$\n" loop
-
-  StrCpy ${L_TEMP} ${L_LINE} 17
-  StrCmp ${L_TEMP} "windows_trayicon " got_icon_option
-  Goto check_eol
-
-got_icon_option:
-  StrCpy ${L_ICONSETTING} ${L_LINE} 1 17
-
-check_eol:
-  StrCpy ${L_TEXTEND} ${L_LINE} 1 -1
-  StrCmp ${L_TEXTEND} "$\n" found_eol
-  StrCmp ${L_TEXTEND} "$\r" found_eol loop
-
-options_done:
-  FileClose ${L_CFG}
-
-  StrCmp ${L_ICONSETTING} "1" enabled
-  StrCpy ${L_ICONSETTING} ""
-  Goto exit
-
-enabled:
-  StrCpy ${L_ICONSETTING} "i"
-
-exit:
-  Pop ${L_TEXTEND}
-  Pop ${L_TEMP}
-  Pop ${L_LINE}
-  Pop ${L_CFG}
-  Pop ${L_USERDATA}
-  Exch ${L_ICONSETTING}
-
-  !undef L_CFG
-  !undef L_ICONSETTING
-  !undef L_LINE
-  !undef L_TEMP
-  !undef L_TEXTEND
-  !undef L_USERDATA
-
-FunctionEnd
 
 #--------------------------------------------------------------------------
 # End of 'msgcapture.nsi'

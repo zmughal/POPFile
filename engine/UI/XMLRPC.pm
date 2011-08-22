@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 5
+# POPFILE LOADABLE MODULE
 package UI::XMLRPC;
 
 #----------------------------------------------------------------------------
@@ -109,15 +109,15 @@ sub start
     # Tell the user interface module that we having a configuration
     # item that needs a UI component
 
-    $self->register_configuration_item_( 'configuration', # PROFILE BLOCK START
+    $self->register_configuration_item_( 'configuration',  # PROFILE BLOCK START
                                          'xmlrpc_port',
                                          'xmlrpc-port.thtml',
-                                         $self );         # PROFILE BLOCK STOP
+                                         $self );          # PROFILE BLOCK STOP
 
-    $self->register_configuration_item_( 'security',      # PROFILE BLOCK START
+    $self->register_configuration_item_( 'security',  # PROFILE BLOCK START
                                          'xmlrpc_local',
                                          'xmlrpc-local.thtml',
-                                         $self );         # PROFILE BLOCK STOP
+                                         $self );     # PROFILE BLOCK STOP
 
     # We use a single XMLRPC::Lite object to handle requests for access to the
     # Classifier::Bayes object
@@ -132,46 +132,43 @@ sub start
     if ( !defined( $self->{server__} ) ) {
         my $port = $self->config_( 'port' );
         my $name = $self->name();
+        $self->log_( 0, "Couldn't start the $name interface because POPFile could not bind to the listen port $port" );
 
-        print <<EOM;
+        print <<EOM; # PROFILE BLOCK START
 
-\nCouldn't start the $name XMLRPC interface because POPFile could not bind to
-the XMLRPC port $port. This could be because there is another service
+\nCouldn't start the $name interface because POPFile could not bind to the
+listen port $port. This could be because there is another service
 using that port or because you do not have the right privileges on
 your system (On Unix systems this can happen if you are not root
 and the port you specified is less than 1024).
 
 EOM
-                    #' # fix some syntax highlighting editors
+                     #' # fix some syntax highlighting editors
+                     # PROFILE BLOCK STOP
         return 0;
     }
 
 
-    # All requests will get dispatched to the main Classifier::Bayes
-    # object, for example the get_bucket_color interface is accessed
-    # with the method name.  The actual dispatch is via the
-    # POPFile::API object which we create in initialize above.
+    # All requests will get dispatched to the main Classifier::Bayes object, for example
+    # the get_bucket_color interface is accessed with the method name.  The actual
+    # dispatch is via the POPFile::API object which we create in initialize above.
     #
     #     POPFile/API.get_bucket_color
 
-    $self->{api__}->{c} = $self->classifier_();
+    $self->{api__}->{c} = $self->{classifier__};
     $self->{server__}->dispatch_to( $self->{api__} );
 
-    # DANGER WILL ROBINSON!  In order to make a polling XML-RPC server
-    # I am using the XMLRPC::Transport::HTTP::Daemon class which uses
-    # blocking I/O.  This would be all very well but it seems to be
-    # totally ignorning signals on Windows and so POPFile is
-    # unstoppable when the handle() method is called.  Forking with
-    # this blocking doesn't help much because then we get an
-    # unstoppable child.
+    # DANGER WILL ROBINSON!  In order to make a polling XML-RPC server I am using
+    # the XMLRPC::Transport::HTTP::Daemon class which uses blocking I/O.  This would
+    # be all very well but it seems to be totally ignorning signals on Windows and so
+    # POPFile is unstoppable when the handle() method is called.  Forking with this
+    # blocking doesn't help much because then we get an unstoppable child.
     #
-    # So the solution relies on knowing the internals of
-    # XMLRPC::Transport::HTTP::Daemon which is actually a
-    # SOAP::Transport::HTTP::Daemon which has a HTTP::Daemon (stored
-    # in a private variable called _daemon.  HTTP::Daemon is an
-    # IO::Socket::INET which means we can create a selector on it, so
-    # here we access a PRIVATE variable on the XMLRPC object.  This is
-    # very bad behaviour, but it works until someone changes XMLRPC.
+    # So the solution relies on knowing the internals of XMLRPC::Transport::HTTP::Daemon
+    # which is actually a SOAP::Transport::HTTP::Daemon which has a HTTP::Daemon (stored
+    # in a private variable called _daemon.  HTTP::Daemon is an IO::Socket::INET which means
+    # we can create a selector on it, so here we access a PRIVATE variable on the XMLRPC
+    # object.  This is very bad behaviour, but it works until someone changes XMLRPC.
 
     $self->{selector__} = new IO::Select( $self->{server__}->{_daemon} );
 
@@ -189,18 +186,16 @@ sub service
 {
     my ( $self ) = @_;
 
-    # See if there's a connection pending on the XMLRPC socket and
-    # handle single request
+    # See if there's a connection pending on the XMLRPC socket and handle
+    # single request
 
     my ( $ready ) = $self->{selector__}->can_read(0);
 
     if ( defined( $ready ) ) {
         if ( my $client = $self->{server__}->accept() ) {
 
-            # Check that this is a connection from the local machine,
-            # if it's not then we drop it immediately without any
-            # further processing.  We don't want to allow remote users
-            # to admin POPFile
+            # Check that this is a connection from the local machine, if it's not then we drop it immediately
+            # without any further processing.  We don't want to allow remote users to admin POPFile
 
             my ( $remote_port, $remote_host ) = sockaddr_in( $client->peername() );
 
@@ -208,22 +203,18 @@ sub service
                  ( $remote_host eq inet_aton( "127.0.0.1" ) ) ) {   # PROFILE BLOCK STOP
                 my $request = $client->get_request();
 
-                # Note that handle() relies on the $request being
-                # perfectly valid, so here we check that it is, if it
-                # is not then we don't want to call handle and we'll
+                # Note that handle() relies on the $request being perfectly valid, so here we
+                # check that it is, if it is not then we don't want to call handle and we'll
                 # return out own error
 
                 if ( defined( $request ) ) {
                     $self->{server__}->request( $request );
 
-                    # Note the direct call to
-                    # SOAP::Transport::HTTP::Server::handle() here,
-                    # this is because we have taken the code from
-                    # XMLRPC::Transport::HTTP::Server::handle() and
-                    # reproduced a modification of it here, accepting
-                    # a single request and handling it.  This call to
-                    # the parent of XMLRPC::Transport::HTTP::Server
-                    # will actually deal with the request
+                    # Note the direct call to SOAP::Transport::HTTP::Server::handle() here, this is
+                    # because we have taken the code from XMLRPC::Transport::HTTP::Server::handle()
+                    # and reproduced a modification of it here, accepting a single request and handling
+                    # it.  This call to the parent of XMLRPC::Transport::HTTP::Server will actually
+                    # deal with the request
 
                     $self->{server__}->SOAP::Transport::HTTP::Server::handle();
                     $client->send_response( $self->{server__}->response );
@@ -256,8 +247,13 @@ sub configure_item
     }
 
     if ( $name eq 'xmlrpc_local' ) {
-        $templ->param( 'XMLRPC_local_on' => $self->config_( 'local' ) );
-        return $self->config_( 'local' );
+        
+        if ( $self->config_( 'local' ) == 1 ) {
+            $templ->param( 'XMLRPC_local_on' => 1 );
+        }
+        else {
+            $templ->param( 'XMLRPC_local_on' => 0 );
+        }
     }
 }
 
@@ -265,8 +261,7 @@ sub configure_item
 #
 # validate_item
 #
-#    $name The name of the item being configured, was passed in by the
-#           call
+#    $name            The name of the item being configured, was passed in by the call
 #                     to register_configuration_item
 #    $templ           The loaded template
 #    $language        The language currently in use
@@ -278,43 +273,50 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ($status, $error);
-
     # Just check to see if the XML rpc port was change and check its value
 
     if ( $name eq 'xmlrpc_port' ) {
         if ( defined($$form{xmlrpc_port}) ) {
-            if ( $self->is_valid_port_( $$form{xmlrpc_port} ) ) {
-                if ( $self->config_( 'port' ) ne $$form{xmlrpc_port} ) {
-                    $self->config_( 'port', $$form{xmlrpc_port} );
-                    $status = sprintf(                     # PROFILE BLOCK START
-                            $$language{Configuration_XMLRPCUpdate},
-                            $self->config_( 'port' ) );    # PROFILE BLOCK STOP
-                }
-            } else {
-                $error = $$language{Configuration_Error7};
+            if ( ( $$form{xmlrpc_port} >= 1 ) && ( $$form{xmlrpc_port} < 65536 ) ) {
+                $self->config_( 'port', $$form{xmlrpc_port} );
+                $templ->param( 'XMLRPC_port_if_error' => 0 );
+                $templ->param( 'XMLRPC_port_updated' => sprintf( $$language{Configuration_XMLRPCUpdate}, $self->config_( 'port' ) ) );
+            } 
+            else {
+                $templ->param( 'XMLRPC_port_if_error' => 1 );
             }
         }
     }
 
     if ( $name eq 'xmlrpc_local' ) {
-        if ( $$form{serveropt_xmlrpc} ) {
-            if ( $self->config_( 'local' ) ne 0 ) {
-                $self->config_( 'local', 0 );
-                $status = $$language{Security_ServerModeUpdateXMLRPC};
-            }
-        }
-        else {
-            if ( $self->config_( 'local' ) ne 1 ) {
-                $self->config_( 'local', 1 );
-                $status = $$language{Security_StealthModeUpdateXMLRPC};
-            }
-        }
-
-        return( $status, $error );
+        $self->config_( 'local', $$form{xmlrpc_local}-1 ) if ( defined($$form{xmlrpc_local}) );
     }
 
-    return ( $status, $error );
+    return '';
+}
+
+# GETTERS/SETTERS
+
+sub classifier
+{
+    my ( $self, $value ) = @_;
+
+    if ( defined( $value ) ) {
+        $self->{classifier__} = $value;
+    }
+
+    return $self->{classifier__};
+}
+
+sub history
+{
+    my ( $self, $value ) = @_;
+
+    if ( defined( $value ) ) {
+        $self->{history__} = $value;
+    }
+
+    return $self->{history__};
 }
 
 1;

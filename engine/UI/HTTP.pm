@@ -34,11 +34,6 @@ use IO::Socket::INET qw(:DEFAULT :crlf);
 use IO::Select;
 use Date::Format qw(time2str);
 
-# We use crypto to secure the contents of POPFile's cookies
-
-use Crypt::CBC;
-use MIME::Base64;
-
 # A handy variable containing the value of an EOL for the network
 
 my $eol = "\015\012";
@@ -52,10 +47,6 @@ sub new
 {
     my $type = shift;
     my $self = POPFile::Module->new();
-
-    # Crypto object used to encode/decode cookies
-
-    $self->{crypto__} = '';
 
     bless $self;
 
@@ -72,43 +63,21 @@ sub new
 sub start
 {
     my ( $self ) = @_;
-
-    if ( $self->config_( 'https_enabled' ) ) {
-        require IO::Socket::SSL;
-
-        $self->{server_}{https} = IO::Socket::SSL->new( Proto     => 'tcp',   # PROFILE BLOCK START
-                                    $self->config_( 'local' )  == 1 ? (LocalAddr => 'localhost') : (),
-                                     LocalPort => $self->config_( 'https_port' ),
-                                     Listen    => SOMAXCONN,
-                                     SSL_cert_file => $self->get_user_path_( $self->global_config_( 'cert_file' ) ),
-                                     SSL_key_file => $self->get_user_path_( $self->global_config_( 'key_file' ) ),
-                                     SSL_ca_file => $self->get_user_path_( $self->global_config_( 'ca_file' ) ),
-                                     Reuse     => 1 );                        # PROFILE BLOCK STOP
-    }
-
-    $self->{server_}{http} = IO::Socket::INET->new( Proto     => 'tcp',       # PROFILE BLOCK START
+    $self->log_( 1, "Trying to open listening socket on port " . $self->config_('port') . '.' );
+    $self->{server_} = IO::Socket::INET->new( Proto     => 'tcp',             # PROFILE BLOCK START
                                     $self->config_( 'local' )  == 1 ? (LocalAddr => 'localhost') : (),
                                      LocalPort => $self->config_( 'port' ),
                                      Listen    => SOMAXCONN,
                                      Reuse     => 1 );                        # PROFILE BLOCK STOP
 
-    if ( !defined( $self->{server_}{http} ) ||       # PROFILE BLOCK START
-         ( $self->config_( 'https_enabled' ) &&
-           !defined( $self->{server_}{https} ) ) ) { # PROFILE BLOCK STOP
-        my ( $port, $protocol );
-
-        if ( !defined( $self->{server_}{http} ) ) {
-            $port = $self->config_( 'port' );
-            $protocol = 'HTTP';
-        } else {
-            $port = $self->config_( 'https_port' );
-            $protocol = 'HTTPS';
-        }
+    if ( !defined( $self->{server_} ) ) {
+        my $port = $self->config_( 'port' );
         my $name = $self->name();
+        $self->log_( 0, "Couldn't start the $name interface because POPFile could not bind to the listen port $port" );
         print STDERR <<EOM;                                                   # PROFILE BLOCK START
 
-\nCouldn\'t start the $name $protocol interface because POPFile could not bind to the
-$protocol port $port. This could be because there is another service
+\nCouldn't start the $name interface because POPFile could not bind to the
+listen port $port. This could be because there is another service
 using that port or because you do not have the right privileges on
 your system (On Unix systems this can happen if you are not root
 and the port you specified is less than 1024).
@@ -119,34 +88,7 @@ EOM
         return 0;
     }
 
-    foreach my $protocol ( keys %{$self->{server_}} ) {
-        $self->{selector_}{$protocol} = new IO::Select( $self->{server_}{$protocol} );
-    }
-
-    # Think of an encryption key for encrypting cookies using Blowfish
-
-    my $cipher = $self->config_( 'cookie_cipher' );
-    my $key_length = 8;
-
-    if ( $cipher =~ /(Crypt::)?Blowfish/i ) {
-        $key_length = 56;
-    }
-    if ( $cipher =~ /(Crypt::)?DES/i ) {
-        $key_length = 8;
-    }
-
-    my $key = $self->random_()->generate_random_string( # PROFILE BLOCK START
-                $key_length,
-                $self->global_config_( 'crypt_strength' ),
-                $self->global_config_( 'crypt_devide' )
-              );                                         # PROFILE BLOCK STOP
-    $self->{crypto__} = new Crypt::CBC( { 'key'            => $key, # PROFILE BLOCK START
-                                          'cipher'         => $cipher,
-                                          'padding'        => 'standard',
-                                          'prepend_iv'     => 0,
-                                          'regenerate_key' => 0,
-                                          'salt'           => 1,
-                                          'header'         => 'salt', } ); # PROFILE BLOCK STOP
+    $self->{selector_} = new IO::Select( $self->{server_} );
 
     return 1;
 }
@@ -162,13 +104,7 @@ sub stop
 {
     my ( $self ) = @_;
 
-    if ( defined( $self->{server_} ) ) {
-        foreach my $protocol ( keys %{$self->{server_}} ) {
-            close $self->{server_}{$protocol} if ( defined( $self->{server_}{$protocol} ) );
-        }
-    }
-
-    $self->SUPER::stop();
+    close $self->{server_} if ( defined( $self->{server_} ) );
 }
 
 # ----------------------------------------------------------------------------
@@ -184,97 +120,89 @@ sub service
 
     my $code = 1;
 
+    return $code if ( !defined( $self->{selector_} ) );
+
     # See if there's a connection waiting for us, if there is we
     # accept it handle a single request and then exit
 
-    foreach my $protocol ( keys %{$self->{server_}} ) {
+    my ( $ready ) = $self->{selector_}->can_read(0);
 
-        my ( $ready ) = $self->{selector_}{$protocol}->can_read(0);
+    # Handle HTTP requests for the UI
 
-        # Handle HTTP requests for the UI
+    if ( ( defined( $ready ) ) && ( $ready == $self->{server_} ) ) {
 
-        if ( ( defined( $ready ) ) && ( $ready == $self->{server_}{$protocol} ) ) {
+        if ( my $client = $self->{server_}->accept() ) {
 
-            if ( my $client = $self->{server_}{$protocol}->accept() ) {
+            # Check that this is a connection from the local machine,
+            # if it's not then we drop it immediately without any
+            # further processing.  We don't want to allow remote users
+            # to admin POPFile
 
-                # Check that this is a connection from the local machine,
-                # if it's not then we drop it immediately without any
-                # further processing.  We don't want to allow remote users
-                # to admin POPFile
+            my ( $remote_port, $remote_host ) = sockaddr_in( $client->peername() );
 
-                my ( $remote_port, $remote_host ) = sockaddr_in( $client->peername() );
+            if ( ( $self->config_( 'local' ) == 0 ) ||                # PROFILE BLOCK START
+                 ( $remote_host eq inet_aton( "127.0.0.1" ) ) ) {     # PROFILE BLOCK STOP
 
-                if ( ( $self->config_( 'local' ) == 0 ) ||                # PROFILE BLOCK START
-                     ( $remote_host eq inet_aton( "127.0.0.1" ) ) ) {     # PROFILE BLOCK STOP
+                # Read the request line (GET or POST) from the client
+                # and if we manage to do that then read the rest of
+                # the HTTP headers grabbing the Content-Length and
+                # using it to read any form POST content into $content
 
-                    # Read the request line (GET or POST) from the client
-                    # and if we manage to do that then read the rest of
-                    # the HTTP headers grabbing the Content-Length and
-                    # using it to read any form POST content into $content
+                $client->autoflush(1);
 
-                    $client->autoflush(1);
+                if ( ( defined( $client ) ) &&                      # PROFILE BLOCK START
+                     ( my $request = $self->slurp_( $client ) ) ) { # PROFILE BLOCK STOP
+                    my $content_length = 0;
+                    my $content = '';
+                    my $status_code = 200;
 
-                    if ( ( defined( $client ) ) &&                      # PROFILE BLOCK START
-                         ( my $request = $self->slurp_( $client ) ) ) { # PROFILE BLOCK STOP
-                        my $content_length = 0;
-                        my $content = '';
-                        my $cookie = '';
-                        my $status_code = 200;
+                    $self->log_( 2, $request );
 
-                        $self->log_( 2, $request );
+                    while ( my $line = $self->slurp_( $client ) )  {
+                        $content_length = $1 if ( $line =~ /Content-Length: (\d+)/i );
 
-                        while ( my $line = $self->slurp_( $client ) )  {
-                            $cookie = $1 if ( $line =~ /Cookie: (.+)/ );
-                            $content_length = $1 if ( $line =~ /Content-Length: (\d+)/i );
-                            # Discovered that Norton Internet Security was
-                            # adding HTTP headers of the form
-                            #
-                            # ~~~~~~~~~~~~~~: ~~~~~~~~~~~~~
-                            #
-                            # which we were not recognizing as valid
-                            # (surprise, surprise) and this was messing
-                            # about our handling of POST data.  Changed
-                            # the end of header identification to any line
-                            # that does not contain a :
+                        # Discovered that Norton Internet Security was
+                        # adding HTTP headers of the form
+                        #
+                        # ~~~~~~~~~~~~~~: ~~~~~~~~~~~~~
+                        #
+                        # which we were not recognizing as valid
+                        # (surprise, surprise) and this was messing
+                        # about our handling of POST data.  Changed
+                        # the end of header identification to any line
+                        # that does not contain a :
 
-                            last                 if ( $line !~ /:/ );
-                        }
+                        last                 if ( $line !~ /:/ );
+                    }
 
-                        if ( $content_length > 0 ) {
-                            $content = $self->slurp_buffer_( $client, # PROFILE BLOCK START
-                                $content_length );                    # PROFILE BLOCK STOP
-                            if ( !defined( $content ) ) {
-                                $status_code = 400;
-                            } else {
-                                $self->log_( 2, $content );
-                            }
-                        }
-
-                        # Handle decryption of a cookie header
-
-                        $cookie = $self->decrypt_cookie__( $cookie );
-
-                        if ( $status_code != 200 ) {
-                            $self->http_error_( $client, $status_code );
+                    if ( $content_length > 0 ) {
+                        $content = $self->slurp_buffer_( $client,  # PROFILE BLOCK START
+                            $content_length );                     # PROFILE BLOCK STOP
+                        if ( !defined( $content ) ) {
+                            $status_code = 400;
                         } else {
-                            if ( $request =~ /^(GET|POST) (.*) HTTP\/1\./i ) {
-                                $code = $self->handle_url( $client, $2, $1, # PROFILE BLOCK START
-                                            $content, $cookie );            # PROFILE BLOCK STOP
-                                $self->log_( 2,                                # PROFILE BLOCK START
-                                    "HTTP handle_url returned code $code\n" ); # PROFILE BLOCK STOP
-                            } else {
-                                $self->http_error_( $client, 500 );
-                            }
+                            $self->log_( 2, $content );
+                        }
+                    }
+
+                    if ( $status_code != 200 ) {
+                        $self->http_error_( $client, $status_code );
+                    } else {
+                        if ( $request =~ /^(GET|POST) (.*) HTTP\/1\./i ) {
+                            $code = $self->handle_url( $client, $2, $1, $content );
+                            $self->log_( 2,                                # PROFILE BLOCK START
+                                "HTTP handle_url returned code $code\n" ); # PROFILE BLOCK STOP
+                        } else {
+                            $self->http_error_( $client, 500 );
                         }
                     }
                 }
-
-                $self->log_( 2, "Close HTTP connection on $client\n" );
-                $self->done_slurp_( $client );
-                close $client;
             }
-        }
 
+            $self->log_( 2, "Close HTTP connection on $client\n" );
+            $self->done_slurp_( $client );
+            close $client;
+        }
     }
 
     return $code;
@@ -289,13 +217,9 @@ sub service
 # ----------------------------------------------------------------------------
 sub forked
 {
-    my ( $self, $writer ) = @_;
+    my ( $self ) = @_;
 
-    $self->SUPER::forked( $writer );
-
-    foreach my $protocol ( keys %{$self->{server_}} ) {
-        close $self->{server_}{$protocol};
-    }
+    close $self->{server_};
 }
 
 # ----------------------------------------------------------------------------
@@ -306,60 +230,13 @@ sub forked
 # $url        URL to process
 # $command    The HTTP command used (GET or POST)
 # $content    Any non-header data in the HTTP command
-# $cookie     Decrypted cookie value (or null)
 #
 # ----------------------------------------------------------------------------
 sub handle_url
 {
-    my ( $self, $client, $url, $command, $content, $cookie ) = @_;
+    my ( $self, $client, $url, $command, $content ) = @_;
 
-    return $self->{url_handler_}( $self, $client, $url, $command, # PROFILE BLOCK START
-                                  $content, $cookie ); # PROFILE BLOCK STOP
-}
-
-# ----------------------------------------------------------------------------
-#
-# decrypt_cookie__
-#
-# $cookie            The cookie value to decrypt
-#
-# ----------------------------------------------------------------------------
-sub decrypt_cookie__
-{
-    my ( $self, $cookie ) = @_;
-
-    $self->log_( 2, "Decrypt cookie: $cookie" );
-
-    $cookie =~ /popfile=([^\r\n]+)/;
-    if ( defined( $1 ) ) {
-        my $decoded_cookie = decode_base64( $1 );
-        my $result = '';
-
-        # Workaround to avoid crash when a wrong cookie is sent
-
-        eval {
-            $result = $self->{crypto__}->decrypt( $decoded_cookie );
-        };
-
-        return $result;
-    }
-
-    return '';
-}
-
-# ----------------------------------------------------------------------------
-#
-# encrypt_cookie_
-#
-# $cookie            The cookie value to encrypt
-#
-# ----------------------------------------------------------------------------
-sub encrypt_cookie_
-{
-    my ( $self, $cookie ) = @_;
-
-    $self->log_( 2, "Encrypting cookie $cookie" );
-    return encode_base64( $self->{crypto__}->encrypt( $cookie ), '' );
+    return $self->{url_handler_}( $self, $client, $url, $command, $content );
 }
 
 # ----------------------------------------------------------------------------
@@ -374,8 +251,6 @@ sub parse_form_
 {
     my ( $self, $arguments ) = @_;
 
-    return if ( !defined( $arguments ) );
-
     # Normally the browser should have done &amp; to & translation on
     # URIs being passed onto us, but there was a report that someone
     # was having a problem with form arguments coming through with
@@ -383,10 +258,12 @@ sub parse_form_
     # which would mess things up in the argument splitter so this code
     # just changes &amp; to & for safety
 
+    return if ( !defined $arguments );
+
     $arguments =~ s/&amp;/&/g;
 
     while ( $arguments =~ m/\G(.*?)=(.*?)(&|\r|\n|$)/g ) {
-        my $arg = $self->url_decode_( $1 );
+        my $arg = $1;
 
         my $need_array = defined( $self->{form_}{$arg} );
 
@@ -433,43 +310,22 @@ sub url_encode_
 
 # ----------------------------------------------------------------------------
 #
-# url_decode_
+# http_redirect_ - tell the browser to redirect to a url
 #
-# $text     Text to decode from URL safety
+# $client   The web browser to send redirect to
+# $url      Where to go
 #
-# Decode text in a URL
+# Return a valid HTTP/1.0 header containing a 302 redirect message to the passed in URL
 #
 # ----------------------------------------------------------------------------
-sub url_decode_
+sub http_redirect_
 {
-    my ( $self, $text ) = @_;
+    my ( $self, $client, $url ) = @_;
 
-    $text =~ s/\+/ /;
-    $text =~ s/(%([A-F0-9][A-F0-9]))/chr(hex($2))/eg;
-
-    return $text;
-}
-
-# ----------------------------------------------------------------------------
-#
-# escape_html_
-#
-# $text     Text to HTML-escaped
-#
-# Escape &, ", >, <, '
-#
-# ----------------------------------------------------------------------------
-sub escape_html_
-{
-    my ( $self, $text ) = @_;
-
-    $text =~ s/&/&amp;/g;
-    $text =~ s/\"/&quot;/g;
-    $text =~ s/>/&gt;/g;
-    $text =~ s/</&lt;/g;
-    $text =~ s/\'/&#39;/g;
-
-    return $text;
+    my $header = "HTTP/1.0 302 Found$eol" .
+                 "Location: $url$eol" .
+                 "$eol";
+    print $client $header;
 }
 
 # ----------------------------------------------------------------------------
@@ -541,11 +397,8 @@ sub http_file_
         # plus 1 hour to give the browser cache 1 hour to keep things
         # like graphics and style sheets in cache.
 
-        my $expires = ( $file =~ /\.log$/ || $file =~ /\.msg$/ ) ?  # PROFILE BLOCK START
-                      '0' : $self->zulu_offset_( 0, 1 );            # PROFILE BLOCK STOP
-
-        my $header = $self->build_http_header_(              # PROFILE BLOCK START
-            200, $type, $expires, '', length( $contents ) ); # PROFILE BLOCK STOP
+        my $header = $self->build_http_header_( 200, $type, time + 60 * 60,
+                                                length( $contents ) );
 
         print $client $header . $contents;
     } else {
@@ -555,13 +408,12 @@ sub http_file_
 
 # ----------------------------------------------------------------------------
 #
-# build_http_header_ - Build HTTP header
+# build_http_header_ - 
 #
 # $status     The status code
 # $type       The type of the content
 # $expires    The datetime the page cache expires
-#             If '0', the page cache will expire instantly
-# $cookie     The cookie header to set
+#             If 0, the page cache will expire instantly
 # $length     The length of the content
 #
 # Returns the header
@@ -569,48 +421,28 @@ sub http_file_
 # ----------------------------------------------------------------------------
 sub build_http_header_
 {
-    my ( $self, $status, $type, $expires, $cookie, $length ) = @_;
+    my ( $self, $status, $type, $expires, $length ) = @_;
 
     my $date = time2str( "%a, %d %h %Y %X %Z", time, 'GMT' );
+    if ( $expires != 0 ) {
+        $expires = time2str( "%a, %d %h %Y %X %Z", $expires, 'GMT' );
+    }
 
     my $header = "HTTP/1.0 $status OK$eol" .  # PROFILE BLOCK START
-                 "Connection close$eol" .
+                 "Connection: close$eol" .
                  "Content-Type: $type$eol" .
                  "Date: $date$eol" .
                  "Expires: $expires$eol" .
                  ( $expires eq '0' ?
                    "Pragma: no-cache$eol" .
-                   "Cache-control: no-cache$eol" : '' ) .
-                 $cookie .
+                   "Cache-Control: no-cache$eol" : '' ) .
                  "Content-Length: $length$eol" .
-                 $eol;                        # PROFILE BLOCK STOP
+                 "$eol";                      # PROFILE BLOCK STOP
 
     return $header;
 }
 
-# ----------------------------------------------------------------------------
-#
-# zulu_offset_
-#
-# $days       Number of days to move forward
-# $hours      Number of hours to move forward
-#
-# Returns the current time in Zulu as a string suitable for passing to
-# a web browser shifted forward $days or $hours.
-#
-# ----------------------------------------------------------------------------
-sub zulu_offset_
-{
-    my ( $self, $days, $hours ) = @_;
-
-    my $zulu = time;
-    $zulu += 60 * 60 * $hours;
-    $zulu += 24 * 60 * 60 * $days;
-
-    my $date = time2str( "%a, %d %h %Y %X %Z", $zulu, 'GMT' );
-
-    return $date;
-}
+# GETTERS/SETTERS
 
 sub history
 {

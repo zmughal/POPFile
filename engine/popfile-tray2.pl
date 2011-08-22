@@ -42,6 +42,7 @@ my $POPFile = POPFile::Loader->new();
 # Indicate that we should create output on STDOUT (the POPFile
 # load sequence) and initialize with the version
 
+$POPFile->debug(1);
 $POPFile->CORE_loader_init();
 
 # Redefine POPFile's signals
@@ -55,6 +56,7 @@ $POPFile->CORE_signals();
 # modules running
 
 $POPFile->CORE_load();
+$POPFile->CORE_link_components();
 $POPFile->CORE_initialize();
 $POPFile->CORE_config();
 
@@ -62,7 +64,7 @@ $POPFile->CORE_config();
 
 my $h = $POPFile->get_module( 'UI::HTML' );
 my $b = $POPFile->get_module( 'Classifier::Bayes' );
-my $w = $POPFile->get_module( 'platform::windows' );
+my $w = $POPFile->get_module( 'core::windows' );
 my $port = $h->config_( 'port' );
 my $host = $b->config_( 'localhostname' ) || 'localhost';
 

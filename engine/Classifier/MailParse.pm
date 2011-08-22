@@ -547,7 +547,7 @@ sub update_pseudoword
                 $literal =~ s/</&lt;/g;
                 $literal =~ s/>/&gt;/g;
                 my $color = $self->get_color__( $mword );
-                my $to    = "<b style=\"color:$color\"><a title=\"$mword\">$literal</a></b>";
+                my $to    = "<b><font color=\"$color\"><a title=\"$mword\">$literal</a></font></b>";
                 $self->{ut__} .= $to . ' ';
             }
         }
@@ -592,13 +592,13 @@ sub update_word
             my $color = $self->get_color__( $mword );
             if ( $encoded == 0 ) {
                 $after = '&' if ( $after eq '>' );
-                if ( !( $self->{ut__} =~                                   # PROFILE BLOCK START
+                if ( !( $self->{ut__} =~                                           # PROFILE BLOCK START
                         s/($before)\Q$word\E($after)
-                         /$1<b style=\"color:$color\">$word<\/b>$2/x ) ) { # PROFILE BLOCK STOP
+                         /$1<b><font color=\"$color\">$word<\/font><\/b>$2/x ) ) { # PROFILE BLOCK STOP
                     print "Could not find $word for colorization\n" if $self->{debug__};
                 }
             } else {
-                $self->{ut__} .= "<span style=\"color:$color\">$word<\/span> ";
+                $self->{ut__} .= "<font color=\"$color\">$word<\/font> ";
             }
         }
 
@@ -717,9 +717,9 @@ sub add_line
             # http://en.wikipedia.org/wiki/List_of_Internet_top-level_domains
 
             while ( $line =~ s/(([[:alpha:]0-9\-_]+\.)+)          # PROFILE BLOCK START
-                               (aero|asia|biz|cat|com|coop|edu|gov|info|int|
-                                jobs|mil|mobi|museum|name|net|org|pro|tel|
-                                travel)
+                               (aero|arpa|asia|biz|cat|com|coop|edu|gov|info|
+                                int|jobs|mil|mobi|museum|name|net|org|pro|tel|
+                                travel|xxx)
                                ([^[:alpha:]0-9\-_\.]|$)/$4/ix ) { # PROFILE BLOCK STOP
                 $self->add_url( "$1$3", $encoded, '', '', $prefix );
             }
@@ -730,7 +730,7 @@ sub add_line
             while ( $line =~ s/(([[:alpha:]0-9\-_]+\.)+)            # PROFILE BLOCK START
                                (a[cdefgilmnoqrstuwxz]|
                                 b[abdefghijmnorstvwyz]|
-                                c[acdfghiklmnoruvxyz]|
+                                c[acdfghiklmnorsuvxyz]|
                                 d[ejkmoz]|
                                 e[cegrstu]|
                                 f[ijkmor]|
@@ -746,12 +746,12 @@ sub add_line
                                 p[aefghklmnrstwy]|
                                 qa|
                                 r[eosuw]|
-                                s[abcdeghijklmnorsvyz]|
+                                s[abcdeghijklmnortuvyz]|
                                 t[cdfghjklmnoprtvwz]|
                                 u[agksyz]|
                                 v[aceginu]|
                                 w[fs]|
-                                y[etu]|
+                                y[et]|
                                 z[amw])
                                ([^[:alpha:]0-9\-_\.]|$)/$4/ix )  {  # PROFILE BLOCK STOP
                 $self->add_url( "$1$3", $encoded, '', '', $prefix );
@@ -1398,8 +1398,9 @@ sub add_url
     }
 
     if ( $url =~ s/^(([[:alpha:]0-9\-_]+\.)+)          # PROFILE BLOCK START
-                    (com|edu|gov|int|mil|net|org|aero|biz|coop|info|museum|
-                     name|pro|[[:alpha:]]{2})
+                    (aero|arpa|asia|biz|cat|com|coop|edu|gov|info|
+                     int|jobs|mil|mobi|museum|name|net|org|pro|tel|
+                     travel|xxx|[a-z]{2})
                     ([^[:alpha:]0-9\-_\.]|$)/$4/ix ) { # PROFILE BLOCK STOP
         $host     = "$1$3";
         $hostform = "name";
@@ -2298,7 +2299,7 @@ sub parse_header
     if ( $self->update_pseudoword( 'header', $header, 0, $header ) ) {
         if ( $self->{color__} ne '' ) {
             my $color     = $self->get_color__( "header:$header" );
-            $self->{ut__} = "<b style=\"color:$color\">$header</b>: $fix_argument\015\012";
+            $self->{ut__} = "<b><font color=\"$color\">$header</font></b>: $fix_argument\015\012";
         }
     } else {
         if ( $self->{color__} ne '' ) {
@@ -2454,7 +2455,7 @@ sub parse_header
 
             if ( $boundary =~ /boundary=[ ]?      # PROFILE BLOCK START
                                (\"([A-Z0-9\'\(\)\+\_\,\-\.\/\:\=\?]
-                                   [A-Z0-9\'\(\)\+_,\-\.\/:=\? ]{0,69})\"|
+                                   [A-Z0-9\'\(\)\+_,\-\.\/:=\? \@]{0,69})\"|
                                 ([^\(\)\<\>\@\,\;\:\\\"\/\[\]\?\=]{1,70})
                                )/ix ) {           # PROFILE BLOCK STOP
 
@@ -2833,6 +2834,13 @@ sub quickmagnets
     my ( $self ) = @_;
 
     return $self->{quickmagnets__};
+}
+
+sub mangle
+{
+    my ( $self, $value ) = @_;
+
+    $self->{mangle__} = $value;
 }
 
 # ----------------------------------------------------------------------------

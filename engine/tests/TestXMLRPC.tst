@@ -28,235 +28,122 @@ use warnings;
 
 use POSIX ":sys_wait_h";
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->{debug__} = 0;
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use Classifier::MailParse;
+use Classifier::Bayes;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use Classifier::WordMangle;
+use POPFile::History;
+use UI::XMLRPC;
 
-my %valid = ( 'POPFile/Database'      => 1,
-              'POPFile/History'       => 1,
-              'POPFile/Logger'        => 1,
-              'POPFile/MQ'            => 1,
-              'Classifier/Bayes'      => 1,
-              'Classifier/WordMangle' => 1,
-              'POPFile/Configuration' => 1,
-              'UI/HTML'               => 1,
-              'UI/XMLRPC'             => 1, );
+# Load the test corpus
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $b = new Classifier::Bayes;
+my $w = new Classifier::WordMangle;
+my $h = new POPFile::History;
+my $x = new UI::XMLRPC;
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-my $db = $POPFile->get_module( 'POPFile::Database' );
-my $b  = $POPFile->get_module( 'Classifier::Bayes' );
-my $mq = $POPFile->get_module( 'POPFile::MQ'       );
-my $h  = $POPFile->get_module( 'POPFile::History'  );
-my $x  = $POPFile->get_module( 'UI::XMLRPC'        );
-my $l  = $POPFile->get_module( 'POPFile::Logger'   );
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->start();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$x->configuration( $c );
+$x->mq( $mq );
+$x->logger( $l );
+$x->{classifier__} = $b;
+
+$h->configuration( $c );
+$h->mq( $mq );
+$h->logger( $l );
+
+$b->history( $h );
+$h->classifier( $b );
+
+$h->initialize();
+test_assert( $h->start() );
+
+$c->module_config_( 'html', 'language', 'English' );
+$c->module_config_( 'html', 'port', 8080 );
+$b->{parser__}->mangle( $w );
+$b->initialize();
+test_assert( $b->start() );
+
+$x->initialize();
+$x->config_( 'enabled', 1 );
+
+my $xport = 12000 + int(rand(2000));
+
+$x->config_( 'port', $xport );
+
+$b->prefork();
+$mq->prefork();
 
 $l->config_( 'level', 2 );
+$l->version( 'svn-b0_22_2' );
+$l->start();
 
-my $http_port = 18080;
-$b->module_config_( 'html', 'port', $http_port );
-$b->global_config_( 'language', 'English' );
-$b->config_( 'hostname', '127.0.0.1' );
-
-# To Test XMLRPC's use of MQ, we need to receive messages
-
-use Test::MQReceiver;
-
-my $rmq = new Test::MQReceiver;
-
-$mq->register( 'UIREG', $rmq );
-
-$x->config_( 'enabled', 1 );
-test_assert( $x->config_( 'enabled' ), 1 );
-my $xport = 12000 + int( rand( 2000 ) );
-$x->config_( 'port', $xport );
-$POPFile->CORE_start();
-
-# Test dynamic UI
-
-$mq->service();
-my @messages = $rmq->read();
-
-shift @messages if ( $^O eq 'MSWin32' );
-
-test_assert_equal( scalar @messages, 2 );
-
-test_assert_equal( $messages[0][0], 'UIREG' );
-test_assert_equal( $#{$messages[0][1]}, 3 );
-test_assert_equal( $messages[0][1][0], 'configuration' );
-test_assert_equal( $messages[0][1][1], 'xmlrpc_port' );
-test_assert_equal( $messages[0][1][2], 'xmlrpc-port.thtml' );
-test_assert_equal( ref $messages[0][1][3], 'UI::XMLRPC' );
-
-test_assert_equal( $messages[1][0], 'UIREG' );
-test_assert_equal( $#{$messages[1][1]}, 3 );
-test_assert_equal( $messages[1][1][0], 'security' );
-test_assert_equal( $messages[1][1][1], 'xmlrpc_local' );
-test_assert_equal( $messages[1][1][2], 'xmlrpc-local.thtml' );
-test_assert_equal( ref $messages[1][1][3], 'UI::XMLRPC' );
-
-# Test configure_item
-
-use Test::SimpleTemplate;
-
-my $templ = new Test::SimpleTemplate;
-
-# nothing happens for unknown configuration item names
-
-$x->configure_item( 'foo', $templ );
-my $params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 0 );
-
-# the right things have to happen for known configuration item names
-
-$x->configure_item( 'xmlrpc_port', $templ );
-$params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 1 );
-test_assert_equal( $templ->param( 'XMLRPC_Port' ), $x->config_( 'port' ) );
-
-delete $templ->{params__};
-
-$x->configure_item( 'xmlrpc_local', $templ );
-$params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 1 );
-test_assert_equal( $templ->param( 'XMLRPC_local_on' ), ( $x->config_( 'local' ) == 1 ) );
-
-delete $templ->{params__};
-
-# test changing/validating of configuration values
-
-my $form = {};
-my $language= {};
-
-my ($status, $error);
-
-# xmlrpc_port
-
-test_assert_equal( $x->config_( 'port' ), $xport );
-
-$form->{xmlrpc_port} = 18081;
-$language->{Configuration_XMLRPCUpdate} = "xmlrpc port update %s";
-
-($status, $error) = $x->validate_item( 'xmlrpc_port', $templ, $language, $form );
-
-test_assert_equal( $status, "xmlrpc port update 18081" );
-test_assert( !defined( $error ) );
-test_assert_equal( $x->config_( 'port' ), 18081 );
-
-$form->{xmlrpc_port} = 'aaa';
-$language->{Configuration_Error7} = "configuration error 7";
-
-($status, $error) = $x->validate_item( 'xmlrpc_port', $templ, $language, $form );
-
-test_assert( !defined( $status ) );
-test_assert_equal( $error, "configuration error 7" );
-test_assert_equal( $x->config_( 'port' ), 18081 );
-
-$form->{xmlrpc_port} = 0;
-
-($status, $error) = $x->validate_item( 'xmlrpc_port', $templ, $language, $form );
-
-test_assert( !defined( $status ) );
-test_assert_equal( $error, "configuration error 7" );
-test_assert_equal( $x->config_( 'port' ), 18081 );
-
-$x->config_( 'port', $xport );
-
-delete $form->{xmlrpc_port};
-
-# xmlrpc_local
-
-test_assert_equal( $x->config_( 'local' ), 1 );
-
-$form->{serveropt_xmlrpc} = 1;
-$language->{Security_ServerModeUpdateXMLRPC} = "xmlrpc is in server mode";
-
-($status, $error) = $x->validate_item( 'xmlrpc_local', $templ, $language, $form );
-
-test_assert_equal( $status, "xmlrpc is in server mode" );
-test_assert( !defined( $error ) );
-test_assert_equal( $x->config_( 'local' ), 0 );
-
-$form->{serveropt_xmlrpc} = 0;
-$language->{Security_StealthModeUpdateXMLRPC} = "xmlrpc is in stealth mode";
-
-($status, $error) = $x->validate_item( 'xmlrpc_local', $templ, $language, $form );
-
-test_assert_equal( $status, "xmlrpc is in stealth mode" );
-test_assert( !defined( $error ) );
-test_assert_equal( $x->config_( 'local' ), 1 );
-
-delete $form->{serveropt_xmlrpc};
-
-# This pipe is used to send signals to the child running
-# the server to change its state, the following commands can
-# be sent
-#
-# __QUIT      Causes the child to terminate POPFile service and
-#             exit
-
-pipe my $dserverreader, my $dserverwriter;
-pipe my $userverreader, my $userverwriter;
-
-my ( $pid, $handle ) = $POPFile->CORE_forker();
+pipe my $reader, my $writer;
+my $pid = fork();
 
 if ( $pid == 0 ) {
+
+    close $reader;
+
+    $b->forked( $writer );
+    $mq->forked( $writer );
+
     # CHILD THAT WILL RUN THE XMLRPC SERVER
+    if ( $x->start() == 1 ) {
+        test_assert( 1, "start passed\n" );
 
-    close $dserverwriter;
-    close $userverreader;
-
-    $userverwriter->autoflush( 1 );
-
-    # Quick hack to make POPFile think it is running as parent process
-
-    $mq->{pid__} = $$;
-
-    my $count = 5000;
-    while ( $POPFile->CORE_service( 1 ) ) {
-        select( undef, undef, undef, 0.05 );
-        last if ( $count-- <= 0 );
-
-        if ( &{$POPFile->{pipeready__}}( $dserverreader ) ) {
-            my $command = <$dserverreader>;
-            last if ( !defined $command );
-
-            if ( $command =~ /__QUIT/ ) {
-                print $userverwriter "OK\n";
-                last;
-            }
+        my $count = 5000;
+        while ( $mq->service() && $x->service() && $h->service() && $b->alive()) {
+            select( undef, undef, undef, 0.05 );
+            last if ( $count-- <= 0 );
         }
+    } else {
+        test_assert( 0, "start failed\n" );
     }
 
-    close $dserverreader;
-    close $userverwriter;
-
-    $POPFile->CORE_stop();
-
-#    sleep 2;
     exit(0);
 } else {
     # PARENT -- test the XMLRPC server
 
-    close $dserverreader;
-    close $userverwriter;
-    $dserverwriter->autoflush(1);
+    close $writer;
+
+    $b->postfork( $pid, $reader );
+    $mq->postfork( $pid, $reader );
 
     sleep 1;
     use XMLRPC::Lite;
 
-#    print "Testing $xport\n";
-
     my $xml = XMLRPC::Lite
         -> proxy( "http://127.0.0.1:$xport/RPC2" )->on_fault( sub{ } );
-
-    test_assert( $xml );
-    test_assert( ref $xml eq 'XMLRPC::Lite', ref $xml );
-    goto EXIT if !$xml;
 
     # API.get_session_key
 
@@ -271,7 +158,6 @@ if ( $pid == 0 ) {
         -> result;
 
     test_assert( $session ne '' );
-    goto EXIT if !$session;
 
     # API.classify
 
@@ -285,19 +171,11 @@ if ( $pid == 0 ) {
     # API.handle_message
 
     my $out_file = "temp.out";
-    my $handle_message = $xml
+    $bucket = $xml
         -> call( 'POPFile/API.handle_message', $session, $file, $out_file )
         -> result;
 
-    test_assert_equal( ref $handle_message, 'ARRAY' );
-
-    $bucket = @{$handle_message}[0];
-    my $slot = @{$handle_message}[1];
-    my $magnet_used = @{$handle_message}[2];
-
     test_assert_equal( $bucket, 'spam' );
-    test_assert_equal( $slot , 1 );
-    test_assert_equal( $magnet_used, 0 );
 
     open CAM, "<TestMails/TestMailParse001.cam";
     open OUTPUT, "<temp.out";
@@ -346,8 +224,6 @@ if ( $pid == 0 ) {
     test_assert_equal( @$buckets[2], 'spam' );
 
     select( undef, undef, undef, .2 );
-
-    sleep 5;
 
     # API.get_pseudo_buckets (undocumented)
 
@@ -880,439 +756,17 @@ if ( $pid == 0 ) {
 
     test_assert_equal( scalar @{$stopwords}, 193 );
 
-    # Tests for v2 APIs
-
-    # API.reclassify
-
-    my %messages = ( $slot => 'personal' );
-    my $reclassify = $xml
-        -> call ( 'POPFile/API.reclassify', $session, %messages )
-        -> result;
-
-    test_assert_equal( $reclassify, 1 );
-
-    # check if the bucket unique count numbers up.
-
-    my $uc2 = $xml
-        -> call ( 'POPFile/API.get_bucket_unique_count', $session, 'personal' )
-        -> result;
-
-    test_assert_equal( $uc2, 19 );
-
-    # TODO: Test whether the message is reclassified
-
-    # API.reclassify with bad parameters
-
-    $reclassify = $xml
-        -> call ( 'POPFile/API.reclassify', $session, undef )
-        -> result;
-
-    test_assert_equal( $reclassify, '' );
-
-    $reclassify = $xml
-        -> call ( 'POPFile/API.reclassify', $session, 2, 'personal' )
-        -> result;
-
-    test_assert_equal( $reclassify, 0 );
-
-    $reclassify = $xml
-        -> call ( 'POPFile/API.reclassify', $session, 1, 'badbucket' )
-        -> result;
-
-    test_assert_equal( $reclassify, 0 );
-
-    # TODO: Multi-user mode tests
-
-    # API.create_user (ADMIN ONLY)
-
-    my $create_user = $xml
-        -> call ( 'POPFile/API.create_user', $session, 'newuser' )
-        -> result;
-
-    test_assert_equal( $create_user->[0], 0 ); # Success
-    test_assert( $create_user->[1] );
-    my $password = $create_user->[1];
-
-    $create_user = $xml
-        -> call ( 'POPFile/API.create_user', $session, 'newuser' )
-        -> result;
-
-    test_assert_equal( $create_user->[0], 1 ); # Already exists
-    test_assert_equal( $create_user->[1], '' );
-
-    $create_user = $xml
-        -> call ( 'POPFile/API.create_user', $session, 'copyuser', 'newuser', 1, 1 )
-        -> result;
-
-    test_assert_equal( $create_user->[0], 0 ); # Success
-
-    # test login as a new user
-
-    my $session2 = $xml
-        -> call ( 'POPFile/API.get_session_key', 'newuser', $password )
-        -> result;
-
-    test_assert( $session2 );
-
-    # API.rename_user (ADMIN ONLY)
-
-    my $rename_user = $xml
-        -> call ( 'POPFile/API.rename_user', $session, 'copyuser', 'copyuser2' )
-        -> result;
-
-    test_assert_equal( $rename_user->[0], 0 ); # Success
-    test_assert( $rename_user->[1] );
-
-    $rename_user = $xml
-        -> call ( 'POPFile/API.rename_user', $session, 'copyuser2', 'newuser' )
-        -> result;
-
-    test_assert_equal( $rename_user->[0], 1 ); # Already exists
-    test_assert_equal( $rename_user->[1], '' );
-
-    # API.get_user_list (ADMIN ONLY)
-
-    my $user_list = $xml
-        -> call ( 'POPFile/API.get_user_list', $session )
-        -> result;
-
-    test_assert( $user_list );
-    test_assert_equal( scalar keys %{$user_list}, 3 );
-    test_assert_equal( ${$user_list}{1}, 'admin' );
-    test_assert_equal( ${$user_list}{2}, 'newuser' );
-    test_assert_equal( ${$user_list}{3}, 'copyuser2' );
-
-    # API.remove_user (ADMIN ONLY)
-
-    my $remove_user = $xml
-        -> call ( 'POPFile/API.remove_user', $session, 'copyuser2' )
-        -> result;
-
-    test_assert_equal( $remove_user, 0 ); # Success
-
-    $remove_user = $xml
-        -> call ( 'POPFile/API.remove_user', $session, 'notauser' )
-        -> result;
-
-    test_assert_equal( $remove_user, 1 ); # Does not exist
-
-    # API.set_password
-
-    my $set_password_for_user = $xml
-        -> call ( 'POPFile/API.set_password', $session2, 'password' )
-        -> result;
-
-    test_assert_equal( $set_password_for_user, 1 ); # Success
-
-    $xml->call ( 'POPFile/API.release_session_key', $session2 );
-
-    # try to login using new password
-
-    $session2 = $xml
-        -> call ( 'POPFile/API.get_session_key', 'newuser', 'password' )
-        -> result;
-
-    test_assert( $session2 ne '' );
-
-    $xml->call ( 'POPFile/API.release_session_key', $session2 );
-
-    # API.change_users_password (ADMIN ONLY)
-
-    my $change_users_password = $xml
-        -> call ( 'POPFile/API.change_users_password', $session, 'newuser', 'password2' )
-        -> result;
-
-    test_assert_equal( $change_users_password, 0 ); # Success
-
-    $change_users_password = $xml
-        -> call ( 'POPFile/API.change_users_password', $session, 'baduser', 'password' )
-        -> result;
-
-    test_assert_equal( $change_users_password, 1 ); # No such user
-
-    # try to login using new password
-
-    $session2 = $xml
-        -> call ( 'POPFile/API.get_session_key', 'newuser', 'password2' )
-        -> result;
-
-    test_assert( $session2 ne '' );
-
-    $xml->call ( 'POPFile/API.release_session_key', $session2 );
-
-    # API.initialize_users_password (ADMIN ONLY)
-
-    my $initialize_users_password = $xml
-        -> call ( 'POPFile/API.initialize_users_password', $session, 'newuser' )
-        -> result;
-
-    test_assert( $initialize_users_password );
-    test_assert_equal( $initialize_users_password->[0], 0 );
-    test_assert( $initialize_users_password->[1] );
-
-    $password = $initialize_users_password->[1];
-
-    # try to login using new password
-
-    $session2 = $xml
-        -> call ( 'POPFile/API.get_session_key', 'newuser', $password )
-        -> result;
-
-    test_assert( $session2 ne '' );
-
-    # API.get_user_id (ADMIN ONLY)
-
-    my $user_id = $xml
-        -> call ( 'POPFile/API.get_user_id', $session, 'newuser' )
-        -> result;
-
-    test_assert( $user_id ne '' );
-
-    $user_id = $xml
-        -> call ( 'POPFile/API.get_user_id', $session, 'baduser' )
-        -> result;
-
-    test_assert( $user_id eq '' );
-
-    # API.get_user_id_from_session
-
-    $user_id = $xml
-        -> call ( 'POPFile/API.get_user_id_from_session', $session )
-        -> result;
-
-    test_assert( $user_id ne '' );
-    test_assert_equal( $user_id, 1 );
-
-    $user_id = $xml
-        -> call ( 'POPFile/API.get_user_id_from_session', $session2 )
-        -> result;
-
-    test_assert( $user_id ne '' );
-    test_assert_equal( $user_id, 2 );
-
-    # API.get_user_name_from_session
-
-    my $user_name = $xml
-        -> call ( 'POPFile/API.get_user_name_from_session', $session )
-        -> result;
-
-    test_assert_equal( $user_name, 'admin' );
-
-    $user_name = $xml
-        -> call ( 'POPFile/API.get_user_name_from_session', $session2 )
-        -> result;
-
-    test_assert_equal( $user_name, 'newuser' );
-
-    # API.get_user_parameter_list (ADMIN ONLY)
-
-    my $user_parameter_list = $xml
-        -> call ( 'POPFile/API.get_user_parameter_list', $session )
-        -> result;
-
-    test_assert_equal( scalar @{$user_parameter_list}, 37 );
-    my @params = ( 'GLOBAL_can_admin', 'GLOBAL_private_key', 'GLOBAL_public_key',
-                   'bayes_subject_mod_left', 'bayes_subject_mod_pos',
-                   'bayes_subject_mod_right', 'bayes_unclassified_weight',
-                   'bayes_xpl_angle', 'history_history_days',
-                   'html_column_characters', 'html_columns', 'html_date_format',
-                   'html_language', 'html_last_reset', 'html_last_update_check',
-                   'html_page_size', 'html_send_stats', 'html_session_dividers',
-                   'html_show_bucket_help', 'html_show_configbars',
-                   'html_show_training_help', 'html_skin', 'html_test_language',
-                   'html_update_check', 'html_wordtable_format',
-                   'imap_bucket_folder_mappings', 'imap_expunge', 'imap_hostname',
-                   'imap_login', 'imap_password', 'imap_port',
-                   'imap_training_mode', 'imap_uidnexts', 'imap_uidvalidities',
-                   'imap_update_interval', 'imap_use_ssl', 'imap_watched_folders', );
-    foreach my $param ( sort @{$user_parameter_list} ) {
-        test_assert_equal( $param, shift @params );
-    }
-
-    # API.get_user_parameter
-
-    my $user_parameter = $xml
-        -> call ( 'POPFile/API.get_user_parameter', $session, 'GLOBAL_can_admin' )
-        -> result;
-
-    test_assert_equal( $user_parameter, 1 );
-
-    $user_parameter = $xml
-        -> call ( 'POPFile/API.get_user_parameter', $session2, 'history_history_days' )
-        -> result;
-
-    test_assert_equal( $user_parameter, 2 );
-
-    $user_parameter = $xml
-        -> call ( 'POPFile/API.get_user_parameter', $session, 'bad_parameter' )
-        -> result;
-
-    test_assert_equal( $user_parameter, '' );
-
-    # API.get_current_sessions (ADMIN ONLY)
-
-    my $current_sessions = $xml
-        -> call ( 'POPFile/API.get_current_sessions', $session )
-        -> result;
-
-    test_assert_equal( scalar @{$current_sessions}, 2 );
-    foreach my $current_session ( @{$current_sessions} ) {
-        if ( $current_session->{userid} == 1 ) {
-            test_assert_equal( $current_session->{session}, $session );
-        } elsif ( $current_session->{userid} == 2 ) {
-            test_assert_equal( $current_session->{session}, $session2 );
-        }
-    }
-#    use Data::Dumper;
-#    print Dumper( $current_sessions );
-
-    # API.add_account (ADMIN ONLY)
-
-    my $add_account = $xml
-        -> call ( 'POPFile/API.add_account', $session, 2, 'pop3', 'account' )
-        -> result;
-
-    test_assert_equal( $add_account, 1 ); # Success
-
-    # API.get_session_key_from_token (ADMIN ONLY)
-
-    my $session3 = $xml
-        -> call ( 'POPFile/API.get_session_key_from_token', $session, 'pop3', 'account' )
-        -> result;
-
-    test_assert( $session3 ne '' );
-
-    # check the username
-
-    $user_name = $xml
-        -> call ( 'POPFile/API.get_user_name_from_session', $session3 )
-        -> result;
-
-    test_assert( $user_name, 'newuser' );
-
-    $xml -> call ( 'POPFile/API.release_session_key', $session3 );
-
-    # API.add_account with bad parameter
-
-    $add_account = $xml
-        -> call ( 'POPFile/API.add_account', $session, 3, 'pop3', 'account2' )
-        -> result;
-
-    test_assert_equal( $add_account, -2 ); # User does not exist
-
-    $add_account = $xml
-        -> call ( 'POPFile/API.add_account', $session, 1, 'pop3', 'account' )
-        -> result;
-
-    test_assert_equal( $add_account, -1 ); # Account already used by another user
-
-    # API.get_accounts (ADMIN ONLY)
-
-    my $accounts = $xml
-        -> call ( 'POPFile/API.get_accounts', $session, 2 )
-        -> result;
-
-    test_assert_equal( scalar @{$accounts}, 1 );
-    test_assert_equal( @{$accounts}[0], 'pop3:account' );
-
-    # API.remove_account (ADMIN ONLY)
-
-    my $remove_account = $xml
-        -> call ( 'POPFile/API.remove_account', $session, 'pop3', 'account' )
-        -> result;
-
-    test_assert_equal( $remove_account, 1 ); # Success
-
-    # Test ADMIN ONLY APIs with non-admin user
-
-    my $result = $xml
-        -> call ( 'POPFile/API.create_user', $session2, 'anotheruser' )
-        -> result;
-    test_assert( $result );
-    test_assert_equal( $result->[0], '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.rename_user', $session2, 'newuser', 'newuser2' )
-        -> result;
-    test_assert( $result );
-    test_assert_equal( $result->[0], '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.remove_user', $session2, 'newuser' )
-        -> result;
-    test_assert_equal( $result, '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.get_user_list', $session2, 'newuser' )
-        -> result;
-    test_assert_equal( $result, '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.change_users_password', $session2, 'admin', 'password' )
-        -> result;
-    test_assert_equal( $result, '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.initialize_users_password', $session2, 'admin' )
-        -> result;
-    test_assert( $result );
-    test_assert_equal( $result->[0], '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.get_user_id', $session2, 'newuser' )
-        -> result;
-    test_assert_equal( $result, '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.get_user_parameter_list', $session2 )
-        -> result;
-    test_assert( $result );
-    test_assert_equal( $result->[0], '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.get_current_sessions', $session2 )
-        -> result;
-    test_assert_equal( $result, '' );
-
-    $result = $xml
-        -> call ( 'POPFile/API.add_account', $session2, 2, 'pop3', 'anotheraccount' )
-        -> result;
-    test_assert_equal( $result, '' );
-
-    $result = $xml
-        -> call ( 'POPFile/get_session_key_from_token', $session2, 'pop3', 'account' )
-        -> result;
-    test_assert_equal( $result, '' );
-
-    $result = $xml
-        -> call ( 'POPFile/get_accounts', $session2, 2 )
-        -> result;
-    test_assert_equal( $result, '' );
-
-    $result = $xml
-        -> call ( 'POPFile/remove_account', $session2, 'pop3', 'account' )
-        -> result;
-    test_assert_equal( $result, '' );
-
     # API.release_session_key
 
-    $xml
-        -> call ( 'POPFile/API.release_session_key', $session );
+    $xml -> call( 'POPFile/API.release_session_key', $session );
 
-    $xml
-        -> call ( 'POPFile/API.release_session_key', $session2 );
+    $b->stop();
+    $x->stop();
+    $l->stop();
+    $h->stop();
+    $w->stop();
 
-EXIT:
-    # Tell the POPFile to die
-
-    print $dserverwriter "__QUIT\n";
-    my $line = <$userverreader>;
-    test_assert_equal( $line, "OK\n" );
-    close $dserverwriter;
-    close $userverreader;
-
-    $POPFile->CORE_stop();
-
+    sleep 4 if ( $^O eq 'MSWin32' );
     while ( waitpid( -1, &WNOHANG ) > 0 ) {
         sleep 1;
     }

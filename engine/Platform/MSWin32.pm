@@ -1,4 +1,4 @@
-# POPFILE LOADABLE MODULE 4
+# POPFILE LOADABLE MODULE
 package Platform::MSWin32;
 
 use POPFile::Module;
@@ -79,9 +79,9 @@ sub new
 
     $self->{popfile_official_site__} = 'http://getpopfile.org/';
     $self->{popfile_download_page__} = 'http://getpopfile.org/download';
-    $self->{update_check_url__} = 'http://getpopfile.org/downloads/current_release.txt';
+    $self->{update_check_url__}      = 'http://getpopfile.org/downloads/current_release.txt';
 
-    $self->{trayicon_filename__} = 'trayicon.ico';
+    $self->{trayicon_filename__}         = 'trayicon.ico';
     $self->{trayicon_updated_filename__} = 'trayicon_up.ico';
 
     $self->{update_check_dialog_title__}  = 'POPFile Update Check';
@@ -146,9 +146,9 @@ sub start
 
     foreach my $dir (@temp) {
         if ( $dir =~ /pdk\-.+\-(\d+)$/ ) {
-            if ( $$ != $1 ) {
+   	        if ( $$ != $1 ) {
                 rmdir $dir;
-            }
+	        }
         }
     }
 
@@ -167,10 +167,10 @@ sub service
     my ( $self ) = @_;
 
     if ( $self->{use_tray_icon__} &&
-         $self->user_module_config_( 1, 'html', 'update_check' ) &&
+         $self->global_config_( 'update_check' ) &&
          ( time >= $self->{next_update_check__} ) ) {
         $self->{next_update_check__} = time + $self->{update_check_interval__};
-        $self->user_module_config_( 1, 'html', 'last_update_check', time );
+        $self->global_config_( 'last_update_check', time );
 
         if ( my $updated = ( $self->{updated__} || $self->update_check( 1 ) ) ) {
             $self->update_check_result( $updated, 0, 1 );
@@ -321,7 +321,7 @@ sub update_check
     my $latest_release;
 
     $self->{next_update_check__} = time + $self->{update_check_interval__};
-    $self->user_module_config_( 1, 'html', 'last_update_check' , time );
+    $self->global_config_( 'last_update_check' , time );
 
     if ( $response->is_success &&
          ( $latest_release = $response->content ) &&
@@ -481,28 +481,20 @@ sub validate_item
 {
     my ( $self, $name, $templ, $language, $form ) = @_;
 
-    my ( $status_message );
-
     if ( $name eq 'windows_trayicon_and_console' ) {
 
-        if ( defined( $$form{update_windows_configuration} ) ) {
-            if ( $$form{windows_trayicon} ) {
-                $self->config_( 'trayicon', 1 );
-            } else {
-                $self->config_( 'trayicon', 0 );
-            }
+        if ( defined($$form{windows_trayicon}) ) {
+            $self->config_( 'trayicon', $$form{windows_trayicon} );
+            $templ->param( 'trayicon_feedback' => 1 );
+        }
 
-            if ( $$form{windows_console} ) {
-                $self->config_( 'console', 1 );
-            } else {
-                $self->config_( 'console', 0 );
-            }
-
-            $status_message = $$language{Windows_NextTime};
+        if ( defined($$form{windows_console}) ) {
+            $self->config_( 'console', $$form{windows_console} );
+            $templ->param( 'console_feedback' => 1 );
         }
     }
 
-   return ( $status_message, undef );
+   return '';
 }
 
 1;

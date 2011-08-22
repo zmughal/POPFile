@@ -2,7 +2,7 @@
 #
 # stop_popfile.nsi --- A simple 'command-line' utility to shutdown POPFile silently.
 #
-# Copyright (c) 2003-2005 John Graham-Cumming
+# Copyright (c) 2003-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -81,18 +81,20 @@
 # The '/WAIT' parameter is important, otherwise the 'failed' case will not be detected.
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.45" compiler,
+  ; released 6 June 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.45"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -100,6 +102,26 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
+
+  ;--------------------------------------------------------------------------
+  ; This script requires the 'Inetc' NSIS plugin
+  ;--------------------------------------------------------------------------
+
+  ; This script uses a special NSIS plugin (inetc) to silently access the POPFile UI's
+  ; 'Shutdown' page. This plugin has much better proxy support than the standard NSISdl
+  ; plugin shipped with NSIS.
+  ;
+  ; The 'NSIS Wiki' page for the 'Inetc' plugin (description, example and download links):
+  ; http://nsis.sourceforge.net/Inetc_plug-in
+  ;
+  ; To compile this script, copy the 'inetc.dll' file to the standard NSIS plugins folder
+  ; (${NSISDIR}\Plugins\). The 'Inetc' documentation, example & source files can be unzipped
+  ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
+  ;
+  ; Tested with the inetc.dll plugin timestamped 28 April 2011 14:23:12
+  ;
+  ; The plugin's history can be found at http://nsis.sourceforge.net/File:Inetc.zip
 
   ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
@@ -122,7 +144,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.5.12"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.7.0"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
@@ -136,13 +158,20 @@
 
   SilentInstall silent
 
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
   ;-------------------------------------------------------------------------------
-  ; Time delay constants used in conjunction with the NSISdl plugin
+  ; Time delay constants used in conjunction with the inetc plugin (replaces NSISdl)
   ;-------------------------------------------------------------------------------
 
-  ; Override the default timeout for NSISdl requests (specifies timeout in milliseconds)
+  ; Override the default connection timeout for inetc requests (specifies timeout in seconds)
+  ; (20 seconds is used to give the user more time to respond to any firewall prompts)
 
-  !define C_DLTIMEOUT                /TIMEOUT=10000
+  !define C_DLTIMEOUT       /CONNECTTIMEOUT=20
 
   ; Delay between the two shutdown requests (in milliseconds)
 
@@ -157,6 +186,7 @@
   !define STOP_POPFILE
 
   !include "pfi-library.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 
@@ -165,18 +195,25 @@
 
   VIProductVersion                          "${C_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "POPFile Silent Shutdown Utility - stops POPFile without \
                                             opening a browser window."
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "POPFile Silent Shutdown Utility"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -198,7 +235,7 @@ Section Shutdown
 
   ; It does not matter if the first command-line parameter uses uppercase or lowercase
 
-  Call PFI_GetParameters
+  Call NSIS_GetParameters
   Pop ${L_PARAMS}
   StrCmp ${L_PARAMS} "" usage
   StrCmp ${L_PARAMS} "/?" usage
@@ -226,8 +263,9 @@ Section Shutdown
   Goto option_error
 
 usage:
-  MessageBox MB_OK "POPFile Silent Shutdown Utility v${C_VERSION}            \
-    Copyright (c) 2005  John Graham-Cumming\
+  MessageBox MB_OK "POPFile Silent Shutdown Utility v${C_VERSION}\
+    ${MB_NL}\
+    Copyright (c)  ${C_BUILD_YEAR}  John Graham-Cumming\
     ${MB_NL}${MB_NL}\
     This command-line utility shuts POPFile down silently, without opening a browser window.\
     ${MB_NL}${MB_NL}\
@@ -237,9 +275,10 @@ usage:
     ${MB_NL}${MB_NL}\
     The optional <PASSWORD> is the password (no spaces allowed) for the POPFile User Interface.\
     ${MB_NL}${MB_NL}\
-    The optional <REPORT> is /SHOWERRORS (only error messages shown), /SHOWALL\
-    ${MB_NL}\
-    (success or error messages always shown), or /SHOWNONE (no messages - this is the default).\
+    The optional <REPORT> can be\
+    ${MB_NL}$\t/SHOWERRORS (only error messages shown),\
+    ${MB_NL}$\t/SHOWALL (success or error messages always shown),\
+    ${MB_NL}or$\t/SHOWNONE (no messages - this is the default).\
     ${MB_NL}${MB_NL}\
     A success/fail error code is always returned which can be checked in a batch file:\
     ${MB_NL}\
@@ -248,8 +287,10 @@ usage:
     ${MB_NL}          IF ERRORLEVEL 1 GOTO FAILED\
     ${MB_NL}          ECHO Shutdown succeeded\
     ${MB_NL}          GOTO DONE\
+    ${MB_NL}\
     ${MB_NL}          :FAILED\
     ${MB_NL}          ECHO **** Shutdown failed ****\
+    ${MB_NL}\
     ${MB_NL}          :DONE\
     ${MB_NL}${MB_NL}\
     Distributed under the terms of the GNU General Public License (GPL) v2."
@@ -298,9 +339,9 @@ port_checks:
   ; If first attempt appears to succeed, we must try again to check if POPFile has shutdown
   ; (we cannot tell the difference between 'shutdown' and 'incorrect password' responses)
 
-  NSISdl::download_quiet ${C_DLTIMEOUT} http://${C_UI_URL}:${L_GUI}/password?password=${L_PASSWORD}&redirect=/shutdown? "$PLUGINSDIR\shutdown_1.htm"
+  inetc::get /silent ${C_DLTIMEOUT} "http://${C_UI_URL}:${L_GUI}/password?password=${L_PASSWORD}&redirect=/shutdown?" "$PLUGINSDIR\shutdown_1.htm" /END
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" try_password_again
+  StrCmp ${L_RESULT} "OK" try_password_again
   StrCmp ${L_REPORT} "none" error_exit
   MessageBox MB_OK|MB_ICONEXCLAMATION \
       "Silent shutdown with password using port '${L_GUI}' failed\
@@ -310,9 +351,9 @@ port_checks:
 
 try_password_again:
   Sleep ${C_DLGAP}
-  NSISdl::download_quiet ${C_DLTIMEOUT} http://${C_UI_URL}:${L_GUI}/password?password=${L_PASSWORD}&redirect=/shutdown? "$PLUGINSDIR\shutdown_2.htm"
+  inetc::get /silent ${C_DLTIMEOUT} "http://${C_UI_URL}:${L_GUI}/password?password=${L_PASSWORD}&redirect=/shutdown?" "$PLUGINSDIR\shutdown_2.htm" /END
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" 0 password_ok
+  StrCmp ${L_RESULT} "OK" 0 password_ok
   Push "$PLUGINSDIR\shutdown_2.htm"
   Call PFI_GetFileSize
   Pop ${L_RESULT}
@@ -339,9 +380,9 @@ no_password_supplied:
   ; If first attempt appears to succeed, we must try again to check if POPFile has shutdown
   ; (we cannot tell the difference between 'shutdown' and 'enter password' responses)
 
-  NSISdl::download_quiet ${C_DLTIMEOUT} http://${C_UI_URL}:${L_GUI}/shutdown "$PLUGINSDIR\shutdown_1.htm"
+  inetc::get /silent ${C_DLTIMEOUT} "http://${C_UI_URL}:${L_GUI}/shutdown" "$PLUGINSDIR\shutdown_1.htm" /END
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" try_again
+  StrCmp ${L_RESULT} "OK" try_again
   StrCmp ${L_REPORT} "none" error_exit
   MessageBox MB_OK|MB_ICONEXCLAMATION \
       "Silent shutdown using port '${L_GUI}' failed\
@@ -351,9 +392,9 @@ no_password_supplied:
 
 try_again:
   Sleep ${C_DLGAP}
-  NSISdl::download_quiet ${C_DLTIMEOUT} http://${C_UI_URL}:${L_GUI}/shutdown "$PLUGINSDIR\shutdown_2.htm"
+  inetc::get /silent ${C_DLTIMEOUT} "http://${C_UI_URL}:${L_GUI}/shutdown" "$PLUGINSDIR\shutdown_2.htm" /END
   Pop ${L_RESULT}
-  StrCmp ${L_RESULT} "success" 0 shutdown_ok
+  StrCmp ${L_RESULT} "OK" 0 shutdown_ok
   Push "$PLUGINSDIR\shutdown_2.htm"
   Call PFI_GetFileSize
   Pop ${L_RESULT}
@@ -404,7 +445,6 @@ exit:
   !undef L_TEMP
 SectionEnd
 
-
 #--------------------------------------------------------------------------
 # General Purpose Library Function: GetNextParam
 #--------------------------------------------------------------------------
@@ -432,42 +472,49 @@ SectionEnd
 Function GetNextParam
 
   !define L_CHAR      $R9                     ; a character from the input list
-  !define L_LIST      $R8                     ; input list of parameters (may be empty)
-  !define L_PARAM     $R7                     ; the first parameter found
+  !define L_LENGTH    $R8                     ; use string length to determine if end-of-string reached
+  !define L_LIST      $R7                     ; input list of parameters (may be empty)
+  !define L_PARAM     $R6                     ; the first parameter found
 
   Exch ${L_LIST}
   Push ${L_PARAM}
   Push ${L_CHAR}
+  Push ${L_LENGTH}
 
   StrCpy ${L_PARAM} ""
 
 loop_L:
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCpy ${L_LIST} ${L_LIST} "" 1             ; remove char from input list
   StrCmp ${L_CHAR} " " loop_L
 
 loop_P:
   StrCpy ${L_PARAM} ${L_PARAM}${L_CHAR}
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCpy ${L_LIST} ${L_LIST} "" 1
   StrCmp ${L_CHAR} " " 0 loop_P               ; loop until a space is found
 
 loop_T:
+  StrLen ${L_LENGTH} ${L_LIST}
+  StrCmp ${L_LENGTH} 0 done
   StrCpy ${L_CHAR} ${L_LIST} 1                ; get next char from input list
-  StrCmp ${L_CHAR} "" done
   StrCmp ${L_CHAR} " " 0 done
   StrCpy ${L_LIST} ${L_LIST} "" 1             ; remove trailing spaces
   Goto loop_T
 
 done:
+  Pop ${L_LENGTH}
   Pop ${L_CHAR}
   Exch ${L_PARAM}                             ; put parameter on stack (may be "")
   Exch
   Exch ${L_LIST}                              ; put revised list on stack (may be "")
 
   !undef L_CHAR
+  !undef L_LENGTH
   !undef L_LIST
   !undef L_PARAM
 

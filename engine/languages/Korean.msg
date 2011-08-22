@@ -183,8 +183,8 @@ Password_Error1                         잘못된 비밀번호
 Security_Error1                         보안포트는 반드시 1부터 65535사이의 숫자여야 합니다.
 Security_Stealth                        스텔스 모드 / 서버 동작
 Security_NoStealthMode                  아니오 (스텔스 모드)
-Security_ExplainStats                   (이것이 켜지면 팝파일은 하루에 한번씩 다음의 세가지 값을 www.usethesource.com에 보냅니다 - bc (만드신 버킷 수), mc (팝파일이 분류한 메시지 수) and ec (분류 오류 건수).  이것들은 파일로 저장되며 팝파일이 어떻게 사용되며 얼마나 잘 작동하는지에 관한 통계를 공표할때 사용됩니다. 제 웹서버는 5일간 로그파일을 보존하고 그 후 삭제합니다. 개개의 IP주소와 통계 간에 어떠한 연관관계도 저장되지 않습니다.)
-Security_ExplainUpdate                  (이것이 켜지면 팝파일은 하루에 한번씩 다음의 세가지 값을 www.usethesource.com에 보냅니다 - ma (설치하신 팝파일의 메이저 버전 번호), mi (설치하신 팝파일의 마이너 버전 번호), bn (설치하신 팝파일의 빌드 번호). 팝파일은 새 버전이 있으면 페이지 맨 위쪽에 그래픽 형태로 그 결과를 표시합니다. 제 웹서버는 5일간 로그파일을 보존하고 그 후 삭제합니다. 개개의 IP주소와 업데이트 체크 간에 어떠한 연관관계도 저장되지 않습니다.)
+Security_ExplainStats                   (이것이 켜지면 팝파일은 하루에 한번씩 다음의 세가지 값을 getpopfile.org에 보냅니다 - bc (만드신 버킷 수), mc (팝파일이 분류한 메시지 수) and ec (분류 오류 건수).  이것들은 파일로 저장되며 팝파일이 어떻게 사용되며 얼마나 잘 작동하는지에 관한 통계를 공표할때 사용됩니다. 제 웹서버는 5일간 로그파일을 보존하고 그 후 삭제합니다. 개개의 IP주소와 통계 간에 어떠한 연관관계도 저장되지 않습니다.)
+Security_ExplainUpdate                  (이것이 켜지면 팝파일은 하루에 한번씩 다음의 세가지 값을 getpopfile.org에 보냅니다 - ma (설치하신 팝파일의 메이저 버전 번호), mi (설치하신 팝파일의 마이너 버전 번호), bn (설치하신 팝파일의 빌드 번호). 팝파일은 새 버전이 있으면 페이지 맨 위쪽에 그래픽 형태로 그 결과를 표시합니다. 제 웹서버는 5일간 로그파일을 보존하고 그 후 삭제합니다. 개개의 IP주소와 업데이트 체크 간에 어떠한 연관관계도 저장되지 않습니다.)
 Security_PasswordTitle                  사용자 인터페이스 비밀번호
 Security_Password                       비밀번호
 Security_PasswordUpdate                 비밀번호를 %s로 변경했습니다.
@@ -213,7 +213,7 @@ Magnet_Error3                           새 자석인 '%s' 을 버킷 '%s' 에 생성
 Magnet_CurrentMagnets                   현재 자석
 Magnet_Message1                         다음 자석은 지정된 버킷으로 메일이 항상 분류되도록 합니다.
 Magnet_CreateNew                        새 자석 생성
-Magnet_Explanation                      <b>세 종류의 자석이 가능합니다:</b> <ul><li><b>발신주소 또는 이름:</b> 예: john@company.com (특정 이메일 주소로), <br />company.com (company.com에서 보내는 모든 메일), <br />John Doe:Jonh Doe만 일치, John:첫단어가 John이면 모두 일치</li><li><b>수신자 메일주소 또는 이름:</b> 발신주소용 자석과 동일하나 수신자에 작용함</li> <li><b>제목의 단어:</b> 예)안녕하세요 는 제목란의 모든 안녕하세요 와 일치</li></ul>
+Magnet_Explanation                      세 종류의 자석이 가능합니다: <ul><li><b>발신주소 또는 이름:</b> 예: john@company.com (특정 이메일 주소로), <br />company.com (company.com에서 보내는 모든 메일), <br />John Doe:Jonh Doe만 일치, John:첫단어가 John이면 모두 일치</li><li><b>수신자 메일주소 또는 이름:</b> 발신주소용 자석과 동일하나 수신자에 작용함</li> <li><b>제목의 단어:</b> 예)안녕하세요 는 제목란의 모든 안녕하세요 와 일치</li></ul>
 Magnet_MagnetType                       자석 종류
 Magnet_Value                            값
 Magnet_Always                           항상 다음 버킷으로

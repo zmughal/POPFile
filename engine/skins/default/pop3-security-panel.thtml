@@ -1,5 +1,26 @@
-                <input type="checkbox" name="serveropt_pop3" id="securityAcceptPOP3" <TMPL_IF NAME="POP3_Security_Local"><TMPL_ELSE>checked</TMPL_IF> <TMPL_IF NAME="If_Javascript_OK"><TMPL_IF NAME="Security_If_Local">disabled</TMPL_IF></TMPL_IF> />
-                <label class="administrationLabel" for="securityAcceptPOP3">
-                    <TMPL_VAR NAME="Localize_Security_POP3">
-                </label>
-                <br />
+            <form class="securitySwitch" action="/security" method="post">
+                <div class="securityLabel">
+                    <TMPL_VAR NAME="Localize_Security_POP3">:
+                </div>
+
+                <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
+
+                <TMPL_IF NAME="POP3_Security_Local">
+
+                <span class="securityWidgetStateOff">
+                    <TMPL_VAR NAME="Localize_Security_NoStealthMode">
+                </span>
+                <input type="submit" class="toggleOn" id="securityAcceptPOP3On" name="toggle" value="<TMPL_VAR NAME="Localize_ChangeToYes">" />
+                <input type="hidden" name="pop3_local" value="1" />
+
+                <TMPL_ELSE>
+
+                <span class="securityWidgetStateOn">
+                    <TMPL_VAR NAME="Localize_Yes">
+                </span>
+                <input type="submit" class="toggleOff" id="securityAcceptPOP3Off" name="toggle" value="<TMPL_VAR NAME="Localize_ChangeToNo"> <TMPL_VAR NAME="Localize_Security_StealthMode">" />
+                <input type="hidden" name="pop3_local" value="2" />
+
+                </TMPL_IF>
+
+            </form>

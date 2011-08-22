@@ -39,9 +39,11 @@ if ( $#ARGV == -1 ) {
     # Indicate that we should create not output on STDOUT (the POPFile
     # load sequence)
 
+    $POPFile->debug(0);
     $POPFile->CORE_loader_init();
     $POPFile->CORE_signals();
     $POPFile->CORE_load( 1 );
+    $POPFile->CORE_link_components();
     $POPFile->CORE_initialize();
 
     # Ugly hack which is needed because Bayes::classify_and_modify looks up
@@ -64,7 +66,7 @@ if ( $#ARGV == -1 ) {
         $POPFile->CORE_start();
 
         my $b = $POPFile->get_module('Classifier::Bayes');
-        my $session = $b->get_administrator_session_key();
+        my $session = $b->get_session_key( 'admin', '' );
 
         $b->classify_and_modify( $session, \*STDIN, \*STDOUT, 1, '', 0, 1, "\n" );
 
