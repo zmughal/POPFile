@@ -52,6 +52,8 @@ $l->mq( $mq );
 $l->logger( $l );
 
 $l->initialize();
+$l->version( 'svn-b0_22_2' );
+$l->start();
 
 $mq->configuration( $c );
 $mq->mq( $mq );
@@ -85,9 +87,9 @@ test_assert_equal( $c->start(), 1 );
 $c->stop();
 test_assert( !$c->check_pid_() );
 
-# disable logging
+# enable logging
 
-$c->global_config_( 'debug', 0 );
+$c->global_config_( 'debug', 1 );
 
 # Check instance coordination via PID file
 
@@ -98,7 +100,7 @@ my $process = fork;
 
 if ($process != 0) {
     #parent loop
-    test_assert_equal(  $c->start(), 0);
+    test_assert_equal( $c->start(), 0 );
     test_assert( !defined( $c->live_check_() ) );
 } elsif ($process == 0) {
     #child loop
@@ -115,7 +117,7 @@ if ($process != 0) {
     $c->service();
 } elsif ($process == 0) {
     #child loop
-    test_assert_equal(  $c->start(), 0);
+    test_assert_equal( $c->start(), 0);
     test_assert( !defined( $c->live_check_() ) );
 
     exit(0);
@@ -124,10 +126,15 @@ if ($process != 0) {
 close STDERR;
 $c->stop();
 
+# Check if unexpected message is recorded
+
+my @last_ten = $l->last_ten();
+test_assert_not_regexp( pop @last_ten, /Can't write to the configuration file/, "Unexpected log message." );
+
 # Check that the popfile.cfg was written
 
 my @expected_config = (
- 'GLOBAL_debug 0',
+ 'GLOBAL_debug 1',
  'GLOBAL_last_update_check 0',
  'GLOBAL_message_cutoff 100000',
  'GLOBAL_msgdir messages/',
@@ -314,6 +321,8 @@ test_assert_equal( $c->get_root_path( '/foo', 0 ), '/foo' );
 test_assert( !defined( $c->get_root_path( '/foo' ) ) );
 test_assert_equal( $c->get_root_path( 'foo/' ), './foo/' );
 $c->{popfile_root__} = '../';
+
+$l->stop();
 
 unlink 'stdout.tmp';
 
