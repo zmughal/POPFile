@@ -355,8 +355,7 @@ sub CORE_warning
     my ( $self, @message ) = @_;
 
     if ( $self->module_config( 'GLOBAL', 'debug' ) > 0 ) {
-        $self->{components__}{core}{logger}->debug( 0, 'Perl warning: ' .
-                                                       @message );
+        $self->{components__}{core}{logger}->debug( 0, "Perl warning: @message" );
         warn @message;
     }
 }
@@ -382,8 +381,7 @@ sub CORE_die
     print STDERR @message;
 
     if ( $self->module_config( 'GLOBAL', 'debug' ) > 0 ) {
-        $self->{components__}{core}{logger}->debug( 0, 'Perl fatal error : ' .
-                                                       @message );
+        $self->{components__}{core}{logger}->debug( 0, "Perl fatal error : @message" );
     }
 
     # Try to stop safely
