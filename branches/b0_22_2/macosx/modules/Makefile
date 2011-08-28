@@ -39,7 +39,7 @@ DBI = DBI-1.616
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.31
+SQLITE = DBD-SQLite-1.33
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
 SQLITE_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(SQLITE_ARCHIVE)
 
@@ -61,7 +61,7 @@ TIMEDATE_URL = http://search.cpan.org/CPAN/authors/id/G/GB/GBARR/$(TIMEDATE_ARCH
 
 # XMLRCP Support
 
-SOAPLITE = SOAP-Lite-0.712
+SOAPLITE = SOAP-Lite-0.714
 SOAPLITE_ARCHIVE = $(SOAPLITE).tar.gz
 SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/M/MK/MKUTTER/$(SOAPLITE_ARCHIVE)
 
@@ -69,7 +69,7 @@ CLASS_INSPECTOR = Class-Inspector-1.25
 CLASS_INSPECTOR_ARCHIVE = $(CLASS_INSPECTOR).tar.gz
 CLASS_INSPECTOR_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(CLASS_INSPECTOR_ARCHIVE)
 
-VERSION_MODULE = version-0.91
+VERSION_MODULE = version-0.94
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
 VERSION_URL = http://search.cpan.org/CPAN/authors/id/J/JP/JPEACOCK/$(VERSION_ARCHIVE)
 
