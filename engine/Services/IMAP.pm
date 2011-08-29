@@ -464,7 +464,10 @@ sub disconnect_folders__ {
 
         my $imap = $self->{folders__}{$folder}{imap};
         if ( defined $imap  && $imap->connected() ) {
-            $imap->logout( $folder );
+            # Workaround for POPFile crashes when disconnecting from server
+            eval {
+                $imap->logout( $folder );
+            };
         }
     }
     %{$self->{folders__}} = ();
