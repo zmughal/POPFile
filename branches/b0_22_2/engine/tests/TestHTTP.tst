@@ -235,7 +235,7 @@ $line = <TEMP>;
 $line = <TEMP>;
 $line = <TEMP>;
 $line = <TEMP>;
-test_assert_regexp( $line, "Couldn't start the simple HTTP interface" );
+test_assert_regexp( $line, "Couldn't start the simple interface because POPFile could not bind to the" );
 close TEMP;
 
 $h2->stop();
