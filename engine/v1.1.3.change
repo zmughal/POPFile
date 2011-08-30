@@ -23,6 +23,9 @@ modules for SSL support by default. (ticket #166)
 Fixed a bug that POPFile records a wrong message, "Can't write to the
 configuration file", when it shuts down. (ticket #165)
 
+Fixed a bug that IMAP module of POPFile sometimes crashes when the network
+connection is lost.
+
 
 WHAT'S CHANGED SINCE v1.1.1
 
