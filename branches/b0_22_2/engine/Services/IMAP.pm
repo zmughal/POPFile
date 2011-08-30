@@ -268,7 +268,7 @@ sub service {
             $self->config_( 'training_mode', 0 );
 
             # say__() and get_response__() will die with this message:
-            if ( $@ =~ /^POPFILE-IMAP-EXCEPTION: (.+\)\))/ ) {
+            if ( $@ =~ /^POPFILE-IMAP-EXCEPTION: (.+\)\))/s ) {
                 $self->log_( 0, $1 );
             }
             # If we didn't die but somebody else did, we have empathy.
