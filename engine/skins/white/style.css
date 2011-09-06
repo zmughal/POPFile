@@ -209,12 +209,32 @@ div.helpMessage {
   background-color: #EEEEEE;
   border: 2px solid #778899;
   padding: 0.3em;
-  padding-bottom: 0;
 }
 
-/*********************************************************/
-/* History Search Filter Highlight */
+div.helpMessage form {
+  margin: 0;
+}
+
+.menuLink {
+  display: block;
+  width: 100%;
+}
+
+.historyMagnetUsed {
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.historyMagnetUsed img {
+  vertical-align: bottom;
+}
+
+.historyMagnetUsed span {
+  font-size:80%;
+  vertical-align: middle;
+}
 
 div.historySearchFilterActive {
-  background-color: #EEEEEE;
+ background-color: #EEEEEE;
 }

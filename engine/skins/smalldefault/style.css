@@ -83,6 +83,24 @@ td.naked {
   border: 0;
 }
 
+td.accuracy0to49 {
+  background-color: red;
+  color: black;
+  height: 20px;
+}
+
+td.accuracy50to93 {
+  background-color: yellow;
+  color: black;
+  height: 20px;
+}
+
+td.accuracy94to100 {
+  background-color: green;
+  color: black;
+  height: 20px;
+}
+
 td.logo2menuSpace {
   height: 0.8em;
 }
@@ -431,9 +449,6 @@ tt {
   font-weight: normal;
 }
 
-/*********************************************************/
-/* History Search Filter Highlight */
-
 div.historySearchFilterActive {
-  background-color: #CCCC99;
+ background-color: #CCCC99;
 }

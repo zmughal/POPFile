@@ -21,21 +21,27 @@
 #
 # ----------------------------------------------------------------------------
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
 
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-my $mq = $POPFile->get_module( 'POPFile/MQ' );
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
 
 # Basic configuration
 test_assert_equal( $mq->name(), 'mq' );
@@ -115,7 +121,5 @@ test_assert_equal( $messages[1][1][1], 'param1' );
 test_assert_equal( $messages[1][0], 'MSG1' );
 test_assert_equal( $messages[1][1][0], 'message1' );
 test_assert_equal( $messages[1][1][1], 'param1' );
-
-$POPFile->CORE_stop();
 
 1;

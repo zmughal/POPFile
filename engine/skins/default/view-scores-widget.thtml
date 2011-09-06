@@ -1,8 +1,8 @@
-    <h4 class="viewHeadings">
-      <a name="scores">
+<b>
+    <a name="scores">
         <TMPL_VAR NAME="Localize_Scores">
-      </a>
-    </h4>
+    </a>
+</b>
 
 <hr />
 <table class="top20Words" summary="">
@@ -84,9 +84,9 @@
         <td class="top20" align="left">
             <TMPL_IF NAME="View_If_Format">
 
-            <h4 class="viewHeadings">
+            <b>
                 <TMPL_VAR NAME="Localize_View_WordMatrix"> (<TMPL_VAR NAME="View_View">)
-            </h4>
+            </b>
 
             </TMPL_IF>
 
@@ -95,21 +95,21 @@
 
             <TMPL_IF NAME="View_If_Format_Freq">
 
-            <a href="/view?view=<TMPL_VAR NAME="View_This">&amp;start_message=<TMPL_VAR NAME="View_This_Page">&amp;format=freq#scores">
+            <a href="/view?session=<TMPL_VAR NAME="Session_Key">&amp;view=<TMPL_VAR NAME="View_This">&amp;start_message=<TMPL_VAR NAME="View_This_Page">&amp;format=freq#scores">
                 <TMPL_VAR NAME="Localize_View_ShowFrequencies"></a>
 
             </TMPL_IF>
 
             <TMPL_IF NAME="View_If_Format_Prob">
 
-            <a href="/view?view=<TMPL_VAR NAME="View_This">&amp;start_message=<TMPL_VAR NAME="View_This_Page">&amp;format=prob#scores">
+            <a href="/view?session=<TMPL_VAR NAME="Session_Key">&amp;view=<TMPL_VAR NAME="View_This">&amp;start_message=<TMPL_VAR NAME="View_This_Page">&amp;format=prob#scores">
                 <TMPL_VAR NAME="Localize_View_ShowProbabilities"></a>
 
             </TMPL_IF>
 
             <TMPL_IF NAME="View_If_Format_Score">
 
-            <a href="/view?view=<TMPL_VAR NAME="View_This">&amp;start_message=<TMPL_VAR NAME="View_This_Page">&amp;format=score#scores">
+            <a href="/view?session=<TMPL_VAR NAME="Session_Key">&amp;view=<TMPL_VAR NAME="View_This">&amp;start_message=<TMPL_VAR NAME="View_This_Page">&amp;format=score#scores">
                 <TMPL_VAR NAME="Localize_View_ShowScores"></a>
 
             </TMPL_IF>
@@ -199,9 +199,9 @@
     <TMPL_IF NAME="If_chart">
 
     <hr />
-    <h4 class="viewHeadings">
+    <b>
         <TMPL_VAR NAME="Localize_View_Chart">
-    </h4>
+    </b>
     <p>
     <table summary="">
         <tr>

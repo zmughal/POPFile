@@ -2,15 +2,15 @@
 
 <TMPL_IF NAME="IMAP_if_mailboxes">
 
-<form action="<TMPL_VAR NAME="Configuration_Action">" method="post">
+<form action="/configuration" method="post">
 
     <TMPL_LOOP NAME="IMAP_loop_watched_folders">
 
-    <label for="imap_folder_<TMPL_VAR NAME="IMAP_loop_counter">" class="configurationLabel">
+    <label class="configurationLabel">
         <TMPL_VAR NAME="IMAP_WatchedFolder_Msg"><TMPL_VAR NAME="IMAP_loop_counter">
     </label>
     <br />
-    <select id="imap_folder_<TMPL_VAR NAME="IMAP_loop_counter">" name="imap_folder_<TMPL_VAR NAME="IMAP_loop_counter">">
+    <select name="imap_folder_<TMPL_VAR NAME="IMAP_loop_counter">">
 
     <TMPL_LOOP NAME="IMAP_loop_mailboxes">
 
@@ -22,19 +22,12 @@
 
     </TMPL_LOOP>
 
-    </select>
-    
-    <TMPL_IF NAME="IMAP_ifnot_first_folder">
-    
-    <input type="submit" class="submit" name="remove_imap_watched_folder_<TMPL_VAR NAME="IMAP_loop_counter">" value="<TMPL_VAR NAME="Localize_Remove">" />
-    
-    </TMPL_IF>
-    
-    <br />
+    </select><br />
 
     </TMPL_LOOP>
 
     <input type="submit" class="submit" name="update_imap_1_watch_folders" value="<TMPL_VAR NAME="Localize_Apply">" />
+    <input type="hidden" name="session" value="<TMPL_VAR NAME="Session_Key">" />
 </form>
 
 <TMPL_ELSE>

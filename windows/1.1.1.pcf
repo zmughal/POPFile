@@ -1,0 +1,10 @@
+; POPFILE PATCH CONTROL FILE
+
+[PCF]
+Format=1
+
+[Settings]
+POPFileVersion=1.1.1
+PatchIssue=0
+NumberOfPatches=0
+Comment=The current SSL Support files are compatible (26 April 2009 @ 15:32 GMT)

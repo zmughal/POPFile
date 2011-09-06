@@ -21,22 +21,27 @@
 #
 # ----------------------------------------------------------------------------
 
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
 
-my %valid = ( 'POPFile/Logger' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
 
-my $l = $POPFile->get_module( 'POPFile/Logger' );
+$l->initialize();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
 
 # Test basic setup, name of the module, debug file location
 # logging option
@@ -54,10 +59,8 @@ unlink( $l->debug_filename() );
 # Test that the last ten functionality works
 my @last_ten = $l->last_ten();
 
-test_assert_equal( $#last_ten, 1 );
-test_assert_regexp( $last_ten[0], "-----------------------\n" );
-my $version = $l->version();
-test_assert_regexp( $last_ten[1], "POPFile $version starting\n" );
+test_assert_equal( $#last_ten, 0 );
+test_assert_equal( $last_ten[0], 'log empty' );
 
 # Check that control character transformation works
 
@@ -65,16 +68,16 @@ $l->debug( 0, "\rtest1\t\n" );
 
 @last_ten = $l->last_ten();
 
-test_assert_equal( $#last_ten, 2 );
-test_assert_regexp( $last_ten[2], '\[0d\]test1\[09\]\[0a\]' );
+test_assert_equal( $#last_ten, 0 );
+test_assert_regexp( $last_ten[0], '\[0d\]test1\[09\]\[0a\]' );
 
 $l->debug( 0,  'test2' );
 
 @last_ten = $l->last_ten();
 
-test_assert_equal( $#last_ten, 3 );
-test_assert_regexp( $last_ten[2], '\[0d\]test1\[09\]\[0a\]' );
-test_assert_regexp( $last_ten[3], 'test2' );
+test_assert_equal( $#last_ten, 1 );
+test_assert_regexp( $last_ten[0], '\[0d\]test1\[09\]\[0a\]' );
+test_assert_regexp( $last_ten[1], 'test2' );
 
 # test size limiting on last ten, note the test
 # of log level here as well
@@ -119,8 +122,6 @@ close DEBUG;
 $l->{last_tickd__} -= 86400;
 $l->service();
 
-my $mq = $POPFile->get_module( 'POPFile/MQ' );
-test_assert( $mq );
 test_assert( defined( $mq->{queue__}{TICKD}[0] ), "checking TICKD message" );
 
 # Move the date ahead three days and check that the debug
@@ -128,14 +129,15 @@ test_assert( defined( $mq->{queue__}{TICKD}[0] ), "checking TICKD message" );
 
 my $file = $l->debug_filename();
 *POPFile::Logger::time = sub { return time + 2 * 24 * 3600; };
-$POPFile->CORE_service( 1 );
+$l->service();
+$mq->service();
 my $exists = ( -e $file );
 test_assert( $exists, "checking that debug file was deleted" );
 *POPFile::Logger::time = sub { return time + 3 * 24 * 3600; };
-$POPFile->CORE_service( 1 );
+$l->service();
+$mq->service();
 $exists = ( -e $file );
 test_assert( !$exists, "checking that debug file was deleted" );
 
-$POPFile->CORE_stop();
 
 1;

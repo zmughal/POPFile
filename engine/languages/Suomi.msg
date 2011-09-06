@@ -25,7 +25,7 @@ LanguageDirection                       ltr
 ManualLanguage                          en
 
 # This is where to find the FAQ on the Wiki
-FAQLink                                 faq
+FAQLink                                 FAQ
 
 # Common words that are used on their own all over the interface
 Apply                                   K&auml;yt&auml;
@@ -228,8 +228,8 @@ Security_Error1                         Portti pit&auml;&auml; olla 1 ja 65535 v
 Security_Stealth                        Piilotila/Palvelintoiminta
 Security_NoStealthMode                  Ei (Piilotila)
 Security_StealthMode                    (Piilotila)
-Security_ExplainStats                   Kun t&auml;m&auml; asetus on p&auml;&auml;ll&auml;, POPFile l&auml;hett&auml;&auml; kerran p&auml;iv&auml;ss&auml; seuraavat kolme arvoa osoitteeseen www.usethesource.com: bc (sankojen kokonaism&auml;&auml;r&auml;), mc (POPFilen luokittelemien viestien m&auml;&auml;r&auml;) ja ec (luokitteluvirheiden m&auml;&auml;r&auml;). N&auml;it&auml; tietoja k&auml;ytet&auml;&auml;n POPFilen k&auml;ytt&ouml;tavoista ja toimintatarkkuudesta kertovien tilastojen laatimiseen. Webpalvelin s&auml;ilytt&auml;&auml; lokitiedostoja noin 5:n p&auml;iv&auml;n ajan, jonka j&auml;lkeen ne poistetaan. Mink&auml;&auml;nlaista tietoa tilastojen ja IP-osoitteiden v&auml;lill&auml; ei s&auml;ilytet&auml;.
-Security_ExplainUpdate                  Kun t&auml;m&auml; asetus on p&auml;&auml;ll&auml;, POPFile l&auml;hett&auml;&auml; kerran p&auml;iv&auml;ss&auml; seuraavat kolme arvoa osoitteeseen www.usethesource.com: ma (POPFilen iso versionumero), mi (POPFilen pieni versionumero) ja bn (POPFilen k&auml;&auml;nn&ouml;snumero). POPFile saa vastauksen kuvana, joka n&auml;kyy sivun yl&auml;laidassa, kun uusi versio on saatavilla. Webpalvelin s&auml;ilytt&auml;&auml; lokitiedostoja noin 5:n p&auml;iv&auml;n ajan, jonka j&auml;lkeen ne poistetaan. Mink&auml;&auml;nlaista tietoa p&auml;ivitystarkistusten ja IP-osoitteiden v&auml;lill&auml; ei s&auml;ilytet&auml;.
+Security_ExplainStats                   Kun t&auml;m&auml; asetus on p&auml;&auml;ll&auml;, POPFile l&auml;hett&auml;&auml; kerran p&auml;iv&auml;ss&auml; seuraavat kolme arvoa osoitteeseen getpopfile.org: bc (sankojen kokonaism&auml;&auml;r&auml;), mc (POPFilen luokittelemien viestien m&auml;&auml;r&auml;) ja ec (luokitteluvirheiden m&auml;&auml;r&auml;). N&auml;it&auml; tietoja k&auml;ytet&auml;&auml;n POPFilen k&auml;ytt&ouml;tavoista ja toimintatarkkuudesta kertovien tilastojen laatimiseen. Webpalvelin s&auml;ilytt&auml;&auml; lokitiedostoja noin 5:n p&auml;iv&auml;n ajan, jonka j&auml;lkeen ne poistetaan. Mink&auml;&auml;nlaista tietoa tilastojen ja IP-osoitteiden v&auml;lill&auml; ei s&auml;ilytet&auml;.
+Security_ExplainUpdate                  Kun t&auml;m&auml; asetus on p&auml;&auml;ll&auml;, POPFile l&auml;hett&auml;&auml; kerran p&auml;iv&auml;ss&auml; seuraavat kolme arvoa osoitteeseen getpopfile.org: ma (POPFilen iso versionumero), mi (POPFilen pieni versionumero) ja bn (POPFilen k&auml;&auml;nn&ouml;snumero). POPFile saa vastauksen kuvana, joka n&auml;kyy sivun yl&auml;laidassa, kun uusi versio on saatavilla. Webpalvelin s&auml;ilytt&auml;&auml; lokitiedostoja noin 5:n p&auml;iv&auml;n ajan, jonka j&auml;lkeen ne poistetaan. Mink&auml;&auml;nlaista tietoa p&auml;ivitystarkistusten ja IP-osoitteiden v&auml;lill&auml; ei s&auml;ilytet&auml;.
 Security_PasswordTitle                  K&auml;ytt&ouml;liittym&auml;n salasana
 Security_Password                       Salasana
 Security_PasswordUpdate                 Salasana vaihdettu
@@ -258,7 +258,7 @@ Magnet_Error3                           Uusi magneetti, '%s', luotu sankoon '%s'
 Magnet_CurrentMagnets                   T&auml;m&auml;nhetkiset magneetit
 Magnet_Message1                         Seuraavat magneetit aiheuttavat sen, ett&auml; viestit luokitellaan aina m&auml;&auml;riteltyyn sankoon.
 Magnet_CreateNew                        Luo uusi magneetti
-Magnet_Explanation                      <b>On olemassa seuraavanlaisia magneetteja:</b> <ul><li><b>L&auml;hett&auml;j&auml;n osoite tai nimi:</b> esimerkiksi &quot;erkki@esimerkki.fi&quot; yksitt&auml;ist&auml; osoitetta varten, <br />&quot;esimerkki.fi&quot; kaikkia niit&auml; varten, joiden osoite p&auml;&auml;ttyy &quot;esimerkki.fi&quot;, <br />&quot;Erkki Esimerkki&quot; yksitt&auml;ist&auml; henkil&ouml;&auml; varten ja &quot;Erkki&quot; kaikkia Erkkej&auml; varten</li><li><b>Vastaanottajan osoite tai nimi/Kopio:</b> Samalla tavoin kuin l&auml;hett&auml;j&auml;magneettien kanssa, mutta vastaanottajien/kopion saavien osoitteiden kanssa</li><li><b>Sanat aiheessa:</b> esimerkiksi &quot;heipparallaa&quot; kaikkia sellaisia viestej&auml; varten, joiden aiherivill&auml; on sana &quot;heipparallaa&quot;.</li></ul>
+Magnet_Explanation                      On olemassa seuraavanlaisia magneetteja: <ul><li><b>L&auml;hett&auml;j&auml;n osoite tai nimi:</b> esimerkiksi &quot;erkki@esimerkki.fi&quot; yksitt&auml;ist&auml; osoitetta varten, <br />&quot;esimerkki.fi&quot; kaikkia niit&auml; varten, joiden osoite p&auml;&auml;ttyy &quot;esimerkki.fi&quot;, <br />&quot;Erkki Esimerkki&quot; yksitt&auml;ist&auml; henkil&ouml;&auml; varten ja &quot;Erkki&quot; kaikkia Erkkej&auml; varten</li><li><b>Vastaanottajan osoite tai nimi/Kopio:</b> Samalla tavoin kuin l&auml;hett&auml;j&auml;magneettien kanssa, mutta vastaanottajien/kopion saavien osoitteiden kanssa</li><li><b>Sanat aiheessa:</b> esimerkiksi &quot;heipparallaa&quot; kaikkia sellaisia viestej&auml; varten, joiden aiherivill&auml; on sana &quot;heipparallaa&quot;.</li></ul>
 Magnet_MagnetType                       Magneetin tyyppi
 Magnet_Value                            arvot
 Magnet_Always                           laitetaan aina sankoon
@@ -358,6 +358,8 @@ Imap_PasswordError                      T&auml;yt&auml; palvelimen salasana.
 Imap_Expunge                            Poista viestit vahdituista kansioista.
 Imap_Interval                           P&auml;ivitysv&auml;li sekunneissa.
 Imap_IntervalError                      T&auml;yt&auml; p&auml;ivitysv&auml;li 10 ja 3600 sekunnin v&auml;lilt&auml;.
+Imap_Bytelimit                          Luokitteluun k&auml;ytett&auml;v&auml; tavum&auml;&auml;r&auml;. Kirjoita 0 (nolla), jos haluat k&auml;ytt&auml;&auml; koko viesti&auml;:
+Imap_BytelimitError                     T&auml;yt&auml; numero.
 Imap_RefreshFolders                     P&auml;ivit&auml; kansiolista.
 Imap_Now                                nyt
 Imap_UpdateError1                       Kirjautuminen ep&auml;onnistui. Tarkista tunnus ja salasana.
@@ -369,6 +371,6 @@ Imap_WatchedFolder                      Vahdittu kansio no
 
 Shutdown_Message                        POPFile on sammutettu
 
-Help_Training                           Kun k&auml;yt&auml;t POPFile&auml; ensimm&auml;ist&auml; kertaa, se ei tied&auml; mit&auml;&auml;n ja vaatii opetusta. POPFilelle pit&auml;&auml; opettaa milt&auml; eri sankojen viestit n&auml;ytt&auml;v&auml;t. POPFile oppii, kun korjaat sen tekemi&auml; virheit&auml; luokittelemalla v&auml;&auml;rin luokitellut viestit oikeaan sankoon. Lis&auml;ksi sinun pit&auml;&auml; lis&auml;t&auml; k&auml;ytt&auml;m&auml;&auml;si s&auml;hk&ouml;postiohjelmaan suodattimia, joka suodattavat viestit POPFilen luokitusten mukaan. Englanninkielist&auml; apua suodatinten tekoon l&ouml;ytyy <a href="http://getpopfile.org/docs/faq/EmailSorting">POPFilen dokumentointiprojektista</a>.
+Help_Training                           Kun k&auml;yt&auml;t POPFile&auml; ensimm&auml;ist&auml; kertaa, se ei tied&auml; mit&auml;&auml;n ja vaatii opetusta. POPFilelle pit&auml;&auml; opettaa milt&auml; eri sankojen viestit n&auml;ytt&auml;v&auml;t. POPFile oppii, kun korjaat sen tekemi&auml; virheit&auml; luokittelemalla v&auml;&auml;rin luokitellut viestit oikeaan sankoon. Lis&auml;ksi sinun pit&auml;&auml; lis&auml;t&auml; k&auml;ytt&auml;m&auml;&auml;si s&auml;hk&ouml;postiohjelmaan suodattimia, joka suodattavat viestit POPFilen luokitusten mukaan. Englanninkielist&auml; apua suodatinten tekoon l&ouml;ytyy <a href="http://getpopfile.org/docs/FAQ:EmailSorting">POPFilen dokumentointiprojektista</a>.
 Help_Bucket_Setup                       POPFile vaatii v&auml;hint&auml;&auml;n kaksi sankoa unclassified (luokittelematon) -nimisen pseudosangon lis&auml;ksi. POPFile voi kuitenkin luokitella viestit hienojakoisemminkin. Sankojen m&auml;&auml;r&auml;&auml; ei ole rajoitettu. Voit k&auml;ytt&auml;&auml; esimerkiksi sankoja "roskapostit", "yksityiset" ja "ty&ouml;asiat".
 Help_No_More                            &Auml;l&auml; n&auml;yt&auml; t&auml;t&auml; viesti&auml; en&auml;&auml;

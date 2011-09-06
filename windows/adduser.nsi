@@ -7,7 +7,7 @@
 #                 to run POPFile for the first time. Some simple "repair work" can also
 #                 be done using this wizard.
 #
-# Copyright (c) 2004-2005 John Graham-Cumming
+# Copyright (c) 2004-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -33,18 +33,20 @@
 #  (4) adduser-Uninstall.nsh   - source for the 'User Data' uninstaller (uninstalluser.exe)
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS 2.0" compiler (final),
-  ; released 7 February 2004, with no "official" NSIS patches applied. This compiler
-  ; can be downloaded from http://prdownloads.sourceforge.net/nsis/nsis20.exe?download
+  ; This version of the script has been tested with the "NSIS v2.45" compiler,
+  ; released 6 June 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+
+  !define C_EXPECTED_VERSION  "v2.45"
 
   !define ${NSIS_VERSION}_found
 
-  !ifndef v2.0_found
+  !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
           "$\r$\n\
           $\r$\n***   NSIS COMPILER WARNING:\
           $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS 2.0 compiler\
+          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
           $\r$\n***\
           $\r$\n***   The resulting 'installer' program should be tested carefully!\
@@ -52,13 +54,10 @@
   !endif
 
   !undef  ${NSIS_VERSION}_found
+  !undef  C_EXPECTED_VERSION
 
-; Expect 3 compiler warnings, all related to standard NSIS language files which are out-of-date
-; (if the default multi-language installer is compiled).
-;
-; NOTE: The language selection menu order used in this script assumes that the NSIS MUI
-; 'Japanese.nsh' language file has been patched to use 'Nihongo' instead of 'Japanese'
-; [see 'SMALL NSIS PATCH REQUIRED' in the 'pfi-languages.nsh' file]
+; NOTE: The language selection menu order used in this script assumes that "Nihongo" is
+; used instead of "Japanese" in the language selection menu (see the 'pfi-languages.nsh' file)
 
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
@@ -88,7 +87,7 @@
 # DIRECTORY page is displayed with the normal default 'User Data' location as the default folder
 # (the user is free to select an alternative location).
 #
-# /installreboot
+# /restart
 #
 # This command-line switch behaves like /install but also makes the wizard set the reboot flag
 # to force a reboot. When the Kakasi package is installed on a Win9x system, a reboot is usually
@@ -129,7 +128,7 @@
 #
 # For example, to remove support for the 'Dutch' language, comment-out the line
 #
-#     !insertmacro PFI_LANG_LOAD "Dutch"
+#     !insertmacro PFI_LANG_LOAD "Dutch"        "-"        ; Language 1043
 #
 # in the 'pfi-languages.nsh' file, and comment-out the line
 #
@@ -151,7 +150,7 @@
   ; 'Add User' wizard overview
   ;------------------------------------------------
 
-  ; This wizard is used by the main POPfile installer ('setup.exe') to perform the user-specific
+  ; This wizard is used by the main POPFile installer ('setup.exe') to perform the user-specific
   ; configuration for the user who is running the installer. The main installer is now solely
   ; concerned with installing the POPFile program files and the associated registry entries.
   ;
@@ -165,7 +164,8 @@
   ; environment variables are initialized before running POPFile. It also offers to reconfigure
   ; any suitable Outlook Express, Outlook or Eudora accounts for the user and can monitor the
   ; conversion of an existing flat file or BerkeleyDB corpus to a new SQL database, or the
-  ; upgrading of an existing SQL database to use a new database schema .
+  ; upgrading of an existing SQL database to use a new database schema or the upgrading of a
+  ; SQLite 2.x format database to the new SQLite 3.x format first used by POPFile 1.1.0.
   ;
   ; Other uses for this wizard include allowing a user to switch between different sets of
   ; configuration data and repairing 'damaged' HKCU entries.
@@ -216,6 +216,12 @@
   Caption                "Add POPFile User v${C_PFI_VERSION}"
   UninstallCaption       "Remove POPFile User v${C_PFI_VERSION}"
 
+  ;--------------------------------------------------------------------------
+  ; Windows Vista expects to find a manifest specifying the execution level
+  ;--------------------------------------------------------------------------
+
+  RequestExecutionLevel   user
+
   ;----------------------------------------------------------------------
   ; Default location for POPFile User Data files (popfile.cfg and others)
   ;
@@ -243,12 +249,16 @@
   !define C_MIN_BANNER_DISPLAY_TIME  250
 
   ;-------------------------------------------------------------------------------
-  ; Constant used to give POPFile time to start its web server and be able to display the UI
+  ; Constants for the timeout loop used after issuing a POPFile 'startup' request
   ;-------------------------------------------------------------------------------
 
-  ; Sleep delay (in milliseconds) used after starting POPFile (in 'CheckLaunchOptions' function)
+  ; Timeout loop counter limit (used while waiting for POPFile to start its webserver)
 
-  !define C_UI_STARTUP_DELAY         5000
+  !define C_STARTUP_LIMIT      50
+
+  ; Delay (in milliseconds) used inside the timeout loop and also in the countdown timer
+
+  !define C_STARTUP_DELAY    1000
 
 #--------------------------------------------------------------------------
 # User Registers (Global)
@@ -258,6 +268,9 @@
 
   Var G_PFISETUP           ; parameter passed from main installer (setup.exe)
                            ; or the 'User Data' Restore utility (pfi-restore (<username>).exe)
+
+  Var G_PFIMODE            ; mode requested via the command-line (extracted from $G_PFISETUP)
+                           ; (/install, /restart or /restore)
 
   Var G_ROOTDIR            ; full path to the folder used for the POPFile program files
   Var G_USERDIR            ; full path to the folder containing the 'popfile.cfg' file
@@ -330,7 +343,7 @@
   !define ADDUSER
 
   !include "pfi-library.nsh"
-  !include "WriteEnvStr.nsh"
+  !include "pfi-nsis-library.nsh"
 
 #--------------------------------------------------------------------------
 # Version Information settings (for the installer EXE and uninstaller EXE)
@@ -341,10 +354,13 @@
 
   VIProductVersion                          "${C_PFI_VERSION}.0"
 
+  !define /date C_BUILD_YEAR                "%Y"
+
   VIAddVersionKey "ProductName"             "POPFile User wizard"
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) 2005  John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Add/Remove POPFile User wizard"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
@@ -355,9 +371,13 @@
     VIAddVersionKey "Build"                 "English-Mode"
   !endif
 
+  VIAddVersionKey "Build Compiler"          "NSIS ${NSIS_VERSION}"
   VIAddVersionKey "Build Date/Time"         "${__DATE__} @ ${__TIME__}"
   !ifdef C_PFI_LIBRARY_VERSION
     VIAddVersionKey "Build Library Version" "${C_PFI_LIBRARY_VERSION}"
+  !endif
+  !ifdef C_NSIS_LIBRARY_VERSION
+    VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
   VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
 
@@ -484,6 +504,7 @@
   ; This makes it easy to recover from a previous 'bad' choice of language for the installer
 
   !define MUI_LANGDLL_ALWAYSSHOW
+  !define MUI_LANGDLL_ALLLANGUAGES
 
   ; Remember user's language selection and offer this as the default when re-installing
   ; (uninstaller also uses this setting to determine which language is to be used)
@@ -610,6 +631,7 @@
   ; Use a "leave" function for the 'FINISH' page to remove any empty corpus folders left
   ; behind after POPFile has converted the buckets (if any) created by the CBP package.
   ; (If the user doesn't run POPFile from the installer, these corpus folders will not be empty)
+  ; This function will also update the estimated size used for the "Add/Remove Programs" entry.
 
   !define MUI_PAGE_CUSTOMFUNCTION_LEAVE       "RemoveEmptyCBPCorpus"
 
@@ -621,8 +643,11 @@
   !define MUI_FINISHPAGE_RUN_FUNCTION         "RunUI"
 
   ; Provide a checkbox to let user display the Release Notes for this version of POPFile
+  ; (MUI_FINISHPAGE_SHOWREADME_TEXT is set to the MUI default string here in order to
+  ; work around a NSIS compiler bug which corrupts the Japanese version of the string)
 
   !define MUI_FINISHPAGE_SHOWREADME
+  !define MUI_FINISHPAGE_SHOWREADME_TEXT      "$(MUI_TEXT_FINISH_SHOWREADME)"
   !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
   !define MUI_FINISHPAGE_SHOWREADME_FUNCTION  "ShowReadMe"
 
@@ -664,7 +689,7 @@
 
   ; At least one language must be specified for the installer (the default is "English")
 
-  !insertmacro PFI_LANG_LOAD "English"
+  !insertmacro PFI_LANG_LOAD "English" "-"
 
   ; Conditional compilation: if ENGLISH_MODE is defined, support only 'English'
 
@@ -716,8 +741,13 @@
   !insertmacro MUI_RESERVEFILE_LANGDLL
   !insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
   ReserveFile "${NSISDIR}\Plugins\Banner.dll"
+  ReserveFile "${NSISDIR}\Plugins\getsize.dll"
+  ReserveFile "${NSISDIR}\Plugins\inetc.dll"
+  ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
+  ReserveFile "${NSISDIR}\Plugins\MoreInfo.dll"
   ReserveFile "${NSISDIR}\Plugins\nsExec.dll"
-  ReserveFile "${NSISDIR}\Plugins\NSISdl.dll"
+  ReserveFile "${NSISDIR}\Plugins\ShellLink.dll"
+  ReserveFile "${NSISDIR}\Plugins\SimpleSC.dll"
   ReserveFile "${NSISDIR}\Plugins\System.dll"
   ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
   ReserveFile "ioA.ini"
@@ -732,22 +762,37 @@
 
 Function .onInit
 
-  ; The command-line switch '/install' (or '/installreboot') is used to suppress this wizard's
+  ; The command-line switch '/install' (or '/restart') is used to suppress this wizard's
   ; language selection dialog when the wizard is called from 'setup.exe' during installation
   ; of POPFile. The '/restore="path to restored data"' switch performs a similar function when
   ; this wizard is called from the POPFile 'User Data' Restore wizard.
 
-  Call PFI_GetParameters
+  StrCpy $G_PFIMODE ""
+
+  Call NSIS_GetParameters
   Pop $G_PFISETUP
-  StrCpy $G_PFIFLAG $G_PFISETUP 9
-  StrCmp $G_PFIFLAG "/restore=" special_case
-  StrCmp $G_PFISETUP "/install" special_case
-  StrCmp $G_PFISETUP "/installreboot" 0 normal_startup
+  StrCpy $G_PFIMODE $G_PFISETUP 9
+  StrCmp $G_PFIMODE "/restore=" restore_case
+  StrCmp $G_PFIMODE "/install" install_case
+  StrCmp $G_PFIMODE "/restart" 0 normal_startup
   SetRebootFlag true
 
-special_case:
+install_case:
   ReadRegStr $LANGUAGE \
+             "HKLM" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
+  Goto extract_files
+
+restore_case:
+  StrCpy $G_PFIMODE "/restore"
+  ReadRegStr $G_PFIFLAG \
              "HKCU" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
+  StrCmp $G_PFIFLAG "" try_installer_language
+  StrCpy $LANGUAGE $G_PFIFLAG
+  Goto extract_files
+
+try_installer_language:
+  ReadRegStr $LANGUAGE \
+             "HKLM" "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "Installer Language"
   Goto extract_files
 
 normal_startup:
@@ -815,7 +860,10 @@ Function PFIGUIInit
 
 try_registry:
   ReadRegStr $G_ROOTDIR HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_LFN"
-  StrCmp $G_ROOTDIR "" 0 compatible
+  StrCmp $G_ROOTDIR "" not_found
+  IfFileExists "$G_ROOTDIR\*.*" compatible
+
+not_found:
   MessageBox MB_OK|MB_ICONSTOP "$(PFI_LANG_COMPAT_NOTFOUND)"
   Abort
 
@@ -923,10 +971,17 @@ save_HKLM_root_sfn:
   WriteRegStr HKLM "SOFTWARE\POPFile Project\${C_PFI_PRODUCT}\MRI" "RootDir_SFN" "${L_TEMP}"
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" 0 update_HKCU_data
+  IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" 0 update_HKCU_data
   IfFileExists "$G_ROOTDIR\uninstall.exe" 0 update_HKCU_data
-  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" NORMAL
-  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk" \
+  Call PFI_AtLeastVista
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "1" update_HKCU_data
+  SetShellVarContext all
+  Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\Uninstall POPFile.lnk"
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" NORMAL
+  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Modify POPFile.lnk" \
                  "$G_ROOTDIR\uninstall.exe"
+  SetShellVarContext current
 
 update_HKCU_data:
 
@@ -1001,7 +1056,7 @@ save_user_sfn:
 check_root_env:
   ReadEnvStr ${L_TEMP} "POPFILE_ROOT"
   StrCmp ${L_POPFILE_ROOT} ${L_TEMP} root_set_ok
-  Call PFI_IsNT
+  Call NSIS_IsNT
   Pop ${L_RESERVED}
   StrCmp ${L_RESERVED} 0 set_root_now
   WriteRegStr HKCU "Environment" "POPFILE_ROOT" ${L_POPFILE_ROOT}
@@ -1020,7 +1075,7 @@ root_set_ok:
 check_user_env:
   ReadEnvStr ${L_TEMP} "POPFILE_USER"
   StrCmp ${L_POPFILE_USER} ${L_TEMP} continue
-  Call PFI_IsNT
+  Call NSIS_IsNT
   Pop ${L_RESERVED}
   StrCmp ${L_RESERVED} 0 set_user_now
   WriteRegStr HKCU "Environment" "POPFILE_USER" ${L_POPFILE_USER}
@@ -1040,7 +1095,7 @@ continue:
   StrCmp ${L_TEMP} "Not SQLite" stopwords
 
   ; Create a shortcut to make it easier to run the SQLite utility. There are two versions of
-  ; the SQLite utility (one for SQlite 2.x format files and one for SQLite 3.x format files)
+  ; the SQLite utility (one for SQLite 2.x format files and one for SQLite 3.x format files)
   ; so we use 'runsqlite.exe' which automatically selects and runs the appropriate version.
 
   Push $G_USERDIR
@@ -1051,7 +1106,7 @@ continue:
   CreateShortCut "$G_USERDIR\Run SQLite utility.lnk" \
                  "$G_ROOTDIR\runsqlite.exe" "${L_TEMP}"
 
-  ; If the 'POPFile SQlite Database Status Check' utility has been installed, create a
+  ; If the 'POPFile SQLite Database Status Check' utility has been installed, create a
   ; a shortcut to make it easy to check the integrity of the SQLite database.
 
   IfFileExists "$G_ROOTDIR\pfidbstatus.exe" 0 stopwords
@@ -1066,13 +1121,28 @@ stopwords:
   ; do not touch the 'stopwords' file in case it has just been restored (but we still
   ; update the default 'stopwords' file to the one distributed with 'our' version of POPFile)
 
-  StrCpy ${L_TEMP} $G_PFISETUP 9
-  StrCmp ${L_TEMP} "/restore=" copy_default_stopwords
+  StrCmp $G_PFIMODE "/restore" copy_default_stopwords
 
-  ; If we are upgrading and the user did not have a 'stopwords' file then do not install one
-  ; (but still update the default file to the one distributed with 'our' version of POPFile)
+  ; If there is no POPFile configuration file in the destination folder then install the
+  ; 'stopwords' file as this is assumed to be a 'clean' installation.
 
   IfFileExists "$G_USERDIR\popfile.cfg" 0 copy_stopwords
+
+  ; If we are upgrading an old system (pre-0.19.0) that did not support the 'stopwords' file
+  ; then we install the current 'stopwords' file so that the upgraded POPFile installation
+  ; can use it. All of the Windows versions of POPFile before the 0.19.0 release used the
+  ; 'ui_port' configuration setting to define the UI port (from 0.19.0 onwards the UI port
+  ; was defined using the 'html_port' setting).
+
+  ; If we are upgrading a system that supported the 'stopwords' file and the user did not
+  ; have a 'stopwords' file then do not install one (but still update the default file to
+  ; the one distributed with 'our' version of POPFile)
+
+  Push "$G_USERDIR\popfile.cfg"
+  Push "ui_port"
+  Call PFI_CfgSettingRead
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "" 0 copy_stopwords
   IfFileExists "$G_USERDIR\stopwords" 0 copy_default_stopwords
 
   ; We are upgrading an existing installation which uses 'stopwords'. If 'our' default list is
@@ -1193,7 +1263,7 @@ skip_rel_notes:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?FrequentlyAskedQuestions"
+              "http://getpopfile.org/docs/FAQ"
 
   !ifndef ENGLISH_MODE
       Goto support
@@ -1201,7 +1271,7 @@ skip_rel_notes:
     japanese_faq:
       WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\FAQ.url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_FrequentlyAskedQuestions"
+                  "http://getpopfile.org/docs/JP:FAQ"
 
     support:
   !endif
@@ -1220,17 +1290,17 @@ skip_rel_notes:
 
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
               "InternetShortcut" "URL" \
-              "http://getpopfile.org/cgi-bin/wiki.pl?POPFileDocumentationProject"
+              "http://getpopfile.org/docs"
 
   !ifndef ENGLISH_MODE
-      Goto pfidiagnostic
+      Goto user_data_shortcut
 
     japanese_wiki:
   WriteINIStr "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\POPFile Support (Wiki).url" \
                   "InternetShortcut" "URL" \
-                  "http://getpopfile.org/cgi-bin/wiki.pl?JP_POPFileDocumentationProject"
+                  "http://getpopfile.org/docs/jp"
 
-    pfidiagnostic:
+    user_data_shortcut:
   !endif
 
   IfFileExists "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data ($G_WINUSERNAME).lnk" 0 pfidiag_entries
@@ -1239,7 +1309,7 @@ skip_rel_notes:
                  "$G_USERDIR"
 
 pfidiag_entries:
-  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 dbstatus_check
+  IfFileExists "$G_ROOTDIR\pfidiag.exe" 0 msgcapture_entry
   Delete "$SMPROGRAMS\${C_PFI_PRODUCT}\PFI Diagnostic utility.lnk"
   SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" NORMAL
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\PFI Diagnostic utility (simple).lnk" \
@@ -1251,7 +1321,11 @@ pfidiag_entries:
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Create 'User Data' shortcut.lnk" \
                  "$G_ROOTDIR\pfidiag.exe" "/shortcut"
 
-dbstatus_check:
+msgcapture_entry:
+  SetFileAttributes "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk" NORMAL
+  CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\Message Capture utility.lnk" \
+                 "$G_ROOTDIR\runpopfile.exe" "/msgcapture"
+
   IfFileExists "$G_ROOTDIR\pfidbstatus.exe" 0 silent_shutdown
   Push $G_USERDIR
   Call PFI_GetSQLdbPathName
@@ -1285,17 +1359,70 @@ set_autostart_set:
 
 end_autostart_set:
 
-  ; Create entry in the Control Panel's "Add/Remove Programs" list
+  ; Create "User Data" entry in the Control Panel's "Add/Remove Programs" list
 
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "DisplayName" "${C_PFI_PRODUCT} Data ($G_WINUSERNAME)"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "DisplayVersion" "${C_PFI_PRODUCT} Data for '$G_WINUSERNAME'"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "DisplayIcon" "$G_USERDIR\uninstalluser.exe,0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "URLInfoAbout" "http://getpopfile.org"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "UninstallString" "$G_USERDIR\uninstalluser.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "InstallLocation" "$G_USERDIR"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "NoModify" "1"
   WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
               "NoRepair" "1"
 
+  ; Create a "POPFile (program)" entry in "Add/Remove Programs" list if the target is Vista or
+  ; later. HKCU is used here (instead of HKLM) to avoid UAC problems which stop the UAC plugin
+  ; from working properly.
+  ;
+  ; The main installer (setup.exe) creates a similar HKCU entry in the "Add/Remove Programs"
+  ; list for the 'admin' account used to give the installer administrator rights. This is done
+  ; to cover the case where the user terminates adduser.exe prematurely.
+
+  IfFileExists "$G_ROOTDIR\uninstall.exe" 0 all_done
+  Call PFI_AtLeastVista
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "0" all_done
+  MoreInfo::GetFileVersion "$G_ROOTDIR\uninstall.exe"
+  Pop ${L_TEMP}
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayName" "${C_PFI_PRODUCT} ${L_TEMP}"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayVersion" "${L_TEMP}"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "DisplayIcon" "$G_ROOTDIR\uninstall.exe,0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "URLInfoAbout" "http://getpopfile.org"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "UninstallString" '"$G_ROOTDIR\uninstall.exe" /UNINSTALL'
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "InstallLocation" "$G_ROOTDIR"
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "$G_ROOTDIR" "/S=Kb" .r0 .r1 .r2
+  WriteRegDWord HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "EstimatedSize" $0
+  Pop $2
+  Pop $1
+  Pop $0
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoModify" "0"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "ModifyPath" '"$G_ROOTDIR\uninstall.exe" /MODIFY'
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoElevateOnModify" "1"
+  WriteRegDWORD HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}" \
+              "NoRepair" "1"
+
+all_done:
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_BE_PATIENT)"
   SetDetailsPrint listonly
@@ -1321,13 +1448,19 @@ SectionEnd
 # If we are performing an upgrade of a POPFile 0.21.x (or later) installation, the SQL database
 # may need to be upgraded (e.g. 0.22.0 uses a different database schema from 0.21.x). If the
 # existing installation uses SQLite we try to make a backup copy of the database before starting
-# POPFile to perform the upgrade.
+# POPFile to perform the upgrade (except for the case where a SQLite 2.x to 3.x upgrade is needed
+# because POPFile will make a backup of the old 2.x database before upgrading it).
 #
 # (If upgrading from 0.21.x to 0.22.0 (or later) then the message history will also be converted
 # but we do not attempt to make a backup of the message history).
 #
 # The backup is created in the '$G_USERDIR\backup' folder. Information on the backup is stored
 # in the 'backup.ini' file to assist in restoring the old corpus.
+#
+# POPFile versions 0.21.0 to 1.0.1 inclusive defaulted to using SQLite 2.x format databases.
+# The 1.1.0 release was the first to default to using the SQLite 3.x format. These 2.x and 3.x
+# format databases are not compatible therefore POPFile 1.1.0 (or later) will automatically
+# backup and convert an existing SQLite 2.x format database into the new 3.x format.
 #
 # If SQL database conversion is required, we will use the 'Message Capture' utility to show
 # the conversion progress reports (instead of running POPFile in a console window).
@@ -1362,6 +1495,15 @@ Section "-SQLCorpusBackup" SecSQLBackup
   StrCmp ${L_SQL_DB} "" exit
   StrCmp ${L_SQL_DB} "Not SQLite" exit
 
+  ; If the current SQLite database is in the old 2.x format there is no need to make a
+  ; backup copy because POPFile will make one before it upgrades the database to the
+  ; new SQLite 3.x format.
+
+  Push ${L_SQL_DB}
+  Call PFI_GetSQLiteFormat
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "2.x" exit
+
   ; If the newly installed POPFile database schema differs from the version used by the
   ; SQLite database, we make a backup copy of the database (because POPFile will perform
   ; an automatic database upgrade when it is started).
@@ -1394,7 +1536,7 @@ got_schemas:
   WriteINIStr "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "DatabasePath" "${L_SQL_DB}"
 
   Push ${L_SQL_DB}
-  Call PFI_GetParent
+  Call NSIS_GetParent
   Pop ${L_TEMP}
   WriteINIStr "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "ParentPath" "${L_TEMP}"
   StrLen ${L_TEMP} ${L_TEMP}
@@ -1574,7 +1716,7 @@ check_bucket_count:
 
   StrCpy ${L_TEMP} ${L_CORPUS_PATH}
   Push ${L_TEMP}
-  Call PFI_GetParent
+  Call NSIS_GetParent
   Pop ${L_TEMP}
   WriteINIStr "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "ParentPath" "${L_TEMP}"
   StrLen ${L_TEMP} ${L_TEMP}
@@ -1670,7 +1812,6 @@ use_inherited_lang:
   StrCmp ${L_LANG} "Chinese-Traditional-BIG5" special_case
   StrCmp ${L_LANG} "English-UK" special_case
   StrCmp ${L_LANG} "Hebrew" special_case
-  StrCmp ${L_LANG} "Klingon" special_case
   Goto use_installer_lang
 
 special_case:
@@ -1708,7 +1849,7 @@ use_installer_lang:
         !insertmacro PFI_UI_LANG_CONFIG "NORWEGIAN" "Norsk"
         !insertmacro PFI_UI_LANG_CONFIG "POLISH" "Polish"
         !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESE" "Portugues"
-        !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESEBR" "Portugues do Brasil"
+        !insertmacro PFI_UI_LANG_CONFIG "PORTUGUESEBR" "Portugues-do-Brasil"
         !insertmacro PFI_UI_LANG_CONFIG "RUSSIAN" "Russian"
         !insertmacro PFI_UI_LANG_CONFIG "SLOVAK" "Slovak"
         !insertmacro PFI_UI_LANG_CONFIG "FINNISH" "Suomi"
@@ -1788,11 +1929,9 @@ Section "-MakeBatchFile" SecMakeBatch
   FileWrite ${L_FILEHANDLE} "REM ---------------------------------------------------------------------${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM POPFile program location = $G_ROOTDIR${MB_NL}"
-  FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "set POPFILE_ROOT=${L_POPFILE_ROOT}${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM POPFile User Data folder = $G_USERDIR${MB_NL}"
-  FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "set POPFILE_USER=${L_POPFILE_USER}${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM ---------------------------------------------------------------------${MB_NL}"
@@ -1809,7 +1948,7 @@ Section "-MakeBatchFile" SecMakeBatch
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM Debug command: Start POPFile in foreground using 'popfile.pl'${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
-  FileWrite ${L_FILEHANDLE} "$\"%POPFILE_ROOT%\perl.exe$\" $\"%POPFILE_ROOT%\popfile.pl$\" --verbose${MB_NL}"
+  FileWrite ${L_FILEHANDLE} "$\"%POPFILE_ROOT%\perl.exe$\" $\"%POPFILE_ROOT%\popfile.pl$\"${MB_NL}"
   FileWrite ${L_FILEHANDLE} "goto exit${MB_NL}"
   FileWrite ${L_FILEHANDLE} "${MB_NL}"
   FileWrite ${L_FILEHANDLE} "REM Debug command: Start POPFile using the 'Message Capture' utility${MB_NL}"
@@ -1939,14 +2078,11 @@ Function CheckUserDirStatus
 
   !define L_RESULT    $R9
 
-  Push ${L_RESULT}
-  StrCpy ${L_RESULT} $G_PFISETUP 9
-  StrCmp ${L_RESULT} "/restore=" restore_install
-  Pop ${L_RESULT}
+  StrCmp $G_PFIMODE "/restore" restore_install
 
   IfFileExists "$INSTDIR\popfile.cfg" 0 exit
-  StrCmp $G_PFISETUP "/install" upgrade_install
-  StrCmp $G_PFISETUP "/installreboot" 0 exit
+  StrCmp $G_PFIMODE "/install" upgrade_install
+  StrCmp $G_PFIMODE "/restart" 0 exit
 
 upgrade_install:
   GetDlgItem $G_DLGITEM $HWNDPARENT 1037
@@ -1981,7 +2117,7 @@ upgrade_install:
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" check_config_data
   Push $G_USERDIR
-  Call PFI_GetRoot
+  Call NSIS_GetRoot
   Pop $G_PLS_FIELD_1
   MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_DIRSELECT_MBNOSFN)"
   Pop ${L_RESULT}
@@ -2019,7 +2155,7 @@ check_config:
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "1" check_restore_log
   StrCpy $G_SFN_DISABLED "1"
-  
+
   ; Short file names are not supported here, so we cannot accept any path containing spaces.
 
   Push $G_USERDIR
@@ -2133,7 +2269,7 @@ Function CheckExistingDataDir
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "" check_locn
   Push $G_USERDIR
-  Call PFI_GetRoot
+  Call NSIS_GetRoot
   Pop $G_PLS_FIELD_1
   MessageBox MB_OK|MB_ICONEXCLAMATION "$(PFI_LANG_DIRSELECT_MBNOSFN)"
 
@@ -2206,6 +2342,17 @@ FunctionEnd
 # is case-sensitive so we have to convert the skin name to lowercase otherwise the current
 # skin will not be shown in the Configuration page of the UI (the UI will show the first entry
 # in the list ("blue") instead of the skin currently in use).
+#
+# The 1.0.0 release introduced the ability to select the parser used to split Japanese text
+# into words. Previous releases only supported the 'Kakasi' parser but 1.0.0 offers a choice
+# of 'Kakasi', 'MeCab' or 'Internal', controlled by the new 'bayes_nihongo_parser' parameter.
+# Valid values for this new popfile.cfg parameter are kakasi, mecab or internal.
+#
+# The 1.1.0 release introduced support for databases built using SQLite 3.x libraries (earlier
+# versions of POPFile only worked with SQLite 2.x format databases). POPFile will automatically
+# convert an existing SQLite 2.x format database into the new 3.x format and it will also adjust
+# the configuration file to use DBD::SQLite instead of DBD::SQLite2 so there's no need for this
+# wizard to make any changes to the configuration data.
 #--------------------------------------------------------------------------
 
 Function CheckExistingConfigData
@@ -2213,26 +2360,28 @@ Function CheckExistingConfigData
   !define L_CFG       $R9     ; handle for "popfile.cfg"
   !define L_CLEANCFG  $R8     ; handle for "clean" copy
   !define L_CMPRE     $R7     ; config param name
-  !define L_LNE       $R6     ; a line from popfile.cfg
-  !define L_OLDUI     $R5     ; used to hold old-style of GUI port
-  !define L_TRAYICON  $R4     ; a config parameter used by popfile.exe
-  !define L_CONSOLE   $R3     ; a config parameter used by popfile.exe
-  !define L_LANG_NEW  $R2     ; new style UI lang parameter
-  !define L_LANG_OLD  $R1     ; old style UI lang parameter
-  !define L_TEXTEND   $R0     ; used to ensure correct handling of lines longer than 1023 chars
-  !define L_SKIN      $9      ; current skin setting
+  !define L_CONSOLE   $R6     ; a config parameter used by popfile.exe
+  !define L_LANG_NEW  $R5     ; new style UI lang parameter
+  !define L_LANG_OLD  $R4     ; old style UI lang parameter
+  !define L_LNE       $R3     ; a line from popfile.cfg
+  !define L_OLDUI     $R2     ; used to hold old-style of GUI port
+  !define L_PARSER    $R1      ; current Nihongo parser setting (introduced in 1.0.0 release)
+  !define L_SKIN      $R0      ; current skin setting
+  !define L_TEXTEND   $9     ; used to ensure correct handling of lines longer than 1023 chars
+  !define L_TRAYICON  $8     ; a config parameter used by popfile.exe
 
   Push ${L_CFG}
   Push ${L_CLEANCFG}
   Push ${L_CMPRE}
-  Push ${L_LNE}
-  Push ${L_OLDUI}
-  Push ${L_TRAYICON}
   Push ${L_CONSOLE}
   Push ${L_LANG_NEW}
   Push ${L_LANG_OLD}
-  Push ${L_TEXTEND}
+  Push ${L_LNE}
+  Push ${L_OLDUI}
+  Push ${L_PARSER}
   Push ${L_SKIN}
+  Push ${L_TEXTEND}
+  Push ${L_TRAYICON}
 
   StrCpy $G_POP3 ""
   StrCpy $G_GUI ""
@@ -2244,12 +2393,21 @@ Function CheckExistingConfigData
   StrCpy ${L_LANG_NEW} ""
   StrCpy ${L_LANG_OLD} ""
 
+  StrCpy ${L_PARSER} ""
+
   ; See if we can get the current pop3 and gui port from an existing configuration.
   ; There may be more than one entry for these ports in the file - use the last one found
   ; (but give priority to any "html_port" entry).
 
-  FileOpen  ${L_CFG} "$G_USERDIR\popfile.cfg" r
   FileOpen  ${L_CLEANCFG} "$PLUGINSDIR\popfile.cfg" w
+  ClearErrors
+  FileOpen  ${L_CFG} "$G_USERDIR\popfile.cfg" r
+  IfErrors 0 found_eol
+
+  ; This is a clean install so set the UI skin to the default setting
+  ; (there is a skin called 'default' but for the 1.0.0 release we use 'simplyblue')
+
+  FileWrite ${L_CLEANCFG} "html_skin simplyblue${MB_NL}"
 
 found_eol:
   StrCpy ${L_TEXTEND} "<eol>"
@@ -2274,8 +2432,12 @@ loop:
 
   StrCpy ${L_CMPRE} ${L_LNE} 17
   StrCmp ${L_CMPRE} "windows_trayicon " got_trayicon
+
   StrCpy ${L_CMPRE} ${L_LNE} 16
   StrCmp ${L_CMPRE} "windows_console " got_console
+
+  StrCpy ${L_CMPRE} ${L_LNE} 21
+  StrCmp ${L_CMPRE} "bayes_nihongo_parser " got_parser
 
   ; do not transfer any UI language settings to the copy of popfile.cfg
 
@@ -2308,6 +2470,10 @@ got_console:
   StrCpy ${L_CONSOLE} ${L_LNE} 1 16
   Goto loop
 
+got_parser:
+  StrCpy ${L_PARSER} ${L_LNE} "" 21
+  Goto loop
+
 got_lang_new:
   StrCpy ${L_LANG_NEW} ${L_LNE} "" 14
   Goto loop
@@ -2325,23 +2491,51 @@ got_skin_new:
 
 got_skin:
   Push ${L_SKIN}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_SKIN}
+
+  ; Originally the skins were all defined in a single 'skins'
+  ; folder. When the new skin template system was introduced
+  ; each skin was given its own folder with the folder's name
+  ; being used to select the skin. These folder names are in
+  ; lowercase so if we are upgrading a very old installation
+  ; we use the 'PFI_SkinCaseChange' macro to ensure that the
+  ; skin parameter in popfile.cfg uses lowercase.
+  ;
+  ; For the 1.0.0 release some significant skin changes have
+  ; been made:
+  ;
+  ; (a) the almost identical 'lrclaptop', 'tinydefault' and
+  ;     'smalldefault' skins have been merged into a revised
+  ;     version of 'smalldefault'
+  ;
+  ; (b) the 'klingon', 'prjbluegrey' and 'prjsteelbeach' skins
+  ;     have been dropped so we fallback to the default skin
+  ;     if any of these skins is currently selected
+  ;
+  ;     (Note that for the 1.0.0 release the default skin is
+  ;     'simplyblue' even though there's a skin called 'default')
+  ;
+  ; The 'PFI_SkinCaseChange' macro provides an easy way to achieve
+  ; the necessary changes if the user currently uses any of the
+  ; merged or dropped skins.
 
   !insertmacro PFI_SkinCaseChange "CoolBlue"       "coolblue"
   !insertmacro PFI_SkinCaseChange "CoolBrown"      "coolbrown"
   !insertmacro PFI_SkinCaseChange "CoolGreen"      "coolgreen"
   !insertmacro PFI_SkinCaseChange "CoolOrange"     "coolorange"
   !insertmacro PFI_SkinCaseChange "CoolYellow"     "coolyellow"
+  !insertmacro PFI_SkinCaseChange "klingon"        "simplyblue"
   !insertmacro PFI_SkinCaseChange "Lavish"         "lavish"
-  !insertmacro PFI_SkinCaseChange "LRCLaptop"      "lrclaptop"
+  !insertmacro PFI_SkinCaseChange "LRCLaptop"      "smalldefault"
   !insertmacro PFI_SkinCaseChange "orangeCream"    "orangecream"
-  !insertmacro PFI_SkinCaseChange "PRJBlueGrey"    "prjbluegrey"
-  !insertmacro PFI_SkinCaseChange "PRJSteelBeach"  "prjsteelbeach"
+  !insertmacro PFI_SkinCaseChange "PRJBlueGrey"    "simplyblue"
+  !insertmacro PFI_SkinCaseChange "PRJSteelBeach"  "simplyblue"
   !insertmacro PFI_SkinCaseChange "SimplyBlue"     "simplyblue"
   !insertmacro PFI_SkinCaseChange "Sleet"          "sleet"
   !insertmacro PFI_SkinCaseChange "Sleet-RTL"      "sleet-rtl"
   !insertmacro PFI_SkinCaseChange "StrawberryRose" "strawberryrose"
+  !insertmacro PFI_SkinCaseChange "tinydefault"    "smalldefault"
 
 save_skin_setting:
   StrCpy ${L_LNE} "${L_CMPRE}${L_SKIN}${MB_NL}"
@@ -2384,11 +2578,28 @@ check_trayicon:
   StrCmp ${L_TRAYICON} "0" found_trayicon
   StrCmp ${L_TRAYICON} "1" found_trayicon
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "?"
-  Goto close_cleancopy
+  Goto check_parser
 
 found_trayicon:
   FileWrite ${L_CLEANCFG} "windows_trayicon ${L_TRAYICON}${MB_NL}"
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "TrayIcon" "${L_TRAYICON}"
+
+check_parser:
+  StrCmp ${L_PARSER} "" parser_not_previously_defined
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "NihongoParser" "${L_PARSER}"
+  ReadRegStr ${L_CMPRE} HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
+  StrCmp ${L_CMPRE} "" retain_setting
+  StrCpy ${L_PARSER} ${L_CMPRE}
+
+retain_setting:
+  FileWrite ${L_CLEANCFG} "bayes_nihongo_parser ${L_PARSER}${MB_NL}"
+  Goto close_cleancopy
+
+parser_not_previously_defined:
+  !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "NihongoParser" "?"
+  ReadRegStr ${L_CMPRE} HKLM "Software\POPFile Project\${C_PFI_PRODUCT}\MRI" "NihongoParser"
+  StrCmp ${L_CMPRE} "" close_cleancopy
+  FileWrite ${L_CLEANCFG} "bayes_nihongo_parser ${L_CMPRE}${MB_NL}"
 
 close_cleancopy:
   FileClose ${L_CLEANCFG}
@@ -2398,14 +2609,14 @@ close_cleancopy:
   ; saved settings will not be used (any existing settings were copied to the new 'popfile.cfg')
 
   Push ${L_LANG_NEW}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_LANG_NEW}
   StrCmp ${L_LANG_NEW} "" 0 check_lang_old
   StrCpy ${L_LANG_NEW} "?"
 
 check_lang_old:
   Push ${L_LANG_OLD}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_LANG_OLD}
   StrCmp ${L_LANG_OLD} "" 0 save_langs
   StrCpy ${L_LANG_OLD} "?"
@@ -2415,15 +2626,15 @@ save_langs:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Inherited" "language" "${L_LANG_OLD}"
 
   Push $G_POP3
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop $G_POP3
 
   Push $G_GUI
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop $G_GUI
 
   Push ${L_OLDUI}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_OLDUI}
 
   ; Save the UI port settings (from popfile.cfg) for later use by the 'MakeUserDirSafe' function
@@ -2479,14 +2690,15 @@ default_gui:
   StrCpy $G_GUI "8081"
 
 ports_ok:
-  Pop ${L_SKIN}
+  Pop ${L_TRAYICON}
   Pop ${L_TEXTEND}
+  Pop ${L_SKIN}
+  Pop ${L_PARSER}
+  Pop ${L_OLDUI}
+  Pop ${L_LNE}
   Pop ${L_LANG_OLD}
   Pop ${L_LANG_NEW}
   Pop ${L_CONSOLE}
-  Pop ${L_TRAYICON}
-  Pop ${L_OLDUI}
-  Pop ${L_LNE}
   Pop ${L_CMPRE}
   Pop ${L_CLEANCFG}
   Pop ${L_CFG}
@@ -2494,14 +2706,15 @@ ports_ok:
   !undef L_CFG
   !undef L_CLEANCFG
   !undef L_CMPRE
-  !undef L_LNE
-  !undef L_OLDUI
-  !undef L_TRAYICON
   !undef L_CONSOLE
   !undef L_LANG_NEW
   !undef L_LANG_OLD
-  !undef L_TEXTEND
+  !undef L_LNE
+  !undef L_OLDUI
+  !undef L_PARSER
   !undef L_SKIN
+  !undef L_TEXTEND
+  !undef L_TRAYICON
 
 FunctionEnd
 
@@ -2608,9 +2821,9 @@ show_defaults:
     StrCmp $LANGUAGE ${LANG_KOREAN} button_text
   !endif
 
-  ; In 'GetDlgItem', use (1200 + Field number - 1) to refer to the field to be changed
+  ; Field 5 = 'Run POPFile at startup' checkbox control
 
-  GetDlgItem $G_DLGITEM $G_HWND 1204            ; Field 5 = 'Run POPFile at startup' checkbox
+  !insertmacro MUI_INSTALLOPTIONS_READ $G_DLGITEM "ioA.ini" "Field 5" "HWND"
   CreateFont $G_FONT "MS Shell Dlg" 10 700      ; use larger & bolder version of the font in use
   SendMessage $G_DLGITEM ${WM_SETFONT} $G_FONT 0
 
@@ -2622,8 +2835,7 @@ show_defaults:
   ; 'User Data', remind the user by changing the text on the "Install" button to "Upgrade" or
   ; "Restore" as appropriate
 
-  StrCpy ${L_RESULT} $G_PFISETUP 9
-  StrCmp ${L_RESULT} "/restore=" restore
+  StrCmp $G_PFIMODE "/restore" restore
 
   IfFileExists "$G_USERDIR\popfile.cfg" upgrade
   GetDlgItem $G_DLGITEM $HWNDPARENT 1           ; "Next" button, also used for "Install"
@@ -2751,8 +2963,8 @@ FunctionEnd
 
 Function MakeUserDirSafe
 
-  StrCmp $G_PFISETUP "/install" nothing_to_check
-  StrCmp $G_PFISETUP "/installreboot" nothing_to_check
+  StrCmp $G_PFIMODE "/install" nothing_to_check
+  StrCmp $G_PFIMODE "/restart" nothing_to_check
   IfFileExists "$G_USERDIR\popfile.cfg" 0 nothing_to_check
 
   !define L_GUI_PORT  $R9
@@ -2765,11 +2977,11 @@ Function MakeUserDirSafe
   DetailPrint "$(PFI_LANG_INST_PROG_UPGRADE)"
   SetDetailsPrint listonly
 
-  ; Starting with POPfile 0.21.0 an experimental version of 'popfile-service.exe' was included
+  ; Starting with POPFile 0.21.0 an experimental version of 'popfile-service.exe' was included
   ; to allow POPFile to be run as a Windows service.
 
   Push "POPFile"
-  Call PFI_ServiceRunning
+  Call PFI_ServiceActive
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "true" manual_shutdown
 
@@ -2786,7 +2998,7 @@ Function MakeUserDirSafe
 
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_GUI_PORT} "pfi-cfg.ini" "Inherited" "NewStyleUI"
   StrCmp ${L_GUI_PORT} "" try_old_style
-  DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_GUI_PORT} [new style port]"
+  DetailPrint "$(PFI_LANG_INST_LOG_SHUTDOWN) ${L_GUI_PORT}"
   DetailPrint "$(PFI_LANG_TAKE_A_FEW_SECONDS)"
   Push ${L_GUI_PORT}
   Call PFI_ShutdownViaUI
@@ -2863,11 +3075,11 @@ Function CompareStopwords
 loop:
   FileRead ${L_STD_FILE} ${L_STD_WORD}
   Push ${L_STD_WORD}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_STD_WORD}
   FileRead ${L_USR_FILE} ${L_USR_WORD}
   Push ${L_USR_WORD}
-  Call PFI_TrimNewlines
+  Call NSIS_TrimNewlines
   Pop ${L_USR_WORD}
   StrCmp ${L_STD_WORD} ${L_USR_WORD} 0 close_files
   StrCmp ${L_STD_WORD} "" 0 loop
@@ -2938,20 +3150,24 @@ FunctionEnd
 #
 # There are some special cases where the installer starts POPFile to update the existing data:
 #
-# POPFile automatically convert an existing  flat-file or BerkeleyDB format corpus to the new
+# POPFile automatically converts an existing  flat-file or BerkeleyDB format corpus to the new
 # SQL database format. This corpus conversion may take several minutes, during which time the
 # POPFile UI will appear to have "locked up" so we use the "Corpus Conversion Monitor" to show
 # some progress messages.
 #
 # Automatic SQL database upgrades occur when POPFile detects that the current database uses an
-# out-of-date schema. These upgrades can take several minutes and during this time POPFile will
-# appear to be locked up. If the installer has detected that an automatic upgrade is required,
-# it will always start POPFile using the "Message Capture" utility to display the upgrade
-# progress messages output by POPFile.
+# out-of-date schema or uses the old SQLite 2.x format (POPFile now uses the new 3.x format for
+# its SQLite database). These upgrades can take several minutes and during this time POPFile will
+# appear to be locked up.
 #
-# When corpus conversion or a database upgrade is to be performed, the user is not allowed to
-# prevent the installer from starting POPFile (this is achieved by disabling the "No, do not
-# start POPFile" radiobutton on the "start POPFile" page)
+# If the installer has detected that an automatic SQL database upgrade is required, it will
+# always start POPFile using the "Message Capture" utility to display the upgrade progress
+# messages output by POPFile.
+#
+# When we start POPFile to do any kind of database upgrade we use the "--shutdown" option
+# to make POPFile terminate after completing the upgrade as this makes it easy to detect
+# when the database upgrade has been completed.
+#
 #--------------------------------------------------------------------------
 
 Function CheckCorpusUpgradeStatus
@@ -2987,24 +3203,37 @@ Function CheckCorpusUpgradeStatus
   ; some progress reports.
 
   ReadINIStr ${L_TEMP} "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "Status"
-  StrCmp ${L_TEMP} "new" disable_the_NO_button
+  StrCmp ${L_TEMP} "new" 0 check_old_sql_upgrade
+  WriteINIStr "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "Status" "old"
+  Call ConvertCorpus
+  Goto exit
+
+check_old_sql_upgrade:
 
   ; If we have made a backup copy of the SQLite database, we will start POPFile from the
   ; installer so we can use the "Message Capture" utility to display the progress reports.
 
   ReadINIStr ${L_TEMP} "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "Status"
-  StrCmp ${L_TEMP} "new" disable_the_NO_button
+  StrCmp ${L_TEMP} "new" 0 check_if_old_sqlite
+  WriteINIStr "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "Status" "old"
+  Goto sql_upgrade
 
-  ; If the POPFile database schema has changed then POPFile will perform an automatic upgrade
-  ; of the database which could take several minutes, so we use the 'Message Capture' utility
-  ; to display the conversion progress reports. For SQLite databases we can query the database
-  ; directly, for non-SQLite databases we simply detect a change in the schema file version.
-
+check_if_old_sqlite:
   Push $G_USERDIR
   Call PFI_GetSQLdbPathName
   Pop ${L_SQL_DB}
   StrCmp ${L_SQL_DB} "" exit
+  StrCmp ${L_SQL_DB} "Not SQLite" check_schema
 
+  ; If the existing SQLite database uses the old 2.x format then POPFile will
+  ; automatically backup this database and convert it to the SQLite 3.x format
+
+  Push ${L_SQL_DB}
+  Call PFI_GetSQLiteFormat
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "2.x" sql_upgrade
+
+check_schema:
   Push "$G_ROOTDIR\Classifier\popfile.sql"
   Call PFI_GetPOPFileSchemaVersion
   Pop ${L_POPFILE_SCHEMA}
@@ -3030,27 +3259,25 @@ get_sqlite_schema:
 got_schemas:
   IntCmp ${L_POPFILE_SCHEMA} ${L_SQLITE_SCHEMA} exit
 
-disable_the_NO_button:
+sql_upgrade:
 
-  ; The installer will start POPFile so we can display corpus conversion or database upgrade
-  ; messages which are normally hidden. Therefore we disable the radio button option which
-  ; allows the user to stop the installer from starting POPFile
+  ; When a SQL database upgrade is required we run the 'Message Capture' utility to display
+  ; the progress reports because this upgrade may take several minutes during which time
+  ; POPFile will appear to have 'locked up'
 
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "Flags" "DISABLED"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "State" "0"   ; 'do not start'
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "State" "0"   ; 'disable tray icon'
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 4" "State" "0"   ; 'enable tray icon'
+  HideWindow
+  ExecWait '"$G_ROOTDIR\msgcapture.exe" /TIMEOUT=PFI'
+  BringToFront
 
-  ; If we are upgrading use the same system tray icon setting as the old installation,
-  ; otherwise use the default setting (system tray icon enabled)
+  Push "$G_ROOTDIR\Classifier\popfile.sql"
+  Call PFI_GetPOPFileSchemaVersion
+  Pop ${L_POPFILE_SCHEMA}
+  StrCpy ${L_TEMP} ${L_POPFILE_SCHEMA} 1
+  StrCmp ${L_TEMP} "(" 0 store_schema
+  StrCpy ${L_POPFILE_SCHEMA} "0"
 
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "pfi-cfg.ini" "Inherited" "TrayIcon"
-  StrCmp ${L_TEMP} "0" disable_tray_icon
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 4" "State" "1"
-  Goto exit
-
-disable_tray_icon:
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "State" "1"
+store_schema:
+  WriteINIStr "$G_USERDIR\install.ini" "Settings" "SQLSV" "${L_POPFILE_SCHEMA}"
 
 exit:
   Pop ${L_TEMP}
@@ -3069,9 +3296,6 @@ FunctionEnd
 # Installer Function: StartPOPFilePage (generates a custom page)
 #
 # This function offers to start the newly installed POPFile.
-#
-# A pseudo "pre" function (CheckCorpusUpgradeStatus) is used to determine whether or not the
-# user will be allowed to select the "No, do not start POPFile" option.
 #
 # A "leave" function (CheckLaunchOptions) is used to act upon the selection made by the user.
 #
@@ -3112,42 +3336,14 @@ check_trayicon:
 close_file:
   FileClose ${L_CFG}
 
-  IfRebootFlag 0 page_enabled
+  ; If we are running on a Win9x system which must be rebooted before the Nihongo parser
+  ; can be used then we do not offer the user the chance to start POPFile and move on to
+  ; the FINISH page to show the REBOOT options (any necessary corpus conversions should
+  ; already have been performed by the 'CheckCorpusUpgradeStatus' function)
 
-  ; We are running on a Win9x system which must be rebooted before Kakasi can be used
+  IfRebootFlag exit
 
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 1" "Flags"
-  StrCmp ${L_TEMP} "DISABLED" display_the_page
-
-  ; If this is a "clean" install (i.e. we have just created some buckets for this user)
-  ; then we do not need to start POPFile before we reboot
-
-  ReadINIStr ${L_TEMP} "$PLUGINSDIR\${CBP_C_INIFILE}" "FolderList" "MaxNum"
-  StrCmp  ${L_TEMP} "" 0 do_not_start_popfile
-
-  ; If, however, corpus conversion or a SQL database upgrade is required, we treat this as
-  ; a special case and start POPFile now so we can monitor the conversion/upgrade because
-  ; this process may take several minutes (and it is simpler to monitor it now instead of
-  ; waiting until after the reboot).
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 2" "Flags"
-  StrCmp ${L_TEMP} "DISABLED" display_the_page
-
-do_not_start_popfile:
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "State" "1"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "State" "0"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 4" "State" "0"
-
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 1" "Flags" "DISABLED"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "Flags" "DISABLED"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "Flags" "DISABLED"
-  !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 4" "Flags" "DISABLED"
-
-  Goto display_the_page
-
-page_enabled:
-
-  ; clear all three radio buttons ('do not start', 'disable icon', 'enable icon')
+  ; Clear all three radio buttons ('do not start', 'disable icon', 'enable icon')
 
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 2" "State" "0"
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioC.ini" "Field 3" "State" "0"
@@ -3179,6 +3375,7 @@ display_the_page:
 
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "ioC.ini"
 
+exit:
   Pop ${L_TEMP}
   Pop ${L_CFG}
 
@@ -3192,39 +3389,34 @@ FunctionEnd
 # (the "leave" function for the custom page created by "StartPOPFilePage")
 #
 # This function is used to action the "start POPFile" option selected by the user.
-# The user is allowed to return to this page and change their selection (if corpus
-# conversion is not required), so the previous state is stored in the INI file used
-# for this custom page.
-#
-# There are also some special cases where the installer will start POPFile automatically:
-#
-# (a) the existing flat-file format corpus is to be converted to SQL database format
-#     (and a backup copy of the corpus has been saved in the backup folder)
-#
-# (b) the existing BerkeleyDB format corpus is to be converted to SQL database format
-#     (and a backup copy of the corpus has been saved in the backup folder)
-#
-# (c) the existing SQL database is to be upgraded to use a new POPFile database schema
-#     (and a backup copy of the SQLite database has been saved in the backup folder)
-#
-# (d) the existing SQL database is to be upgraded to use a new POPFile database schema
-#     (and a backup already exists or the existing installation does not use SQLite)
+# The user is allowed to return to this page and change their selection so the
+# previous state is stored in the INI file used for this custom page.
 #--------------------------------------------------------------------------
 
 Function CheckLaunchOptions
 
-  !define L_CFG             $R9   ; file handle
-  !define L_CONSOLE         $R8   ; set to 'b' for background mode or 'f' for foreground mode
-  !define L_EXE             $R7   ; full path of Perl EXE to be monitored
-  !define L_POPFILE_SCHEMA  $R6   ; database schema version used by newly installed POPFile
-  !define L_TEMP            $R5
-  !define L_TRAY            $R4   ; system tray icon mode: 1 = enabled, 0 = disabled
+  !define L_BANNER_1        $R9   ; text used for upper line of banner
+  !define L_BANNER_2A       $R8   ; text used for lower line of banner
+  !define L_BANNER_2B       $R7   ; ditto
+  !define L_BANNER_2C       $R6   ; ditto
+  !define L_BANNER_2D       $R5   ; ditto
+  !define L_BANNER_HANDLE   $R4   ; handle of the banner control we want to modify
+  !define L_CONSOLE         $R3   ; set to 'b' for background mode or 'f' for foreground mode
+  !define L_EXE             $R2   ; full path of Perl EXE to be monitored
+  !define L_TEMP            $R1
+  !define L_TIMEOUT         $R0   ; used to avoid infinite loop while we wait for POPFile to startup
+  !define L_TRAY            $9    ; system tray icon mode: 1 = enabled, 0 = disabled
 
-  Push ${L_CFG}
+  Push ${L_BANNER_1}
+  Push ${L_BANNER_2A}
+  Push ${L_BANNER_2B}
+  Push ${L_BANNER_2C}
+  Push ${L_BANNER_2D}
+  Push ${L_BANNER_HANDLE}
   Push ${L_CONSOLE}
   Push ${L_EXE}
-  Push ${L_POPFILE_SCHEMA}
   Push ${L_TEMP}
+  Push ${L_TIMEOUT}
   Push ${L_TRAY}
 
   StrCpy ${L_CONSOLE} "b"    ; the default is to run in the background (no console window shown)
@@ -3282,7 +3474,8 @@ start_popfile:
   ; Set ${L_EXE} to "" as we do not yet know if we are going to monitor a file in $G_ROOTDIR
 
   ; If we run POPFile in the background, we display a banner to provide some user feedback
-  ; since it can take a few seconds for POPFile to start up.
+  ; since it can take a few seconds (for large databases it could be 30 seconds or more,
+  ; depending upon the database size, system speed etc) for POPFile to start up.
 
   ; If we run POPFile in a console window, we do not display a banner because on some systems
   ; the console window might cause the banner DLL to lock up and this in turn locks up the
@@ -3290,7 +3483,7 @@ start_popfile:
 
   StrCpy ${L_EXE} ""
 
-  ; Field 4 = 'Run POPFile with system tray icon' radio button (this is the default mode)
+  ; Field 4 = 'Run POPFile with system tray icon' radio button
 
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 4" "State"
   StrCmp ${L_TEMP} "1" run_with_icon
@@ -3306,7 +3499,7 @@ start_popfile:
 lastaction_disableicon:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Run Status" "LastAction" "disableicon"
   StrCpy ${L_TRAY} "0"
-  Goto corpus_conv_check
+  Goto check_if_banner_needed
 
 run_with_icon:
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "pfi-cfg.ini" "Run Status" "LastAction"
@@ -3319,15 +3512,14 @@ lastaction_enableicon:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "pfi-cfg.ini" "Run Status" "LastAction" "enableicon"
   StrCpy ${L_TRAY} "1"
 
-corpus_conv_check:
-
-  ; To indicate the special cases where the installer is to start POPFile to perform corpus or
-  ; database conversion, 'CheckCorpusUpgradeStatus' clears the "No" radio button and disables it
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 2" "Flags"
-  StrCmp ${L_TEMP} "DISABLED" launch_conversion_monitor
-
+check_if_banner_needed:
   StrCmp ${L_CONSOLE} "f" do_not_show_banner
+
+  StrCpy ${L_BANNER_1}  "$(PFI_LANG_LAUNCH_BANNER_1)"
+  StrCpy ${L_BANNER_2A} "$(PFI_LANG_LAUNCH_BANNER_2)"
+  StrCpy ${L_BANNER_2B} "$(PFI_LANG_NSISDL_CONNECTING)"
+  StrCpy ${L_BANNER_2C} "$(PFI_LANG_LAUNCH_BANNER_3)"
+  StrCpy ${L_BANNER_2D} "$(PFI_LANG_LAUNCH_BANNER_4)"
 
   !ifndef ENGLISH_MODE
 
@@ -3335,7 +3527,7 @@ corpus_conv_check:
     ; but East Asian versions of Windows 9x do not support this so in these cases
     ; we use "English" text for the banner (otherwise the text would be unreadable garbage).
 
-    Call PFI_IsNT
+    Call NSIS_IsNT
     Pop ${L_TEMP}
     StrCmp ${L_TEMP} "1" show_banner
 
@@ -3348,12 +3540,23 @@ corpus_conv_check:
     Goto show_banner
 
   use_ENGLISH_banner:
-    Banner::show /NOUNLOAD /set 76 "Preparing to start POPFile." "This may take a few seconds..."
-    Goto do_not_show_banner   ; sic!
+    StrCpy ${L_BANNER_1}  "Preparing to start POPFile."
+    StrCpy ${L_BANNER_2A} "This may take a few seconds..."
+    StrCpy ${L_BANNER_2B} "Connecting ..."
+    StrCpy ${L_BANNER_2C} "POPFile is not ready yet"
+    StrCpy ${L_BANNER_2D} "POPFile is almost ready..."
 
-    show_banner:
+  show_banner:
   !endif
-  Banner::show /NOUNLOAD /set 76 "$(PFI_LANG_LAUNCH_BANNER_1)" "$(PFI_LANG_LAUNCH_BANNER_2)"
+
+  ; Hiding the wizard's window appears to solve the infamous "banner lockup" problem
+  ; ('BringToFront' is used to re-display the wizard)
+
+  HideWindow
+  Banner::show /NOUNLOAD /set 76 "${L_BANNER_1}" "${L_BANNER_2A}"
+	Banner::getWindow /NOUNLOAD
+	Pop ${L_TEMP}
+  GetDlgItem ${L_BANNER_HANDLE} ${L_TEMP} 1030    ; 1030 is the lower line of text (76 is upper line)
 
 do_not_show_banner:
 
@@ -3379,11 +3582,12 @@ continue:
   Call PFI_SetTrayIconMode
   SetOutPath $G_ROOTDIR
   ClearErrors
-  Exec '"$G_ROOTDIR\popfile.exe" --verbose'
+  Exec '"$G_ROOTDIR\popfile.exe"'
   IfErrors 0 startup_ok
   StrCmp ${L_CONSOLE} "f" error_msg
   Sleep ${C_MIN_BANNER_DISPLAY_TIME}
   Banner::destroy
+  BringToFront
 
 error_msg:
   MessageBox MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST \
@@ -3394,79 +3598,109 @@ error_msg:
       Click 'OK' once POPFile has been started."
   Goto exit_without_banner
 
-launch_conversion_monitor:
-
-  ; Update the system tray icon setting in 'popfile.cfg' (even though it may be ignored for
-  ; some special cases, we need to honour the user's selection for subsequent activations)
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 4" "State"
-  Push ${L_TEMP}
-  Call PFI_SetTrayIconMode
-
-  ; If corpus conversion (from flat file or BerkeleyDB format) is required, we run the
-  ; 'Corpus Conversion Monitor' which displays progress messages because the conversion
-  ; may take several minutes during which time POPFile will appear to have 'locked up'
-
-  ReadINIStr ${L_TEMP} "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "Status"
-  StrCmp ${L_TEMP} "new" 0 check_database
-
-  WriteINIStr "$G_USERDIR\backup\backup.ini" "NonSQLCorpus" "Status" "old"
-  Call ConvertCorpus
-  Goto exit_without_banner
-
-check_database:
-  ReadINIStr ${L_TEMP} "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "Status"
-  StrCmp ${L_TEMP} "new" 0 sqlupgrade
-  WriteINIStr "$G_USERDIR\backup\backup.ini" "OldSQLdatabase" "Status" "old"
-
-sqlupgrade:
-
-  ; When a SQL database upgrade is required we run the 'Message Capture' utility to display
-  ; the progress reports because this upgrade may take several minutes during which time
-  ; POPFile will appear to have 'locked up'
-
-  Call UpgradeSQLdatabase
-  Push "$G_ROOTDIR\Classifier\popfile.sql"
-  Call PFI_GetPOPFileSchemaVersion
-  Pop ${L_POPFILE_SCHEMA}
-  StrCpy ${L_TEMP} ${L_POPFILE_SCHEMA} 1
-  StrCmp ${L_TEMP} "(" 0 store_schema
-  StrCpy ${L_POPFILE_SCHEMA} "0"
-
-store_schema:
-  WriteINIStr "$G_USERDIR\install.ini" "Settings" "SQLSV" "${L_POPFILE_SCHEMA}"
-  Goto exit_without_banner
-
 startup_ok:
 
-  ; A simple time delay is used to give POPFile time to get ready to display the UI. It takes
-  ; time for POPFile to start up and be able to generate the UI pages - attempts to access the
-  ; UI too quickly will result in a browser error message (which must be cancelled by the user)
-  ; and an empty browser window (which must be refreshed by the user). Earlier versions of the
-  ; installer waited until POPFile could display a UI page but on some systems this wait proved
-  ; to be endless. (The installer should have given up after a certain number of failed NSISdl
-  ; attempts to access the UI but in some cases NSISdl never returned control to the installer
-  ; so the installer stopped responding.)
+  ; Wait until POPFile is ready to display the UI (this make take a while if the database
+  ; is large and/or the system is relatively slow so we need to keep the user informed
+  ; while we wait). We display a timeout that counts DOWN to zero instead of one that
+  ; counts UP from 1. This timeout can reach well into double figures and when counting
+  ; UP there is a risk that the user will suspect the installer has gone into a loop!
 
-  Sleep ${C_UI_STARTUP_DELAY}
+  StrCpy ${L_TIMEOUT} ${C_STARTUP_LIMIT}      ; Timeout used to avoid an infinite loop
 
+check_if_ready:
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2B} ${L_TIMEOUT}"
+  inetc::head /silent "http://127.0.0.1:$G_GUI" "$PLUGINSDIR\hdr.txt" /END
+  Pop ${L_TEMP}
+  StrCmp ${L_TEMP} "OK" calc_page_delay
+  StrCmp ${L_TEMP} "SendRequest Error" not_ready
+  StrCpy $G_PLS_FIELD_1 ${L_TEMP} 12
+  StrCmp $G_PLS_FIELD_1 "Server Error" calc_page_delay report_status
+
+not_ready:
+  StrCpy ${L_TEMP} "${L_BANNER_2C}"
+
+report_status:
+	SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_TEMP}"
+  Sleep ${C_STARTUP_DELAY}
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} - 1
+  IntCmp ${L_TIMEOUT} 0 check_if_ready remove_banner check_if_ready
+
+calc_page_delay:
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2D}"
+  Sleep ${C_STARTUP_DELAY}
+
+  ; Now use the size (in MB) of the SQLite database to form a rough
+  ; estimate of the expected time to silently get the first UI page
+
+  Push $G_USERDIR
+  Call PFI_GetSQLdbPathName
+  Pop $G_PLS_FIELD_2
+  StrCmp $G_PLS_FIELD_2 "" use_default
+  StrCmp $G_PLS_FIELD_2 "Not SQLite" use_default
+  IfFileExists "$G_PLS_FIELD_2" 0 use_default
+  Push $G_PLS_FIELD_2
+  Call NSIS_GetParent
+  Pop $G_PLS_FIELD_1
+  StrLen ${L_TEMP} $G_PLS_FIELD_1
+  IntOp ${L_TEMP} ${L_TEMP} + 1
+  StrCpy $G_PLS_FIELD_2 $G_PLS_FIELD_2 "" ${L_TEMP}
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "$G_PLS_FIELD_1" "/M=$G_PLS_FIELD_2 /G=0 /S=Mb" .r0 .r1 .r2
+  StrCpy ${L_TIMEOUT} $0
+  Pop $2
+  Pop $1
+  Pop $0
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} / 7
+  IntOp ${L_TIMEOUT} ${L_TIMEOUT} + 1
+  Goto get_a_page
+
+use_default:
+  StrCpy ${L_TIMEOUT} "5"
+
+get_a_page:
+
+  ; By default the FINISH page offers to display the UI. POPFile appears to take several
+  ; seconds to display the very first UI page accessed so we access a page silently here
+  ; to ensure the user does not see an empty browser window for several seconds when this
+  ; FINISH page option is used.
+
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_BANNER_2A} (${L_TIMEOUT}s ?)"
+  inetc::get /silent "http://127.0.0.1:$G_GUI/security" "$PLUGINSDIR\ui.htm" /END
+  Pop ${L_TEMP}
+  SendMessage ${L_BANNER_HANDLE} ${WM_SETTEXT} 0 "STR:${L_TEMP}"
+  Sleep 1000
+
+remove_banner:
   StrCmp ${L_CONSOLE} "f" exit_without_banner
-  Sleep ${C_MIN_BANNER_DISPLAY_TIME}
   Banner::destroy
+  BringToFront
 
 exit_without_banner:
   Pop ${L_TRAY}
+  Pop ${L_TIMEOUT}
   Pop ${L_TEMP}
-  Pop ${L_POPFILE_SCHEMA}
   Pop ${L_EXE}
   Pop ${L_CONSOLE}
-  Pop ${L_CFG}
+  Pop ${L_BANNER_HANDLE}
+  Pop ${L_BANNER_2D}
+  Pop ${L_BANNER_2C}
+  Pop ${L_BANNER_2B}
+  Pop ${L_BANNER_2A}
+  Pop ${L_BANNER_1}
 
-  !undef L_CFG
+  !undef L_BANNER_1
+  !undef L_BANNER_2A
+  !undef L_BANNER_2B
+  !undef L_BANNER_2C
+  !undef L_BANNER_2D
+  !undef L_BANNER_HANDLE
   !undef L_CONSOLE
   !undef L_EXE
-  !undef L_POPFILE_SCHEMA
   !undef L_TEMP
+  !undef L_TIMEOUT
   !undef L_TRAY
 
 FunctionEnd
@@ -3519,18 +3753,6 @@ exit:
 FunctionEnd
 
 #--------------------------------------------------------------------------
-# Installer Function: UpgradeSQLdatabase
-#--------------------------------------------------------------------------
-
-Function UpgradeSQLdatabase
-
-  HideWindow
-  ExecWait '"$G_ROOTDIR\msgcapture.exe" /TIMEOUT=PFI'
-  BringToFront
-
-FunctionEnd
-
-#--------------------------------------------------------------------------
 # Installer Function: CheckRunStatus
 # (the "pre" function for the 'FINISH' page)
 #
@@ -3549,10 +3771,15 @@ Function CheckRunStatus
 
   Push ${L_TEMP}
 
-  ; If we have installed Kakasi on a Win9x system we may need to reboot before allowing the
-  ; user to start POPFile (corpus conversion and SQL database upgrades are special cases)
+  ; If we have installed Kakasi or MeCab on a Win9x system we may need to reboot before allowing
+  ; the user to start POPFile (corpus conversion and SQL database upgrades are handled by the
+  ; 'CheckCorpusUpgradeStatus' function earlier)
 
-  IfRebootFlag disable_BACK_button
+  IfRebootFlag 0 enable_run_box
+ !insertmacro MUI_INSTALLOPTIONS_WRITE "ioSpecial.ini" "Settings" "BackEnabled" "0"
+  Goto exit
+
+enable_run_box:
 
   ; Enable the 'Run' CheckBox on the 'FINISH' page (it may have been disabled on our last visit)
 
@@ -3562,19 +3789,7 @@ Function CheckRunStatus
   ; If user has not started POPFile, we cannot offer to display the POPFile User Interface
 
   !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 2" "State"
-  StrCmp ${L_TEMP} "1" disable_RUN_option
-
-  ; If the installer has started POPFile (because the existing flat-file corpus or BerkeleyDB
-  ; corpus needs to be converted to a SQL database or because the existing SQL database needs
-  ; to be upgraded) then the 'Do not run POPFile' radio button on the 'Start POPFile' page will
-  ; have been disabled. For these special cases we disable the "Back" button.
-
-  !insertmacro MUI_INSTALLOPTIONS_READ ${L_TEMP} "ioC.ini" "Field 2" "Flags"
-  StrCmp ${L_TEMP} "DISABLED" 0 exit
-
-disable_BACK_button:
- !insertmacro MUI_INSTALLOPTIONS_WRITE "ioSpecial.ini" "Settings" "BackEnabled" "0"
-  Goto exit
+  StrCmp ${L_TEMP} "1" disable_RUN_option exit
 
 disable_RUN_option:
   !insertmacro MUI_INSTALLOPTIONS_WRITE "ioSpecial.ini" "Field 4" "State" "0"
@@ -3599,6 +3814,10 @@ FunctionEnd
 # If the installer is allowed to display the UI, it now displays the Buckets page
 # (instead of the default page). This makes it easier for users to check the results
 # of upgrading a pre-0.21.0 installation (the upgrade may change some bucket settings).
+#
+# It also makes it easier to check the results of an SQLite 2.x to 3.x upgrade or
+# a database schema upgrade and also shows the current statistics (some users may
+# rarely look at the UI).
 #--------------------------------------------------------------------------
 
 Function RunUI
@@ -3622,15 +3841,19 @@ FunctionEnd
 
 #--------------------------------------------------------------------------
 # Installer Function: RemoveEmptyCBPCorpus
+# (the 'Leave' function for the 'FINISH' page)
 #
 # If the wizard used the CBP package to create some buckets, there may be
 # some empty corpus folders left behind (after POPFile has converted the
 # buckets to the new SQL format) so we remove these useless empty folders.
+#
+# The size estimate used in the "Add/Remove Programs" entry is updated
+# to match the current size of the User Data folder.
 #--------------------------------------------------------------------------
 
 Function RemoveEmptyCBPCorpus
 
-  IfFileExists "$PLUGINSDIR\${CBP_C_INIFILE}" 0 nothing_to_do
+  IfFileExists "$PLUGINSDIR\${CBP_C_INIFILE}" 0 update_arp_entry
 
   !define L_FOLDER_COUNT  $R9
   !define L_FOLDER_PATH   $R8
@@ -3642,7 +3865,7 @@ Function RemoveEmptyCBPCorpus
   ; (if any) created by the CBP package.
 
   ReadINIStr ${L_FOLDER_COUNT} "$PLUGINSDIR\${CBP_C_INIFILE}" "FolderList" "MaxNum"
-  StrCmp  ${L_FOLDER_COUNT} "" exit
+  StrCmp  ${L_FOLDER_COUNT} "" update_arp_entry
 
 loop:
   ReadINIStr ${L_FOLDER_PATH} "$PLUGINSDIR\${CBP_C_INIFILE}" "FolderList" "Path-${L_FOLDER_COUNT}"
@@ -3663,14 +3886,25 @@ corpus_root:
   ReadINIStr ${L_FOLDER_PATH} "$PLUGINSDIR\${CBP_C_INIFILE}" "CBP Data" "CorpusPath"
   RMDir ${L_FOLDER_PATH}
 
-exit:
+update_arp_entry:
+  ReadRegStr ${L_FOLDER_PATH} HKCU \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" "InstallLocation"
+  Push $0
+  Push $1
+  Push $2
+  getsize::GetSize "${L_FOLDER_PATH}" "/S=Kb" .r0 .r1 .r2
+  WriteRegDWord HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${C_PFI_PRODUCT}_Data" \
+              "EstimatedSize" $0
+  Pop $2
+  Pop $1
+  Pop $0
+
   Pop ${L_FOLDER_PATH}
   Pop ${L_FOLDER_COUNT}
 
   !undef L_FOLDER_COUNT
   !undef L_FOLDER_PATH
 
-nothing_to_do:
 FunctionEnd
 
 
@@ -3700,11 +3934,11 @@ FunctionEnd
       ; East Asian versions of Windows 9x do not support this so in these cases we use
       ; "English" text for the banner (otherwise the text would be unreadable garbage).
 
-      !define L_RESULT    $R9   ; The 'PFI_IsNT' function returns 0 if Win9x was detected
+      !define L_RESULT    $R9   ; The 'NSIS_IsNT' function returns 0 if Win9x was detected
 
       Push ${L_RESULT}
 
-      Call PFI_IsNT
+      Call NSIS_IsNT
       Pop ${L_RESULT}
       StrCmp ${L_RESULT} "1" show_banner
 

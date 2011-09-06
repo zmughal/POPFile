@@ -25,6 +25,13 @@ use strict;
 use warnings;
 no warnings qw(redefine);
 
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use POPFile::History;
+use Proxy::NNTP;
+use Classifier::Bayes;
+use Classifier::WordMangle;
 use IO::Handle;
 use IO::Socket;
 use Digest::MD5;
@@ -43,48 +50,105 @@ test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/.svn' );
 rmtree( 'messages' );
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-#$POPFile->{debug__} = 1;
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+my $c  = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l  = new POPFile::Logger;
+my $b  = new Classifier::Bayes;
+my $w  = new Classifier::WordMangle;
+my $h  = new POPFile::History;
 
-my %valid = ( 'POPFile/Logger'        => 1,
-              'POPFile/MQ'            => 1,
-              'POPFile/Configuration' => 1,
-              'POPFile/Database'      => 1,
-              'POPFile/History'       => 1,
-              'Proxy/NNTP'            => 1,
-              'Classifier/Bayes'      => 1,
-              'Classifier/WordMangle' => 1 );
+sub forker
+{
+    pipe my $reader, my $writer;
+    $l->log_( 2, "Created pipe pair $reader and $writer" );
+    $b->prefork();
+    $mq->prefork();
+    $h->prefork();
+    my $pid = fork();
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
+    if ( !defined( $pid ) ) {
+        close $reader;
+        close $writer;
+        return (undef, undef);
+    }
 
-my $l  = $POPFile->get_module( 'POPFile::Logger'   );
-my $mq = $POPFile->get_module( 'POPFile::MQ'       );
-my $b  = $POPFile->get_module( 'Classifier::Bayes' );
-my $h  = $POPFile->get_module( 'POPFile::History'  );
-my $db = $POPFile->get_module( 'POPFile::Database' );
+    if ( $pid == 0 ) {
+        $b->forked( $writer );
+        $mq->forked( $writer );
+        $h->forked( $writer );
+        close $reader;
 
+        use IO::Handle;
+        $writer->autoflush(1);
+
+        return (0, $writer);
+    }
+
+    $l->log_( 2, "Child process has pid $pid" );
+
+    $b->postfork( $pid, $reader );
+    $mq->postfork( $pid, $reader );
+    $h->postfork( $pid, $reader );
+    close $writer;
+    return ($pid, $reader);
+}
+
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
+
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
 $l->config_( 'level', 2 );
+$l->version( 'svn-b0_22_2' );
 
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->start();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+$mq->pipeready( \&pipeready );
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$h->configuration( $c );
+$h->mq( $mq );
+$h->logger( $l );
+
+$b->history( $h );
+$h->classifier( $b );
+
+$h->initialize();
+
+$b->initialize();
 $b->module_config_( 'html', 'port', 8080 );
-$b->global_config_( 'language', 'English' );
+$b->module_config_( 'html', 'language', 'English' );
 $b->config_( 'hostname', '127.0.0.1' );
+$b->{parser__}->mangle( $w );
+$b->start();
+$h->start();
+$l->start();
 
-# To test NNTP's use of MQ, we need to receive messages
-use Test::MQReceiver;
+my $n = new Proxy::NNTP;
 
-my $rmq = new Test::MQReceiver;
+$n->configuration( $c );
+$n->mq( $mq );
+$n->logger( $l );
+$n->classifier( $b );
 
-$mq->register( 'UIREG', $rmq );
-
-my $n = $POPFile->get_module( 'Proxy::NNTP' );
 $n->forker( \&forker );
-$n->pipeready( $POPFile->{pipeready__} );
-$n->setchildexit( $POPFile->{childexit__} );
+$n->pipeready( \&pipeready );
 
 $n->{version_} = 'test suite';
 $n->initialize();
@@ -98,224 +162,9 @@ $n->global_config_( 'timeout', $timeout );
 $n->config_( 'enabled', 0 );
 test_assert_equal( $n->start(), 2 );
 $n->config_( 'enabled', 1 );
-
-$POPFile->CORE_start();
-
-# Test dynamic UI
-
-$mq->service();
-my @messages = $rmq->read();
-
-shift @messages if ( $^O eq 'MSWin32' );
-
-test_assert_equal( $#messages, 2 );
-
-test_assert_equal( $messages[0][0], 'UIREG' );
-test_assert_equal( $#{$messages[0][1]}, 3 );
-test_assert_equal( $messages[0][1][0], 'configuration' );
-test_assert_equal( $messages[0][1][1], 'nntp_config' );
-test_assert_equal( $messages[0][1][2], 'nntp-configuration.thtml' );
-test_assert_equal( ref $messages[0][1][3], 'Proxy::NNTP' );
-
-test_assert_equal( $messages[1][0], 'UIREG' );
-test_assert_equal( $#{$messages[1][1]}, 3 );
-test_assert_equal( $messages[1][1][0], 'security' );
-test_assert_equal( $messages[1][1][1], 'nntp_local' );
-test_assert_equal( $messages[1][1][2], 'nntp-security-local.thtml' );
-test_assert_equal( ref $messages[1][1][3], 'Proxy::NNTP' );
-
-# Test configure_item
-
-use Test::SimpleTemplate;
-
-my $templ = new Test::SimpleTemplate;
-
-# nothing happens for unknown configuration item names
-
-$n->configure_item( 'foo', $templ );
-my $params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 0 );
-
-# the right things have to happen for known configuration item names
-
-$n->configure_item( 'nntp_config', $templ );
-$params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 3 );
-test_assert_equal( $templ->param( 'nntp_port'          ), $n->config_( 'port'      ) );
-test_assert_equal( $templ->param( 'nntp_separator'     ), $n->config_( 'separator' ) );
-test_assert_equal( $templ->param( 'nntp_force_fork_on' ), ( $n->config_( 'force_fork' ) == 1 ) );
-
-delete $templ->{params__};
-
-$n->configure_item( 'nntp_local', $templ );
-$params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 1 );
-test_assert_equal( $templ->param( 'nntp_if_local' ), ( $n->config_( 'local' ) == 1 ) );
-
-delete $templ->{params__};
-
-# test changing/validating of configuration values
-
-my $form = {};
-my $language= {};
-my ( $status, $error );
-
-test_assert_equal( $n->config_( 'socks_port' ), 1080 );
-
-$form->{nntp_socks_port} = 10080;
-$language->{Configuration_SOCKSPortUpdate} = "socks port update %s";
-
-( $status, $error ) = $n->validate_item( 'nntp_socks_configuration', $templ, $language, $form );
-
-test_assert_equal( $status, "socks port update 10080" );
-test_assert( !defined( $error) );
-test_assert_equal( $n->config_( 'socks_port' ), 10080 );
-
-$n->config_( 'socks_port', 1080 );
-
-$form->{nntp_socks_port} = 'aaa';
-$language->{Configuration_Error8} = "configuration error 8";
-
-( $status, $error ) = $n->validate_item( 'nntp_socks_configuration', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 8" );
-test_assert( !defined( $status) );
-test_assert_equal( $n->config_( 'socks_port' ), 1080 );
-
-delete $form->{nntp_socks_port};
-
-$form->{nntp_socks_server} = 'example.com';
-$language->{Configuration_SOCKSServerUpdate} = 'socks server update %s';
-
-( $status, $error ) = $n->validate_item( 'nntp_socks_configuration', $templ, $language, $form );
-
-test_assert_equal( $status, "socks server update example.com" );
-test_assert( !defined( $error ) );
-test_assert_equal( $n->config_( 'socks_server' ), 'example.com' );
-
-$form->{nntp_socks_port} = '10081';
-$form->{nntp_socks_server} = 'subdomain.example.com';
-
-( $status, $error ) = $n->validate_item( 'nntp_socks_configuration', $templ, $language, $form );
-
-test_assert_equal( $status, "socks port update 10081\nsocks server update subdomain.example.com" );
-test_assert( !defined( $error ) );
-test_assert_equal( $n->config_( 'socks_server' ), 'subdomain.example.com' );
-test_assert_equal( $n->config_( 'socks_port' ), 10081 );
-
-delete $form->{nntp_socks_port};
-delete $form->{nntp_socks_server};
-
-$n->config_( 'socks_server', '' );
-
-test_assert_equal( $n->config_( 'port' ), $port );
-
-$language->{Configuration_NNTPUpdate} = "nntp port update %s";
-$form->{nntp_port} = $port + 1;
-
-( $status, $error ) = $n->validate_item( 'nntp_config', $templ, $language, $form );
-
-test_assert_equal( $status, "nntp port update " . ( $port + 1 ) . "\n" );
-test_assert( !defined( $error ) );
-test_assert_equal( $n->config_('port'), $port + 1 );
-
-$n->config_( 'port', $port );
-
-$form->{nntp_port} = 'aaa';
-$language->{Configuration_Error3} = "configuration error 3";
-
-( $status, $error ) = $n->validate_item( 'nntp_config', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 3\n" );
-test_assert( !defined( $status ) );
-test_assert_equal( $n->config_( 'port' ), $port );
-
-$form->{nntp_port} = 0;
-
-( $status, $error ) = $n->validate_item( 'nntp_config', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 3\n" );
-test_assert( !defined( $status ) );
-test_assert_equal( $n->config_( 'port' ), $port );
-
-$form->{nntp_port} = 65536;
-
-( $status, $error ) = $n->validate_item( 'nntp_config', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 3\n" );
-test_assert( !defined( $status ) );
-test_assert_equal( $n->config_( 'port' ), $port );
-
-delete $form->{nntp_port};
-
-test_assert_equal( $n->config_( 'separator' ), ':' );
-
-$form->{nntp_separator} = '\'';
-$language->{'Configuration_NNTPSepUpdate'} = "nntp separator update %s";
-$language->{'Configuration_Error1'} = "configuration error 1";
-
-( $status, $error ) = $n->validate_item( 'nntp_config', $templ, $language, $form );
-
-test_assert_equal( $status, "nntp separator update \'\n" );
-test_assert( !defined( $error ) );
-test_assert_equal( $n->config_( 'separator' ), '\'' );
-
-$form->{nntp_separator} = 'aaaaa';
-
-( $status, $error ) = $n->validate_item( 'nntp_config', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 1\n" );
-test_assert( !defined( $status ) );
-test_assert_equal( $n->config_( 'separator' ), '\'' );
-
-delete $form->{nntp_separator};
-$n->config_( 'separator', ':' );
-
-test_assert_equal( $n->config_( 'force_fork' ), 0 );
-
-$language->{'Configuration_NNTPForkEnabled'} = "nntp fork on";
-$language->{'Configuration_NNTPForkDisabled'} = "nntp fork off";
-$form->{nntp_force_fork} = 1;
-
-( $status, $error ) = $n->validate_item( 'nntp_config', $templ, $language, $form );
-
-test_assert_equal( $status, "nntp fork on" );
-test_assert( !defined( $error ) );
-test_assert_equal( $n->config_( 'force_fork' ), 1 );
-
-$form->{nntp_force_fork} = 0;
-
-( $status, $error ) = $n->validate_item( 'nntp_config', $templ, $language, $form );
-
-test_assert_equal( $status, "nntp fork off" );
-test_assert( !defined( $error ) );
-test_assert_equal( $n->config_( 'force_fork' ), 0 );
-
-delete $form->{nntp_force_fork};
-$n->config_( 'force_fork', 0 );
-
-test_assert_equal( $n->config_( 'local' ), 1 );
-
-$language->{'Security_ServerModeUpdateNNTP'} = "nntp is in server mode";
-$language->{'Security_StealthModeUpdateNNTP'} = "nntp is in stealth mode";
-$form->{serveropt_nntp} = 1; # Server mode
-
-( $status, $error ) = $n->validate_item( 'nntp_local', $templ, $language, $form );
-
-test_assert_equal( $status, "nntp is in server mode" );
-test_assert( !defined( $error ) );
-test_assert_equal( $n->config_( 'local' ), 0 );
-
-$form->{serveropt_nntp} = 0; # Stealth mode
-
-( $status, $error ) = $n->validate_item( 'nntp_local', $templ, $language, $form );
-
-test_assert_equal( $status, "nntp is in stealth mode" );
-test_assert( !defined( $error ) );
-test_assert_equal( $n->config_( 'local' ), 1 );
-
-delete $form->{serveropt_nntp};
-$n->config_( 'local', 1 );
+test_assert_equal( $n->start(), 1 );
+$n->{api_session__} = $b->get_session_key( 'admin', '' );
+$n->history( $h );
 
 # some tests require this directory to be present
 
@@ -324,9 +173,6 @@ mkdir( 'messages' );
 # This pipe is used to send signals to the child running
 # the server to change its state, the following commands can
 # be sent
-#
-# __APOPON    Enable APOP on the server
-# __APOPOFF   Disable APOP on the server (default state)
 
 pipe my $dserverreader, my $dserverwriter;
 pipe my $userverreader, my $userverwriter;
@@ -366,7 +212,6 @@ if ( $pid == 0 ) {
 
     close $server;
     $b->stop();
-    $db->stop();
     exit 0;
 } else {
 
@@ -417,12 +262,12 @@ if ( $pid == 0 ) {
                     next;
                 }
             }
+            select undef, undef, undef, 0.01;
         }
 
         close $dreader;
         close $uwriter;
         $b->stop();
-        $db->stop();
         exit 0;
     } else {
 
@@ -435,8 +280,6 @@ if ( $pid == 0 ) {
         close $dserverreader;
         close $userverwriter;
         $dserverwriter->autoflush(1);
-
-        my $session = $b->get_administrator_session_key();
 
         sleep 5;
 
@@ -560,6 +403,15 @@ if ( $pid == 0 ) {
         print $client "HEAD 1$eol";
         $result = <$client>;
         test_assert_equal( $result, "412 No newsgroup selected$eol" );
+
+#        print $client "HEAD <nntp0\@test1.group>$eol";
+#        $result = <$client>;
+#        test_assert_equal( $result, "221 0 <nntp0\@test1.group>$eol" );
+#        $result = <$client>;
+#        if ( $result =~ /^221/ ) {
+#            while ( <$client> ) {
+#            }
+#        }
 
         print $client "BODY 1$eol";
         $result = <$client>;
@@ -732,11 +584,11 @@ if ( $pid == 0 ) {
         close HIST;
 
         my ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
-            $h->get_slot_fields( $history_count, $session );
+            $h->get_slot_fields( $history_count );
         test_assert_equal( $usedtobe, 0       );
         test_assert_equal( $bucket,   'spam'  );
         test_assert_equal( $hdr_from, 'blank' );
-        test_assert_equal( $magnet,   ''      );
+        test_assert_equal( $magnet,   0       );
 
         print $client "ARTICLE <nntp27\@not.exist.goup>$eol";
         $result = <$client>;
@@ -752,13 +604,15 @@ if ( $pid == 0 ) {
         $cam =~ s/msg$/cam/;
 
         test_assert( open FILE, "<$cam" );
-        binmode FILE;
+        binmode FILE;my $i = 1;
         while ( my $line = <FILE> ) {
             $result = <$client>;
+            my $logline = "File $cam line $i [$line], $client [$result]";
+            $logline =~ s/[$cr$lf]+//g;
             $result =~ s/view=$history_count/view=popfile0=0.msg/;
             $result =~ s/[$cr$lf]+//g;
             $line   =~ s/[$cr$lf]+//g;
-            test_assert_equal( $result, $line );
+            test_assert_equal( $result, $line, $logline );$i++;
         }
         close FILE;
 
@@ -794,10 +648,10 @@ if ( $pid == 0 ) {
         close HIST;
 
         ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
-            $h->get_slot_fields( $history_count, $session );
+            $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
-        test_assert_equal( $magnet, '' );
+        test_assert_equal( $magnet, 0 );
 
         # Check what happens when HEAD fails
 
@@ -886,10 +740,10 @@ if ( $pid == 0 ) {
         close HIST;
 
         ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
-            $h->get_slot_fields( $history_count, $session );
+            $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
-        test_assert_equal( $magnet, '' );
+        test_assert_equal( $magnet, 0 );
 
         # POST command (fail)
 
@@ -928,6 +782,7 @@ if ( $pid == 0 ) {
         wait_proxy();
 
         close $client;
+        sleep 1;
 
         # Test basic HEAD capability with headtoo gets classification
 
@@ -1015,10 +870,10 @@ if ( $pid == 0 ) {
         close HIST;
 
         ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
-            $h->get_slot_fields( $history_count, $session );
+            $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
-        test_assert_equal( $magnet, '' );
+        test_assert_equal( $magnet, 0 );
 
         # Test ARTICLE <message-id> after HEAD comes from cache
 
@@ -1213,10 +1068,10 @@ if ( $pid == 0 ) {
         close HIST;
 
         ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
-            $h->get_slot_fields( $history_count, $session );
+            $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
-        test_assert_equal( $magnet, '' );
+        test_assert_equal( $magnet, 0 );
 
         print $client "ARTICLE <nntp8\@test2.group>$eol";
         $result = <$client>;
@@ -1322,10 +1177,10 @@ if ( $pid == 0 ) {
         close HIST;
 
         ( $id, $hdr_from, $hdr_to, $hdr_cc, $hdr_subject, $hdr_date, $hash, $inserted, $bucket, $usedtobe, $bucketid, $magnet ) =
-            $h->get_slot_fields( $history_count, $session );
+            $h->get_slot_fields( $history_count );
         test_assert_equal( $bucket, 'spam' );
         test_assert_equal( $usedtobe, 0 );
-        test_assert_equal( $magnet, '' );
+        test_assert_equal( $magnet, 0 );
 
         # Test ARTICLE after HEAD comes from cache with illegal CRLF.CRLF
 
@@ -1349,7 +1204,7 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, ".$eol" );
         $result = <$client>;
-        test_assert_equal( $result, ".$eol" ); # TODO
+        test_assert_equal( $result, ".$eol" );
 
         # Check what happens when HEAD fails
 
@@ -1370,6 +1225,7 @@ if ( $pid == 0 ) {
         wait_proxy();
 
         close $client;
+        sleep 1;
 
         # Check insertion of the X-POPFile-Timeout headers
 
@@ -1435,6 +1291,7 @@ if ( $pid == 0 ) {
         wait_proxy();
 
         close $client;
+        sleep 1;
 
         # Test slow LF's on a CRLF
 
@@ -1482,6 +1339,7 @@ if ( $pid == 0 ) {
         wait_proxy();
 
         close $client;
+        sleep 1;
 
         # Test QUIT straight after connect
 
@@ -1501,6 +1359,7 @@ if ( $pid == 0 ) {
         wait_proxy();
 
         close $client;
+        sleep 1;
 
         # Test odd command straight after connect gives error
 
@@ -1524,6 +1383,7 @@ if ( $pid == 0 ) {
         wait_proxy();
 
         close $client;
+        sleep 1;
 
         # Make sure that changing the separator doesn't break
         # anything
@@ -1552,6 +1412,7 @@ if ( $pid == 0 ) {
         wait_proxy();
 
         close $client;
+        sleep 1;
 
         print $dwriter "__SEPCHANGE \$$eol";
         $line = <$ureader>;
@@ -1577,6 +1438,7 @@ if ( $pid == 0 ) {
         wait_proxy();
 
         close $client;
+        sleep 1;
 
         # Send the remote server a special message that makes it die
         print $dwriter "__SEPCHANGE :$eol";
@@ -1607,6 +1469,7 @@ if ( $pid == 0 ) {
         test_assert_equal( $result, "205 Bye$eol" );
 
         close $client;
+        sleep 1;
 
         # Tell the proxy to die
 
@@ -1616,14 +1479,14 @@ if ( $pid == 0 ) {
         close $dwriter;
         close $ureader;
 
-        $b->release_session_key( $session );
-
-        $n->stop();
-        $POPFile->CORE_stop();
-
         while ( waitpid( -1, 0 ) != -1 ) { }
 
         $mq->reaper();
+        $n->stop();
+        $h->stop();
+        $b->stop();
+        $l->stop();
+#        $c->stop();
     }
 }
 
@@ -1673,7 +1536,7 @@ sub server
     my $hang   = 0;
     my $slowlf = 0;
     my $group  = '';
-    my $current_message = '';
+    my $current_message = 0;
     my %groups = ( 'test1.group'    => scalar @messages,
                    'test2.group'    => scalar @messages,
                    'empty.group'    => 0,
@@ -2032,46 +1895,5 @@ sub get_group_and_index
     return ( '', $index, $g );
 }
 
-
-sub forker
-{
-    pipe my $reader, my $writer;
-    $l->log_( 2, "Created pipe pair $reader and $writer" );
-    $b->prefork();
-    $mq->prefork();
-    $h->prefork();
-    $db->prefork();
-    $n->prefork();
-    my $pid = fork();
-
-    if ( !defined( $pid ) ) {
-        close $reader;
-        close $writer;
-        return (undef, undef);
-    }
-
-    if ( $pid == 0 ) {
-        $db->forked( $writer );
-        $b->forked( $writer );
-        $mq->forked( $writer );
-        $h->forked( $writer );
-        close $reader;
-
-        use IO::Handle;
-        $writer->autoflush(1);
-
-        return (0, $writer);
-    }
-
-    $l->log_( 2, "Child process has pid $pid" );
-
-    $b->postfork( $pid, $reader );
-    $mq->postfork( $pid, $reader );
-    $h->postfork( $pid, $reader );
-    $db->postfork( $pid, $reader );
-    $n->postfork( $pid, $reader );
-    close $writer;
-    return ($pid, $reader);
-}
 
 1;

@@ -23,32 +23,66 @@
 
 use strict;
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+use Classifier::Bayes;
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use Classifier::WordMangle;
+use POPFile::History;
 
-my %valid = ( 'Classifier/Bayes' => 1,
-              'Classifier/WordMangle' => 1,
-              'POPFile/Logger' => 1,
-              'POPFile/Database' => 1,
-              'POPFile/History' => 1,
-              'POPFile/MQ'     => 1,
-              'POPFile/Configuration' => 1 );
+# Load the test corpus
+my $c = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l = new POPFile::Logger;
+my $b = new Classifier::Bayes;
+my $w = new Classifier::WordMangle;
+my $h = new POPFile::History;
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
-$POPFile->CORE_start();
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
 
-my $l = $POPFile->get_module( 'POPFile/Logger' );
-$l->global_config_( 'debug', 1 );
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
+
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->start();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$h->configuration( $c );
+$h->mq( $mq );
+$h->logger( $l );
+
+$b->history( $h );
+$h->classifier( $b );
+
+$h->initialize();
+
+$b->module_config_( 'html', 'language', 'English' );
+$b->{parser__}->mangle( $w );
+$b->initialize();
+
+test_assert( $b->start() );
+test_assert( $h->start() );
+
+history_test();
+
 $l->config_( 'level', 2 );
-
-my $h = $POPFile->get_module( 'POPFile/History' );
-my $session = $h->classifier_()->get_administrator_session_key();
-
-history_test( $session );
 
 # Check that the directories are gone too
 
@@ -56,48 +90,24 @@ test_assert( !( -e 'messages/00' ) );
 test_assert( !( -e 'messages/00/00' ) );
 test_assert( !( -e 'messages/00/00/00' ) );
 
-# Multi user mode tests
-
-$h->global_config_( 'single_user', 0 );
-
-my ( $result, $password ) = $h->classifier_()->create_user( $session, 'test' );
-test_assert( defined( $result ) );
-test_assert_equal( $result, 0 );
-test_assert( defined( $password ) );
-test_assert( length $password );
-
-my $user_session = $h->classifier_()->get_session_key( 'test', $password );
-test_assert( defined( $user_session ) );
-
-$h->classifier_()->create_bucket( $user_session, 'spam' );
-$h->classifier_()->create_bucket( $user_session, 'personal' );
-$h->classifier_()->create_bucket( $user_session, 'other' );
-
-history_test( $user_session );
-
-$h->classifier_()->release_session_key( $user_session );
-$h->classifier_()->release_session_key( $session );
-
-$POPFile->CORE_stop();
+$h->stop();
+$b->stop();
 
 sub history_test
 {
-    my ( $session ) = @_;
+    my $session = $b->get_session_key( 'admin', '' );
 
-    my $userid = $h->classifier_()->get_user_id_from_session( $session );
-    test_assert( defined( $userid ) );
+    my $userid = 1;
 
     my %bucketids;
-    $bucketids{spam} = $h->classifier_()->get_bucket_id( $session, 'spam' );
-    $bucketids{personal} = $h->classifier_()->get_bucket_id( $session, 'personal' );
-
-    my $insert_time = time - 100;
+    $bucketids{spam} = $h->{classifier__}->get_bucket_id( $session, 'spam' );
+    $bucketids{personal} = $h->{classifier__}->get_bucket_id( $session, 'personal' );
 
     # Check the behaviour of reserve_slot.  It should return a valid
     # number and create the associated path (but not the file), check
     # that get_slot_file returns the same file as reserve_slot
 
-    my ( $slot, $file ) = $h->reserve_slot( $session, $insert_time++ );
+    my ( $slot, $file ) = $h->reserve_slot();
 
     test_assert( defined( $slot ) );
     test_assert( !( -e $file ) );
@@ -115,7 +125,7 @@ sub history_test
     # Check that there is an entry and that it has not yet
     # been committed
 
-    my @result = $h->db_()->selectrow_array( "select committed from history where id = $slot;" );
+    my @result = $h->{db__}->selectrow_array( "select committed from history where id = $slot;" );
     test_assert_equal( $#result, 0 );
     test_assert( $result[0] != 1 );
 
@@ -127,14 +137,14 @@ sub history_test
     test_assert( !( -e $file ) );
     test_assert( !( -e $path ) );
 
-    @result = $h->db_()->selectrow_array( "select committed from history where id = $slot;" );
+    @result = $h->{db__}->selectrow_array( "select committed from history where id = $slot;" );
     test_assert_equal( $#result, -1 );
 
     # Now try actually adding an element to the history.  Reserve a slot
     # then commit it and call service to get it added.  Ensure that the
     # slot is now committed and has the right fields
 
-    ( $slot, $file ) = $h->reserve_slot( $session, $insert_time++ );
+    ( $slot, $file ) = $h->reserve_slot();
 
     open FILE, ">$file";
     print FILE <<EOF;
@@ -142,7 +152,7 @@ Received: Today
 From: John Graham-Cumming <nospam\@jgc.org>
 To: Everyone <nospam-everyone\@jgc.org>
 Cc: People <no-spam-people\@jgc.org>
-Subject: re: his is the subject line
+Subject: this is the subject line
 Date: Sun, 25 Jul 2020 03:46:32 -0700
 Message-ID: 1234
 
@@ -153,12 +163,14 @@ EOF
     my $size = -s $file;
     my $slot1;
 
-    ( $slot1, $file ) = $h->reserve_slot( $session, $insert_time++ );
+    sleep(2);
+
+    ( $slot1, $file ) = $h->reserve_slot();
     open FILE, ">$file";
     print FILE <<EOF;
 From: Evil Spammer <nospam\@jgc.org>
 To: Someone Else <nospam-everyone\@jgc.org>
-Subject: Hot Teen Mortgage Enlargers
+Subject: hot teen mortgage enlargers
 Date: Sat, 24 Jul 2020 03:46:32 -0700
 Message-ID: 12345
 
@@ -166,6 +178,8 @@ This is the message body
 EOF
     close FILE;
     my $size2 = -s $file;
+
+    sleep(2);
 
     # This is a message for testing evil spammer header tricks or
     # unusual header malformations that may end up parsed into our
@@ -183,7 +197,7 @@ EOF
 
     my $slot2;
 
-    ( $slot2, $file ) = $h->reserve_slot( $session, $insert_time++ );
+    ( $slot2, $file ) = $h->reserve_slot();
     open FILE, ">$file";
     print FILE <<EOF;
 From: Evil Spammer who does tricks <nospam\@jgc.org>
@@ -200,65 +214,64 @@ EOF
     my $size3 = -s $file;
 
     $h->commit_slot( $session, $slot1, 'spam', 0 );
-    $POPFile->CORE_service( 1 );
+    $mq->service();
+    $h->service();
     $h->commit_slot( $session, $slot, 'personal', 0 );
-    $POPFile->CORE_service( 1 );
+    $mq->service();
+    $h->service();
     $h->commit_slot( $session, $slot2, 'spam', 0 );
-    $POPFile->CORE_service( 1 );
-    $POPFile->CORE_service( 1 );
-    $POPFile->CORE_service( 1 );
+    $mq->service();
+    $h->service();
 
     # Check that the message hash mechanism works
 
     my $hash = $h->get_message_hash( '1234',
         'Sun, 25 Jul 2020 03:46:32 -0700',
-        're: his is the subject line',
+        'this is the subject line',
         'Today' );
 
-    test_assert_equal( $hash, '79499c2f056a026ef7bb4ab6c1f51a18' );
+    test_assert_equal( $hash, 'b3acb78f29968d1565ab3c55230c6547' );
     test_assert_equal( $slot, $h->get_slot_from_hash( $hash ) );
 
     # Check that the three messages were correctly inserted into
     # the database
 
-    @result = $h->db_()->selectrow_array( "select * from history where id = $slot and userid = $userid;" );
-    test_assert_equal( $#result, 17 );
+    @result = $h->{db__}->selectrow_array( "select * from history where id = 1;" );
+    test_assert_equal( $#result, 16 );
     test_assert_equal( $result[0], $slot ); # id
     test_assert_equal( $result[1], $userid ); # userid
     test_assert_equal( $result[2], 1 ); # committed
     test_assert_equal( $result[3], 'John Graham-Cumming <nospam@jgc.org>' ); # From
     test_assert_equal( $result[4], 'Everyone <nospam-everyone@jgc.org>' ); # To
     test_assert_equal( $result[5], 'People <no-spam-people@jgc.org>' ); # Cc
-    test_assert_equal( $result[6], 're: his is the subject line' ); # Subject
+    test_assert_equal( $result[6], 'this is the subject line' ); # Subject
     test_assert_equal( $result[7], 1595673992 );
     test_assert_equal( $result[10], $bucketids{personal} ); # bucketid
     test_assert_equal( $result[11], 0 ); # usedtobe
     test_assert_equal( $result[13], 'john graham-cumming nospam@jgc.org' );
     test_assert_equal( $result[14], 'everyone nospam-everyone@jgc.org' ); # To
     test_assert_equal( $result[15], 'people no-spam-people@jgc.org' ); # Cc
-    test_assert_equal( $result[16], 'his is the subject line' ); # Subject
-    test_assert_equal( $result[17], $size ); # size
+    test_assert_equal( $result[16], $size ); # size
 
-    @result = $h->db_()->selectrow_array( "select * from history where id = $slot1;" );
-    test_assert_equal( $#result, 17 );
+    @result = $h->{db__}->selectrow_array( "select * from history where id = 2;" );
+    test_assert_equal( $#result, 16 );
     test_assert_equal( $result[0], $slot1 ); # id
     test_assert_equal( $result[1], $userid ); # userid
     test_assert_equal( $result[2], 1 ); # committed
     test_assert_equal( $result[3], 'Evil Spammer <nospam@jgc.org>' ); # From
     test_assert_equal( $result[4], 'Someone Else <nospam-everyone@jgc.org>' ); # To
     test_assert_equal( $result[5], '' ); # Cc
-    test_assert_equal( $result[6], 'Hot Teen Mortgage Enlargers' ); # Subject
+    test_assert_equal( $result[6], 'hot teen mortgage enlargers' ); # Subject
     test_assert_equal( $result[7], 1595587592 );
     test_assert_equal( $result[10], $bucketids{spam} ); # bucketid
     test_assert_equal( $result[11], 0 ); # usedtobe
     test_assert_equal( $result[13], 'evil spammer nospam@jgc.org' ); # From
     test_assert_equal( $result[14], 'someone else nospam-everyone@jgc.org' );
     test_assert_equal( $result[15], '' ); # Cc
-    test_assert_equal( $result[16], 'hot teen mortgage enlargers' ); # Subject
-    test_assert_equal( $result[17], $size2 ); # size
+    test_assert_equal( $result[16], $size2 ); # size
 
-    @result = $h->db_()->selectrow_array( "select * from history where id = $slot2;" );
-    test_assert_equal( $#result, 17 );
+    @result = $h->{db__}->selectrow_array( "select * from history where id = 3;" );
+    test_assert_equal( $#result, 16 );
     test_assert_equal( $result[0], $slot2 ); # id
     test_assert_equal( $result[1], $userid ); # userid
     test_assert_equal( $result[2], 1 ); # committed
@@ -272,33 +285,32 @@ EOF
     test_assert_equal( $result[13], 'evil spammer who does tricks nospam@jgc.org' ); # From
     test_assert_equal( $result[14], 'do you covet to perceive precious following day ?' );
     test_assert_equal( $result[15], '' ); # Cc
-    test_assert_equal( $result[16], '' ); # subject
-    test_assert_equal( $result[17], $size3 ); # size
-
+    test_assert_equal( $result[16], $size3 ); # size
     # Try a reclassification and undo
 
     $h->change_slot_classification( 1, 'spam', $session );
+    $b->release_session_key( $session );
 
-    my @fields = $h->get_slot_fields( 1, $session );
+    my @fields = $h->get_slot_fields( 1 );
     test_assert_equal( $fields[10], $bucketids{spam} );
     test_assert_equal( $fields[9],  $bucketids{personal} );
     test_assert_equal( $fields[8],  'spam' );
 
-    $h->revert_slot_classification( 1, $session );
-    @fields = $h->get_slot_fields( 1, $session );
+    $h->revert_slot_classification( 1 );
+    @fields = $h->get_slot_fields( 1 );
     test_assert_equal( $fields[10], $bucketids{personal} );
     test_assert_equal( $fields[9],  0 );
     test_assert_equal( $fields[8],  'personal' );
 
     # Check is_valid_slot
 
-    test_assert( $h->is_valid_slot( 1, $session ) );
-    test_assert( !$h->is_valid_slot( 100, $session ) );
+    test_assert( $h->is_valid_slot( 1 ) );
+    test_assert( !$h->is_valid_slot( 100 ) );
 
     # Now that we've got some data in the history test the query
     # interface
 
-    my $q = $h->start_query( $session );
+    my $q = $h->start_query();
 
     test_assert( defined( $q ) );
     test_assert_regexp( $q, '[0-9a-f]{8}' );
@@ -318,7 +330,7 @@ EOF
     test_assert_equal( $rows[2][1], 'John Graham-Cumming <nospam@jgc.org>' );
 
 
-    my @slot_row = $h->get_slot_fields( $rows[0][0], $session );
+    my @slot_row = $h->get_slot_fields( $rows[0][0] );
     test_assert_equal( join(':',@{$rows[0]}), join(':',@slot_row) );
 
     # Start with the most basic, give me everything query
@@ -351,14 +363,6 @@ EOF
     @rows = $h->get_query_rows( $q, 2, 1 );
     test_assert_equal( $#rows, 0 );
     test_assert_equal( $rows[0][1], 'John Graham-Cumming <nospam@jgc.org>' );
-
-    $h->set_query( $q, '', '', 'subject', 0 );
-    test_assert_equal( $h->get_query_size( $q ), 3 );
-    @rows = $h->get_query_rows( $q, 1, 3 );
-    test_assert_equal( $#rows, 2 );
-    test_assert_equal( $rows[0][1], 'Evil Spammer who does tricks <nospam@jgc.org>' );
-    test_assert_equal( $rows[1][1], 'John Graham-Cumming <nospam@jgc.org>' );
-    test_assert_equal( $rows[2][1], 'Evil Spammer <nospam@jgc.org>' );
 
     # Now try unsorted and filtered on a specific bucket
 
@@ -448,12 +452,11 @@ EOF
 
     $h->stop_query( $q );
 
-    if ( $userid eq 1 ) {
-        # Make sure that we can upgrade an existing file with a specific
-        # classification
+    # Make sure that we can upgrade an existing file with a specific
+    # classification
 
-        open MSG, '>' . $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.msg' );
-        print MSG <<EOF;
+    open MSG, '>' . $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.msg' );
+    print MSG <<EOF;
 From: Another Person
 To: Someone Else
 Subject: Something
@@ -461,97 +464,75 @@ Date: Sun, 25 Jul 2000 03:46:31 -0700
 
 This is the body of the message
 EOF
-        close MSG;
+    close MSG;
 
-        $size = -s $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.msg' );
+    $size = -s $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.msg' );
 
-        open CLS, '>' . $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.cls' );
-        print CLS <<EOF;
+    open CLS, '>' . $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.cls' );
+    print CLS <<EOF;
 RECLASSIFIED
 other
 personal
 EOF
-        close CLS;
+    close CLS;
 
-        # Save STDOUT
+    $h->upgrade_history_files__();
 
-        open my $old_stdout, ">&STDOUT";
-        open STDOUT, ">stdout.tmp";
+    test_assert( !(-e $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.cls' ) ) );
+    test_assert( !(-e $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.msg' ) ) );
 
-        $h->upgrade_history_files__();
+    $mq->service();
+    $h->service();
 
-        close STDOUT;
-        unlink 'stdout.tmp';
+    $q = $h->start_query();
 
-        # Restore STDOUT
+    $h->set_query( $q, '', '', '', 0 );
+    test_assert_equal( $h->get_query_size( $q ), 4 );
 
-        open STDOUT, ">&", $old_stdout;
+    $h->set_query( $q, 'other', '', '', 0 );
+    test_assert_equal( $h->get_query_size( $q ), 1 );
 
-        test_assert( !(-e $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.cls' ) ) );
-        test_assert( !(-e $h->get_user_path_( $h->global_config_( 'msgdir' ) . 'popfile1=1.msg' ) ) );
-
-        $POPFile->CORE_service( 1 );
-
-        $q = $h->start_query( $session );
-
-        $h->set_query( $q, '', '', '', 0 );
-        test_assert_equal( $h->get_query_size( $q ), 4 );
-
-        $h->set_query( $q, 'other', '', '', 0 );
-        test_assert_equal( $h->get_query_size( $q ), 1 );
-
-        @rows = $h->get_query_rows( $q, 1, 1 );
-        test_assert_equal( $#rows, 0 );
-        test_assert_equal( $rows[0][1], 'Another Person' );
-        test_assert_equal( $rows[0][2], 'Someone Else' );
-        test_assert_equal( $rows[0][4], 'Something' );
-        test_assert_equal( $rows[0][5], 964521991 );
-        test_assert_equal( $rows[0][12], $size );
-
-        $h->stop_query( $q );
-    }
-
-    $q = $h->start_query( $session );
+    @rows = $h->get_query_rows( $q, 1, 1 );
+    test_assert_equal( $#rows, 0 );
+    test_assert_equal( $rows[0][1], 'Another Person' );
+    test_assert_equal( $rows[0][2], 'Someone Else' );
+    test_assert_equal( $rows[0][4], 'Something' );
+    test_assert_equal( $rows[0][5], 964521991 );
+    test_assert_equal( $rows[0][12], $size );
 
     # Now check that deletion works
 
     $h->set_query( $q, '', '', '', 0 );
-    test_assert_equal( $h->get_query_size( $q ), ($userid eq 1?4:3) );
+    test_assert_equal( $h->get_query_size( $q ), 4 );
     $h->stop_query( $q );
 
     $file = $h->get_slot_file( $slot1 );
     test_assert( ( -e $file ) );
     $h->start_deleting();
-    $h->delete_slot( $slot1, 0, $session, 0 );
+    $h->delete_slot( $slot1, 0 );
     $h->stop_deleting();
     test_assert( !( -e $file ) );
 
-    $q = $h->start_query( $session );
-    $h->set_query( $q, '', '', '', 0 );
-    test_assert_equal( $h->get_query_size( $q ), ($userid eq 1?3:2) );
+    $h->set_query( $q, '', '', 'from', 0 );
+    test_assert_equal( $h->get_query_size( $q ), 3 );
 
     @rows = $h->get_query_rows( $q, 1, 3 );
     test_assert_equal( $#rows, 2 );
-    if ( $userid eq 1 ) {
-        test_assert_equal( $rows[0][1], 'Another Person' );
-        test_assert_equal( $rows[1][1], 'Evil Spammer who does tricks <nospam@jgc.org>' );
-        test_assert_equal( $rows[2][1], 'John Graham-Cumming <nospam@jgc.org>' );
-    } else {
-        test_assert_equal( $rows[0][1], 'Evil Spammer who does tricks <nospam@jgc.org>' );
-        test_assert_equal( $rows[1][1], 'John Graham-Cumming <nospam@jgc.org>' );
-    }
+    test_assert_equal( $rows[0][1], 'Another Person' );
+    test_assert_equal( $rows[1][1], 'Evil Spammer who does tricks <nospam@jgc.org>' );
+    test_assert_equal( $rows[2][1], 'John Graham-Cumming <nospam@jgc.org>' );
 
     # Now try history cleanup, should leave nothing
 
     $h->stop_query( $q );
 
-    $h->user_config_( 1, 'history_days', 0 ); # Clean up userid = 1 only
+    $h->config_( 'history_days', 0 );
     sleep 2;
     $h->cleanup_history();
 
-    my $qq = $h->start_query( $session );
+    my $qq = $h->start_query();
     $h->set_query( $qq, '', '', '', 0 );
-    test_assert_equal( $h->get_query_size( $qq ), ($userid eq 1?0:2) );
+    test_assert_equal( $h->get_query_size( $qq ), 0 );
     $h->stop_query( $qq );
 
     test_assert( !defined( $h->{queries__}{$q} ) );

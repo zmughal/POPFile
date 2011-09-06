@@ -39,16 +39,13 @@
 # SUBMIT a          Finds the form with input a and submits it
 # SETSUBMIT a b     Just like doing SETINPUT a b followed by SUBMIT a
 # CONFIGIS a b      Verify that config item a has value b
-# SETCONFIG u a b     Set config item a for user u to b
-# USERCONFIGIS u a b  Verify that config item a for user u has value b
-# SETUSERCONFIG u a b Set config item a for user u to b
+# SETCONFIG a b     Set config item a to b
 # MAGNETIS a b c    Checks that magnet c exists in bucket a with type b
 # PARAMETERIS a b c Check that parameter b in bucket a has value c
 # CLICK a           Click the button called a
 # SENDMSG a b       Send a message through the POPFile MQ (message a with parameter b)
 # STOP              Terminate the script, used for debugging
 # HIDDEN a          If a is 1 then allow matching on hidden form elements
-# ISVALIDPASSWORD a Check that password a is valid for the current user
 #                   (by default this is 0)
 #
 # Expect that the following are available to you within the MATCH/ENDMATCH block
@@ -56,6 +53,8 @@
 # $port             The port on which the HTML interface is running
 # $url              URL object for the last URL specified
 # $content          String containing the return from the last URL fetch
+# $sk               The current HTML UI session key
+# $version          Same as $h->version()
 
 # Test the simplest functionality of the HTML interface
 
@@ -68,41 +67,32 @@ GET /
 
 MATCH <title>POPFile Control Center</title>
 MATCH <html lang="en">
-MATCH <link rel="stylesheet" type="text/css" href="skins/default/style.css" media="all" title="POPFile">
+MATCH <link rel="stylesheet" type="text/css" href="skins/simplyblue/style.css" title="POPFile">
 MATCH <link rel="icon" href="favicon.ico">
 
 MATCH <a class="shutdownLink" href="/shutdown">Shutdown POPFile</a>
 
 # Common MIDDLE parts (i.e. the tabs)
 
-MATCH <a class="menuLink" href="/history"
+MATCH <a class="menuLink" href="/history?session=$sk">
 MATCH History</a>
-MATCH <a class="menuLink" href="/buckets"
+MATCH <a class="menuLink" href="/buckets?session=$sk">
 MATCH Buckets</a>
-MATCH <a class="menuLink" href="/magnets"
+MATCH <a class="menuLink" href="/magnets?session=$sk&amp;start_magnet=0">
 MATCH Magnets</a>
-MATCH <a class="menuLink" href="/administration"
-MATCH Administration</a>
-MATCH <a class="menuLink" href="/advanced"
+MATCH <a class="menuLink" href="/configuration?session=$sk">
+MATCH Configuration</a>
+MATCH <a class="menuLink" href="/security?session=$sk">
+MATCH Security</a>
+MATCH <a class="menuLink" href="/advanced?session=$sk">
 MATCH Advanced</a>
-
-NOTMATCH <a class="menuLink" href="/users"
-NOTMATCH Users</a>
 
 # Common BOTTOM parts
 
-MATCH
-<a class="bottomLink" href="http://getpopfile.org/" title="Visit the POPFile home page">
-POPFile Home Page</a>
-ENDMATCH
-MATCH
-<a class="bottomLink" href="http://getpopfile.org/docs/FAQ" title="POPFile Frequently Asked Questions">
-FAQ</a>
-ENDMATCH
-MATCH
-<a class="bottomLink" href="http://getpopfile.org/docs/index.php" title="POPFile's documentation wiki">
-Documentation</a>
-ENDMATCH
+MATCH <a class="bottomLink" href="http://getpopfile.org/">POPFile Home Page</a>
+MATCH <a class="bottomLink" href="http://getpopfile.org/docs/FAQ">FAQ</a>
+MATCH <a class="bottomLink" href="http://getpopfile.org/docs/index.php">Documentation</a>
+MATCH $version
 
 # Verify that each of the pages highlights the correct item on
 # the tab bar and hence the simplest level of page serving is working
@@ -111,805 +101,38 @@ ENDMATCH
 GET /history
 MATCH
 <td class="menuSelected" align="center">
-<a class="menuLink" href="/history"
+                <a class="menuLink" href="/history?session=$sk">
 ENDMATCH
 
 GET /buckets
 MATCH
 <td class="menuSelected" align="center">
-<a class="menuLink" href="/buckets"
+                <a class="menuLink" href="/buckets?session=$sk">
 ENDMATCH
 
 GET /magnets
 MATCH
 <td class="menuSelected" align="center">
-<a class="menuLink" href="/magnets"
+                <a class="menuLink" href="/magnets?session=$sk&amp;start_magnet=0">
 ENDMATCH
 
-GET /administration
+GET /configuration
 MATCH
 <td class="menuSelected" align="center">
-<a class="menuLink" href="/administration"
+                <a class="menuLink" href="/configuration?session=$sk">
+ENDMATCH
+
+GET /security
+MATCH
+<td class="menuSelected" align="center">
+                <a class="menuLink" href="/security?session=$sk">
 ENDMATCH
 
 GET /advanced
 MATCH
 <td class="menuSelected" align="center">
-<a class="menuLink" href="/advanced"
+                <a class="menuLink" href="/advanced?session=$sk">
 ENDMATCH
-
-GET /users
-MATCH POPFile Web Server Error 404
-
-# Enter the Multi user mode
-
-GET /administration
-INPUTIS   usermode on
-CONFIGIS  GLOBAL_single_user 1
-SETINPUT  usermode off
-CLICK     apply_stealth
-INPUTIS   usermode
-CONFIGIS  GLOBAL_single_user 0
-MATCH     POPFile is now in the Multiuser Mode. You are recommended to restart POPFile.
-MATCH     <a class="logoutLink" href="/logout">Logout (admin)</a>
-
-# Login page
-
-GET       /logout
-MATCH     <h2 class="password">Login</h2>
-MATCH     User name
-MATCH     Password
-SETINPUT  username admin
-SETSUBMIT password wrongpassword
-MATCH     Incorrect user name or password
-SETINPUT  username wronguser
-SETSUBMIT password
-MATCH     Incorrect user name or password
-
-SETINPUT  username admin
-SETSUBMIT password
-MATCH     Recent Messages
-
-# Does not redirect to login page
-
-GET       /logout
-GET       /administration
-MATCH     <input type="hidden" id="next" name="next" value="%2Fadministration" />
-GET       /logout
-MATCH     <input type="hidden" id="next" name="next" value="%2F" />
-SETINPUT  username admin
-SETSUBMIT password
-
-# Administration page (Current Active User sessions)
-
-GET       /administration
-MATCH     Current Active User Sessions
-MATCH     <td align="left" >admin</td>
-
-# Advanced page (No single user mode options)
-
-GET       /advanced
-NOTMATCH  Single User Mode Parameters
-
-# Users page
-
-# Create user
-
-GET       /users
-MATCH     Create New User
-SETSUBMIT newuser testuser
-MATCH     Created user &#39;testuser&#39; (initial password &#39;
-SETSUBMIT newuser testuser
-MATCH     User &#39;testuser&#39; not created: already exists
-SETSUBMIT newuser testuser2
-MATCH     Created user &#39;testuser2&#39; (initial password &#39;
-
-SETINPUT  newuser admin_clone
-SETSUBMIT clone admin
-MATCH     Created user &#39;admin_clone&#39; as clone of &#39;admin&#39; (initial password &#39;
-
-SETINPUT  newuser admin_clone_with_data
-SETINPUT  clone admin
-SETINPUT  users_copy_magnets on
-SETSUBMIT users_copy_corpus on
-MATCH     Created user &#39;admin_clone_with_data&#39; as clone of &#39;admin&#39; (initial password &#39;
-
-# Remove User
-
-GET       /users
-MATCH     Remove Existing User
-MATCH
-<select name="toremove">
-<option value="">&nbsp;</option>
-<option>admin_clone</option>
-<option>testuser2</option>
-<option>testuser</option>
-<option>admin_clone_with_data</option>
-</select>
-ENDMATCH
-SETSUBMIT toremove testuser
-MATCH     Removed user &#39;testuser&#39;
-MATCH
-<select name="toremove">
-<option value="">&nbsp;</option>
-<option>admin_clone</option>
-<option>testuser2</option>
-<option>admin_clone_with_data</option>
-</select>
-ENDMATCH
-SETSUBMIT toremove admin_clone
-MATCH     Failed to remove user &#39;admin_clone&#39;: disable admin rights first
-MATCH
-<select name="toremove">
-<option value="">&nbsp;</option>
-<option>admin_clone</option>
-<option>testuser2</option>
-<option>admin_clone_with_data</option>
-</select>
-ENDMATCH
-
-# Rename user
-
-GET       /users
-MATCH     Rename Existing User
-MATCH
-<select name="torename">
-<option value="">&nbsp;</option>
-<option>admin_clone</option>
-<option>testuser2</option>
-<option>admin_clone_with_data</option>
-</select>
-ENDMATCH
-SETINPUT  torename testuser2
-SETSUBMIT newname renameduser
-MATCH     Renamed user &#39;testuser2&#39; to &#39;renameduser&#39; (initial password &#39;
-MATCH
-<select name="torename">
-<option value="">&nbsp;</option>
-<option>admin_clone</option>
-<option>renameduser</option>
-<option>admin_clone_with_data</option>
-</select>
-ENDMATCH
-SETINPUT  torename renameduser
-SETSUBMIT newname admin
-MATCH     Failed to rename user &#39;renameduser&#39; to &#39;admin&#39;: already exists
-
-# Initialize user's password
-
-GET       /users
-MATCH     Change/Initialize User's Password
-MATCH
-<select name="tochangepassword">
-<option value="">&nbsp;</option>
-<option>admin_clone</option>
-<option>admin</option>
-<option>renameduser</option>
-<option>admin_clone_with_data</option>
-</select>
-ENDMATCH
-SETINPUT  tochangepassword renameduser
-SETSUBMIT users_reset_password on
-MATCH     Initialized password for user &#39;renameduser&#39; (new initial password &#39;
-
-# Set user's password
-
-GET       /users
-SETINPUT  tochangepassword renameduser
-SETINPUT  users_new_password newpassword
-SETSUBMIT users_confirm_password newpassword
-MATCH     Changed password for user &#39;renameduser&#39;
-SETINPUT  tochangepassword renameduser
-SETINPUT  users_new_password newpassword2
-SETSUBMIT users_confirm_password wrongconfirmpassword
-MATCH     Failed to change password for user &#39;renameduser&#39;: The new password must by identical in the New and Confirm New boxes
-
-SETINPUT  tochangepassword admin_clone
-SETINPUT  users_new_password newpassword
-SETSUBMIT users_confirm_password newpassword
-MATCH     Changed password for user &#39;admin_clone&#39;
-
-SETINPUT  tochangepassword admin_clone_with_data
-SETINPUT  users_new_password newpassword
-SETSUBMIT users_confirm_password newpassword
-MATCH     Changed password for user &#39;admin_clone_with_data&#39;
-
-# Edit user's settings
-
-GET       /users
-MATCH     Edit User Settings
-MATCH
-<select name="editname">
-<option value="">&nbsp;</option>
-<option>admin_clone</option>
-<option>admin</option>
-<option>renameduser</option>
-<option>admin_clone_with_data</option>
-</select>
-ENDMATCH
-SETSUBMIT editname admin
-MATCH     Associated POP3 Accounts (admin)
-MATCH     Parameters (admin)
-
-# Add account
-
-SETSUBMIT newaccount foo:bar
-MATCH
-<tr>
-<th class="usersLabel" scope="col" align="left">
-POP3 Account
-</th>
-<th class="usersLabel" scope="col">
-Remove
-</th>
-</tr>
-ENDMATCH
-MATCH
-<td>
-foo:bar
-</td>
-ENDMATCH
-
-SETINPUT  newaccount fooz:bar
-CLICK     addaccount
-MATCH
-<td>
-fooz:bar
-</td>
-ENDMATCH
-
-SETINPUT  newaccount foo:bar
-CLICK     addaccount
-MATCH     Failed to add the account because it is assigned to another user
-
-SETINPUT  newaccount badaccount
-CLICK     addaccount
-MATCH     The new account name must be in the form host:user
-
-# Remove account
-
-SETINPUT  remove_fooz:bar on
-CLICK     delete
-NOTMATCH  fooz:bar
-
-# Edit parameters
-
-INPUTIS   parameter_history_history_days 2
-USERCONFIGIS admin history_history_days 2
-SETSUBMIT parameter_history_history_days 10
-INPUTIS   parameter_history_history_days 10
-USERCONFIGIS admin history_history_days 10
-SETSUBMIT parameter_history_history_days 2
-
-INPUTIS   parameter_GLOBAL_can_admin 1
-USERCONFIGIS admin GLOBAL_can_admin 1
-SETSUBMIT parameter_GLOBAL_can_admin 0
-INPUTIS   parameter_GLOBAL_can_admin 1
-USERCONFIGIS admin GLOBAL_can_admin 1
-
-# Timeout test
-
-GET       /advanced
-CONFIGIS  GLOBAL_session_timeout 1800
-INPUTIS   parameter_GLOBAL_session_timeout 1800
-SETSUBMIT parameter_GLOBAL_session_timeout 1
-CONFIGIS  GLOBAL_session_timeout 1
-INPUTIS   parameter_GLOBAL_session_timeout 1
-
-CODE
-select( undef, undef, undef, 5 ); # wait for timeout
-ENDCODE
-
-GET       /advanced
-MATCH     Login
-MATCH     POPFile session has been expired because a timeout period passed
-SETINPUT  username admin
-SETSUBMIT password
-
-GET       /advanced
-SETSUBMIT parameter_GLOBAL_session_timeout 1800
-CONFIGIS  GLOBAL_session_timeout 1800
-INPUTIS   parameter_GLOBAL_session_timeout 1800
-
-GET       /logout
-
-# Login as standard (non-admin) user
-
-GET       /
-SETINPUT  username renameduser
-SETSUBMIT password wrongpassword
-MATCH     Incorrect user name or password
-SETINPUT  username renameduser
-SETSUBMIT password newpassword
-
-MATCH <a class="menuLink" href="/history"
-MATCH History</a>
-MATCH <a class="menuLink" href="/buckets"
-MATCH Buckets</a>
-MATCH <a class="menuLink" href="/magnets"
-MATCH Magnets</a>
-
-NOTMATCH <a class="menuLink" href="/administration"
-NOTMATCH Administration</a>
-NOTMATCH <a class="menuLink" href="/users"
-NOTMATCH Users</a>
-NOTMATCH <a class="menuLink" href="/advanced"
-NOTMATCH Advanced</a>
-
-MATCH     <a class="logoutLink" href="/logout">Logout (renameduser)</a>
-NOTMATCH  <a class="shutdownLink" href="/shutdown">Shutdown POPFile</a>
-
-# Standard user can't access the log file
-
-GET /popfile_current_log.log
-MATCH POPFile Web Server Error 404
-
-# No History
-
-GET /history
-MATCH
-<td class="menuSelected" align="center">
-<a class="menuLink" href="/history"
-ENDMATCH
-MATCH     No messages.
-
-# No Buckets
-
-GET /buckets
-MATCH
-<td class="menuSelected" align="center">
-<a class="menuLink" href="/buckets"
-ENDMATCH
-MATCH
-<span style="color:black">
-unclassified
-</span>
-ENDMATCH
-MATCH
-<td align="right">
-0 (  0.00%)
-</td>
-<td align="right">
-0
-</td>
-<td align="right">
-</td>
-ENDMATCH
-
-# No Magnets
-
-GET /magnets
-MATCH
-<td class="menuSelected" align="center">
-<a class="menuLink" href="/magnets"
-ENDMATCH
-NOTMATCH  text1
-
-# Non admin users can't access these pages
-
-GET   /administration
-MATCH POPFile Web Server Error 404
-GET   /users
-MATCH POPFile Web Server Error 404
-GET   /advanced
-MATCH POPFile Web Server Error 404
-
-GET   /shutdown
-MATCH POPFile Web Server Error 404
-
-# Language test
-
-GET          /
-MATCH        <html lang="en">
-USERCONFIGIS renameduser html_language English
-SETSUBMIT    language Francais
-MATCH        <html lang="fr">
-USERCONFIGIS renameduser html_language Francais
-USERCONFIGIS admin html_language English
-SETSUBMIT    language English
-MATCH        <html lang="en">
-USERCONFIGIS renameduser html_language English
-
-GET /logout
-
-# Login as cloned admin without data
-
-GET /
-SETINPUT  username admin_clone
-SETSUBMIT password newpassword
-
-MATCH <a class="menuLink" href="/history"
-MATCH History</a>
-MATCH <a class="menuLink" href="/buckets"
-MATCH Buckets</a>
-MATCH <a class="menuLink" href="/magnets"
-MATCH Magnets</a>
-MATCH <a class="menuLink" href="/administration"
-MATCH Administration</a>
-MATCH <a class="menuLink" href="/users"
-MATCH Users</a>
-MATCH <a class="menuLink" href="/advanced"
-MATCH Advanced</a>
-
-MATCH <a class="logoutLink" href="/logout">Logout (admin_clone)</a>
-MATCH <a class="shutdownLink" href="/shutdown">Shutdown POPFile</a>
-
-# No history
-
-GET       /history
-MATCH     No messages.
-
-# Buckets
-
-GET /buckets
-MATCH
-<td class="menuSelected" align="center">
-<a class="menuLink" href="/buckets"
-ENDMATCH
-MATCH
-<span style="color:red">
-other
-</span>
-ENDMATCH
-MATCH
-<span style="color:green">
-personal
-</span>
-ENDMATCH
-MATCH
-<span style="color:blue">
-spam
-</span>
-ENDMATCH
-MATCH
-<span style="color:black">
-unclassified
-</span>
-ENDMATCH
-MATCH
-<td align="right">
-0
-</td>
-ENDMATCH
-MATCH
-<td align="right">
-0 (0.00%)
-</td>
-<td align="right">
-0
-</td>
-<td align="right">
-0
-</td>
-ENDMATCH
-MATCH
-<td align="right">
-0 (0.00%)
-</td>
-<td align="right">
-0
-</td>
-<td align="right">
-</td>
-ENDMATCH
-
-# No magnets
-
-GET /magnets
-MATCH
-<td class="menuSelected" align="center">
-<a class="menuLink" href="/magnets"
-ENDMATCH
-NOTMATCH  text1
-
-GET /logout
-
-# Login as cloned admin with data
-
-GET /
-SETINPUT  username admin_clone_with_data
-SETSUBMIT password newpassword
-
-MATCH <a class="menuLink" href="/history"
-MATCH History</a>
-MATCH <a class="menuLink" href="/buckets"
-MATCH Buckets</a>
-MATCH <a class="menuLink" href="/magnets"
-MATCH Magnets</a>
-MATCH <a class="menuLink" href="/administration"
-MATCH Administration</a>
-MATCH <a class="menuLink" href="/users"
-MATCH Users</a>
-MATCH <a class="menuLink" href="/advanced"
-MATCH Advanced</a>
-
-MATCH     <a class="logoutLink" href="/logout">Logout (admin_clone_with_data)</a>
-MATCH <a class="shutdownLink" href="/shutdown">Shutdown POPFile</a>
-
-# History is not copied
-
-GET       /history
-MATCH     No messages.
-
-# Buckets
-
-GET       /buckets
-MATCH
-<span style="color:red">
-other
-</span>
-ENDMATCH
-MATCH
-<span style="color:green">
-personal
-</span>
-ENDMATCH
-MATCH
-<span style="color:blue">
-spam
-</span>
-ENDMATCH
-MATCH
-<span style="color:black">
-unclassified
-</span>
-ENDMATCH
-
-MATCH
-<td align="right">
-656
-</td>
-ENDMATCH
-MATCH
-<td align="right">
-3
-</td>
-ENDMATCH
-MATCH
-<td align="right">
-3,353
-</td>
-ENDMATCH
-
-# Magnets
-
-GET       /magnets
-INPUTIS text1 oldstyle
-INPUTIS bucket1 personal
-INPUTIS type1 from
-INPUTIS text2 bar
-INPUTIS bucket2 personal
-INPUTIS type2 subject
-INPUTIS text3 baz\@baz.com
-INPUTIS bucket3 personal
-INPUTIS type3 to
-
-GET /logout
-
-# Return to the single user mode
-
-GET       /administration
-SETINPUT  username admin
-SETSUBMIT password
-
-INPUTIS   usermode
-CONFIGIS  GLOBAL_single_user 0
-SETINPUT  usermode on
-CLICK     apply_stealth
-INPUTIS   usermode on
-CONFIGIS  GLOBAL_single_user 1
-NOTMATCH  <a class="logoutLink" href="/logout">Logout (admin)</a>
-MATCH     POPFile is now in the Single User Mode (POPFile classic). You are recommended to restart POPFile.
-
-# Config Bar
-
-GET /history
-
-# Show/Hide Config Bar
-
-MATCH    <a name="configBar" title="Hide configuration bar" href="/history?hide_configbar=1">Config Bar</a>
-MATCH    <table class="configBarBody" cellspacing="0" width="100%" summary="">
-GET      /history?hide_configbar=1
-MATCH    <a title="Show configuration bar" href="/history?show_configbar=1#configBar">Config Bar</a>
-NOTMATCH <table class="configBarBody" cellspacing="0" width="100%" summary="">
-GET      /history?show_configbar=1
-MATCH    <a name="configBar" title="Hide configuration bar" href="/history?hide_configbar=1">Config Bar</a>
-
-# Check skin change
-
-MATCH        <link rel="stylesheet" type="text/css" href="skins/default/style.css" media="all" title="POPFile">
-USERCONFIGIS admin html_skin default
-SETSUBMIT    skin oceanblue
-MATCH        <link rel="stylesheet" type="text/css" href="skins/oceanblue/style.css" title="POPFile-Style">
-USERCONFIGIS admin html_skin oceanblue
-SETSUBMIT    skin default
-USERCONFIGIS admin html_skin default
-
-# Check language change
-
-MATCH        <html lang="en">
-USERCONFIGIS admin html_language English
-SETSUBMIT    language Francais
-MATCH        <html lang="fr">
-USERCONFIGIS admin html_language Francais
-SETSUBMIT    language English
-MATCH        <html lang="en">
-USERCONFIGIS admin html_language English
-
-# Check history lines change
-
-INPUTIS      page_size 20
-USERCONFIGIS admin html_page_size 20
-SETSUBMIT    page_size 30
-INPUTIS      page_size 30
-USERCONFIGIS admin html_page_size 30
-#MATCH        Updated number of messages per page to 30
-SETSUBMIT    page_size 0
-MATCH        The page size must be a number between 1 and 1000
-INPUTIS      page_size 30
-SETSUBMIT    page_size 20
-USERCONFIGIS admin html_page_size 20
-
-# Check history days change
-
-INPUTIS      history_days 2
-USERCONFIGIS admin history_history_days 2
-SETSUBMIT    history_days 3
-INPUTIS      history_days 3
-USERCONFIGIS admin history_history_days 3
-#MATCH        Updated number of days of history to 3
-SETSUBMIT    history_days 0
-#MATCH        The number of days in the history must be a number between 1 and 366
-INPUTIS      history_days 3
-
-# Add/Remove columns
-
-MATCH
-<a href="/history?setsort=inserted" title="Sort by this column">
-<em class="historyLabelSort">
-&lt;&nbsp;Arrived
-</em>
-</a>
-ENDMATCH
-MATCH
-<a href="/history?setsort=from" title="Sort by this column">
-From
-</a>
-ENDMATCH
-MATCH
-<a href="/history?setsort=to" title="Sort by this column">
-To
-</a>
-ENDMATCH
-MATCH
-<a href="/history?setsort=subject" title="Sort by this column">
-Subject
-</a>
-ENDMATCH
-MATCH
-<a href="/history?setsort=bucket" title="Sort by this column">
-Bucket
-</a>
-ENDMATCH
-MATCH
-<input type="hidden" id="inserted" name="inserted">
-<input type="hidden" id="from" name="from">
-<input type="hidden" id="to" name="to">
-<span class="checkLabel"><input type="checkbox" id="cc" class="checkbox" name="cc">&nbsp;<label for="cc">Cc</label>&nbsp;</span>
-<input type="hidden" id="subject" name="subject">
-<span class="checkLabel"><input type="checkbox" id="date" class="checkbox" name="date">&nbsp;<label for="date">Date</label>&nbsp;</span>
-<span class="checkLabel"><input type="checkbox" id="size" class="checkbox" name="size">&nbsp;<label for="size">Size</label>&nbsp;</span>
-<input type="hidden" id="bucket" name="bucket">
-ENDMATCH
-USERCONFIGIS admin html_columns +inserted,+from,+to,-cc,+subject,-date,-size,+bucket,
-
-SETINPUT date on
-CLICK    update_fields
-MATCH
-<a href="/history?setsort=date" title="Sort by this column">
-Date
-</a>
-ENDMATCH
-MATCH
-<input type="hidden" id="inserted" name="inserted">
-<input type="hidden" id="from" name="from">
-<input type="hidden" id="to" name="to">
-<span class="checkLabel"><input type="checkbox" id="cc" class="checkbox" name="cc">&nbsp;<label for="cc">Cc</label>&nbsp;</span>
-<input type="hidden" id="subject" name="subject">
-<input type="hidden" id="date" name="date">
-<span class="checkLabel"><input type="checkbox" id="size" class="checkbox" name="size">&nbsp;<label for="size">Size</label>&nbsp;</span>
-<input type="hidden" id="bucket" name="bucket">
-ENDMATCH
-USERCONFIGIS admin html_columns +inserted,+from,+to,-cc,+subject,+date,-size,+bucket,
-
-SETINPUT size on
-CLICK    update_fields
-MATCH
-<a href="/history?setsort=size" title="Sort by this column">
-Size
-</a>
-ENDMATCH
-MATCH
-<input type="hidden" id="inserted" name="inserted">
-<input type="hidden" id="from" name="from">
-<input type="hidden" id="to" name="to">
-<span class="checkLabel"><input type="checkbox" id="cc" class="checkbox" name="cc">&nbsp;<label for="cc">Cc</label>&nbsp;</span>
-<input type="hidden" id="subject" name="subject">
-<input type="hidden" id="date" name="date">
-<input type="hidden" id="size" name="size">
-<input type="hidden" id="bucket" name="bucket">
-ENDMATCH
-USERCONFIGIS admin html_columns +inserted,+from,+to,-cc,+subject,+date,+size,+bucket,
-
-MATCH    <a class="columnRemove" href="/history?removecolumn=date"><img title="Remove column" src="skins/x.gif" border="0" alt="x"></a>
-MATCH    <a class="columnRemove" href="/history?removecolumn=size"><img title="Remove column" src="skins/x.gif" border="0" alt="x"></a>
-
-GET      /history?removecolumn=date
-NOTMATCH <a class="columnRemove" href="/history?removecolumn=date"><img title="Remove column" src="skins/x.gif" border="0" alt="x"></a>
-MATCH    <a class="columnRemove" href="/history?removecolumn=size"><img title="Remove column" src="skins/x.gif" border="0" alt="x"></a>
-MATCH
-<input type="hidden" id="inserted" name="inserted">
-<input type="hidden" id="from" name="from">
-<input type="hidden" id="to" name="to">
-<span class="checkLabel"><input type="checkbox" id="cc" class="checkbox" name="cc">&nbsp;<label for="cc">Cc</label>&nbsp;</span>
-<input type="hidden" id="subject" name="subject">
-<span class="checkLabel"><input type="checkbox" id="date" class="checkbox" name="date">&nbsp;<label for="date">Date</label>&nbsp;</span>
-<input type="hidden" id="size" name="size">
-<input type="hidden" id="bucket" name="bucket">
-ENDMATCH
-USERCONFIGIS admin html_columns +inserted,+from,+to,-cc,+subject,-date,+size,+bucket,
-
-GET      /history?removecolumn=size
-NOTMATCH <a class="columnRemove" href="/history?removecolumn=size"><img title="Remove column" src="skins/x.gif" border="0" alt="x"></a>
-MATCH
-<input type="hidden" id="inserted" name="inserted">
-<input type="hidden" id="from" name="from">
-<input type="hidden" id="to" name="to">
-<span class="checkLabel"><input type="checkbox" id="cc" class="checkbox" name="cc">&nbsp;<label for="cc">Cc</label>&nbsp;</span>
-<input type="hidden" id="subject" name="subject">
-<span class="checkLabel"><input type="checkbox" id="date" class="checkbox" name="date">&nbsp;<label for="date">Date</label>&nbsp;</span>
-<span class="checkLabel"><input type="checkbox" id="size" class="checkbox" name="size">&nbsp;<label for="size">Size</label>&nbsp;</span>
-<input type="hidden" id="bucket" name="bucket">
-ENDMATCH
-USERCONFIGIS admin html_columns +inserted,+from,+to,-cc,+subject,-date,-size,+bucket,
-
-# Move column left/right
-
-MATCH    <a class="columnMove" href="/history?moveright=inserted"><img title="Move right" src="skins/rightarrow.gif" border="0" alt="&gt;"></a>
-MATCH    <a class="columnMove" href="/history?moveleft=from"><img title="Move left" src="skins/leftarrow.gif" border="0" alt="&lt;"></a>
-GET      /history?moveright=inserted
-MATCH    <a class="columnMove" href="/history?moveleft=inserted"><img title="Move left" src="skins/leftarrow.gif" border="0" alt="&lt;"></a>
-MATCH    <a class="columnMove" href="/history?moveright=inserted"><img title="Move right" src="skins/rightarrow.gif" border="0" alt="&gt;"></a>
-NOTMATCH <a class="columnMove" href="/history?moveleft=from"><img title="Move left" src="skins/leftarrow.gif" border="0" alt="&lt;"></a>
-USERCONFIGIS admin html_columns +from,+inserted,+to,-cc,+subject,-date,-size,+bucket
-
-GET      /history?moveleft=inserted
-MATCH    <a class="columnMove" href="/history?moveright=inserted"><img title="Move right" src="skins/rightarrow.gif" border="0" alt="&gt;"></a>
-MATCH    <a class="columnMove" href="/history?moveleft=from"><img title="Move left" src="skins/leftarrow.gif" border="0" alt="&lt;"></a>
-NOTMATCH <a class="columnMove" href="/history?moveleft=inserted"><img title="Move left" src="skins/leftarrow.gif" border="0" alt="&lt;"></a>
-USERCONFIGIS admin html_columns +inserted,+from,+to,-cc,+subject,-date,-size,+bucket
-
-# Column size
-
-MATCH         (Archive Copy) RE: CW v9 and armlets...
-USERCONFIGIS  admin html_column_characters 39
-CLICK         increase
-MATCH         (Archive Copy) RE: CW v9 and armlets...
-USERCONFIGIS  admin html_column_characters 40
-
-CLICK         decrease
-MATCH         (Archive Copy) RE: CW v9 and armlets...
-USERCONFIGIS  admin html_column_characters 39
-SETUSERCONFIG admin html_column_characters 6
-USERCONFIGIS  admin html_column_characters 6
-CLICK         decrease
-CLICK         decrease
-MATCH         test...
-USERCONFIGIS  admin html_column_characters 5
-
-CLICK         automatic
-MATCH         (Archive Copy) RE: CW v9 and armlets...
-USERCONFIGIS  admin html_column_characters 0
 
 # History Page
 
@@ -941,7 +164,7 @@ MATCH &lt;to header missing&gt;
 MATCH xxx\@xxx.net
 MATCH &quot;Willie Eason&quot; &lt;5x8njuc1ydwu\@mail2Honey....
 MATCH someone\@somewhere.com
-MATCH >dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@...
+MATCH dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@dirtur.com, dsmith\@dialpoint.net, dsmith\@crosscountybank.com,	&lt;dsmith\@cybersurf.net&gt;, &lt;dsmith\@dotnet.com&gt;, &lt;dsmith\@db.com&gt;, &lt;dsmith\@cs.com&gt;	, &lt;dsmith\@crossville.com&gt;,	&lt;dsmith\@dreamscape.com&gt;, &lt;dsmith\@cvnc.net&gt;, &lt;dsmith\@dmrtc.net&gt;, &lt;dsmith\@datarecall.net&gt;,	&lt;dsmith\@dasia.net&gt;
 MATCH gentoo-announce\@gentoo.org
 MATCH elia\@tpkm.ru, rescuebre\@tpkm.ru, kcruz\@rltvty.com, bugtracker\@rltvty.com
 MATCH rescuebre\@tpkm.ru, bugs\@drnn.net, kcruz\@rltvty.com, bugtracker\@rltvty.com
@@ -966,137 +189,130 @@ MATCH [spam] Want to see a huge horse c*ck in ...
 MATCH spamaddy,what ?
 MATCH &lt;subject header missing&gt;
 MATCH blank
+
+MATCH <a href="/buckets?session=$sk&amp;showbucket=spam">
 MATCH
 <span style="color:blue">
 spam
 </span>
 ENDMATCH
 MATCH &lt;&nbsp;Arrived
-MATCH <a href="/history?setsort=from"
+MATCH
+<a href="/history?session=$sk&amp;setsort=from">
+From
+</a>
+ENDMATCH
+
+MATCH reclassify_11
+MATCH remove_11
+MATCH rowid_11
+MATCH /view\?view=11
+MATCH reclassify_12
+MATCH remove_12
+MATCH rowid_12
+MATCH /view\?view=12
+MATCH reclassify_13
+MATCH remove_13
+MATCH rowid_13
+MATCH /view\?view=13
+MATCH reclassify_14
+MATCH remove_14
+MATCH rowid_14
+MATCH /view\?view=14
+MATCH reclassify_15
+MATCH remove_15
+MATCH rowid_15
+MATCH /view\?view=15
+MATCH reclassify_16
+MATCH remove_16
+MATCH rowid_16
+MATCH /view\?view=16
+MATCH reclassify_17
+MATCH remove_17
+MATCH rowid_17
+MATCH /view\?view=17
+MATCH reclassify_18
+MATCH remove_18
+MATCH rowid_18
+MATCH /view\?view=18
+MATCH reclassify_19
+MATCH remove_19
+MATCH rowid_19
+MATCH /view\?view=19
+MATCH reclassify_20
+MATCH remove_20
+MATCH rowid_20
+MATCH /view\?view=20
+MATCH reclassify_21
+MATCH remove_21
+MATCH rowid_21
+MATCH /view\?view=21
+MATCH reclassify_22
+MATCH remove_22
+MATCH rowid_22
+MATCH /view\?view=22
+MATCH reclassify_23
+MATCH remove_23
+MATCH rowid_23
+MATCH /view\?view=23
+MATCH reclassify_24
+MATCH remove_24
+MATCH rowid_24
+MATCH /view\?view=24
+MATCH reclassify_25
+MATCH remove_25
+MATCH rowid_25
+MATCH /view\?view=25
+MATCH reclassify_26
+MATCH remove_26
+MATCH rowid_26
+MATCH /view\?view=26
+MATCH reclassify_27
+MATCH remove_27
+MATCH rowid_27
+MATCH /view\?view=27
+MATCH reclassify_28
+MATCH remove_28
+MATCH rowid_28
+MATCH /view\?view=28
+MATCH reclassify_29
+MATCH remove_29
+MATCH rowid_29
+MATCH /view\?view=29
+MATCH reclassify_30
+MATCH remove_30
+MATCH rowid_30
+MATCH /view\?view=30
+
 
 # Check the page navigator
 
 MATCH
 Jump to page:
 <b>1</b>
-[<a href="/history?start_message=20&amp;sort=-inserted">2</a>]
-[<a href="/history?start_message=20&amp;sort=-inserted">Next &gt;</a>]
+[<a href="/history?start_message=20&amp;session=$sk&amp;sort=-inserted">2</a>]
+[<a href="/history?start_message=20&amp;session=$sk&amp;sort=-inserted">Next &gt;</a>]
 ENDMATCH
-MATCH asdfsomebody\@mbnet.fi
-MATCH &lt;to header missing&gt;
-MATCH xxx\@xxx.net
-MATCH &quot;Willie Eason&quot; &lt;5x8njuc1ydwu\@mail2Honey....
-MATCH someone\@somewhere.com
-MATCH >dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@...
-MATCH gentoo-announce\@gentoo.org
-MATCH elia\@tpkm.ru, rescuebre\@tpkm.ru, kcruz\@rltvty.com, bugtracker\@rltvty.com
-MATCH rescuebre\@tpkm.ru, bugs\@drnn.net, kcruz\@rltvty.com, bugtracker\@rltvty.com
-MATCH &lt;Undisclosed Recipients&gt;
-MATCH cfzvcvhr\@worldnet.att.net
-MATCH &quot;Armlet Forum&quot; &lt;armlet-forum\@news.palmos.com&gt;
-MATCH &lt;webmaster\@jgc.org&gt;
-MATCH spamaddy\@domain
-
-GET /history?start_message=20&amp;sort=-inserted
+GET /history?start_message=20&amp;session=$sk&amp;sort=-inserted
 MATCH
 Jump to page:
-[<a href="/history?start_message=0&amp;sort=-inserted">&lt; Previous</a>]
-[<a href="/history?start_message=0&amp;sort=-inserted">1</a>]
+[<a href="/history?start_message=0&amp;session=$sk&amp;sort=-inserted">&lt; Previous</a>]
+[<a href="/history?start_message=0&amp;session=$sk&amp;sort=-inserted">1</a>]
 <b>2</b>
 ENDMATCH
-MATCH XoSeXyGoDdEsSm\@hotmail.com
-MATCH from: Leandro
+NOTMATCH &quot;Dr. Robert Ezenshtein&quot; &lt;phrekiesomeone\@
 NOTMATCH asdfsomebody\@mbnet.fi
-MATCH &lt;to header missing&gt;
-NOTMATCH xxx\@xxx.net
-NOTMATCH &quot;Willie Eason&quot; &lt;5x8njuc1ydwu\@mail2Honey....
-NOTMATCH someone\@somewhere.com
-NOTMATCH >dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@...
-NOTMATCH gentoo-announce\@gentoo.org
-NOTMATCH elia\@tpkm.ru, rescuebre\@tpkm.ru, kcruz\@rltvty.com, bugtracker\@rltvty.com
-NOTMATCH rescuebre\@tpkm.ru, bugs\@drnn.net, kcruz\@rltvty.com, bugtracker\@rltvty.com
-NOTMATCH &lt;Undisclosed Recipients&gt;
-NOTMATCH cfzvcvhr\@worldnet.att.net
-NOTMATCH &quot;Armlet Forum&quot; &lt;armlet-forum\@news.palmos.com&gt;
-NOTMATCH &lt;webmaster\@jgc.org&gt;
-NOTMATCH spamaddy\@domain
-
-SETSUBMIT jumptopage 1
-MATCH
-Jump to page:
-<b>1</b>
-[<a href="/history?start_message=20&amp;sort=-inserted">2</a>]
-[<a href="/history?start_message=20&amp;sort=-inserted">Next &gt;</a>]
-ENDMATCH
-MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
-MATCH asdfsomebody\@mbnet.fi
-MATCH &lt;to header missing&gt;
-MATCH xxx\@xxx.net
-MATCH &quot;Willie Eason&quot; &lt;5x8njuc1ydwu\@mail2Honey....
-MATCH someone\@somewhere.com
-MATCH >dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@...
-MATCH gentoo-announce\@gentoo.org
-MATCH elia\@tpkm.ru, rescuebre\@tpkm.ru, kcruz\@rltvty.com, bugtracker\@rltvty.com
-MATCH rescuebre\@tpkm.ru, bugs\@drnn.net, kcruz\@rltvty.com, bugtracker\@rltvty.com
-MATCH &lt;Undisclosed Recipients&gt;
-MATCH cfzvcvhr\@worldnet.att.net
-MATCH &quot;Armlet Forum&quot; &lt;armlet-forum\@news.palmos.com&gt;
-MATCH &lt;webmaster\@jgc.org&gt;
-MATCH spamaddy\@domain
-
-SETSUBMIT jumptopage 3
-MATCH
-Jump to page:
-<b>1</b>
-[<a href="/history?start_message=20&amp;sort=-inserted">2</a>]
-[<a href="/history?start_message=20&amp;sort=-inserted">Next &gt;</a>]
-ENDMATCH
-MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
-MATCH asdfsomebody\@mbnet.fi
-MATCH &lt;to header missing&gt;
-MATCH xxx\@xxx.net
-MATCH &quot;Willie Eason&quot; &lt;5x8njuc1ydwu\@mail2Honey....
-MATCH someone\@somewhere.com
-MATCH >dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@...
-MATCH gentoo-announce\@gentoo.org
-MATCH elia\@tpkm.ru, rescuebre\@tpkm.ru, kcruz\@rltvty.com, bugtracker\@rltvty.com
-MATCH rescuebre\@tpkm.ru, bugs\@drnn.net, kcruz\@rltvty.com, bugtracker\@rltvty.com
-MATCH &lt;Undisclosed Recipients&gt;
-MATCH cfzvcvhr\@worldnet.att.net
-MATCH &quot;Armlet Forum&quot; &lt;armlet-forum\@news.palmos.com&gt;
-MATCH &lt;webmaster\@jgc.org&gt;
-MATCH spamaddy\@domain
-
-SETSUBMIT jumptopage 0
-MATCH
-Jump to page:
-<b>1</b>
-[<a href="/history?start_message=20&amp;sort=-inserted">2</a>]
-[<a href="/history?start_message=20&amp;sort=-inserted">Next &gt;</a>]
-ENDMATCH
-MATCH asdfsomebody\@mbnet.fi
-MATCH &lt;to header missing&gt;
-MATCH xxx\@xxx.net
-MATCH &quot;Willie Eason&quot; &lt;5x8njuc1ydwu\@mail2Honey....
-MATCH someone\@somewhere.com
-MATCH >dsmith\@ctaz.com, dsmith\@dol.net, dsmith\@...
-MATCH gentoo-announce\@gentoo.org
-MATCH elia\@tpkm.ru, rescuebre\@tpkm.ru, kcruz\@rltvty.com, bugtracker\@rltvty.com
-MATCH rescuebre\@tpkm.ru, bugs\@drnn.net, kcruz\@rltvty.com, bugtracker\@rltvty.com
-MATCH &lt;Undisclosed Recipients&gt;
-MATCH cfzvcvhr\@worldnet.att.net
-MATCH &quot;Armlet Forum&quot; &lt;armlet-forum\@news.palmos.com&gt;
-MATCH &lt;webmaster\@jgc.org&gt;
-MATCH spamaddy\@domain
-
+NOTMATCH &lt;elia\@tpkm.ru&gt;
+NOTMATCH Enlarge your package Doctor ApprovedNHOB
+NOTMATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
 GET /history
 
 # Check refresh
 
 NOTMATCH Testing Refresh
-MATCH (<a class="history" href="/history">Refresh</a>)
+MATCH (<a class="history" href="/history?session=$sk">Refresh</a>)
 NEWMSG 1
-GET /history
+GET /history?session=$sk
 MATCH John
 MATCH Testing Refresh
 MATCH personal
@@ -1104,15 +320,15 @@ MATCH personal
 # Check magnet classified mails
 
 NOTMATCH Magnetic Attraction for Ferrous Females
-MATCH (<a class="history" href="/history">Refresh</a>)
+MATCH (<a class="history" href="/history?session=$sk">Refresh</a>)
 NEWMSG 2
-GET /history?setfilter=
+GET /history?session=$sk&amp;setfilter=
 MATCH foo-magnet\@magnetmania.com
 MATCH Magnetic Attraction for Ferrous Females
 MATCH personal
-MATCH <img title="From:foo" alt="From:foo" src="/skins/magnet.png">
+MATCH <img title="foo" alt="foo" src="/skins/default/magnet.png">
 
-GET /view?view=32&amp;start_message=0
+GET /view?view=32&amp;start_message=0&amp;session=$sk
 MATCH Single Message View
 MATCH foo-magnet\@magnetmania.com
 MATCH Magnetic Attraction for Ferrous Females
@@ -1122,7 +338,7 @@ Magnet used:
 </b>
 </font>
 <font size="+1">
-From:foo
+foo
 </font>
 ENDMATCH
 
@@ -1163,6 +379,11 @@ NOTMATCH No matching messages.
 MATCH Douglas Arnold &lt;0noy8\@worldnet.att.net&gt;
 MATCH Jump to page
 
+SETSUBMIT search "
+NOTMATCH """
+MATCH "&quot;"
+CLICK reset_filter_search
+
 # Check search filter highlight
 
 NOTMATCH historySearchFilterActive
@@ -1190,11 +411,11 @@ NOTMATCH Testing Refresh
 MATCH
 Jump to page:
 <b>1</b>
-[<a href="/history?start_message=20&amp;filter=spam&amp;sort=-inserted">2</a>]
-[<a href="/history?start_message=20&amp;filter=spam&amp;sort=-inserted">Next &gt;</a>]
+[<a href="/history?start_message=20&amp;session=$sk&amp;filter=spam&amp;sort=-inserted">2</a>]
+[<a href="/history?start_message=20&amp;session=$sk&amp;filter=spam&amp;sort=-inserted">Next &gt;</a>]
 ENDMATCH
 
-GET /history?start_message=20&amp;filter=spam
+GET /history?start_message=20&amp;session=$sk&amp;filter=spam
 NOTMATCH Testing Refresh
 SETINPUT filter other
 CLICK setfilter
@@ -1215,7 +436,6 @@ NOTMATCH Testing Refresh
 CLICK setfilter
 MATCH Magnetic Attraction for Ferrous Females
 NOTMATCH Testing Refresh
-CLICK reset_filter_search
 
 # Check search filter highlight
 
@@ -1248,15 +468,15 @@ CLICK reset_filter_search
 # Check sorting
 
 MATCH
-<a href="/history?setsort=bucket" title="Sort by this column">
+<a href="/history?session=$sk&amp;setsort=bucket">
 Bucket
 </a>
 ENDMATCH
 
-GET /history?setsort=bucket
+GET /history?session=$sk&amp;setsort=bucket
 MATCH
 <td>
-<a href="/buckets?showbucket=personal">
+<a href="/buckets?session=$sk&amp;showbucket=personal">
 <span style="color:green">
 personal
 </span>
@@ -1264,8 +484,8 @@ personal
 </td>
 ENDMATCH
 MATCH
-<th class="historyLabel">
-<a href="/history?setsort=-bucket" title="Sort by this column">
+<th class="historyLabel" scope="col" align="left">
+<a href="/history?session=$sk&amp;setsort=-bucket">
 <em class="historyLabelSort">
 &gt;&nbsp;Bucket
 </em>
@@ -1273,10 +493,10 @@ MATCH
 </th>
 ENDMATCH
 
-GET /history?setsort=-bucket
+GET /history?session=$sk&amp;setsort=-bucket
 MATCH
-<th class="historyLabel">
-<a href="/history?setsort=bucket" title="Sort by this column">
+<th class="historyLabel" scope="col" align="left">
+<a href="/history?session=$sk&amp;setsort=bucket">
 <em class="historyLabelSort">
 &lt;&nbsp;Bucket
 </em>
@@ -1284,7 +504,7 @@ MATCH
 </th>
 ENDMATCH
 
-GET /history?setsort=
+GET /history?session=$sk&amp;setsort=
 
 # Check reclassification
 
@@ -1322,11 +542,12 @@ MATCH Magnetic Attraction
 CLICK undo_31
 MATCH
 <td>
-<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0&amp;sort=-inserted">
-<span title="Testing Refresh">Testing Refresh</span></a>
+<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0&amp;session=$sk&amp;sort=-inserted">
+Testing Refresh
+</a>
 </td>
 <td>
-<a href="/buckets?showbucket=personal">
+<a href="/buckets?session=$sk&amp;showbucket=personal">
 <span style="color:green">
 personal
 </span>
@@ -1338,7 +559,7 @@ ENDMATCH
 
 MATCH
 <td>
-<a href="/buckets?showbucket=spam">
+<a href="/buckets?session=$sk&amp;showbucket=spam">
 <span style="color:blue">
 spam
 </span>
@@ -1348,8 +569,8 @@ ENDMATCH
 
 # bucket page
 
-GET /buckets?showbucket=spam
-MATCH Detail for <span style="color:blue">spam</span>
+GET /buckets?session=$sk&showbucket=spam
+MATCH Detail for <font color="blue">spam</font>
 
 GET /history
 
@@ -1357,12 +578,13 @@ GET /history
 
 MATCH
 <td>
-<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0&amp;sort=-inserted">
-<span title="Testing Refresh">Testing Refresh</span></a>
+<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0&amp;session=$sk&amp;sort=-inserted">
+Testing Refresh
+</a>
 </td>
 ENDMATCH
 
-GET /view?view=31&amp;start_message=0
+GET /view?view=31&amp;start_message=0&amp;session=$sk
 MATCH Single Message View
 MATCH Testing Refresh
 MATCH John
@@ -1406,28 +628,29 @@ MATCH Scores
 MATCH 0.769209
 MATCH 0.230763
 MATCH 2.829186e-05
-MATCH <b style="color:red">here</b>
+MATCH <font color="red">here</font>
 NOTMATCH 0.3289
 NOTMATCH 0.6697
-MATCH <b style="color:black">John</b>
+MATCH <font color="black">John</font>
+MATCH <font color="red">here</font>
 MATCH Body would
 
-GET /view?view=31&amp;start_message=0&amp;format=prob
+GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=prob
 MATCH showing word probabilities
 MATCH 0.7692
 MATCH 0.2308
 
-GET /view?view=31&amp;start_message=0&amp;format=freq
+GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=freq
 MATCH showing word frequencies
 MATCH 0.00165
 MATCH 0.00336
 
-GET /view?view=31&amp;start_message=0&amp;format=score
+GET /view?view=31&amp;start_message=0&amp;session=$sk&amp;format=score
 MATCH showing word scores
 MATCH 2.3639
 MATCH 2.6727
 
-GET   /view?view=31&amp;text=1
+GET   /view?view=31&amp;start_message=0&amp;session=$sk&amp;text=1
 MATCH From: John
 MATCH Subject: Testing Refresh
 MATCH Body would go here
@@ -1451,11 +674,12 @@ MATCH Scores
 MATCH 0.769209
 MATCH 0.230763
 MATCH 2.829186e-05
-MATCH <b style="color:red">here</b>
+MATCH <font color="red">here</font>
 NOTMATCH 0.3289
 NOTMATCH 0.6697
-MATCH <b style="color:black">John</b>
-MATCH Body would
+MATCH <font color="black">John</font>
+MATCH <font color="red">here</font>
+# MATCH Body would
 
 GET /jump_to_message?view=40
 NOTMATCH Single Message View
@@ -1463,24 +687,19 @@ MATCH Recent Messages
 
 # jump_to_message and a password
 
-GET /history
-SETINPUT new_password secret
-SETINPUT confirm_password secret
-CLICK    change_password
-MATCH    New password has been set
-GET /logout
-
-GET /jump_to_message?view=31
-SETSUBMIT password secret
-MATCH Single Message View
-MATCH Testing Refresh
-GET /history
-
-SETINPUT old_password secret
-SETINPUT new_password
-SETINPUT confirm_password
-CLICK    change_password
-MATCH    New password has been set
+#GET /security
+#INPUTIS password
+#CONFIGIS html_password
+#SETSUBMIT password secret
+#GET /jump_to_message?view=popfile10000=1.msg
+#MATCH Enter password:
+#SETSUBMIT password secret
+#MATCH Single Message View
+#MATCH Testing Refresh
+#SETCONFIG html_password
+#GET /security
+#SETSUBMIT password
+#MATCH Updated password to
 
 # Quick Magnets
 
@@ -1511,7 +730,7 @@ CLICK delete
 
 # Reclassify from single message view
 
-GET /view?view=31&amp;start_message=0
+GET /view?view=31&amp;start_message=0&amp;session=$sk
 MATCH Single Message View
 MATCH Testing Refresh
 SETINPUT reclassify_31 spam
@@ -1520,16 +739,17 @@ MATCH Changed to <font color="blue">spam</font>
 
 # Undo on single message view
 
-GET /view?view=31&amp;start_message=0
+GET /view?view=31&amp;start_message=0&amp;session=$sk
 MATCH Single Message View
 CLICK undo_31
 MATCH
 <td>
-<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0">
-<span title="Testing Refresh">Testing Refresh</span></a>
+<a class="messageLink" title="Testing Refresh" href="/view?view=31&amp;start_message=0&amp;session=$sk">
+Testing Refresh
+</a>
 </td>
 <td>
-<a href="/buckets?showbucket=personal">
+<a href="/buckets?session=$sk&amp;showbucket=personal">
 <span style="color:green">
 personal
 </span>
@@ -1540,21 +760,21 @@ ENDMATCH
 # Check delete one message
 
 GET /history
-MATCH    Testing Refresh
+MATCH Testing Refresh
 SETINPUT remove_31 on
-CLICK    clearchecked
-MATCH    Recent Messages
+CLICK clearchecked
+MATCH Recent Messages
 NOTMATCH Testing Refresh
 
 # Check delete some messages
 
-MATCH    foo-magnet\@magnetmania.com
-MATCH    Dr. Robert Ezenshtein
-SETINPUT remove_30 on
-SETINPUT remove_32 on
-CLICK    clearchecked
-NOTMATCH foo-magnet\@magnetmania.com
-NOTMATCH Dr. Robert Ezenshtein
+MATCH gentoo-announce
+MATCH Armlet Forum
+SETINPUT remove_20 on
+SETINPUT remove_13 on
+CLICK clearchecked
+NOTMATCH gentoo-announce
+NOTMATCH Armlet Forum
 
 # Check delete page of messages
 
@@ -1562,8 +782,7 @@ GET /history
 CLICK clearpage
 NOTMATCH Jump to message
 MATCH Recent Messages (9)
-MATCH Luke Perry
-MATCH serafina venter
+MATCH Hello,Let us enjoy life
 
 # Check delete all messages
 
@@ -1599,15 +818,17 @@ INPUTIS   type5 subject
 INPUTIS   bucket5 spam
 MAGNETIS  spam subject newmagnet
 
-SETINPUT  text0 foo
-SETINPUT  type0 from
+SETINPUT text0 foo
+SETINPUT type0 from
 SETSUBMIT bucket0 personal
-MATCH     Magnet &#39;from: foo&#39; already exists in bucket &#39;personal&#39;
+MATCH Magnet &#39;from: foo&#39; already exists in bucket &#39;personal&#39;
+NOTMATCH &lt;br
 
-SETINPUT  text0 foo bar
-SETINPUT  type0 from
+SETINPUT text0 foo bar
+SETINPUT type0 from
 SETSUBMIT bucket0 personal
-MATCH     New magnet &#39;from: foo bar&#39; clashes with magnet &#39;from: foo&#39; in bucket &#39;personal&#39; and could cause ambiguous results.  New magnet was not added.
+MATCH New magnet &#39;from: foo bar&#39; clashes with magnet &#39;from: foo&#39; in bucket &#39;personal&#39; and could cause ambiguous results.  New magnet was not added.
+NOTMATCH &lt;br
 
 # Check magnet change value
 
@@ -1616,18 +837,18 @@ INPUTIS   text5 newmagnetvalue
 INPUTIS   type5 subject
 INPUTIS   bucket5 spam
 MAGNETIS  spam subject newmagnetvalue
-INPUTIS   text1 foo
-INPUTIS   bucket1 personal
-INPUTIS   type1 from
-INPUTIS   text2 oldstyle
-INPUTIS   bucket2 personal
-INPUTIS   type2 from
-INPUTIS   text3 bar
-INPUTIS   bucket3 personal
-INPUTIS   type3 subject
-INPUTIS   text4 baz\@baz.com
-INPUTIS   bucket4 personal
-INPUTIS   type4 to
+INPUTIS text1 foo
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 oldstyle
+INPUTIS bucket2 personal
+INPUTIS type2 from
+INPUTIS text3 bar
+INPUTIS bucket3 personal
+INPUTIS type3 subject
+INPUTIS text4 baz\@baz.com
+INPUTIS bucket4 personal
+INPUTIS type4 to
 
 # Check magnet change type
 
@@ -1636,18 +857,18 @@ INPUTIS   type5 to
 INPUTIS   text5 newmagnetvalue
 INPUTIS   bucket5 spam
 MAGNETIS  spam to newmagnetvalue
-INPUTIS   text1 foo
-INPUTIS   bucket1 personal
-INPUTIS   type1 from
-INPUTIS   text2 oldstyle
-INPUTIS   bucket2 personal
-INPUTIS   type2 from
-INPUTIS   text3 bar
-INPUTIS   bucket3 personal
-INPUTIS   type3 subject
-INPUTIS   text4 baz\@baz.com
-INPUTIS   bucket4 personal
-INPUTIS   type4 to
+INPUTIS text1 foo
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 oldstyle
+INPUTIS bucket2 personal
+INPUTIS type2 from
+INPUTIS text3 bar
+INPUTIS bucket3 personal
+INPUTIS type3 subject
+INPUTIS text4 baz\@baz.com
+INPUTIS bucket4 personal
+INPUTIS type4 to
 
 # Check magnet change bucket
 
@@ -1656,41 +877,41 @@ INPUTIS   bucket5 personal
 INPUTIS   text5 newmagnetvalue
 INPUTIS   type5 to
 MAGNETIS  personal to newmagnetvalue
-INPUTIS   text1 foo
-INPUTIS   bucket1 personal
-INPUTIS   type1 from
-INPUTIS   text2 oldstyle
-INPUTIS   bucket2 personal
-INPUTIS   type2 from
-INPUTIS   text3 bar
-INPUTIS   bucket3 personal
-INPUTIS   type3 subject
-INPUTIS   text4 baz\@baz.com
-INPUTIS   bucket4 personal
-INPUTIS   type4 to
+INPUTIS text1 foo
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 oldstyle
+INPUTIS bucket2 personal
+INPUTIS type2 from
+INPUTIS text3 bar
+INPUTIS bucket3 personal
+INPUTIS type3 subject
+INPUTIS text4 baz\@baz.com
+INPUTIS bucket4 personal
+INPUTIS type4 to
 
 # Check the magnet navigator
 
-GET /history
+GET /configuration
 SETSUBMIT page_size 3
 
 GET /magnets
 MATCH
 Jump to magnet page:
 <b>1</b>
-[<a href="/magnets?start_magnet=3">2</a>]
-[<a href="/magnets?start_magnet=3">Next</a>]
+[<a href="/magnets?start_magnet=3&amp;session=$sk">2</a>]
+[<a href="/magnets?start_magnet=3&amp;session=$sk">Next</a>]
 ENDMATCH
 
-GET /magnets?start_magnet=3
+GET /magnets?start_magnet=3&amp;session=$sk
 MATCH
 Jump to magnet page:
-[<a href="/magnets?start_magnet=0">Previous</a>]
-[<a href="/magnets?start_magnet=0">1</a>]
+[<a href="/magnets?start_magnet=0&amp;session=$sk">Previous</a>]
+[<a href="/magnets?start_magnet=0&amp;session=$sk">1</a>]
 <b>2</b>
 ENDMATCH
 
-GET /history
+GET /configuration
 SETSUBMIT page_size 20
 
 # Check magnet deletion
@@ -1698,26 +919,46 @@ SETSUBMIT page_size 20
 GET /magnets
 SETINPUT remove5 on
 CLICK delete
-MATCH Removed the magnet &#39;to: newmagnetvalue&#39; from bucket &#39;personal&#39;
-NOTMATCH "newmagnetvalue"
+NOTMATCH newmagnetvalue
 NOTMATCH type5
 
 SETINPUT remove1 on
 SETINPUT remove3 on
-CLICK    delete
+CLICK delete
 NOTMATCH "foo"
-NOTMATCH "bar"
-INPUTIS  text1 oldstyle
-INPUTIS  bucket1 personal
-INPUTIS  type1 from
-INPUTIS  text2 baz\@baz.com
-INPUTIS  bucket2 personal
-INPUTIS  type2 to
+NOTMATCH bar
+INPUTIS text1 oldstyle
+INPUTIS bucket1 personal
+INPUTIS type1 from
+INPUTIS text2 baz\@baz.com
+INPUTIS bucket2 personal
+INPUTIS type2 to
 NOTMATCH type3
 
-# Administration Page
+# Configuration Page
 
-GET /administration
+GET /configuration
+
+# Check skin change
+
+MATCH <link rel="stylesheet" type="text/css" href="skins/simplyblue/style.css" title="POPFile">
+CONFIGIS html_skin simplyblue
+SETSUBMIT skin oceanblue
+MATCH <link rel="stylesheet" type="text/css" href="skins/oceanblue/style.css" title="POPFile">
+CONFIGIS html_skin oceanblue
+SETSUBMIT skin default
+CONFIGIS html_skin default
+
+# Check language change
+
+MATCH <html lang="en">
+CONFIGIS html_language English
+SETSUBMIT language Francais
+MATCH <html lang="fr">
+CONFIGIS html_language Francais
+SETSUBMIT language English
+MATCH <html lang="en">
+CONFIGIS html_language English
 
 # Check logger change
 
@@ -1726,32 +967,36 @@ CONFIGIS  GLOBAL_debug 1
 SETSUBMIT debug 3
 INPUTIS   debug 3
 CONFIGIS  GLOBAL_debug 2
-MATCH     The current logger output : &#39;To Screen (console)&#39;
 SETSUBMIT debug 4
 INPUTIS   debug 4
 CONFIGIS  GLOBAL_debug 3
-MATCH     The current logger output : &#39;To Screen and File&#39;
 SETSUBMIT debug 1
 INPUTIS   debug 1
 CONFIGIS  GLOBAL_debug 0
-MATCH     The current logger output : &#39;None&#39;
 
-# Check logger level change
+# Check history lines change
 
-INPUTIS   level 0
-CONFIGIS  logger_level 0
-SETSUBMIT level 1
-INPUTIS   level 1
-CONFIGIS  logger_level 1
-MATCH     The current logger level : &#39;Medium&#39;
-SETSUBMIT level 2
-INPUTIS   level 2
-CONFIGIS  logger_level 2
-MATCH     The current logger level : &#39;High&#39;
-SETSUBMIT level 0
-INPUTIS   level 0
-CONFIGIS  logger_level 0
-MATCH     The current logger level : &#39;Low&#39;
+INPUTIS   page_size 20
+CONFIGIS  html_page_size 20
+SETSUBMIT page_size 30
+INPUTIS   page_size 30
+CONFIGIS  html_page_size 30
+MATCH Updated number of messages per page to 30
+SETSUBMIT page_size 0
+MATCH The page size must be a number between 1 and 1000
+INPUTIS   page_size 30
+
+# Check history days change
+
+INPUTIS   history_days 2
+CONFIGIS  history_history_days 2
+SETSUBMIT history_days 3
+INPUTIS   history_days 3
+CONFIGIS  history_history_days 3
+MATCH Updated number of days of history to 3
+SETSUBMIT history_days 0
+MATCH The number of days in the history must be a number between 1 and 366
+INPUTIS   history_days 3
 
 # Check change timeout
 
@@ -1765,18 +1010,6 @@ SETSUBMIT timeout 0
 MATCH The TCP timeout must be a number between 10 and 1800
 INPUTIS   timeout 61
 
-# Check change session timeout
-
-INPUTIS   session_timeout 1800
-CONFIGIS  GLOBAL_session_timeout 1800
-SETSUBMIT session_timeout 1801
-INPUTIS   session_timeout 1801
-CONFIGIS  GLOBAL_session_timeout 1801
-MATCH Updated session timeout to 1801
-SETSUBMIT session_timeout 0
-MATCH The session timeout must be a number between 300 and 86400
-INPUTIS   session_timeout 1801
-
 # Check change POP3 port
 
 INPUTIS   pop3_port 9110
@@ -1786,7 +1019,7 @@ INPUTIS   pop3_port 111
 CONFIGIS  pop3_port 111
 MATCH Updated POP3 port to 111; this change will not take affect until you restart POPFile
 SETSUBMIT pop3_port 0
-MATCH The POP3/POP3S listen port must be a number between 1 and 65535
+MATCH The POP3 listen port must be a number between 1 and 65535
 INPUTIS   pop3_port 111
 SETSUBMIT pop3_port $port
 MATCH The POP3 listen port cannot be the same value as the user interface port
@@ -1806,16 +1039,15 @@ INPUTIS   pop3_separator ;
 
 # Check fork for POP3
 
-INPUTIS   pop3_force_fork
+HIDDEN 1
+INPUTIS   pop3_force_fork 1
+CONFIGIS  pop3_force_fork 0
+SETSUBMIT pop3_force_fork 0
+INPUTIS   pop3_force_fork 1
 CONFIGIS  pop3_force_fork 0
 SETSUBMIT pop3_force_fork 1
-INPUTIS   pop3_force_fork 1
-CONFIGIS  pop3_force_fork 1
-MATCH     Enabled concurrent POP3 connections
-SETSUBMIT pop3_force_fork off
-INPUTIS   pop3_force_fork
-CONFIGIS  pop3_force_fork 0
-MATCH     Disabled concurrent POP3 connections
+INPUTIS   pop3_force_fork 0
+HIDDEN 0
 
 # Check UI port
 
@@ -1832,30 +1064,35 @@ SETSUBMIT ui_port 111
 MATCH The user interface port cannot be the same value as the POP3 listen port
 INPUTIS   ui_port 8082
 
+# Security Page
+
+GET /security
+
 # Check POP3 stealth
 
-INPUTIS   serveropt_pop3
-CONFIGIS  pop3_local 1
-SETSUBMIT serveropt_pop3 on
-INPUTIS   serveropt_pop3 on
-CONFIGIS  pop3_local 0
-MATCH     POPFile POP3 proxy ALLOWS to be accessed from another machine; this change will not take affect until you restart POPFile
-SETSUBMIT serveropt_pop3 off
-INPUTIS   serveropt_pop3
-CONFIGIS  pop3_local 1
-MATCH     POPFile POP3 proxy WON&#39;T be accessed from another machine; this change will not take affect until you restart POPFile
+HIDDEN 1
+INPUTIS pop3_local 1
+CONFIGIS pop3_local 1
+SETSUBMIT pop3_local 1
+INPUTIS pop3_local 2
+CONFIGIS pop3_local 0
+SETSUBMIT pop3_local 2
+INPUTIS pop3_local 1
+CONFIGIS pop3_local 1
+HIDDEN 0
 
 # Check UI stealth
-INPUTIS   serveropt_html
-CONFIGIS  html_local 1
-SETSUBMIT serveropt_html on
-INPUTIS   serveropt_html on
-CONFIGIS  html_local 0
-MATCH     POPFile UI (Control center) ALLOWS to be accessed from another machine; this change will not take affect until you restart POPFile
-SETSUBMIT serveropt_html off
-INPUTIS   serveropt_html
-CONFIGIS  html_local 1
-MATCH     POPFile UI (Control center) WON&#39;T be accessed from another machine; this change will not take affect until you restart POPFile
+
+HIDDEN 1
+INPUTIS localui 1
+CONFIGIS html_local 1
+SETSUBMIT localui 1
+INPUTIS localui 2
+CONFIGIS html_local 0
+SETSUBMIT localui 2
+INPUTIS localui 1
+CONFIGIS html_local 1
+HIDDEN 0
 
 # Check POP3 AUTH options
 
@@ -1879,39 +1116,41 @@ MATCH The port must be a number between 1 and 65535
 
 # Check autoupdate
 
-INPUTIS      update_check
-USERCONFIGIS admin html_update_check 0
-SETSUBMIT    update_check on
-INPUTIS      update_check on
-USERCONFIGIS admin html_update_check 1
-MATCH        POPFile checks for updates daily
-SETSUBMIT    update_check off
-INPUTIS      update_check
-USERCONFIGIS admin html_update_check 0
-MATCH        POPFile does not check for updates automatically
+HIDDEN 1
+INPUTIS update_check 2
+CONFIGIS GLOBAL_update_check 0
+SETSUBMIT update_check 1
+INPUTIS update_check 2
+CONFIGIS GLOBAL_update_check 0
+SETSUBMIT update_check 2
+INPUTIS update_check 1
+CONFIGIS GLOBAL_update_check 1
+HIDDEN 0
 
 # Check statistics sending
 
-INPUTIS      send_stats
-USERCONFIGIS admin html_send_stats 0
-SETSUBMIT    send_stats on
-INPUTIS      send_stats on
-MATCH        POPFile sends classification statistics daily
-USERCONFIGIS admin html_send_stats 1
-SETSUBMIT    send_stats off
-INPUTIS      send_stats
-USERCONFIGIS admin html_send_stats 0
-MATCH        POPFile does not send classification statistics
+HIDDEN 1
+INPUTIS send_stats 2
+CONFIGIS html_send_stats 0
+SETSUBMIT send_stats 1
+INPUTIS send_stats 2
+CONFIGIS html_send_stats 0
+SETSUBMIT send_stats 2
+INPUTIS send_stats 1
+CONFIGIS html_send_stats 1
+HIDDEN 0
 
 # Check password
 
-GET /history
-ISVALIDPASSWORD
-SETINPUT        new_password secret
-SETSUBMIT       confirm_password secret
-ISVALIDPASSWORD secret
-SETSUBMIT       old_password secret
-ISVALIDPASSWORD
+INPUTIS password
+CONFIGIS html_password b61124a488acc5f4406e74272629ee86
+SETSUBMIT password secret
+CONFIGIS html_password d5a642c75542722fd0e20993ee36765d
+MATCH Updated password
+SETSUBMIT password
+INPUTIS password
+CONFIGIS html_password b61124a488acc5f4406e74272629ee86
+MATCH Updated password
 
 # Advanced Page
 
@@ -1925,61 +1164,46 @@ MATCH smtp
 
 # Check add ignore word
 
-INPUTIS   newword
+INPUTIS newword
 SETSUBMIT newword four11@.-_
-MATCH &#39;four11@.-_&#39; added to the Ignored Words list
-# reload
-GET /advanced
 MATCH four11@.-_
 SETSUBMIT newword ba"d
 MATCH Ignored words can only contain alphanumeric, ., _, -, or @ characters
 
 # Check remove ignore word
 
-INPUTIS   word
+INPUTIS word
 SETSUBMIT word four11@.-_
-MATCH &#39;four11@.-_&#39; removed from the Ignored Words list
-# reload
-GET /advanced
-NOTMATCH  four11@.-_
+NOTMATCH four11@.-_
 SETSUBMIT word ba"d
 MATCH Ignored words can only contain alphanumeric, ., _, -, or @ characters
 
 # TODO Write better tests for stop words in Japanese
 # and Korean
 
-GET /administration
+GET /configuration
 SETSUBMIT language Nihongo
 GET /advanced
 MATCH address
 MATCH localhost
 MATCH smtp
 
-GET /administration
+GET /configuration
 SETSUBMIT language Korean
 GET /advanced
 MATCH address
 MATCH localhost
 MATCH smtp
 
-GET /administration
+GET /configuration
 SETSUBMIT language English
 
 # Check change arbitrary parameter
 
 GET /advanced
 SETSUBMIT parameter_bayes_hostname testhostname
-CONFIGIS  bayes_hostname testhostname
-INPUTIS   parameter_bayes_hostname testhostname
-
-# Single user mode parameters
-
-GET /advanced
-MATCH Single User Mode Parameters
-
-SETSUBMIT parameter_bayes_unclassified_weight 1000
-USERCONFIGIS admin bayes_unclassified_weight 1000
-INPUTIS   parameter_bayes_unclassified_weight 1000
+CONFIGIS bayes_hostname testhostname
+INPUTIS parameter_bayes_hostname testhostname
 
 # Buckets Page
 
@@ -1995,9 +1219,9 @@ MATCH spam
 MATCH personal
 MATCH other
 
-MATCH <a href="/buckets?showbucket=spam">
-MATCH <a href="/buckets?showbucket=personal">
-MATCH <a href="/buckets?showbucket=other">
+MATCH <a href="/buckets?session=$sk&amp;showbucket=spam">
+MATCH <a href="/buckets?session=$sk&amp;showbucket=personal">
+MATCH <a href="/buckets?session=$sk&amp;showbucket=other">
 
 MATCH
 <td align="right">
@@ -2017,48 +1241,23 @@ ENDMATCH
 
 # Check statistics displayed correctly
 
-MATCH
-<td align="right">
-1,785 (12.74%)
-</td>
-ENDMATCH
-MATCH
-<td align="right">
-103 (0.73%)
-</td>
-ENDMATCH
-MATCH
-<td align="right">
-12,114 (86.51%)
-</td>
-ENDMATCH
+MATCH 1,785 (12.74%)
+MATCH 103 (0.73%)
+MATCH 12,114 (86.51%)
 
-MATCH
-<td style="background:red; width:12.75%; height:20px;" title="other (12.75)">
-<img src="pix.gif" alt="" height="20" width="1" />
-</td>
-ENDMATCH
-MATCH
-<td style="background:green; width:0.74%; height:20px;" title="personal (0.74)">
-<img src="pix.gif" alt="" height="20" width="1" />
-</td>
-ENDMATCH
-MATCH
-<td style="background:blue; width:86.52%; height:20px;" title="spam (86.52)">
-<img src="pix.gif" alt="" height="20" width="1" />
-</td>
-ENDMATCH
+MATCH <td style="background:green; width:75.61%;" title="personal (75.61)">
+MATCH <td style="background:blue; width:24.39%;" title="spam (24.39)">
 
 # Check Reset Statistics
 
 MATCH
 <td align="right">
-164
+656
 </td>
 ENDMATCH
 MATCH
 <td align="right">
-1
+3
 </td>
 ENDMATCH
 MATCH
@@ -2086,7 +1285,7 @@ MATCH newbucket0-_
 MATCH Created bucket named newbucket0-_
 MATCH
 <td align="left">
-<a href="/buckets?showbucket=newbucket0-_">
+<a href="/buckets?session=$sk&amp;showbucket=newbucket0-_">
 <span style="color:black">
 newbucket0-_
 </span>
@@ -2108,10 +1307,10 @@ MATCH other
 
 # Check set bucket color
 
-GET /buckets?newbucket0-__color=blue&amp;bucket_settings=Apply%20Changes
+GET /buckets?newbucket0-__color=blue&bucket=newbucket0-_&bucket_settings=1&session=$sk
 MATCH
 <td align="left">
-<a href="/buckets?showbucket=newbucket0-_">
+<a href="/buckets?session=$sk&amp;showbucket=newbucket0-_">
 <span style="color:blue">
 newbucket0-_
 </span>
@@ -2129,7 +1328,7 @@ SETSUBMIT newname sensible
 MATCH Renamed bucket newbucket0-_ to sensible
 MATCH
 <td align="left">
-<a href="/buckets?showbucket=sensible">
+<a href="/buckets?session=$sk&amp;showbucket=sensible">
 <span style="color:blue">
 sensible
 </span>
@@ -2199,14 +1398,14 @@ PARAMETERIS spam quarantine 0
 
 # Check operation of color change
 
-GET /buckets?spam_color=feldspar&amp;bucket_settings=Apply%20Changes
-MATCH <option value="feldspar"  selected style="color: feldspar">
+GET /buckets?spam_color=purple&bucket=spam&bucket_settings=1&session=$sk
+MATCH <option value="purple"  selected style="color: purple">
 
 # Check individual bucket page for accuracy
 
-MATCH /buckets?showbucket=spam
-GET /buckets?showbucket=spam
-MATCH Detail for <span style="color:feldspar">spam</span>
+MATCH /buckets?session=$sk&amp;showbucket=spam
+GET /buckets?session=$sk&amp;showbucket=spam
+MATCH Detail for <font color="purple">spam</font>
 MATCH 12,114
 MATCH (3,353 distinct)
 MATCH
@@ -2214,10 +1413,10 @@ MATCH
 100.00%
 </td>
 ENDMATCH
-MATCH <a class="bucketLetter" href="/buckets?showbucket=spam&amp;showletter=m">
+MATCH <a class="bucketLetter" href="/buckets?session=$sk&amp;showbucket=spam&amp;showletter=m">
 
-GET /buckets?showbucket=spam&amp;showletter=m
-MATCH <a class="wordListLink" href="/buckets?lookup=Lookup&amp;word=missouri#Lookup">
+GET /buckets?session=$sk&amp;showbucket=spam&amp;showletter=m
+MATCH <a class="wordListLink" href="/buckets?session=$sk&amp;lookup=Lookup&amp;word=missouri#Lookup">
 
 # Check clearing of individual bucket
 
@@ -2234,71 +1433,10 @@ Total word count
 </td>
 ENDMATCH
 
-# Cookie test
+# Check bad session key
 
-# Single user mode
-
-SETCOOKIE 123456
-GET       /
-MATCH     Recent Messages
-
-SETINPUT  old_password
-SETINPUT  new_password secret
-SETINPUT  confirm_password secret
-CLICK     change_password
-MATCH     New password has been set
-
-SETCOOKIE 123456
-GET       /
-MATCH     Login
-
-SETSUBMIT password secret
-MATCH     Recent Messages
-
-# invalid cookie1
-
-SETCOOKIE U2FsdGVkX183ySXJbS5ODY1xWaXjA6JXEJyng/Gcxw7xcX/XEqChvbddodaI7xIff47V5z+lW9LYf9+YcnifYchpGxYAQtJOM2mA0lU4eyiUbgdx0tpjmzjdHxzCyO06BGxfqibNotcmhDqxiMzCjYa9J6jVClSXW2PKjrpEvYDNuF435TnO87ucLSDKq3NChNpbyJ448OPco9WYBFx5+g==
-GET       /
-MATCH     Login
-
-SETSUBMIT password secret
-MATCH     Recent Messages
-
-# invalid cookie2
-
-SETCOOKIE U2FsdGVkX183ySXJbS5ODY1xWaXjA6JXEJyng/G;xw7xcX/XEqChvbddodaI7xIff47V5z+lW9LYf9+YcnifYchpGxYAQtJOM2mA0lU4eyiUbgdx0tpjmzjdHxzCyO06BGxfqibNotcmhDqxiMzCjYa9J6jVClSXW2PKjrpEvYDNuF435TnO87ucLSDKq3NChNpbyJ448OPco9WYBFx5+ga=
-GET       /
-MATCH     Login
-
-SETSUBMIT password secret
-MATCH     Recent Messages
-
-SETINPUT  old_password secret
-SETINPUT  new_password
-SETINPUT  confirm_password
-CLICK     change_password
-MATCH     New password has been set
-
-# Multiuser mode
-
-GET       /administration
-SETINPUT  usermode off
-CLICK     apply_stealth
-
-SETCOOKIE 123456
-GET       /
-MATCH     Login
-
-SETINPUT  username admin
-SETSUBMIT password
-MATCH     Recent Messages
-
-GET       /administration
-SETINPUT  usermode on
-CLICK     apply_stealth
-
-#GET /history?session=123456
-#MATCH POPFile Session Expired
+GET /history?session=123456
+MATCH POPFile Session Expired
 
 # Get ICO, GIF, CSS, PNG, LOG and HTML file
 
@@ -2356,49 +1494,42 @@ MATCH POPFile Web Server Error 404
 
 # Check update checking
 
-SETUSERCONFIG admin html_update_check 1
-SETUSERCONFIG admin html_send_stats 1
-SETUSERCONFIG admin html_last_update_check 0
+SETCONFIG GLOBAL_update_check 1
+SETCONFIG GLOBAL_send_stats 1
+SETCONFIG GLOBAL_last_update_check 0
+SETCONFIG GLOBAL_ecount 1
 GET /
 MATCH popfile_update.pl
 MATCH popfile_stats.pl
 
 # Check the operation of passwords
 
-GET /history
-SETINPUT new_password secret
-SETINPUT confirm_password secret
-CLICK    change_password
-MATCH    New password has been set
-GET /logout
-
-GET /history
-MATCH     <h2 class="password">Login</h2>
-SETSUBMIT password wrongpassword
-MATCH Incorrect password
-GET /history
-MATCH     <h2 class="password">Login</h2>
+GET /security
+INPUTIS password
+CONFIGIS html_password b61124a488acc5f4406e74272629ee86
 SETSUBMIT password secret
-MATCH     Recent Messages
-
-SETINPUT  old_password secret
-SETINPUT  new_password
-SETINPUT  confirm_password
-CLICK     change_password
-MATCH     New password has been set
-
-SETINPUT old_password wrongpassword
-CLICK    change_password
-MATCH    The old password entered is incorrect
-SETINPUT old_password
-SETINPUT new_password secret
-SETINPUT confirm_password wrongconfirmpassword
-CLICK    change_password
-MATCH    The new password must by identical in the New and Confirm New boxes
-
-
+GET /advanced?session=123456
+MATCH Enter password:
+SETSUBMIT password wrong
+MATCH Enter password:
+MATCH Incorrect password
+GET /?session=123456
+MATCH Enter password:
+SETSUBMIT password secret
+MATCH Recent Messages
+GET /advanced?session=123456&dummy=foo&dummy=bar
+MATCH Enter password:
+SETSUBMIT password secret
+MATCH All POPFile Parameters
+GET /password
+MATCH Enter password:
+SETSUBMIT password secret
+MATCH Recent Messages
+GET /security
 
 # Check shutdown operation
 
 GET /shutdown
+MATCH Enter password:
+SETSUBMIT password secret
 MATCH POPFile has shut down

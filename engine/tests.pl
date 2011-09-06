@@ -67,11 +67,11 @@ sub rec_cp
             my $t = $f;
             $t =~ s/^$from/$to/;
             if ( $t !~ /.svn/ ) {
-                if ( -d $f ) {
+            if ( -d $f ) {
                     mkdir $t;
                 } else {
                     copy( $f, $t ) or $ok = 0;
-                }
+            }
             }
         };
     my %optref = ( wanted => $subref, no_chdir => 1 );
@@ -112,7 +112,7 @@ sub spin
 #
 # test_report   -        Report whether a test passed or not
 #
-# $ok           Boolean indicating whether the test passed
+# $ok                   Boolean indicating whether the test passed
 # $test                 String containing the test executed
 # $file                 The name of the file invoking the test
 # $line                 The line in the $file where the test can be found
@@ -131,7 +131,7 @@ sub test_report
     if ( !$ok ) {
         $fail_messages .= "\n    $file:$line failed '$test'";
         if ( defined( $context ) ) {
-                $fail_messages .= " ($context)";
+            $fail_messages .= " ($context)";
         }
         $test_failures += 1;
         print "Test fail at $file:$line ($test)";
@@ -193,8 +193,7 @@ sub test_assert_equal
     $test = '' unless (defined($test));
     $expected = '' unless (defined($expected));
 
-    if ( ( $expected ne '' ) && ( $test ne '' ) &&
-         !( $expected =~ /[^0-9]/ ) && !( $test =~ /[^0-9]/ ) ) {
+    if ( !( $expected =~ /[^0-9]/ ) && !( $test =~ /[^0-9]/ )) {
 
         # This int() and is so that we don't get bitten by odd
         # floating point problems
@@ -339,7 +338,6 @@ foreach my $test (@tests) {
         $test_results{$test} = { FAIL => ( $test_failures - $current_error_count ), OK => ( $test_count - $current_test_count ) };
         cleanup();
     }
-
 }
 
 print "\n\n";
@@ -348,7 +346,9 @@ print "\n\n";
 my $test_report = './test-report.txt';
 open REPORT, ">$test_report";
 
-print REPORT "\n\n$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
+print REPORT "$fail_messages\n\n" if ( $test_failures > 0 );
+
+print REPORT "$test_count tests, " . ( $test_count - $test_failures ) . " ok, $test_failures failed\n\n";
 
 # Display a summary of the results if more than 1 test was run:
 if ( scalar keys %test_results > 1 ) {
@@ -401,7 +401,7 @@ close REPORT;
 # Output report to STDOUT
 open REPORT, "<$test_report";
 while ( <REPORT> ) {
-    print;
+    print STDOUT;
 }
 close REPORT;
 

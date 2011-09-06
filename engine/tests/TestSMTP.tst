@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 #
-# Tests for SMTP.pm
+# Tests for NNTP.pm
 #
 # Copyright (c) 2001-2011 John Graham-Cumming
 #
@@ -25,8 +25,17 @@ use strict;
 use warnings;
 no warnings qw(redefine);
 
+use POPFile::Configuration;
+use POPFile::MQ;
+use POPFile::Logger;
+use POPFile::History;
+use Proxy::SMTP;
+use Classifier::Bayes;
+use Classifier::WordMangle;
 use IO::Handle;
 use IO::Socket;
+use Digest::MD5;
+
 
 use POSIX ":sys_wait_h";
 
@@ -41,48 +50,105 @@ test_assert( rec_cp( 'corpus.base', 'corpus' ) );
 rmtree( 'corpus/.svn' );
 rmtree( 'messages' );
 
-use POPFile::Loader;
-my $POPFile = POPFile::Loader->new();
-#$POPFile->{debug__} = 1;
-$POPFile->CORE_loader_init();
-$POPFile->CORE_signals();
+my $c  = new POPFile::Configuration;
+my $mq = new POPFile::MQ;
+my $l  = new POPFile::Logger;
+my $b  = new Classifier::Bayes;
+my $w  = new Classifier::WordMangle;
+my $h  = new POPFile::History;
 
-my %valid = ( 'POPFile/Logger'        => 1,
-              'POPFile/MQ'            => 1,
-              'POPFile/Configuration' => 1,
-              'POPFile/Database'      => 1,
-              'POPFile/History'       => 1,
-              'Proxy/SMTP'            => 1,
-              'Classifier/Bayes'      => 1,
-              'Classifier/WordMangle' => 1 );
+sub forker
+{
+    pipe my $reader, my $writer;
+    $l->log_( 2, "Created pipe pair $reader and $writer" );
+    $b->prefork();
+    $mq->prefork();
+    $h->prefork();
+    my $pid = fork();
 
-$POPFile->CORE_load( 0, \%valid );
-$POPFile->CORE_initialize();
-$POPFile->CORE_config( 1 );
+    if ( !defined( $pid ) ) {
+        close $reader;
+        close $writer;
+        return (undef, undef);
+    }
 
-my $l  = $POPFile->get_module( 'POPFile::Logger'   );
-my $mq = $POPFile->get_module( 'POPFile::MQ'       );
-my $b  = $POPFile->get_module( 'Classifier::Bayes' );
-my $h  = $POPFile->get_module( 'POPFile::History'  );
-my $db = $POPFile->get_module( 'POPFile::Database' );
+    if ( $pid == 0 ) {
+        $b->forked( $writer );
+        $mq->forked( $writer );
+        $h->forked( $writer );
+        close $reader;
 
+        use IO::Handle;
+        $writer->autoflush(1);
+
+        return (0, $writer);
+    }
+
+    $l->log_( 2, "Child process has pid $pid" );
+
+    $b->postfork( $pid, $reader );
+    $mq->postfork( $pid, $reader );
+    $h->postfork( $pid, $reader );
+    close $writer;
+    return ($pid, $reader);
+}
+
+$c->configuration( $c );
+$c->mq( $mq );
+$c->logger( $l );
+
+$c->initialize();
+
+$l->configuration( $c );
+$l->mq( $mq );
+$l->logger( $l );
+
+$l->initialize();
 $l->config_( 'level', 2 );
+$l->version( 'svn-b0_22_2' );
 
+$w->configuration( $c );
+$w->mq( $mq );
+$w->logger( $l );
+
+$w->start();
+
+$mq->configuration( $c );
+$mq->mq( $mq );
+$mq->logger( $l );
+$mq->pipeready( \&pipeready );
+
+$b->configuration( $c );
+$b->mq( $mq );
+$b->logger( $l );
+
+$h->configuration( $c );
+$h->mq( $mq );
+$h->logger( $l );
+
+$b->history( $h );
+$h->classifier( $b );
+
+$h->initialize();
+
+$b->initialize();
 $b->module_config_( 'html', 'port', 8080 );
-$b->global_config_( 'language', 'English' );
+$b->module_config_( 'html', 'language', 'English' );
 $b->config_( 'hostname', '127.0.0.1' );
+$b->{parser__}->mangle( $w );
+$b->start();
+$h->start();
+$l->start();
 
-# To test NNTP's use of MQ, we need to receive messages
-use Test::MQReceiver;
+my $s = new Proxy::SMTP;
 
-my $rmq = new Test::MQReceiver;
+$s->configuration( $c );
+$s->mq( $mq );
+$s->logger( $l );
+$s->classifier( $b );
 
-$mq->register( 'UIREG', $rmq );
-
-my $s = $POPFile->get_module( 'Proxy::SMTP' );
 $s->forker( \&forker );
-$s->pipeready( $POPFile->{pipeready__} );
-$s->setchildexit( $POPFile->{childexit__} );
+$s->pipeready( \&pipeready );
 
 $s->{version_} = 'test suite';
 $s->initialize();
@@ -94,270 +160,14 @@ $s->config_( 'port', $port );
 $s->config_( 'force_fork', 0 );
 $s->config_( 'chain_server', 'localhost' );
 $s->config_( 'chain_port', $port2 );
-$s->global_config_( 'timeout', 1 );
+$s->global_config_( 'timeout', $timeout );
 
 $s->config_( 'enabled', 0 );
 test_assert_equal( $s->start(), 2 );
 $s->config_( 'enabled', 1 );
-
-$POPFile->CORE_start();
-
-# Test dynamic UI
-
-$mq->service();
-my @messages = $rmq->read();
-
-shift @messages if ( $^O eq 'MSWin32' );
-
-test_assert_equal( $#messages, 3 );
-
-test_assert_equal( $messages[0][0], 'UIREG' );
-test_assert_equal( $#{$messages[0][1]}, 3 );
-test_assert_equal( $messages[0][1][0], 'configuration' );
-test_assert_equal( $messages[0][1][1], 'smtp_fork_and_port' );
-test_assert_equal( $messages[0][1][2], 'smtp-configuration.thtml' );
-test_assert_equal( ref $messages[0][1][3], 'Proxy::SMTP' );
-
-test_assert_equal( $messages[1][0], 'UIREG' );
-test_assert_equal( $#{$messages[1][1]}, 3 );
-test_assert_equal( $messages[1][1][0], 'security' );
-test_assert_equal( $messages[1][1][1], 'smtp_local' );
-test_assert_equal( $messages[1][1][2], 'smtp-security-local.thtml' );
-test_assert_equal( ref $messages[1][1][3], 'Proxy::SMTP' );
-
-test_assert_equal( $messages[2][0], 'UIREG' );
-test_assert_equal( $#{$messages[2][1]}, 3 );
-test_assert_equal( $messages[2][1][0], 'chain' );
-test_assert_equal( $messages[2][1][1], 'smtp_server' );
-test_assert_equal( $messages[2][1][2], 'smtp-chain-server.thtml' );
-test_assert_equal( ref $messages[2][1][3], 'Proxy::SMTP' );
-
-# Test configure_item
-
-use Test::SimpleTemplate;
-
-my $templ = new Test::SimpleTemplate;
-
-# nothing happens for unknown configuration item names
-
-$s->configure_item( 'foo', $templ );
-my $params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 0 );
-
-# the right things have to happen for known configuration item names
-
-$s->configure_item( 'smtp_fork_and_port', $templ );
-$params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 2 );
-test_assert_equal( $templ->param( 'smtp_port'          ), $s->config_( 'port'      ) );
-test_assert_equal( $templ->param( 'smtp_force_fork_on' ), ( $s->config_( 'force_fork' ) == 1 ) );
-
-delete $templ->{params__};
-
-$s->configure_item( 'smtp_local', $templ );
-$params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 1 );
-test_assert_equal( $templ->param( 'smtp_local_on' ), ( $s->config_( 'local' ) == 1 ) );
-
-delete $templ->{params__};
-
-$s->configure_item( 'smtp_server', $templ );
-$params = $templ->{params__};
-test_assert_equal( scalar( keys( %{$params} ) ), 2 );
-test_assert_equal( $templ->param( 'smtp_chain_server' ), $s->config_( 'chain_server' ) );
-test_assert_equal( $templ->param( 'smtp_chain_port' ), $s->config_( 'chain_port' ) );
-
-delete $templ->{params__};
-
-# test changing/validating of configuration values
-
-my $form = {};
-my $language= {};
-my ( $status, $error );
-
-test_assert_equal( $s->config_( 'socks_port' ), 1080 );
-
-$form->{smtp_socks_port} = 10080;
-$language->{Configuration_SOCKSPortUpdate} = "socks port update %s";
-
-( $status, $error ) = $s->validate_item( 'smtp_socks_configuration', $templ, $language, $form );
-
-test_assert_equal( $status, "socks port update 10080" );
-test_assert( !defined( $error ), $error );
-test_assert_equal( $s->config_( 'socks_port' ), 10080 );
-
-$s->config_( 'socks_port', 1080 );
-
-$form->{smtp_socks_port} = 'aaa';
-$language->{Configuration_Error8} = "configuration error 8";
-
-( $status, $error ) = $s->validate_item( 'smtp_socks_configuration', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 8" );
-test_assert( !defined( $status), $status );
-test_assert_equal( $s->config_( 'socks_port' ), 1080 );
-
-delete $form->{smtp_socks_port};
-
-$form->{smtp_socks_server} = 'example.com';
-$language->{Configuration_SOCKSServerUpdate} = 'socks server update %s';
-
-( $status, $error ) = $s->validate_item( 'smtp_socks_configuration', $templ, $language, $form );
-
-test_assert_equal( $status, "socks server update example.com" );
-test_assert( !defined( $error ), $error );
-test_assert_equal( $s->config_( 'socks_server' ), 'example.com' );
-
-$form->{smtp_socks_port} = '10081';
-$form->{smtp_socks_server} = 'subdomain.example.com';
-
-( $status, $error ) = $s->validate_item( 'smtp_socks_configuration', $templ, $language, $form );
-
-test_assert_equal( $status, "socks port update 10081\nsocks server update subdomain.example.com" );
-test_assert( !defined( $error ), $error );
-test_assert_equal( $s->config_( 'socks_server' ), 'subdomain.example.com' );
-test_assert_equal( $s->config_( 'socks_port' ), 10081 );
-
-delete $form->{smtp_socks_port};
-delete $form->{smtp_socks_server};
-
-$s->config_( 'socks_server', '' );
-
-test_assert_equal( $s->config_( 'port' ), $port );
-
-$language->{Configuration_SMTPUpdate} = "smtp port update %s";
-$form->{smtp_port} = $port + 1;
-
-( $status, $error ) = $s->validate_item( 'smtp_fork_and_port', $templ, $language, $form );
-
-test_assert_equal( $status, "smtp port update " . ( $port + 1 ) );
-test_assert( !defined( $error ), $error );
-test_assert_equal( $s->config_('port'), $port + 1 );
-
-$s->config_( 'port', $port );
-
-$form->{smtp_port} = 'aaa';
-$language->{Configuration_Error3} = "configuration error 3";
-
-( $status, $error ) = $s->validate_item( 'smtp_fork_and_port', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 3" );
-test_assert( !defined( $status ), $status );
-test_assert_equal( $s->config_( 'port' ), $port );
-
-$form->{smtp_port} = 0;
-
-( $status, $error ) = $s->validate_item( 'smtp_fork_and_port', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 3" );
-test_assert( !defined( $status ), $status );
-test_assert_equal( $s->config_( 'port' ), $port );
-
-$form->{smtp_port} = 65536;
-
-( $status, $error ) = $s->validate_item( 'smtp_fork_and_port', $templ, $language, $form );
-
-test_assert_equal( $error, "configuration error 3" );
-test_assert( !defined( $status ), $status );
-test_assert_equal( $s->config_( 'port' ), $port );
-
-delete $form->{smtp_port};
-
-test_assert_equal( $s->config_( 'force_fork' ), 0 );
-
-$language->{'Configuration_SMTPForkEnabled'} = "smtp fork on";
-$language->{'Configuration_SMTPForkDisabled'} = "smtp fork off";
-$form->{smtp_force_fork} = 1;
-
-( $status, $error ) = $s->validate_item( 'smtp_fork_and_port', $templ, $language, $form );
-
-test_assert_equal( $status, "smtp fork on\n" );
-test_assert( !defined( $error ), $error );
-test_assert_equal( $s->config_( 'force_fork' ), 1 );
-
-$form->{smtp_force_fork} = 0;
-
-( $status, $error ) = $s->validate_item( 'smtp_fork_and_port', $templ, $language, $form );
-
-test_assert_equal( $status, "smtp fork off\n" );
-test_assert( !defined( $error ) );
-test_assert_equal( $s->config_( 'force_fork' ), 0 );
-
-delete $form->{smtp_force_fork};
-$s->config_( 'force_fork', 0 );
-
-test_assert_equal( $s->config_( 'local' ), 1 );
-
-$language->{'Security_ServerModeUpdateSMTP'} = "smtp is in server mode";
-$language->{'Security_StealthModeUpdateSMTP'} = "smtp is in stealth mode";
-$form->{serveropt_smtp} = 1; # Server mode
-
-( $status, $error ) = $s->validate_item( 'smtp_local', $templ, $language, $form );
-
-test_assert_equal( $status, "smtp is in server mode" );
-test_assert( !defined( $error ) );
-test_assert_equal( $s->config_( 'local' ), 0 );
-
-$form->{serveropt_smtp} = 0; # Stealth mode
-
-( $status, $error ) = $s->validate_item( 'smtp_local', $templ, $language, $form );
-
-test_assert_equal( $status, "smtp is in stealth mode" );
-test_assert( !defined( $error ) );
-test_assert_equal( $s->config_( 'local' ), 1 );
-
-delete $form->{serveropt_smtp};
-$s->config_( 'local', 1 );
-
-test_assert_equal( $s->config_( 'chain_port' ), $port2 );
-
-$form->{smtp_chain_server_port} = 10025;
-$language->{Security_SMTPPortUpdate} = "smtp chain port update %s";
-
-( $status, $error ) = $s->validate_item( 'smtp_server', $templ, $language, $form );
-
-test_assert_equal( $status, "smtp chain port update 10025" );
-test_assert( !defined( $error ), $error );
-test_assert_equal( $s->config_( 'chain_port' ), 10025 );
-
-$s->config_( 'chain_port', $port2 );
-
-$form->{smtp_chain_server_port} = 'aaa';
-$language->{Security_Error1} = "security error 1";
-
-( $status, $error ) = $s->validate_item( 'smtp_server', $templ, $language, $form );
-
-test_assert_equal( $error, "security error 1" );
-test_assert( !defined( $status), $status );
-test_assert_equal( $s->config_( 'chain_port' ), $port2 );
-
-delete $form->{smtp_chain_server_port};
-
-$form->{smtp_chain_server} = 'example.com';
-$language->{Security_SMTPServerUpdate} = 'smtp chain server update %s';
-
-( $status, $error ) = $s->validate_item( 'smtp_server', $templ, $language, $form );
-
-test_assert_equal( $status, "smtp chain server update example.com\n" );
-test_assert( !defined( $error ), $error );
-test_assert_equal( $s->config_( 'chain_server' ), 'example.com' );
-
-$form->{smtp_chain_server_port} = '10025';
-$form->{smtp_chain_server} = 'subdomain.example.com';
-
-( $status, $error ) = $s->validate_item( 'smtp_server', $templ, $language, $form );
-
-test_assert_equal( $status, "smtp chain server update subdomain.example.com\nsmtp chain port update 10025" );
-test_assert( !defined( $error ), $error );
-test_assert_equal( $s->config_( 'chain_server' ), 'subdomain.example.com' );
-test_assert_equal( $s->config_( 'chain_port' ), 10025 );
-
-delete $form->{smtp_chain_server_port};
-delete $form->{smtp_chain_server};
-
-$s->config_( 'chain_server', 'localhost' );
-$s->config_( 'chain_port', $port2 );
-
+test_assert_equal( $s->start(), 1 );
+$s->{api_session__} = $b->get_session_key( 'admin', '' );
+$s->history( $h );
 
 # some tests require this directory to be present
 
@@ -405,7 +215,6 @@ if ( $pid == 0 ) {
 
     close $server;
     $b->stop();
-    $db->stop();
     exit 0;
 } else {
 
@@ -447,7 +256,6 @@ if ( $pid == 0 ) {
         close $dreader;
         close $uwriter;
         $b->stop();
-        $db->stop();
         exit 0;
     } else {
 
@@ -568,8 +376,6 @@ if ( $pid == 0 ) {
         $result = <$client>;
         test_assert_equal( $result, "250 OK$eol" );
 
-        wait_proxy();
-
         print $client "QUIT$eol";
         $result = <$client>;
         test_assert_equal( $result, "221 Bye$eol" );
@@ -619,12 +425,14 @@ if ( $pid == 0 ) {
         close $dwriter;
         close $ureader;
 
-        $s->stop();
-        $POPFile->CORE_stop();
-
         while ( waitpid( -1, 0 ) != -1 ) { }
 
         $mq->reaper();
+        $s->stop();
+        $h->stop();
+        $b->stop();
+        $l->stop();
+#        $c->stop();
     }
 }
 
@@ -783,47 +591,6 @@ sub server
     }
 
     return 1;
-}
-
-sub forker
-{
-    pipe my $reader, my $writer;
-    $l->log_( 2, "Created pipe pair $reader and $writer" );
-    $b->prefork();
-    $mq->prefork();
-    $h->prefork();
-    $db->prefork();
-    $s->prefork();
-    my $pid = fork();
-
-    if ( !defined( $pid ) ) {
-        close $reader;
-        close $writer;
-        return (undef, undef);
-    }
-
-    if ( $pid == 0 ) {
-        $db->forked( $writer );
-        $b->forked( $writer );
-        $mq->forked( $writer );
-        $h->forked( $writer );
-        close $reader;
-
-        use IO::Handle;
-        $writer->autoflush(1);
-
-        return (0, $writer);
-    }
-
-    $l->log_( 2, "Child process has pid $pid" );
-
-    $b->postfork( $pid, $reader );
-    $mq->postfork( $pid, $reader );
-    $h->postfork( $pid, $reader );
-    $db->postfork( $pid, $reader );
-    $s->postfork( $pid, $reader );
-    close $writer;
-    return ($pid, $reader);
 }
 
 1;

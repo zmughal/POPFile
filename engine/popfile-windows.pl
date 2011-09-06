@@ -42,6 +42,7 @@ my $POPFile = POPFile::Loader->new();
 # Load the minimal amount of POPFile to get reliable access to the
 # configuration options and then figure out which popfileXX.exe to run
 
+$POPFile->debug(0);
 $POPFile->CORE_loader_init();
 
 # Redefine POPFile's signals
@@ -55,10 +56,11 @@ $POPFile->CORE_signals();
 # modules running
 
 $POPFile->CORE_load();
+$POPFile->CORE_link_components();
 $POPFile->CORE_initialize();
 $POPFile->CORE_config();
 
-my $w = $POPFile->get_module( 'platform::windows' );
+my $w = $POPFile->get_module( 'core::windows' );
 
 my $i = $w->config_( 'trayicon' )?'i':'';
 my $f = $w->config_( 'console' )?'f':'b';
