@@ -107,7 +107,7 @@ windows: winexe; @$(MAKE) -C ../windows
 
 LANGUAGES := $(wildcard languages/*.msg)
 
-BUILD_ZIP=wzzip -P $(POPFILE_ZIP) -a $^
+BUILD_ZIP=7z a -tzip $(POPFILE_ZIP) $^
 xplat: $(POPFILE_ZIP)
 $(POPFILE_ZIP): core languages skins POPFile/popfile_version
 
