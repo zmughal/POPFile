@@ -60,110 +60,6 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
-  ;------------------------------------------------
-  ; This script requires the 'DumpLog' NSIS plugin
-  ;------------------------------------------------
-
-  ; This script uses a special NSIS plugin (DumpLog) to save the installation log to a file.
-  ; This plugin is much faster than the 'Dump Content of Log Window to File' function shown
-  ; in the NSIS Users Manual (see section D.4 in Appendix D of the manual for NSIS 2.45).
-  ;
-  ; The 'NSIS Wiki' page for the 'DumpLog' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/DumpLog_plug-in
-  ;
-  ; To compile this script, copy the 'DumpLog.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'DumpLog' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested with version 1.0 of the DumpLog.dll plugin.
-  ;
-  ; The plugin's history can be found at http://nsis.sourceforge.net/File:DumpLog.zip
-
-  ;------------------------------------------------
-  ; This script requires the 'Inetc' NSIS plugin
-  ;------------------------------------------------
-
-  ; This script uses a special NSIS plugin (inetc) to download the SSL files. This plugin
-  ; has much better proxy support than the standard NSISdl plugin shipped with NSIS.
-  ;
-  ; The 'NSIS Wiki' page for the 'Inetc' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/Inetc_plug-in
-  ;
-  ; To compile this script, copy the 'inetc.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'Inetc' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested with the inetc.dll plugin timestamped 28 April 2011 14:23:12
-  ;
-  ; The plugin's history can be found at http://nsis.sourceforge.net/File:Inetc.zip
-
-  ;------------------------------------------------
-  ; This script requires the 'LockedList' NSIS plugin
-  ;------------------------------------------------
-
-  ; This script uses a special NSIS plugin (LockedList) to check if POPFile is running.
-  ;
-  ; The 'NSIS Wiki' page for the 'LockedList' plugin (description and download links):
-  ; http://nsis.sourceforge.net/LockedList_plug-in
-  ;
-  ; To compile this script, copy the 'LockedList.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested using LockedList plugin v2.3 timestamped 7 February 2011 18:52:22
-  ;
-  ; The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
-
-  ;------------------------------------------------
-  ; This script requires the 'md5dll' NSIS plugin
-  ;------------------------------------------------
-
-  ; This script uses a special NSIS plugin (md5dll) to calculate the MD5 sum for a file.
-  ;
-  ; The 'NSIS Wiki' page for the 'md5dll' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/MD5_plugin
-  ;
-  ; To compile this script, copy the 'md5dll.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'md5dll' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested using md5dll plugin v0.5 timestamped 23 January 2010 15:10:24
-  ;
-  ; The plugin's history can be found at http://nsis.sourceforge.net/File:Md5dll.zip
-
-  ;------------------------------------------------
-  ; This script requires the 'SimpleSC' NSIS plugin
-  ;------------------------------------------------
-
-  ; This script uses a special NSIS plugin (SimpleSC) to check if the POPFile service
-  ; is running.
-  ;
-  ; The 'NSIS Wiki' page for the 'SimpleSC' plugin (description and download links):
-  ; http://nsis.sourceforge.net/NSIS_Simple_Service_Plugin
-  ;
-  ; To compile this script, copy the 'SimpleSC.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'SimpleSC' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested with v1.29 of the SimpleSC.dll plugin.
-
-  ;------------------------------------------------
-  ; This script requires the 'untgz' NSIS plugin
-  ;------------------------------------------------
-
-  ; This script uses a special NSIS plugin (untgz) to extract files from the *.tar.gz archives.
-  ;
-  ; The 'NSIS Wiki' page for the 'untgz' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/UnTGZ_plug-in
-  ;
-  ; To compile this script, copy the 'untgz.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'untgz' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested with version 1.0.17 of the 'untgz' plugin.
-  ;
-  ; The plugin's history can be found at http://nsis.sourceforge.net/File:Untgz.zip
-
   ;----------------------------------------------------------
   ; Different POPFile releases require different SSL support
   ;----------------------------------------------------------
@@ -391,7 +287,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.5.0"
+  !define C_PFI_VERSION  "0.5.1"
 
   ; Mention the wizard's version number in the window title
 

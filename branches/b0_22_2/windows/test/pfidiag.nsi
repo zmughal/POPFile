@@ -4,7 +4,7 @@
 #                 to assist in solving problems with POPFile installations
 #                 (using v0.21.0 or a later installer) on Windows systems.
 #
-# Copyright (c) 2004-2010  John Graham-Cumming
+# Copyright (c) 2004-2011  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -46,37 +46,6 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
-  ;------------------------------------------------
-  ; This script requires the 'GetVersion' NSIS plugin
-  ;------------------------------------------------
-  ;
-  ; This script uses a special NSIS plugin (GetVersion) to identify the Windows version
-  ;
-  ; The 'NSIS Wiki' page for the 'GetVersion' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/GetVersion_(Windows)_plug-in
-  ;
-  ; To compile this script, copy the 'GetVersion.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'GetVersion' source and example files can be unzipped to the
-  ; appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
-  ;
-  ; This script requires v1.3 (or later) of the GetVersion plugin in order to correctly identify
-  ; the different versions of Windows 7.
-
-  ;------------------------------------------------
-  ; This script requires the 'ShellLink' NSIS plugin
-  ;------------------------------------------------
-  ;
-  ; This script uses a special NSIS plugin (ShellLink) to extract information from a Windows
-  ; shortcut (*.lnk) file
-  ;
-  ; The 'NSIS Wiki' page for the 'ShellLink' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/ShellLink_plugin
-  ;
-  ; To compile this script, copy the 'ShellLink.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'ShellLink' source and example files can be unzipped to the
-  ; ${NSISDIR}\Contrib\ShellLink\ folder if you wish, but this step is entirely optional.
-  ;
-  ; Tested with v1.2 of the ShellLink plugin (timestamped 3 June 2010 17:23:24)
 
 #--------------------------------------------------------------------------
 # Run-time command-line switches (used by 'pfidiag.exe')
@@ -128,7 +97,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.3.0"
+  !define C_VERSION   "0.3.1"
 
   !define C_OUTFILE   "pfidiag.exe"
 
