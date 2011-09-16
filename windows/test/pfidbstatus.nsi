@@ -11,7 +11,7 @@
 #                           to execute SQL from the command-line so this utility checks the
 #                           sqlite.exe version number before trying to execute any SQL.
 #
-# Copyright (c) 2005-2009  John Graham-Cumming
+# Copyright (c) 2005-2011  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -51,29 +51,6 @@
 
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
-
-  ;------------------------------------------------
-  ; This script requires the 'GetSize' NSIS plugin
-  ;------------------------------------------------
-
-  ; This script uses a special NSIS plugin (GetSize) to find the size of the SQLite database.
-  ;
-  ; 'GetSize' plugin thread in the "NSIS Discussion" forum:
-  ; http://forums.winamp.com/showthread.php?threadid=224452
-  ;
-  ; 'GetSize' plugin download link (from the above forum thread):
-  ; http://forums.winamp.com/attachment.php?postid=1756112
-  ;
-  ; To compile this script, copy the 'getsize.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'GetSize' source and example files can be unzipped to the
-  ; ${NSISDIR}\Contrib\GetSize\ folder if you wish, but this step is entirely optional.
-  ;
-  ; Tested with version 1.0 of the 'GetSize' plugin.
-  ;
-  ; The 'GetSize' plugin has not been added to the NSIS Wiki. The plugin's author decided
-  ; to include its functions in a much larger general purpose plugin (Locate). This enhanced
-  ; plugin (it is more than 3 times the size of 'GetSize') has been added to the NSIS Wiki:
-  ; http://nsis.sourceforge.net/Locate_plugin
 
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
@@ -159,7 +136,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.2.1"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.2.2"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here

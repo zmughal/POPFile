@@ -64,7 +64,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.6.2"
+  !define C_PFI_LIBRARY_VERSION     "0.6.3"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -2029,23 +2029,6 @@
 # NOTE:
 # The !insertmacro PFI_DumpLog "" and !insertmacro PFI_DumpLog "un." commands are included in this file
 # so NSIS scripts can use 'Call PFI_DumpLog' and 'Call un.PFI_DumpLog' without additional preparation.
-#
-#--------------------------------------------------------------------------
-# This macro uses a plugin which is not distributed with the NSIS compiler
-#--------------------------------------------------------------------------
-# This macro uses a special NSIS plugin (DumpLog) to dump the log contents into a text file.
-# Originally a script-based method was used but it could take several seconds to save the log
-# (the plugin saves the file almost instantly).
-#
-# The 'NSIS Wiki' page for the 'DumpLog' plugin (description, example and download links):
-# http://nsis.sourceforge.net/DumpLog_plugin
-#
-# To install this plugin, copy the 'DumpLog.dll' file to the standard NSIS plugins folder
-# (${NSISDIR}\Plugins\). The 'DumpLog' source and example files can be unzipped to the
-# appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
-#
-# Tested with version 1.0 of the 'DumpLog' plugin.
-#--------------------------------------------------------------------------
 #
 # Inputs:
 #         (top of stack)     - the full path of the file where the log will be dumped

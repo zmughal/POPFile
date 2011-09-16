@@ -50,28 +50,6 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
-  ;--------------------------------------------------
-  ; This script requires the 'LockedList' NSIS plugin
-  ;--------------------------------------------------
-
-  ; In order to allow this utility to check if a particular executable file is in use
-  ; a special NSIS plugin (LockedList) is used. This plugin replaces the previous
-  ; detection method because the old method always reported that a file was locked if
-  ; the utility was run by a user without administrator rights (even if the file in
-  ; question was not in use).
-  ;
-  ; The 'NSIS Wiki' page for the 'LockedList' plugin (description and download links):
-  ; http://nsis.sourceforge.net/LockedList_plug-in
-  ;
-  ; To compile this script, copy the 'LockedList.dll' file to the standard NSIS plugins
-  ; folder (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be
-  ; unzipped to the appropriate ${NSISDIR} sub-folders if you wish, but this step is
-  ; entirely optional.
-  ;
-  ; Tested using LockedList plugin v2.3 timestamped 7 February 2011 18:52:22
-  ;
-  ; The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
-
 #-------------------------------------------------------------------------------------------
 # Parameters are supplied via an INI file stored in the same folder as this utility:
 #
@@ -142,7 +120,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.3.0"
+  !define C_VERSION   "0.3.1"
 
   ; Specify the icon file for the utility
 

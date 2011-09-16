@@ -105,25 +105,6 @@
   !undef  C_EXPECTED_VERSION
 
   ;--------------------------------------------------------------------------
-  ; This script requires the 'Inetc' NSIS plugin
-  ;--------------------------------------------------------------------------
-
-  ; This script uses a special NSIS plugin (inetc) to silently access the POPFile UI's
-  ; 'Shutdown' page. This plugin has much better proxy support than the standard NSISdl
-  ; plugin shipped with NSIS.
-  ;
-  ; The 'NSIS Wiki' page for the 'Inetc' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/Inetc_plug-in
-  ;
-  ; To compile this script, copy the 'inetc.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'Inetc' documentation, example & source files can be unzipped
-  ; to the appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested with the inetc.dll plugin timestamped 28 April 2011 14:23:12
-  ;
-  ; The plugin's history can be found at http://nsis.sourceforge.net/File:Inetc.zip
-
-  ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
   ;
   ; ${IO_NL} is used for InstallOptions-style 'new line' sequences.
@@ -144,7 +125,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.7.0"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.7.1"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
