@@ -103,60 +103,6 @@
 # makensis.exe /DC_POPFILE_MAJOR_VERSION=0 /DC_POPFILE_MINOR_VERSION=21 /DC_POPFILE_REVISION=1 /DC_POPFILE_RC installer.nsi
 #--------------------------------------------------------------------------
 
-  ;------------------------------------------------
-  ; This script requires the 'GetVersion' NSIS plugin
-  ;------------------------------------------------
-  ;
-  ; This script uses a special NSIS plugin (GetVersion) to identify the Windows version
-  ;
-  ; The 'NSIS Wiki' page for the 'GetVersion' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/GetVersion_(Windows)_plug-in
-  ;
-  ; To compile this script, copy the 'GetVersion.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'GetVersion' source and example files can be unzipped to the
-  ; appropriate sub-folders of ${NSISDIR} if you wish, but this step is entirely optional.
-  ;
-  ; This script requires v0.9 (or later) of the GetVersion plugin
-
-  ;------------------------------------------------
-  ; This script requires the 'UAC' NSIS plugin
-  ;------------------------------------------------
-
-  ; The new 'User Account Control' (UAC) feature in Windows Vista makes it difficult to install
-  ; POPFile from a 'standard' user account. This script uses a special NSIS plugin (UAC) which
-  ; allows the 'POPFile program files' part of the installation to be run at the 'admin' level
-  ; and the user-specific POPFile configuration part to be run at the 'user' level.
-  ;
-  ; The 'NSIS Wiki' page for the 'UAC' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/UAC_plug-in
-  ;
-  ; To compile this script, copy the 'UAC.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'UAC' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested with version v0.0.9 (20080721) of the 'UAC' plugin,
-  ; timestamped 21 July 2008 23:56:04.
-
-  ;----------------------------------------------------------
-  ; This script requires the 'AccessControl' NSIS plugin
-  ;----------------------------------------------------------
-
-  ; The UAC plugin works by running an 'outer' installer at the 'standard user' level and
-  ; an 'inner' installer at the 'admin' level. To support two-way communication between these
-  ; two installer instances the 'inner' one creates a temporary file in the 'All Users' data
-  ; folder and uses the 'AccessControl' plugin to grant the 'outer' installer Read/Write
-  ; access to this temporary file.
-  ;
-  ; The 'NSIS Wiki' page for the 'AccessControl' plugin (description, example and download links):
-  ; http://nsis.sourceforge.net/AccessControl_plug-in
-  ;
-  ; To compile this script, copy the 'AccessControl.dll' file to the standard NSIS plugins folder
-  ; (${NSISDIR}\Plugins\). The 'AccessControl' source and example files can be unzipped to the
-  ; appropriate ${NSISDIR} sub-folders if you wish, but this step is entirely optional.
-  ;
-  ; Tested with the "23rd January 2008" version of the 'AccessControl' plugin,
-  ; timestamped 17 February 2008 17:28:44 (sic).
-
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
 #--------------------------------------------------------------------------
@@ -356,6 +302,27 @@
 
   !echo "${MB_NL}\
       ${MB_NL}   ActivePerl version ${C_AP_VERSION} Build ${C_AP_BUILD} will be used to prepare the minimal Perl${MB_NL}${MB_NL}"
+
+  ;----------------------------------------------------------------------
+  ; Now check that the compiler is using the correct set of extra plugins
+  ;----------------------------------------------------------------------
+
+  !system 'if exist ".\plugin-status.nsh" del ".\plugin-status.nsh"'
+  !system '".\toolkit\plugin-vcheck.exe"'
+  !include /NONFATAL ".\plugin-status.nsh"
+
+  ; The above '!system' call can fail on older (slower/Win9x?) systems so if the expected
+  ; output file is not found we try a safer version of the '!system' call. If this call
+  ; also fails then the NSIS compiler will stop with a fatal error.
+
+  !ifndef C_PLUGIN_CHECKSUMS
+    !system 'start /w .\toolkit\plugin-vcheck.exe'
+    !include ".\plugin-status.nsh"
+   !endif
+
+  ; Delete the "include" file after it has been read
+
+  !delfile ".\plugin-status.nsh"
 
   ;----------------------------------------------------------------------------------
   ; Root directory for the Kakasi package.
