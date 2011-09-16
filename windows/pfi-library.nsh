@@ -42,14 +42,15 @@
 # (10) MSGCAPTURE       defined in msgcapture.nsi (used to capture POPFile's console messages)
 # (11) ONDEMAND         defined in add-ons\OnDemand.nsi (starts POPFile & email client together)
 # (12) PFIDIAG          defined in test\pfidiag.nsi (helps diagnose installer-related problems)
-# (13) PORTABLE         defined in portable\POPFilePortable.nsi (PortableApps format launcher)
-# (14) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
-# (15) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
-# (16) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
-# (17) SHUTDOWN         defined in portable\POPFilePortableShutdown.nsi (shutdown POPFile Portable)
-# (18) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
-# (19) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
-# (20) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
+# (13) PLUGINCHECK      defined in toolkit\plugin-vcheck.nsi (checks the extra NSIS plugins)
+# (14) PORTABLE         defined in portable\POPFilePortable.nsi (PortableApps format launcher)
+# (15) RESTORE          defined in restore.nsi (POPFile 'User Data' Restore utility)
+# (16) RUNPOPFILE       defined in runpopfile.nsi (simple front-end for popfile.exe)
+# (17) RUNSQLITE        defined in runsqlite.nsi (simple front-end for sqlite.exe/sqlite3.exe)
+# (18) SHUTDOWN         defined in portable\POPFilePortableShutdown.nsi (shutdown POPFile Portable)
+# (19) STOP_POPFILE     defined in stop_popfile.nsi (the 'POPFile Silent Shutdown' utility)
+# (20) TRANSLATOR       defined in test\translator.nsi (main installer translations testbed)
+# (21) TRANSLATOR_AUW   defined in test\transAUW.nsi ('Add POPFile User' translations testbed)
 #--------------------------------------------------------------------------
 
 !ifndef PFI_VERBOSE
@@ -63,7 +64,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.6.1"
+  !define C_PFI_LIBRARY_VERSION     "0.6.2"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -1767,22 +1768,6 @@
 # some circumstances (still to be investigated!) it mistakenly reports that a file
 # is locked.
 #
-#------------------------------------------------------------------------------------
-#
-# The 'NSIS Wiki' page for the 'LockedList' plugin (description and download links) is
-# http://nsis.sourceforge.net/LockedList_plug-in
-#
-# To compile this script, copy the 'LockedList.dll' file to the standard NSIS plugins
-# folder (${NSISDIR}\Plugins\). The 'LockedList' source and example files can be
-# unzipped to the appropriate ${NSISDIR} sub-folders if you wish, but this step is
-# entirely optional.
-#
-# Tested using LockedList plugin v2.3 timestamped 7 February 2011 18:52:22
-#
-# The plugin's history can be found at http://nsis.sourceforge.net/File:LockedList.zip
-#
-#------------------------------------------------------------------------------------
-#
 # Unfortunately the 'LockedList' plugin relies upon OS features only found in
 # Windows NT4 or later so older systems such as Win9x must be treated as special
 # cases.
@@ -2781,7 +2766,7 @@
   FunctionEnd
 !macroend
 
-!ifndef CREATEUSER & MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
+!ifndef CREATEUSER & MONITORCC & ONDEMAND & PLUGINCHECK & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetDateTimeStamp
     #
@@ -2973,7 +2958,7 @@
   FunctionEnd
 !macroend
 
-!ifndef CREATEUSER & MONITORCC & ONDEMAND & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
+!ifndef CREATEUSER & MONITORCC & ONDEMAND & PLUGINCHECK & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_GetLocalTime
     #
@@ -4775,7 +4760,7 @@
   FunctionEnd
 !macroend
 
-!ifndef LFNFIXER & MONITORCC & PFIDIAG & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & TRANSLATOR
+!ifndef LFNFIXER & MONITORCC & PFIDIAG & PLUGINCHECK & PORTABLE & RUNPOPFILE & RUNSQLITE & SHUTDOWN & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckDecimal
     #
@@ -4901,7 +4886,7 @@
   FunctionEnd
 !macroend
 
-!ifdef ADDSSL | INSTALLER
+!ifdef ADDSSL | INSTALLER | PLUGINCHECK
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrCheckHexadecimal
     #
@@ -5017,7 +5002,7 @@
     FunctionEnd
 !macroend
 
-!ifndef DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
+!ifndef DBSTATUS & IMAPUPDATER & LFNFIXER & MONITORCC & MSGCAPTURE & ONDEMAND & PLUGINCHECK & RUNSQLITE & SHUTDOWN & STOP_POPFILE & TRANSLATOR
     #--------------------------------------------------------------------------
     # Installer Function: PFI_StrStr
     #
