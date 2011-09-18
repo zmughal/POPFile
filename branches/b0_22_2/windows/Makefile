@@ -25,7 +25,8 @@ include $(ENGINE)/vars.mak
 MAKENSIS_VERSION_STRING:=/DC_POPFILE_MAJOR_VERSION=$(POPFILE_MAJOR_VERSION) /DC_POPFILE_MINOR_VERSION=$(POPFILE_MINOR_VERSION) /DC_POPFILE_REVISION=$(POPFILE_REVISION) /DC_POPFILE_RC=$(RC)
 
 MAKENSIS=echo Making $@ ; makensis.exe $(MAKENSIS_VERSION_STRING) /V4 /O$(patsubst %.exe,%.log,$@) $<
-BUILD_ZIP=wzzip -P $(POPFILE_WINDOWS_ZIP) -a $^
+
+BUILD_ZIP=7z a -tzip $(POPFILE_WINDOWS_ZIP) $^
 
 SETUP:=setup$(RC).exe
 RUNPOPFILE=runpopfile.exe
@@ -35,11 +36,12 @@ STOP_PF=stop_pf.exe
 MSGCAPTURE=msgcapture.exe
 RUNSQLITE=runsqlite.exe
 APVERCHECK=toolkit/ap-vcheck.exe
+PLUGINCHECK=toolkit/plugin-vcheck.exe
 
 ALLEXES := $(SETUP) $(RUNPOPFILE) $(ADDUSER)     \
            $(MONITORCC) $(STOP_PF) $(MSGCAPTURE) \
-           $(APVERCHECK)                         \
-           $(RUNSQLITE) $(POPFILE_WINDOWS_ZIP) 
+           $(APVERCHECK) $(PLUGINCHECK)          \
+           $(RUNSQLITE) $(POPFILE_WINDOWS_ZIP)
 
 all: build
 build: $(POPFILE_WINDOWS_ZIP)
@@ -71,7 +73,7 @@ $(SETUP): installer.nsi ; @$(MAKENSIS)
 $(SETUP): $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/Platform/MSWin32.pm $(ENGINE)/skins/*/*.css $(ENGINE)/skins/*/*.gif $(ENGINE)/skins/*/*.thtml $(ENGINE)/v$(POPFILE_VERSION).change
 $(SETUP): $(STOP_PF) $(ENGINE)/popfile.exe $(ENGINE)/popfileb.exe $(ENGINE)/popfileib.exe $(ENGINE)/popfilef.exe $(ENGINE)/popfileif.exe $(ENGINE)/popfile-service.exe
 $(SETUP): $(RUNPOPFILE) $(ADDUSER) $(MONITORCC) $(STOP_PF) $(MSGCAPTURE)
-$(SETUP): $(APVERCHECK)
+$(SETUP): $(APVERCHECK) $(PLUGINCHECK)
 $(SETUP): ioG.ini
 $(SETUP): languages/*-pfi.nsh hdr-common.bmp special.bmp remove.ico
 $(SETUP): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
@@ -96,3 +98,5 @@ $(MSGCAPTURE): hdr-common.bmp
 $(MSGCAPTURE): UI/pfi_headerbmpr.exe UI/pfi_modern.exe
 
 $(APVERCHECK): $(patsubst %.exe,%.nsi,$(APVERCHECK))
+
+$(PLUGINCHECK): $(patsubst %.exe,%.nsi,$(PLUGINCHECK))
