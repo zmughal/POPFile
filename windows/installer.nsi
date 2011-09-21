@@ -2589,6 +2589,9 @@ Function CheckForExistingLocation
 
   ReadINIStr $INSTDIR "$G_COMMS_FILE" "RealUser" "POPFILE_ROOT"
   StrCmp $INSTDIR "" try_real_lfn
+  Push $INSTDIR
+  Call PFI_GetCompleteFPN
+  Pop $INSTDIR
   IfFileExists "$INSTDIR\*.*" exit
 
 try_real_lfn:
