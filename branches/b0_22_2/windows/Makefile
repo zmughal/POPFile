@@ -1,4 +1,4 @@
-# Copyright (c) John Graham-Cumming
+# Copyright (c) 2002-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
