@@ -7,18 +7,23 @@
 #                   the POPFILE_ROOT and POPFILE_USER environment variables) for the
 #                   user running the installer.
 #
-#                   (A) Requires the following programs (built using NSIS):
+#                   (A) Uses the following programs at compile-time (built using NSIS):
 #
-#                       (1) adduser.exe     (NSIS script: adduser.nsi)
-#                       (2) msgcapture.exe  (NSIS script: msgcapture.nsi)
-#                       (3) runpopfile.exe  (NSIS script: runpopfile.nsi)
-#                       (4) runsqlite.exe   (NSIS script: runsqlite.nsi)
-#                       (5) stop_pf.exe     (NSIS script: stop_popfile.nsi)
+#                       (1) ap-vcheck.exe     (NSIS script: toolkit/ap-vcheck.nsi)
+#                       (2) plugin-vcheck.exe (NSIS script: toolkit/plugin-vcheck.nsi)
 #
-#                   (B) The following programs (built using NSIS) are optional:
+#                   (B) Requires the following programs (built using NSIS):
 #
-#                       (1) pfidbstatus.exe (NSIS script: test\pfidbstatus.nsi)
-#                       (2) pfidiag.exe     (NSIS script: test\pfidiag.nsi)
+#                       (1) adduser.exe       (NSIS script: adduser.nsi)
+#                       (2) msgcapture.exe    (NSIS script: msgcapture.nsi)
+#                       (3) runpopfile.exe    (NSIS script: runpopfile.nsi)
+#                       (4) runsqlite.exe     (NSIS script: runsqlite.nsi)
+#                       (5) stop_pf.exe       (NSIS script: stop_popfile.nsi)
+#
+#                   (C) The following programs (built using NSIS) are optional:
+#
+#                       (1) pfidbstatus.exe   (NSIS script: test\pfidbstatus.nsi)
+#                       (2) pfidiag.exe       (NSIS script: test\pfidiag.nsi)
 #
 # Copyright (c) 2002-2011 John Graham-Cumming
 #
