@@ -5,7 +5,7 @@
 #                    DBI trace feature which generates extra console messages that
 #                    may assist in debugging database problems.
 #
-# Copyright (c) 2011  John Graham-Cumming
+# Copyright (c) 2008-2011  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -46,6 +46,13 @@
 
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
+
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "plugin-status.nsh"
 
   ; Although this utility was originally created for use with the 1.0.0 release it is
   ; compatible with many earlier installations created by the installer, though in some cases a
@@ -88,7 +95,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.1.1"
+  !define C_VERSION             "0.2.0"
 
   !define C_OUTFILE             "dbicapture.exe"
 
