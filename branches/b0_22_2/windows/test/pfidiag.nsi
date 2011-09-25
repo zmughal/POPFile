@@ -46,6 +46,12 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "..\plugin-status.nsh"
 
 #--------------------------------------------------------------------------
 # Run-time command-line switches (used by 'pfidiag.exe')
@@ -97,7 +103,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.3.1"
+  !define C_VERSION   "0.4.0"
 
   !define C_OUTFILE   "pfidiag.exe"
 

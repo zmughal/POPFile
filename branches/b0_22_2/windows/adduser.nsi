@@ -56,6 +56,13 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "plugin-status.nsh"
+
 ; NOTE: The language selection menu order used in this script assumes that "Nihongo" is
 ; used instead of "Japanese" in the language selection menu (see the 'pfi-languages.nsh' file)
 
