@@ -10,7 +10,7 @@
 #                    Capture utility (if it is available) whenever the 'windows-console'
 #                    mode is selected in 'popfile.cfg'.
 #
-# Copyright (c) 2004-2009 John Graham-Cumming
+# Copyright (c) 2004-2011 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -50,6 +50,13 @@
 
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
+
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "plugin-status.nsh"
 
 #--------------------------------------------------------------------------
 # Optional run-time command-line switches (used by 'runpopfile.exe')
@@ -119,7 +126,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.3.0"
+  !define C_PFI_VERSION   "0.4.0"
 
   !define C_OUTFILE       "runpopfile.exe"
 

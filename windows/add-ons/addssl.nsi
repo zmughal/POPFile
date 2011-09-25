@@ -60,6 +60,13 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "..\plugin-status.nsh"
+
   ;----------------------------------------------------------
   ; Different POPFile releases require different SSL support
   ;----------------------------------------------------------
@@ -287,7 +294,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.5.1"
+  !define C_PFI_VERSION  "0.6.0"
 
   ; Mention the wizard's version number in the window title
 

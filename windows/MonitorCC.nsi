@@ -46,6 +46,13 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "plugin-status.nsh"
+
 #--------------------------------------------------------------------------
 # Run-time command-line switches (used by 'monitorcc.exe')
 #--------------------------------------------------------------------------
@@ -113,7 +120,7 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.3.4"
+  !define C_PFI_VERSION  "0.4.0"
 
   !define C_OUTFILE      "monitorcc.exe"
 

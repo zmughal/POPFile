@@ -50,6 +50,13 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "..\plugin-status.nsh"
+
 #-------------------------------------------------------------------------------------------
 # Parameters are supplied via an INI file stored in the same folder as this utility:
 #
@@ -120,7 +127,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.3.1"
+  !define C_VERSION   "0.4.0"
 
   ; Specify the icon file for the utility
 

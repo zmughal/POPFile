@@ -65,6 +65,13 @@
   !undef  C_EXPECTED_VERSION
 
   ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "plugin-status.nsh"
+
+  ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
   ;
   ; ${IO_NL} is used for InstallOptions-style 'new line' sequences.
@@ -80,7 +87,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.2.2"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.3.0"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "runsqlite.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here

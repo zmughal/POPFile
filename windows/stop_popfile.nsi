@@ -105,6 +105,13 @@
   !undef  C_EXPECTED_VERSION
 
   ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "plugin-status.nsh"
+
+  ;--------------------------------------------------------------------------
   ; Symbols used to avoid confusion over where the line breaks occur.
   ;
   ; ${IO_NL} is used for InstallOptions-style 'new line' sequences.
@@ -125,7 +132,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.7.1"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.8.0"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 

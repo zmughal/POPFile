@@ -52,6 +52,13 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "..\plugin-status.nsh"
+
 #--------------------------------------------------------------------------
 # Compile-time command-line switches (used by 'makensis.exe')
 #--------------------------------------------------------------------------
@@ -136,7 +143,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.2.2"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.3.0"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here

@@ -6,7 +6,7 @@
 #                    the need to display the console window (when the console window was
 #                    used by earlier installers it caused confusion amongst some users).
 #
-# Copyright (c) 2004-2009  John Graham-Cumming
+# Copyright (c) 2004-2011  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -47,6 +47,13 @@
 
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
+
+  ;--------------------------------------------------------------------------
+  ; Optional check on status of the extra NSIS plugins required by POPFile
+  ; (The plugin status is _always_ checked when installer.nsi is compiled)
+  ;--------------------------------------------------------------------------
+
+  !include /NONFATAL "plugin-status.nsh"
 
 #--------------------------------------------------------------------------
 # Support provided for this utility by the Windows installer
@@ -118,7 +125,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.2.0"
+  !define C_VERSION             "0.3.0"
 
   !define C_OUTFILE             "msgcapture.exe"
 
