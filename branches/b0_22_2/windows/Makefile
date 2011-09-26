@@ -143,10 +143,15 @@ $(PLUGINCHECK): toolkit/plugin-vcheck.nsi $(SCRIPTLIBS) POPFileIcon/popfile.ico
 
 # Note: $(ADDSSL) is NOT included in releases
 #
-$(ADDSSL): add-ons/addssl.nsi $(SCRIPTLIBS) add-ons/hdr-update.bmp add-ons/special-update.bmp POPFileIcon/popfile.ico $(CUSTOMUIS) $(PLUGINSTATUS)
+$(ADDSSL): add-ons/addssl.nsi $(SCRIPTLIBS)
+$(ADDSSL): add-ons/hdr-update.bmp add-ons/special-update.bmp POPFileIcon/popfile.ico
+$(ADDSSL): $(CUSTOMUIS) $(PLUGINSTATUS)
+$(ADDSSL):
 	@cd $(dir $@) ; $(MAKENSIS)
 
 # Note: $(ONDEMAND) is NOT included in releases
 #
-$(ONDEMAND): add-ons/OnDemand.nsi add-ons/OnDemand-default.ini add-ons/OnDemand.ico $(SCRIPTLIBS) $(PLUGINSTATUS)
+$(ONDEMAND): add-ons/OnDemand.nsi add-ons/OnDemand-default.ini add-ons/OnDemand.ico
+$(ONDEMAND): $(SCRIPTLIBS) $(PLUGINSTATUS)
+$(ONDEMAND):
 	@cd $(dir $@) ; $(MAKENSIS)
