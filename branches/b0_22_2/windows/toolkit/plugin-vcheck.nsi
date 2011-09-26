@@ -283,8 +283,10 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.1.0"     ; see 'VIProductVersion' below for format details
-  !define C_OUTFILE   "plugin-vcheck.exe"
+  !define C_VERSION       "0.2.0"     ; see 'VIProductVersion' below for format details
+  !define C_OUTFILE       "plugin-vcheck.exe"
+
+  !define C_RESULTS_FILE  "plugin-status.nsh"
 
   Name "NSIS Extra Plugin Status Check ${C_VERSION}"
 
@@ -379,7 +381,9 @@ Section default
   Push ${L_TEMP}
   Push ${L_TEXT}
 
-  FileOpen ${L_RESULTS_FILE} "plugin-status.nsh" w
+  InitPluginsDir
+
+  FileOpen ${L_RESULTS_FILE} "$PLUGINSDIR\${C_RESULTS_FILE}" w
 
   FileWrite ${L_RESULTS_FILE} "!ifndef MB_NL${MB_NL}"
   FileWrite ${L_RESULTS_FILE} "  !define C_PLUGIN_MB_NL${MB_NL}"
@@ -509,14 +513,14 @@ no_problems:
   StrCpy ${L_RESULT} '${L_RESULT}{MB_NL}$$'
   StrCpy ${L_RESULT} '${L_RESULT}{MB_NL}$\"'
   FileWrite ${L_RESULTS_FILE} ${L_RESULT}${MB_NL}
-  Goto exit
+  Goto print_undefs
 
 print_result:
   StrCpy ${L_RESULT} "${L_RESULT}$$"
   StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}"
   FileWrite ${L_RESULTS_FILE}  '!error $\"${L_RESULT}$\"${MB_NL}'
 
-exit:
+print_undefs:
   SetPluginUnload manual
 
   ; Now unload the MD5 DLL to allow the $PLUGINSDIR to be removed automatically
@@ -531,6 +535,14 @@ exit:
 
   FileClose ${L_RESULTS_FILE}
 
+  ; Only update the status report file if there is any change
+
+  Call CompareStatusReports
+  Pop ${L_RESULT}
+  StrCmp ${L_RESULT} "same" exit
+  CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_RESULTS_FILE}" ".\${C_RESULTS_FILE}"
+
+exit:
   Pop ${L_TEXT}
   Pop ${L_TEMP}
   Pop ${L_RESULTS_FILE}
@@ -560,6 +572,82 @@ exit:
   !undef L_TEXT
 
  SectionEnd
+
+#--------------------------------------------------------------------------
+# Function: CompareStatusReports
+#
+# Compare the newly prepared '${C_RESULTS_FILE}' file with the version
+# found in the current working directory and report the result. These
+# files may use CRLF or LF as the end-of-line marker so the file size
+# is not tested. Return either "same" or "different" result string via
+# the stack.
+#
+# These files can contain empty lines, i.e lines with CRLF or LF only
+#--------------------------------------------------------------------------
+
+Function CompareStatusReports
+
+  !define L_NEW_FILE    $R9   ; handle used to access newly created status report
+  !define L_NEW_TEXT    $R8
+  !define L_OLD_FILE    $R7   ; handle used to access existing status report
+  !define L_OLD_TEXT    $R6
+  !define L_RESULT      $R5
+
+  !define C_NEW_STATUS  "$PLUGINSDIR\${C_RESULTS_FILE}"
+  !define C_OLD_STATUS  ".\${C_RESULTS_FILE}"
+
+  Push ${L_RESULT}
+  Push ${L_NEW_FILE}
+  Push ${L_NEW_TEXT}
+  Push ${L_OLD_FILE}
+  Push ${L_OLD_TEXT}
+
+  StrCpy ${L_RESULT}  "different"
+
+  IfFileExists "${C_OLD_STATUS}" 0 exit
+
+  FileOpen ${L_NEW_FILE} "${C_NEW_STATUS}" r
+  FileOpen ${L_OLD_FILE} "${C_OLD_STATUS}" r
+
+loop:
+  FileRead ${L_NEW_FILE} ${L_NEW_TEXT}
+  FileRead ${L_OLD_FILE} ${L_OLD_TEXT}
+  StrCmp ${L_NEW_TEXT} "" 0 trim_text
+  StrCmp ${L_NEW_TEXT} ${L_OLD_TEXT} files_match
+
+trim_text:
+  Push ${L_NEW_TEXT}
+  Call NSIS_TrimNewlines
+  Pop ${L_NEW_TEXT}
+  Push ${L_OLD_TEXT}
+  Call NSIS_TrimNewlines
+  Pop ${L_OLD_TEXT}
+  StrCmp ${L_NEW_TEXT} ${L_OLD_TEXT} loop close_files
+
+files_match:
+  StrCpy ${L_RESULT} "same"
+
+close_files:
+  FileClose ${L_NEW_FILE}
+  FileClose ${L_OLD_FILE}
+
+exit:
+  Pop ${L_OLD_TEXT}
+  Pop ${L_OLD_FILE}
+  Pop ${L_NEW_TEXT}
+  Pop ${L_NEW_FILE}
+  Exch ${L_RESULT}
+
+  !undef C_NEW_STATUS
+  !undef C_OLD_STATUS
+
+  !undef L_NEW_FILE
+  !undef L_NEW_TEXT
+  !undef L_OLD_FILE
+  !undef L_OLD_TEXT
+  !undef L_RESULT
+
+FunctionEnd
 
 ;--------------------------------------
 ; end-of-file
