@@ -283,7 +283,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION       "0.2.1"     ; see 'VIProductVersion' below for format details
+  !define C_VERSION       "0.2.2"     ; see 'VIProductVersion' below for format details
   !define C_OUTFILE       "plugin-vcheck.exe"
 
   !define C_RESULTS_FILE  "plugin-status.nsh"
@@ -344,7 +344,7 @@
   !ifdef C_NSIS_LIBRARY_VERSION
     VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
-  VIAddVersionKey "Build Script"            "${__FILE__}${LF}(${__TIMESTAMP__})"
+  VIAddVersionKey "Build Script"            "${__FILE__}$\r${LF}(${__TIMESTAMP__})" ;need CRLF here!
 
 #------------------------------------------------------------------------------------
 
