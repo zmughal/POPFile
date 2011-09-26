@@ -41,7 +41,6 @@ PFIDIAG=test/pfidiag.exe
 APVERCHECK=toolkit/ap-vcheck.exe
 
 PLUGINCHECK=toolkit/plugin-vcheck.exe
-PLUGINMD5=toolkit/extra-plugins.md5
 PLUGINSTATUS=plugin-status.nsh
 
 CUSTOMUIS=UI/pfi_headerbmpr.exe UI/pfi_modern.exe
@@ -64,22 +63,22 @@ ALLNSISLOGS := *.log add-ons/*.log test/*.log toolkit/*.log
 
 all: build
 
-build: plugin-status.nsh $(POPFILE_WINDOWS_ZIP)
+build: $(POPFILE_WINDOWS_ZIP)
 
 $(POPFILE_WINDOWS_ZIP): $(SETUP)
 	rm -f $@
 	$(BUILD_ZIP)
 
 clean:
-	@rm -f $(ALLEXES) $(ALLNSISLOGS) plugin-status.nsh
+	@rm -f $(ALLEXES) $(ALLNSISLOGS)
 
 optional: $(ADDSSL) $(DBICAPTURE) $(ONDEMAND)
 
-$(PLUGINSTATUS): $(PLUGINCHECK) $(PLUGINMD5)
-	@echo ; echo Making $@ ; $(PLUGINCHECK)
+$(PLUGINSTATUS): $(PLUGINCHECK) toolkit/extra-plugins.md5
+	@echo ; echo Making $@ ; $(PLUGINCHECK) ; touch $@
 
 .SUFFIXES:
-%.exe : %.nsi $(SCRIPTLIBS) hdr-common.bmp POPFileIcon/popfile.ico $(CUSTOMUIS) $(PLUGINMD5) ; @$(MAKENSIS)
+%.exe : %.nsi $(SCRIPTLIBS) hdr-common.bmp POPFileIcon/popfile.ico $(CUSTOMUIS) $(PLUGINSTATUS) ; @$(MAKENSIS)
 
 $(SETUP): installer.nsi ; @$(MAKENSIS)
 $(SETUP): $(ENGINE)/*.pl $(ENGINE)/Classifier/*.pm $(ENGINE)/Platform/MSWin32.pm $(ENGINE)/POPFile/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/Services/*.pm $(ENGINE)/Services/IMAP/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/v$(POPFILE_VERSION).change
@@ -100,7 +99,7 @@ $(ADDUSER): special.bmp remove.ico
 # Note: $(DBICAPTURE) is NOT included in releases
 #
 $(DBICAPTURE): $(patsubst %.exe,%.nsi,$(DBICAPTURE))
-$(DBICAPTURE): ioDTL.ini $(PLUGINSTATUS)
+$(DBICAPTURE): ioDTL.ini
 
 $(MONITORCC): $(patsubst %.exe,%.nsi,$(MONITORCC))
 $(MONITORCC): $(PFILANGS)
@@ -112,7 +111,7 @@ $(RUNPOPFILE): languages/English-pfi.nsh
 
 $(RUNSQLITE): $(patsubst %.exe,%.nsi,$(RUNSQLITE))
 
-$(STOP_PF) : stop_popfile.nsi shutdown.ico $(SCRIPTLIBS) $(PLUGINMD5)
+$(STOP_PF) : stop_popfile.nsi shutdown.ico $(SCRIPTLIBS) $(PLUGINSTATUS)
 	@$(MAKENSIS)
 
 # A bug in the NSIS compiler means that some of the "predefines" do not get defined
@@ -122,13 +121,13 @@ $(STOP_PF) : stop_popfile.nsi shutdown.ico $(SCRIPTLIBS) $(PLUGINMD5)
 
 $(DBSTATUS): test/pfidbstatus.nsi $(SCRIPTLIBS)
 $(DBSTATUS): hdr-common.bmp POPFileIcon/popfile.ico
-$(DBSTATUS): $(CUSTOMUIS) $(PLUGINMD5)
+$(DBSTATUS): $(CUSTOMUIS) $(PLUGINSTATUS)
 $(DBSTATUS):
 	@cd $(dir $@) ; echo ; echo Making $@ ; echo ; makensis.exe /V4 /DCTS_INTEGRATED /O$(patsubst %.exe,%.log,$(@F)) $(notdir $<)
 
 $(PFIDIAG): test/pfidiag.nsi $(SCRIPTLIBS)
 $(PFIDIAG): hdr-common.bmp test/pfinfo.ico
-$(PFIDIAG): $(CUSTOMUIS) $(PLUGINMD5)
+$(PFIDIAG): $(CUSTOMUIS) $(PLUGINSTATUS)
 $(PFIDIAG):
 	@cd $(dir $@) ; $(MAKENSIS)
 
@@ -144,10 +143,10 @@ $(PLUGINCHECK): toolkit/plugin-vcheck.nsi $(SCRIPTLIBS) POPFileIcon/popfile.ico
 
 # Note: $(ADDSSL) is NOT included in releases
 #
-$(ADDSSL): add-ons/addssl.nsi $(SCRIPTLIBS) add-ons/hdr-update.bmp add-ons/special-update.bmp POPFileIcon/popfile.ico $(CUSTOMUIS) $(PLUGINMD5) $(PLUGINSTATUS)
+$(ADDSSL): add-ons/addssl.nsi $(SCRIPTLIBS) add-ons/hdr-update.bmp add-ons/special-update.bmp POPFileIcon/popfile.ico $(CUSTOMUIS) $(PLUGINSTATUS)
 	@cd $(dir $@) ; $(MAKENSIS)
 
 # Note: $(ONDEMAND) is NOT included in releases
 #
-$(ONDEMAND): add-ons/OnDemand.nsi add-ons/OnDemand-default.ini add-ons/OnDemand.ico $(SCRIPTLIBS) $(PLUGINMD5) $(PLUGINSTATUS)
+$(ONDEMAND): add-ons/OnDemand.nsi add-ons/OnDemand-default.ini add-ons/OnDemand.ico $(SCRIPTLIBS) $(PLUGINSTATUS)
 	@cd $(dir $@) ; $(MAKENSIS)

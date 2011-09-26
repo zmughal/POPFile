@@ -309,25 +309,12 @@
       ${MB_NL}   ActivePerl version ${C_AP_VERSION} Build ${C_AP_BUILD} will be used to prepare the minimal Perl${MB_NL}${MB_NL}"
 
   ;----------------------------------------------------------------------
-  ; Now check that the compiler is using the correct set of extra plugins
+  ; Now make sure the 'plugin-status.nsh' file is up-to-date before using
+  ; it to check that the compiler has the correct set of extra plugins.
   ;----------------------------------------------------------------------
 
-  !system 'if exist ".\plugin-status.nsh" del ".\plugin-status.nsh"'
   !system '".\toolkit\plugin-vcheck.exe"'
-  !include /NONFATAL ".\plugin-status.nsh"
-
-  ; The above '!system' call can fail on older (slower/Win9x?) systems so if the expected
-  ; output file is not found we try a safer version of the '!system' call. If this call
-  ; also fails then the NSIS compiler will stop with a fatal error.
-
-  !ifndef C_PLUGIN_CHECKSUMS
-    !system 'start /w .\toolkit\plugin-vcheck.exe'
-    !include ".\plugin-status.nsh"
-   !endif
-
-  ; Delete the "include" file after it has been read
-
-  !delfile ".\plugin-status.nsh"
+  !include ".\plugin-status.nsh"
 
   ;----------------------------------------------------------------------------------
   ; Root directory for the Kakasi package.
