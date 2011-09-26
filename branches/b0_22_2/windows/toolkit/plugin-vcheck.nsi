@@ -256,14 +256,14 @@
 
   !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
-          "$\r$\n\
-          $\r$\n***   NSIS COMPILER WARNING:\
-          $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
-          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
-          $\r$\n***\
-          $\r$\n***   The resulting 'installer' program should be tested carefully!\
-          $\r$\n$\r$\n"
+          "$\n\
+          $\n***   NSIS COMPILER WARNING:\
+          $\n***\
+          $\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
+          $\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\n***\
+          $\n***   The resulting 'installer' program should be tested carefully!\
+          $\n$\n"
   !endif
 
   !undef  ${NSIS_VERSION}_found
@@ -272,18 +272,18 @@
   ;--------------------------------------------------------------------------
   ; Symbol used to avoid confusion over where the line breaks occur.
   ;
-  ; ${MB_NL} is used for MessageBox-style 'new line' sequences.
+  ; ${LF}    is used for simple 'line-feed' characters.
   ;
   ; (this constant does not follow the 'C_' naming convention described below)
   ;--------------------------------------------------------------------------
 
-  !define MB_NL   "$\r$\n"
+  !define LF      "$\n"
 
   ;--------------------------------------------------------------------------
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION       "0.2.0"     ; see 'VIProductVersion' below for format details
+  !define C_VERSION       "0.2.1"     ; see 'VIProductVersion' below for format details
   !define C_OUTFILE       "plugin-vcheck.exe"
 
   !define C_RESULTS_FILE  "plugin-status.nsh"
@@ -344,7 +344,7 @@
   !ifdef C_NSIS_LIBRARY_VERSION
     VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
-  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
+  VIAddVersionKey "Build Script"            "${__FILE__}${LF}(${__TIMESTAMP__})"
 
 #------------------------------------------------------------------------------------
 
@@ -385,31 +385,30 @@ Section default
 
   FileOpen ${L_RESULTS_FILE} "$PLUGINSDIR\${C_RESULTS_FILE}" w
 
-  FileWrite ${L_RESULTS_FILE} "!ifndef MB_NL${MB_NL}"
-  FileWrite ${L_RESULTS_FILE} "  !define C_PLUGIN_MB_NL${MB_NL}"
-  FileWrite ${L_RESULTS_FILE} "  !define MB_NL $\"$$"
-  FileWrite ${L_RESULTS_FILE} "\r$$"
-  FileWrite ${L_RESULTS_FILE} "\n$\"${MB_NL}"
-  FileWrite ${L_RESULTS_FILE} "!endif${MB_NL}${MB_NL}"
+  FileWrite ${L_RESULTS_FILE} "!ifndef LF${LF}"
+  FileWrite ${L_RESULTS_FILE} "  !define C_PLUGIN_LF${LF}"
+  FileWrite ${L_RESULTS_FILE} "  !define LF $\"$$"
+  FileWrite ${L_RESULTS_FILE} "\n$\"${LF}"
+  FileWrite ${L_RESULTS_FILE} "!endif${LF}${LF}"
 
   IfFileExists "$EXEDIR\extra-plugins.md5" found_checksums
-  FileWrite ${L_RESULTS_FILE} "!define C_PLUGIN_CHECKSUMS $\"missing$\"${MB_NL}${MB_NL}"
+  FileWrite ${L_RESULTS_FILE} "!define C_PLUGIN_CHECKSUMS $\"missing$\"${LF}${LF}"
 
   StrCpy ${L_RESULT} "$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}${C_SPACER_A}*** Fatal Error ***$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}${C_SPACER_A}*** Fatal Error ***$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}"
   StrCpy ${L_RESULT} "${L_RESULT}${C_SPACER_A}Checksum file ('extra-plugins.md5') is missing!$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}${C_SPACER_A}($EXEDIR\extra-plugins.md5)"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}${C_SPACER_A}($EXEDIR\extra-plugins.md5)"
   Goto print_result
 
 found_checksums:
-  FileWrite ${L_RESULTS_FILE}  "!define C_PLUGIN_CHECKSUMS $\"found$\"${MB_NL}${MB_NL}"
+  FileWrite ${L_RESULTS_FILE}  "!define C_PLUGIN_CHECKSUMS $\"found$\"${LF}${LF}"
 
   StrCpy ${L_MISSING_LIST}    "$$"
-  StrCpy ${L_MISSING_LIST}    "${L_MISSING_LIST}{MB_NL}"
+  StrCpy ${L_MISSING_LIST}    "${L_MISSING_LIST}{LF}"
   StrCpy ${L_INCORRECT_LIST}  "${L_MISSING_LIST}"
 
   SetPluginUnload alwaysoff
@@ -435,7 +434,7 @@ read_next_line:
   IfFileExists "${L_FILEPATH}" get_expected_MD5
   IntOp ${L_MISSING_COUNT} ${L_MISSING_COUNT} + 1
   StrCpy ${L_MISSING_LIST} "${L_MISSING_LIST}$$"
-  StrCpy ${L_MISSING_LIST} "${L_MISSING_LIST}{MB_NL}${C_SPACER_B}${L_PLUGIN_NAME}"
+  StrCpy ${L_MISSING_LIST} "${L_MISSING_LIST}{LF}${C_SPACER_B}${L_PLUGIN_NAME}"
   Goto read_next_line
 
 get_expected_MD5:
@@ -448,7 +447,7 @@ get_expected_MD5:
   StrCmp ${L_EXPECTED_MD5} ${L_TEMP} read_next_line
   IntOp ${L_INCORRECT_COUNT} ${L_INCORRECT_COUNT} + 1
   StrCpy ${L_INCORRECT_LIST} "${L_INCORRECT_LIST}$$"
-  StrCpy ${L_INCORRECT_LIST} "${L_INCORRECT_LIST}{MB_NL}${C_SPACER_B}${L_PLUGIN_NAME}"
+  StrCpy ${L_INCORRECT_LIST} "${L_INCORRECT_LIST}{LF}${C_SPACER_B}${L_PLUGIN_NAME}"
   Goto read_next_line
 
 end_of_file:
@@ -465,10 +464,10 @@ several_missing:
 
 update_missing_text:
   StrCpy ${L_RESULT} "$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}${C_SPACER_A}*** Fatal Error ***$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}${C_SPACER_A}*** Fatal Error ***$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}"
   StrCpy ${L_RESULT} "${L_RESULT}${C_SPACER_A}${L_TEXT}${L_MISSING_LIST}"
 
   IntCmp ${L_INCORRECT_COUNT} 1 add_one_incorrect print_result add_several_incorrect
@@ -482,8 +481,8 @@ add_several_incorrect:
 
 add_incorrect_text:
   StrCpy ${L_RESULT} "${L_RESULT}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}${C_SPACER_A}${L_TEXT}${L_INCORRECT_LIST}"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}${C_SPACER_A}${L_TEXT}${L_INCORRECT_LIST}"
   Goto print_result
 
 none_missing:
@@ -498,27 +497,27 @@ only_several_incorrect:
 
 update_incorrect_text:
   StrCpy ${L_RESULT} "$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}${C_SPACER_A}*** Fatal Error ***$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}${C_SPACER_A}*** Fatal Error ***$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}$$"
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}"
   StrCpy ${L_RESULT} "${L_RESULT}${C_SPACER_A}${L_TEXT}${L_INCORRECT_LIST}"
   Goto print_result
 
 no_problems:
   StrCpy ${L_RESULT} '!echo $\"$$'
-  StrCpy ${L_RESULT} '${L_RESULT}{MB_NL}$$'
-  StrCpy ${L_RESULT} '${L_RESULT}{MB_NL}Extra NSIS plugins all present and correct!$$'
-  StrCpy ${L_RESULT} '${L_RESULT}{MB_NL}$$'
-  StrCpy ${L_RESULT} '${L_RESULT}{MB_NL}$$'
-  StrCpy ${L_RESULT} '${L_RESULT}{MB_NL}$\"'
-  FileWrite ${L_RESULTS_FILE} ${L_RESULT}${MB_NL}
+  StrCpy ${L_RESULT} '${L_RESULT}{LF}$$'
+  StrCpy ${L_RESULT} '${L_RESULT}{LF}Extra NSIS plugins all present and correct!$$'
+  StrCpy ${L_RESULT} '${L_RESULT}{LF}$$'
+  StrCpy ${L_RESULT} '${L_RESULT}{LF}$$'
+  StrCpy ${L_RESULT} '${L_RESULT}{LF}$\"'
+  FileWrite ${L_RESULTS_FILE} ${L_RESULT}${LF}
   Goto print_undefs
 
 print_result:
   StrCpy ${L_RESULT} "${L_RESULT}$$"
-  StrCpy ${L_RESULT} "${L_RESULT}{MB_NL}"
-  FileWrite ${L_RESULTS_FILE}  '!error $\"${L_RESULT}$\"${MB_NL}'
+  StrCpy ${L_RESULT} "${L_RESULT}{LF}"
+  FileWrite ${L_RESULTS_FILE}  '!error $\"${L_RESULT}$\"${LF}'
 
 print_undefs:
   SetPluginUnload manual
@@ -528,10 +527,10 @@ print_undefs:
   md5dll::GetMD5String "dummy"
   Pop ${L_TEMP}
 
-  FileWrite ${L_RESULTS_FILE} "${MB_NL}!ifdef C_PLUGIN_MB_NL${MB_NL}"
-  FileWrite ${L_RESULTS_FILE} "  !undef C_PLUGIN_MB_NL${MB_NL}"
-  FileWrite ${L_RESULTS_FILE} "  !undef MB_NL${MB_NL}"
-  FileWrite ${L_RESULTS_FILE} "!endif${MB_NL}${MB_NL}"
+  FileWrite ${L_RESULTS_FILE} "${LF}!ifdef C_PLUGIN_LF${LF}"
+  FileWrite ${L_RESULTS_FILE} "  !undef C_PLUGIN_LF${LF}"
+  FileWrite ${L_RESULTS_FILE} "  !undef LF${LF}"
+  FileWrite ${L_RESULTS_FILE} "!endif${LF}${LF}"
 
   FileClose ${L_RESULTS_FILE}
 

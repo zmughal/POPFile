@@ -39,14 +39,14 @@
 
   !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
-          "$\r$\n\
-          $\r$\n***   NSIS COMPILER WARNING:\
-          $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
-          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
-          $\r$\n***\
-          $\r$\n***   The resulting 'installer' program should be tested carefully!\
-          $\r$\n$\r$\n"
+          "$\n\
+          $\n***   NSIS COMPILER WARNING:\
+          $\n***\
+          $\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
+          $\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\n***\
+          $\n***   The resulting 'installer' program should be tested carefully!\
+          $\n$\n"
   !endif
 
   !undef  ${NSIS_VERSION}_found
@@ -143,7 +143,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.3.0"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.3.1"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here

@@ -47,14 +47,14 @@
 
   !ifndef ${C_EXPECTED_VERSION}_found
       !warning \
-          "$\r$\n\
-          $\r$\n***   NSIS COMPILER WARNING:\
-          $\r$\n***\
-          $\r$\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
-          $\r$\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
-          $\r$\n***\
-          $\r$\n***   The resulting 'installer' program should be tested carefully!\
-          $\r$\n$\r$\n"
+          "$\n\
+          $\n***   NSIS COMPILER WARNING:\
+          $\n***\
+          $\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
+          $\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\n***\
+          $\n***   The resulting 'installer' program should be tested carefully!\
+          $\n$\n"
   !endif
 
   !undef  ${NSIS_VERSION}_found
@@ -294,7 +294,7 @@
 
   Name                   "POPFile SSL Setup"
 
-  !define C_PFI_VERSION  "0.6.0"
+  !define C_PFI_VERSION  "0.6.1"
 
   ; Mention the wizard's version number in the window title
 
