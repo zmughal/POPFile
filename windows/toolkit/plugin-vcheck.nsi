@@ -6,6 +6,10 @@
 #                       correct versions of the extra (i.e. not shipped with NSIS)
 #                       plugins used by the installer and other NSIS-based programs.
 #
+#                       NOTE:
+#                          The INCLUDE file ('plugin-status.nsh') will be created
+#                          (or updated) in the current working directory.
+#
 # Copyright (c) 2011  John Graham-Cumming
 #
 #   This file is part of POPFile
@@ -283,7 +287,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION       "0.2.2"     ; see 'VIProductVersion' below for format details
+  !define C_VERSION       "0.2.3"     ; see 'VIProductVersion' below for format details
   !define C_OUTFILE       "plugin-vcheck.exe"
 
   !define C_RESULTS_FILE  "plugin-status.nsh"
@@ -539,7 +543,12 @@ print_undefs:
   Call CompareStatusReports
   Pop ${L_RESULT}
   StrCmp ${L_RESULT} "same" exit
-  CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_RESULTS_FILE}" ".\${C_RESULTS_FILE}"
+
+  ; Fully-qualified path names should always be used with the 'CopyFiles' instruction.
+  ; Using relative paths will have unpredictable results!
+
+  GetFullPathName ${L_FILEPATH} "."
+  CopyFiles /SILENT /FILESONLY "$PLUGINSDIR\${C_RESULTS_FILE}" "${L_FILEPATH}\${C_RESULTS_FILE}"
 
 exit:
   Pop ${L_TEXT}
