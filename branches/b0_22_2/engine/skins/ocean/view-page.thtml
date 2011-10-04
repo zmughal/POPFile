@@ -143,7 +143,7 @@
                             </b>
 
                             <select name="reclassify_<TMPL_VAR NAME="View_Index">">
-                                <option selected="selected"></option>
+                                <option value="" selected="selected">&nbsp;</option>
 
                                 <TMPL_LOOP NAME="View_Loop_Buckets">
 
