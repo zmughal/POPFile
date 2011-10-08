@@ -23,7 +23,7 @@ include $(ENGINE)/vars.mak
 
 MAKENSIS_VERSION_STRING:=/DC_POPFILE_MAJOR_VERSION=$(POPFILE_MAJOR_VERSION) /DC_POPFILE_MINOR_VERSION=$(POPFILE_MINOR_VERSION) /DC_POPFILE_REVISION=$(POPFILE_REVISION) /DC_POPFILE_RC=$(RC)
 
-MAKENSIS=echo ; echo Making $@ ; echo ; makensis.exe $(MAKENSIS_VERSION_STRING) /V4 /O$(patsubst %.exe,%.log,$(@F)) $(notdir $<)
+MAKENSIS=echo ; echo Making $@ ; echo ; makensis.exe $(MAKENSIS_VERSION_STRING) /V4 /O$(patsubst %.exe,%.log,$(notdir $@)) $(notdir $<)
 
 BUILD_ZIP=7z a -tzip $(POPFILE_WINDOWS_ZIP) $^
 
@@ -123,7 +123,7 @@ $(DBSTATUS): test/pfidbstatus.nsi $(SCRIPTLIBS)
 $(DBSTATUS): hdr-common.bmp POPFileIcon/popfile.ico
 $(DBSTATUS): $(CUSTOMUIS) $(PLUGINSTATUS)
 $(DBSTATUS):
-	@cd $(dir $@) ; echo ; echo Making $@ ; echo ; makensis.exe /V4 /DCTS_INTEGRATED /O$(patsubst %.exe,%.log,$(@F)) $(notdir $<)
+	@cd $(dir $@) ; echo ; echo Making $@ ; echo ; makensis.exe /V4 /DCTS_INTEGRATED /O$(patsubst %.exe,%.log,$(notdir $@)) $(notdir $<)
 
 $(PFIDIAG): test/pfidiag.nsi $(SCRIPTLIBS)
 $(PFIDIAG): hdr-common.bmp test/pfinfo.ico
