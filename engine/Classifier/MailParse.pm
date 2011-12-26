@@ -2356,15 +2356,17 @@ sub parse_header
             }
         }
 
-        while ( $argument =~ s/<([[:alpha:]0-9\-_\.]+?@([[:alpha:]0-9\-_\.]+?))>// ) {
+        $argument =~ s{<([[:alpha:]0-9\-_\.]+?@([[:alpha:]0-9\-_\.]+?))>}{  # PROFILE BLOCK START
             $self->update_word( $1, 0, ';', '&', $prefix );
             $self->add_url( $2, 0, '@', '[&<]', $prefix );
-        }
+            '';
+        }egsx;                                                              # PROFILE BLOCK STOP
 
-        while ( $argument =~ s/([[:alpha:]0-9\-_\.]+?@([[:alpha:]0-9\-_\.]+))// ) {
+        $argument =~ s{([[:alpha:]0-9\-_\.]+?@([[:alpha:]0-9\-_\.]+))}{     # PROFILE BLOCK START
             $self->update_word( $1, 0, '', '', $prefix );
             $self->add_url( $2, 0, '@', '', $prefix );
-        }
+            '';
+        }egsx;                                                              # PROFILE BLOCK STOP
 
         $self->add_line( $argument, 0, $prefix );
         return ( $mime, $encoding );
