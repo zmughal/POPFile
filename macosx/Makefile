@@ -171,7 +171,7 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 		cp InstallationCheck-SnowLeopard $(RESOURCES)/InstallationCheck; \
 		perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 	else \
-		if test "$$SWVER" == "7"; \
+		if test "$$SWVER" == "7" -o "$$SWVER" == "8"; \
 		then \
 			perl -MEncode -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;Encode::from_to($$_,"shift_jis","utf8");print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 			cp InstallationCheck-Lion $(RESOURCES)/InstallationCheck; \

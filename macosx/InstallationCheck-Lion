@@ -1,7 +1,7 @@
 #!/bin/sh
 
 MAJOR=`sw_vers -productVersion | awk -F "." '{print $2}'`
-if [ "${MAJOR}" = "7" ];
+if [ "${MAJOR}" = "7" -o "${MAJOR}" = "8" ];
 then
     exit 0
 else
