@@ -1270,6 +1270,12 @@ sub db_disconnect__
 {
     my ( $self ) = @_;
 
+    # Check whether that we've already connected to the database
+
+    if ( !defined( $self->{db__} ) || ref $self->{db__} ne 'DBI::db' ) {
+        return;
+    }
+
     $self->{db_get_buckets__}->finish;
     $self->{db_get_wordid__}->finish;
     $self->{db_get_userid__}->finish;
@@ -1302,10 +1308,8 @@ sub db_disconnect__
     undef $self->{db_get_buckets_with_magnets__};
     undef $self->{db_delete_zero_words__};
 
-    if ( defined( $self->{db__} ) ) {
-        $self->{db__}->disconnect;
-        undef $self->{db__};
-    }
+    $self->{db__}->disconnect;
+    undef $self->{db__};
 }
 
 #----------------------------------------------------------------------------

@@ -1132,4 +1132,8 @@ $b->stop();
 unlink 'temp.tmp';
 unlink 'temp2.tmp';
 
+# Make sure that re-stop the module does not cause an error
+
+$b->stop();
+
 1;

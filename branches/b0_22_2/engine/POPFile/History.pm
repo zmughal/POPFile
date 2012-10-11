@@ -63,7 +63,7 @@ sub new
     # rows and a total row count.  These quadruples are implemented
     # as a sub-hash with keys query, count, cache, fields
 
-    $self->{queries__} = ();
+    $self->{queries__} = {};
 
     $self->{firsttime__} = 1;
 
@@ -933,6 +933,8 @@ sub start_query
 sub stop_query
 {
     my ( $self, $id ) = @_;
+
+    return if ( !defined( $id ) || !exists( $self->{queries__}{$id} ) );
 
     # If the cache size hasn't grown to the row
     # count then we didn't fetch everything and so
