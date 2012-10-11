@@ -257,10 +257,11 @@ sub live_check_
         my $oldpid = $self->get_pid_();
         my $wait_time = $self->config_( 'pidcheck_interval' ) * 2;
 
-        my $error = "\n\nA copy of POPFile appears to be running.\n Attempting to signal the previous copy.\n Waiting $wait_time seconds for a reply.\n";
+        my $error = "\n\n A copy of POPFile appears to be running.\n Attempting to signal the previous copy.\n Waiting $wait_time seconds for a reply.\n";
 
         $self->delete_pid_();
 
+        flush STDOUT;
         print STDERR $error;
 
         select( undef, undef, undef, $wait_time );

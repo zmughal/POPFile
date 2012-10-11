@@ -696,11 +696,12 @@ sub CORE_initialize
                  $mod->forker(    $self->{forker__} );
                  $mod->setchildexit( $self->{childexit__} );
                  $mod->pipeready( $self->{pipeready__} );
-	    }
+            }
         }
         print '} ' if $self->{debug__};
     }
     print "\n" if $self->{debug__};
+    flush STDOUT;
 }
 
 #----------------------------------------------------------------------------
