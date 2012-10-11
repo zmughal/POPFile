@@ -161,6 +161,9 @@ sub start
     $self->{pid_file__} = $self->get_user_path( $self->config_( 'piddir' ) . 'popfile.pid', 0 );
 
     if (defined($self->live_check_())) {
+        # Failed to start
+
+        $self->{started__} = 0;
         return 0;
     }
 
@@ -213,6 +216,8 @@ sub service
 sub stop
 {
     my ( $self ) = @_;
+
+    return if ( $self->{started__} == 0 );
 
     $self->save_configuration();
 
