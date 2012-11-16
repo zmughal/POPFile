@@ -10,7 +10,7 @@
 #                          The INCLUDE file ('plugin-status.nsh') will be created
 #                          (or updated) in the current working directory.
 #
-# Copyright (c) 2011  John Graham-Cumming
+# Copyright (c) 2011-2012 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -194,7 +194,7 @@
   ;--------------------------------------------------------------------------
   ; This plugin contains basic service functions like start, stop the service
   ; or checking the service status. It also contains advanced service functions
-  ; for example setting the service description, changed the logon account,
+  ; for example setting the service description, changing the logon account,
   ; granting or removing the service logon privilege.
   ;
   ; The 'NSIS Wiki' page for the 'SimpleSC' plugin (description and download
@@ -244,17 +244,17 @@
   ; Lines in 'extra-plugins.md5' which contain MD5 sums are assumed to be
   ; in this format:
   ;
-  ; (a) positions 1 to 32 contain a 32 character hexadecimal number (line starts in column 1)
+  ; (a) columns 1 to 32 contain a 32 character hexadecimal number (line starts in column 1)
   ; (b) column 33 is a space character (' ')
   ; (c) column 34 is the text/binary flag (' ' = text, '*' = binary)
   ; (d) column 35 is the first character of the filename (filename terminates with end-of-line)
   ;--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.45" compiler,
-  ; released 6 June 2009. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.46" compiler,
+  ; released 6 December 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.46-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.45"
+  !define C_EXPECTED_VERSION  "v2.46"
 
   !define ${NSIS_VERSION}_found
 
@@ -273,6 +273,32 @@
   !undef  ${NSIS_VERSION}_found
   !undef  C_EXPECTED_VERSION
 
+  ; The POPFile installer and some of the NSIS-based utilities require some
+  ; NSIS plugins which are not included in the NSIS compiler package. This
+  ; utility uses the MD5 plugin to check that appropriate versions of these
+  ; extra plugins exist - but the MD5 plugin is one of these extra plugins!
+  ;
+  ; If the MD5 plugin is missing, display a suitable error message.
+
+  !tempfile FILE
+  !system 'dir /b "${NSISDIR}\plugins\*.dll" > "${FILE}"'
+  !searchparse /ignorecase /noerrors /file "${FILE}" "md5dll." STATUS
+  !delfile "${FILE}"
+  !undef FILE
+  !define ${STATUS}_FOUND
+  !ifndef DLL_FOUND
+      !error \
+          "$\n\
+          $\n***\
+          $\n***   Fatal error: An essential NSIS plugin is MISSING\
+          $\n***\
+          $\n***   MD5 plugin is not in the '${NSISDIR}\plugins' folder!\
+          $\n***\
+          $\n$\n"
+  !endif
+  !undef DLL_FOUND
+  !undef STATUS
+
   ;--------------------------------------------------------------------------
   ; Symbol used to avoid confusion over where the line breaks occur.
   ;
@@ -284,10 +310,10 @@
   !define LF      "$\n"
 
   ;--------------------------------------------------------------------------
-  ; POPFile constants have been given names beginning with 'C_' (eg C_README)
+  ; POPFile constants have names beginning with 'C_' (e.g. C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION       "0.2.3"     ; see 'VIProductVersion' below for format details
+  !define C_VERSION       "0.3.0"     ; see 'VIProductVersion' below for format details
   !define C_OUTFILE       "plugin-vcheck.exe"
 
   !define C_RESULTS_FILE  "plugin-status.nsh"
@@ -335,7 +361,7 @@
   VIAddVersionKey "CompanyName"             "The POPFile Project"
   VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of \
                                              John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Used when compiling the POPFile installer"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
