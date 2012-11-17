@@ -10,7 +10,7 @@
 #                    Capture utility (if it is available) whenever the 'windows-console'
 #                    mode is selected in 'popfile.cfg'.
 #
-# Copyright (c) 2004-2011 John Graham-Cumming
+# Copyright (c) 2004-2012 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -28,11 +28,11 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.45" compiler,
-  ; released 6 June 2009. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.46" compiler,
+  ; released 6 December 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.46-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.45"
+  !define C_EXPECTED_VERSION  "v2.46"
 
   !define ${NSIS_VERSION}_found
 
@@ -56,7 +56,7 @@
   ; (The plugin status is _always_ checked when installer.nsi is compiled)
   ;--------------------------------------------------------------------------
 
-  !include /NONFATAL "plugin-status.nsh"
+  !include /NONFATAL ".\plugin-status.nsh"
 
 #--------------------------------------------------------------------------
 # Optional run-time command-line switches (used by 'runpopfile.exe')
@@ -126,7 +126,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_PFI_VERSION   "0.4.1"
+  !define C_PFI_VERSION   "0.4.2"
 
   !define C_OUTFILE       "runpopfile.exe"
 
@@ -183,7 +183,7 @@
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
   VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "Enhanced front-end for POPFile starter program"
   VIAddVersionKey "FileVersion"             "${C_PFI_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"

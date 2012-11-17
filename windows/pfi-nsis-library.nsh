@@ -24,7 +24,7 @@
 #                      Pop $R0
 #--------------------------------------------------------------------------
 
-  !define C_NSIS_LIBRARY_VERSION     "0.2.3"
+  !define C_NSIS_LIBRARY_VERSION     "0.2.4"
 
   ;----------------------------------------------
   ; Use the following standard NSIS header files:
@@ -32,6 +32,7 @@
 
   !include  FileFunc.nsh
   !include  TextFunc.nsh
+  !include  WinVer.nsh
 
 #=============================================================================================
 #
@@ -279,19 +280,15 @@
 
 !macro NSIS_IsNT UN
   Function ${UN}NSIS_IsNT
-    Push $0
-    ReadRegStr $0 HKLM \
-      "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
-    StrCmp $0 "" 0 IsNT_yes
-    ; we are not NT.
-    Pop $0
-    Push 0
-    Return
 
-  IsNT_yes:
-      ; NT!!!
-      Pop $0
-      Push 1
+  Push $0
+  ${If} ${IsNT}
+    StrCpy $0 1
+  ${Else}
+    StrCpy $0 0
+  ${EndIf}
+  Exch $0
+
   FunctionEnd
 !macroend
 

@@ -4,7 +4,7 @@
 #                 to assist in solving problems with POPFile installations
 #                 (using v0.21.0 or a later installer) on Windows systems.
 #
-# Copyright (c) 2004-2011  John Graham-Cumming
+# Copyright (c) 2004-2012  John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -23,11 +23,11 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.45" compiler,
-  ; released 6 June 2009. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.46" compiler,
+  ; released 6 December 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.46-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.45"
+  !define C_EXPECTED_VERSION  "v2.46"
 
   !define ${NSIS_VERSION}_found
 
@@ -103,7 +103,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.4.1"
+  !define C_VERSION   "0.4.2"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -157,7 +157,7 @@
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
   VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Diagnostic Utility"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"

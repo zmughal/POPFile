@@ -5,7 +5,7 @@
 #             buckets for use with a "clean" install of POPFile. Three built-in default values
 #             can be overridden by creating suitable "!define" statements in 'adduser.nsi'.
 #
-# Copyright (c) 2003-2007 John Graham-Cumming
+# Copyright (c) 2003-2012 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -21,11 +21,6 @@
 #   You should have received a copy of the GNU General Public License
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#
-#----------------------------------------------------------------------------------------------
-#
-# This version of the script has been tested with the "NSIS 2" compiler (final),
-# released 7 February 2004, with no "official" NSIS patches/CVS updates applied.
 #
 #----------------------------------------------------------------------------------------------
 

@@ -4,7 +4,7 @@
 #                   POPFile Windows installer when a flat-file or BerkeleyDB corpus
 #                   needs to be converted to the new SQL database format.
 #
-# Copyright (c) 2004-2011 John Graham-Cumming
+# Copyright (c) 2004-2012 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -23,11 +23,11 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.45" compiler,
-  ; released 6 June 2009. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.46" compiler,
+  ; released 6 December 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.46-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.45"
+  !define C_EXPECTED_VERSION  "v2.46"
 
   !define ${NSIS_VERSION}_found
 
@@ -51,7 +51,7 @@
   ; (The plugin status is _always_ checked when installer.nsi is compiled)
   ;--------------------------------------------------------------------------
 
-  !include /NONFATAL "plugin-status.nsh"
+  !include /NONFATAL ".\plugin-status.nsh"
 
 #--------------------------------------------------------------------------
 # Run-time command-line switches (used by 'monitorcc.exe')
@@ -120,7 +120,7 @@
 
   Name                   "${C_PFI_PRODUCT}"
 
-  !define C_PFI_VERSION  "0.4.1"
+  !define C_PFI_VERSION  "0.4.2"
 
   !define C_OUTFILE      "monitorcc.exe"
 

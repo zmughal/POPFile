@@ -5,7 +5,7 @@
 #                    DBI trace feature which generates extra console messages that
 #                    may assist in debugging database problems.
 #
-# Copyright (c) 2008-2011  John Graham-Cumming
+# Copyright (c) 2008-2012 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -24,11 +24,11 @@
 #
 #--------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.45" compiler,
-  ; released 6 June 2009. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.46" compiler,
+  ; released 6 December 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.46-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.45"
+  !define C_EXPECTED_VERSION  "v2.46"
 
   !define ${NSIS_VERSION}_found
 
@@ -39,7 +39,7 @@
           $\n***\
           $\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
-          $\\n***\
+          $\n***\
           $\n***   The resulting 'installer' program should be tested carefully!\
           $\n$\n"
   !endif
@@ -52,7 +52,7 @@
   ; (The plugin status is _always_ checked when installer.nsi is compiled)
   ;--------------------------------------------------------------------------
 
-  !include /NONFATAL "plugin-status.nsh"
+  !include /NONFATAL ".\plugin-status.nsh"
 
   ; Although this utility was originally created for use with the 1.0.0 release it is
   ; compatible with many earlier installations created by the installer, though in some cases a
@@ -95,7 +95,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.2.1"
+  !define C_VERSION             "0.2.2"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -145,7 +145,7 @@
   VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
   VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR}  John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI DBI Trace Capture Utility (levels 0 to 15)"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
