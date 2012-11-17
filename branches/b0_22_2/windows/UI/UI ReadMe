@@ -2,7 +2,7 @@
 NOTES ON HOW THE CUSTOMISED UI FILES FOR THE POPFILE INSTALLER WERE CREATED
 =============================================================================
 
-Last updated: 8 June 2009 (10:59 GMT)
+Last updated: 17 November 2012 (16:43 GMT)
 
 =============================================================================
 INTRODUCTION
@@ -21,7 +21,7 @@ To solve this problem, the following customised UI files have been created:
 (3) pfi_headerbmpr.exe based upon ${NSISDIR}\Contrib\UIs\modern_headerbmpr.exe
 
 The current versions of these customised UI files are based upon the UI files
-provided in the NSIS 2.45 package released on 6 June 2009.
+provided in the NSIS 2.46 package released on 6 December 2009.
 
 Future updates to the NSIS compiler may not be compatible with these customised
 UI files. These notes describe in detail how these files were created, to make
@@ -49,8 +49,8 @@ buttons at the foot of the page have been increased in width.
 
 Details:
 
-'pfi_modern.exe' [changeset:3520] created by modifying 'modern.exe' from
-the NSIS 2.45 release (dated 06-Jun-2009), as follows:
+'pfi_modern.exe' created by modifying the 'modern.exe' file (dated 05-Dec-2009)
+from the NSIS 2.46 package as follows [changeset:3839]:
 
 [1] Dialog 111, Control 103 (the icon image)
 
@@ -122,8 +122,8 @@ buttons at the foot of the page have been increased in width.
 'PFI_HEADERBMP.EXE' CHANGES (bitmap appears at the left of the header area)
 =============================================================================
 
-'pfi_headerbmp.exe' [changeset:3520] created by modifying 'modern_headerbmp.exe'
-from the NSIS 2.45 release (dated 06-Jun-2009), as follows:
+'pfi_headerbmp.exe' created by modifying the 'modern_headerbmp.exe' file
+(dated 05-Dec-2009) from the NSIS 2.46 package as follows [changeset:3839]:
 
 [1] Dialog 105, Control 1037 (the TITLE text area)
 
@@ -171,8 +171,8 @@ from the NSIS 2.45 release (dated 06-Jun-2009), as follows:
 'PFI_HEADERBMPR.EXE' CHANGES (bitmap appears at the right of the header area)
 =============================================================================
 
-'pfi_headerbmpr.exe' [changeset:3520] created by modifying 'modern_headerbmpr.exe'
-from the NSIS 2.45 release (dated 06-Jun-2009), as follows:
+'pfi_headerbmpr.exe' created by modifying the 'modern_headerbmpr.exe' file
+(dated 05-Dec-2009) from the NSIS 2.46 package as follows [changeset:3839]:
 
 [1] Dialog 105, Control 1037 (the TITLE text area)
 
