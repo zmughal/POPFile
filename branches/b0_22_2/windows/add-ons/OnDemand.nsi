@@ -9,7 +9,7 @@
 #                   and starting the email client (to avoid problems if the email client looks
 #                   for new mail before POPFile is ready to accept commands).
 #
-# Copyright (c) 2005-2011 John Graham-Cumming
+# Copyright (c) 2005-2012 John Graham-Cumming
 #
 #   This file creates a utility for use with POPFile.
 #
@@ -27,11 +27,11 @@
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #-------------------------------------------------------------------------------------------
 
-  ; This version of the script has been tested with the "NSIS v2.45" compiler,
-  ; released 6 June 2009. This particular compiler can be downloaded from
-  ; http://prdownloads.sourceforge.net/nsis/nsis-2.45-setup.exe?download
+  ; This version of the script has been tested with the "NSIS v2.46" compiler,
+  ; released 6 December 2009. This particular compiler can be downloaded from
+  ; http://prdownloads.sourceforge.net/nsis/nsis-2.46-setup.exe?download
 
-  !define C_EXPECTED_VERSION  "v2.45"
+  !define C_EXPECTED_VERSION  "v2.46"
 
   !define ${NSIS_VERSION}_found
 
@@ -127,7 +127,7 @@
 
   OutFile ${C_OUTFILE}
 
-  !define C_VERSION   "0.4.1"
+  !define C_VERSION   "0.4.2"
 
   ; Specify the icon file for the utility
 
