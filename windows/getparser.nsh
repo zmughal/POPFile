@@ -19,7 +19,7 @@
 #                   INCLUDE file contains macro-based SECTION and FUNCTION definitions
 #                   to make future maintenance easier.
 #
-# Copyright (c) 2007-2011 John Graham-Cumming
+# Copyright (c) 2007-2012 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -163,7 +163,7 @@
         ;--------------------------------------------------------------------------
 
         SetOutPath "$G_MPLIBDIR"
-        File "${C_PERL_DIR}\lib\base.pm"
+        File "${C_PERL_DIR}\site\lib\base.pm"
         File "${C_PERL_DIR}\lib\bytes.pm"
         File "${C_PERL_DIR}\lib\bytes_heavy.pl"
         File "${C_PERL_DIR}\site\lib\Encode.pm"

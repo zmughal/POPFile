@@ -9,7 +9,7 @@
 #                                   required and these are installed at the same time as the
 #                                   optional POPFile component.
 #
-# Copyright (c) 2005-2011 John Graham-Cumming
+# Copyright (c) 2005-2012 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -60,8 +60,8 @@
   File "${C_PERL_DIR}\bin\perl58.dll"
 
   SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\lib\AutoLoader.pm"
-  File "${C_PERL_DIR}\lib\Carp.pm"
+  File "${C_PERL_DIR}\site\lib\AutoLoader.pm"
+  File "${C_PERL_DIR}\site\lib\Carp.pm"
   File "${C_PERL_DIR}\lib\Config.pm"
   File "${C_PERL_DIR}\lib\Config_heavy.pl"
   File "${C_PERL_DIR}\site\lib\constant.pm"
@@ -84,9 +84,9 @@
         SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\integer.pm"
   File "${C_PERL_DIR}\lib\IO.pm"
-  File "${C_PERL_DIR}\lib\lib.pm"
+  File "${C_PERL_DIR}\site\lib\lib.pm"
   File "${C_PERL_DIR}\lib\locale.pm"
-  File "${C_PERL_DIR}\lib\LWP.pm"
+  File "${C_PERL_DIR}\site\lib\LWP.pm"
   File "${C_PERL_DIR}\lib\POSIX.pm"
         SetOutPath "$G_MPLIBDIR\auto\POSIX"
         File "${C_PERL_DIR}\lib\auto\POSIX\POSIX.dll"
@@ -95,9 +95,9 @@
         SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\re.pm"
   File "${C_PERL_DIR}\lib\SelectSaver.pm"
-  File "${C_PERL_DIR}\lib\Socket.pm"
+  File "${C_PERL_DIR}\site\lib\Socket.pm"
         SetOutPath "$G_MPLIBDIR\auto\Socket"
-        File "${C_PERL_DIR}\lib\auto\Socket\Socket.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Socket\Socket.dll"
         SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\strict.pm"
   File "${C_PERL_DIR}\lib\Symbol.pm"
@@ -114,16 +114,16 @@
 
   SetOutPath "$G_MPLIBDIR\Carp"
   File "${C_PERL_DIR}\lib\Carp\Clan.pm"
-  File "${C_PERL_DIR}\lib\Carp\Heavy.pm"
+  File "${C_PERL_DIR}\site\lib\Carp\Heavy.pm"
 
   SetOutPath "$G_MPLIBDIR\Date"
   File "${C_PERL_DIR}\site\lib\Date\Format.pm"
   File "${C_PERL_DIR}\site\lib\Date\Parse.pm"
 
   SetOutPath "$G_MPLIBDIR\Digest"
-  File "${C_PERL_DIR}\lib\Digest\MD5.pm"
+  File "${C_PERL_DIR}\site\lib\Digest\MD5.pm"
         SetOutPath "$G_MPLIBDIR\auto\Digest\MD5"
-        File "${C_PERL_DIR}\lib\auto\Digest\MD5\MD5.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Digest\MD5\MD5.dll"
 
   SetOutPath "$G_MPLIBDIR\Exporter"
   File "${C_PERL_DIR}\lib\Exporter\Heavy.pm"
@@ -145,19 +145,19 @@
 
   SetOutPath "$G_MPLIBDIR\HTML"
   File "${C_PERL_DIR}\lib\HTML\Tagset.pm"
-  File "${C_PERL_DIR}\lib\HTML\Template.pm"
+  File "${C_PERL_DIR}\site\lib\HTML\Template.pm"
 
   SetOutPath "$G_MPLIBDIR\HTTP"
-  File "${C_PERL_DIR}\lib\HTTP\Config.pm"
-  File "${C_PERL_DIR}\lib\HTTP\Date.pm"
-  File "${C_PERL_DIR}\lib\HTTP\Headers.pm"
-  File "${C_PERL_DIR}\lib\HTTP\Message.pm"
-  File "${C_PERL_DIR}\lib\HTTP\Request.pm"
-  File "${C_PERL_DIR}\lib\HTTP\Response.pm"
-  File "${C_PERL_DIR}\lib\HTTP\Status.pm"
+  File "${C_PERL_DIR}\site\lib\HTTP\Config.pm"
+  File "${C_PERL_DIR}\site\lib\HTTP\Date.pm"
+  File "${C_PERL_DIR}\site\lib\HTTP\Headers.pm"
+  File "${C_PERL_DIR}\site\lib\HTTP\Message.pm"
+  File "${C_PERL_DIR}\site\lib\HTTP\Request.pm"
+  File "${C_PERL_DIR}\site\lib\HTTP\Response.pm"
+  File "${C_PERL_DIR}\site\lib\HTTP\Status.pm"
 
   SetOutPath "$G_MPLIBDIR\HTTP\Request"
-  File "${C_PERL_DIR}\lib\HTTP\Request\Common.pm"
+  File "${C_PERL_DIR}\site\lib\HTTP\Request\Common.pm"
 
   SetOutPath "$G_MPLIBDIR\IO"
   File "${C_PERL_DIR}\lib\IO\Dir.pm"
@@ -167,8 +167,8 @@
   File "${C_PERL_DIR}\lib\IO\Poll.pm"
   File "${C_PERL_DIR}\lib\IO\Seekable.pm"
   File "${C_PERL_DIR}\lib\IO\Select.pm"
-  File "${C_PERL_DIR}\site\lib\IO\SessionData.pm"
-  File "${C_PERL_DIR}\site\lib\IO\SessionSet.pm"
+  File "${C_PERL_DIR}\lib\IO\SessionData.pm"
+  File "${C_PERL_DIR}\lib\IO\SessionSet.pm"
   File "${C_PERL_DIR}\lib\IO\Socket.pm"
   File "${C_PERL_DIR}\lib\IO\String.pm"
   File "${C_PERL_DIR}\lib\IO\Zlib.pm"
@@ -180,18 +180,18 @@
   File "${C_PERL_DIR}\lib\IO\Socket\UNIX.pm"
 
   SetOutPath "$G_MPLIBDIR\List"
-  File "${C_PERL_DIR}\lib\List\Util.pm"
+  File "${C_PERL_DIR}\site\lib\List\Util.pm"
         SetOutPath "$G_MPLIBDIR\auto\List\Util"
-        File "${C_PERL_DIR}\lib\auto\List\Util\Util.dll"
+        File "${C_PERL_DIR}\site\lib\auto\List\Util\Util.dll"
 
   SetOutPath "$G_MPLIBDIR\LWP"
-  File "${C_PERL_DIR}\lib\LWP\MemberMixin.pm"
-  File "${C_PERL_DIR}\lib\LWP\Protocol.pm"
-  File "${C_PERL_DIR}\lib\LWP\Simple.pm"
-  File "${C_PERL_DIR}\lib\LWP\UserAgent.pm"
+  File "${C_PERL_DIR}\site\lib\LWP\MemberMixin.pm"
+  File "${C_PERL_DIR}\site\lib\LWP\Protocol.pm"
+  File "${C_PERL_DIR}\site\lib\LWP\Simple.pm"
+  File "${C_PERL_DIR}\site\lib\LWP\UserAgent.pm"
 
   SetOutPath "$G_MPLIBDIR\LWP\Protocol"
-  File "${C_PERL_DIR}\lib\LWP\Protocol\http.pm"
+  File "${C_PERL_DIR}\site\lib\LWP\Protocol\http.pm"
 
   SetOutPath "$G_MPLIBDIR\MIME"
   File "${C_PERL_DIR}\lib\MIME\Base64.pm"
@@ -200,13 +200,13 @@
         File "${C_PERL_DIR}\lib\auto\MIME\Base64\Base64.dll"
 
   SetOutPath "$G_MPLIBDIR\Net"
-  File "${C_PERL_DIR}\lib\Net\HTTP.pm"
+  File "${C_PERL_DIR}\site\lib\Net\HTTP.pm"
 
   SetOutPath "$G_MPLIBDIR\Net\HTTP"
-  File "${C_PERL_DIR}\lib\Net\HTTP\Methods.pm"
+  File "${C_PERL_DIR}\site\lib\Net\HTTP\Methods.pm"
 
   SetOutPath "$G_MPLIBDIR\Scalar"
-  File "${C_PERL_DIR}\lib\Scalar\Util.pm"
+  File "${C_PERL_DIR}\site\lib\Scalar\Util.pm"
 
   SetOutPath "$G_MPLIBDIR\Sys"
   File "${C_PERL_DIR}\lib\Sys\Hostname.pm"
@@ -284,14 +284,14 @@
   ; Install Perl modules and library files for SQLite support
 
   SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\lib\base.pm"
+  File "${C_PERL_DIR}\site\lib\base.pm"
   File "${C_PERL_DIR}\lib\overload.pm"
-  File "${C_PERL_DIR}\lib\DBI.pm"
+  File "${C_PERL_DIR}\site\lib\DBI.pm"
 
   ; Required in order to use any version of SQLite
 
   SetOutPath "$G_MPLIBDIR\auto\DBI"
-  File "${C_PERL_DIR}\lib\auto\DBI\DBI.dll"
+  File "${C_PERL_DIR}\site\lib\auto\DBI\DBI.dll"
 
   ; POPFile 1.1.0 was the first version of POPFile to work with SQLite 3.x libraries.
   ; SQLite databases built using SQLite 3.x are incompatible with those built using
@@ -299,11 +299,11 @@
   ; order to allow old POPFile databases to be upgraded to the new SQLite 3.x format.
 
   SetOutPath "$G_MPLIBDIR\DBD"
-  File "${C_PERL_DIR}\lib\DBD\SQLite.pm"
+  File "${C_PERL_DIR}\site\lib\DBD\SQLite.pm"
   File "${C_PERL_DIR}\site\lib\DBD\SQLite2.pm"
 
   SetOutPath "$G_MPLIBDIR\auto\DBD\SQLite"
-  File "${C_PERL_DIR}\lib\auto\DBD\SQLite\SQLite.dll"
+  File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite\SQLite.dll"
 
   SetOutPath "$G_MPLIBDIR\auto\DBD\SQLite2"
   File "${C_PERL_DIR}\site\lib\auto\DBD\SQLite2\SQLite2.dll"
