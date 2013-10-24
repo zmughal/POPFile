@@ -38,5 +38,5 @@ if POPFILE_USER is not equal to "" then
 
     -- Run POPFile from the chosen data folder
 
-    do shell script "export POPFILE_ROOT=" & POPFILE_ROOT & "; export POPFILE_USER=" & POPFILE_USER & "; perl -I" & POPFILE_ROOT & "/lib " & POPFILE_ROOT & "/popfile.pl > " & POPFILE_USER & "/console.log 2>&1 &"
+    do shell script "export VERSIONER_PERL_VERSION=5.12; export POPFILE_ROOT=" & POPFILE_ROOT & "; export POPFILE_USER=" & POPFILE_USER & "; perl -I" & POPFILE_ROOT & "/lib " & POPFILE_ROOT & "/popfile.pl > " & POPFILE_USER & "/console.log 2>&1 &"
 end if
