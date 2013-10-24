@@ -1,8 +1,8 @@
-About the POPFile installer for Mac OS X 10.7 (Lion) and 10.8 (Maountain Lion)
+About the POPFile installer for Mac OS X 10.7 (Lion), 10.8 (Maountain Lion) and 10.9 (Mavericks)
 
 ***NOTE***
 
-  This is the installer package of POPFile for Mac OS X 10.7 (Lion) and 10.8 (Mountain Lion).
+  This is the installer package of POPFile for Mac OS X 10.7 (Lion), 10.8 (Mountain Lion) and 10.9 (Mavericks).
   If you are using Mac OS X 10.6 or earlier, please download the Snow Leopard or earlier version from here:
 
   http://getpopfile.org/download
