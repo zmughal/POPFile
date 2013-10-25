@@ -3192,21 +3192,18 @@ sub classify_and_modify
         # if we're saving (not nosave) and not echoing, we can safely
         # unload this into the temp file
 
-        if (open FLUSH, ">$msg_file.flush") {
-            binmode FLUSH;
+        # Use variable as a file handle
 
-            # TODO: Do this in a faster way (without flushing to one
-            # file then copying to another) (perhaps a select on $mail
-            # to predict if there is flushable data)
+        my $extra;
+        if (open FLUSH, '>', \$extra) {
+            binmode FLUSH;
 
             $self->flush_extra_( $mail, \*FLUSH, 0 );
             close FLUSH;
 
             # append any data we got to the actual temp file
 
-            if ( ( (-s "$msg_file.flush") > 0 ) &&        # PROFILE BLOCK START
-                   ( open FLUSH, "<$msg_file.flush" ) ) { # PROFILE BLOCK STOP
-                binmode FLUSH;
+            if ( defined $extra && length $extra > 0 ) {
                 if ( open TEMP, ">>$msg_file" ) {
                     binmode TEMP;
 
@@ -3216,16 +3213,14 @@ sub classify_and_modify
 
                     print TEMP ".$crlf";
 
-                    print TEMP $_ while (<FLUSH>);
+                    print TEMP $extra;
 
                     # NOTE: The last line flushed MAY be a CRLF.CRLF,
                     # which isn't actually part of the message body
 
                     close TEMP;
                 }
-                close FLUSH;
             }
-            unlink("$msg_file.flush");
         }
     } else {
 
