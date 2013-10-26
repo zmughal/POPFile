@@ -384,6 +384,11 @@ sub CORE_die
         $self->{components__}{core}{logger}->debug( 0, "Perl fatal error : @message" );
     }
 
+    my $i = 0;
+    while ( my @rv = caller($i++) ) {
+        $self->{components__}{core}{logger}->debug( 0, "  called from @rv" );
+    }
+
     # Try to stop safely
 
     $self->CORE_stop( );
