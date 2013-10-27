@@ -153,5 +153,5 @@ $(POPFILE_VERSION_FILE): vars.mak
 .PHONY: packing popfile.pck
 packing: popfile.pck
 
-popfile.pck: popfile.pl bayes.pl pipe.pl insert.pl Classifier/*.pm POPFile/*.pm Proxy/*.pm Services/*.pm UI/*.pm
+popfile.pck: popfile.pl bayes.pl pipe.pl insert.pl Classifier/*.pm Platform/*.pm POPFile/*.pm Proxy/*.pm Services/*.pm UI/*.pm
 	@perl make_packing_list.pl $@ $^
