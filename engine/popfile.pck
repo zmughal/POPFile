@@ -20,10 +20,12 @@ REQUIRED	0.0.0	IO::Socket
 REQUIRED	0.0.0	IO::Socket::INET
 OPTIONAL-SSL Connection Support	0.0.0	IO::Socket::SSL
 OPTIONAL-Socks Proxy Support	0.0.0	IO::Socket::Socks
+REQUIRED	0.0.0	LWP::UserAgent
 REQUIRED	0.0.0	MIME::Base64
 REQUIRED	0.0.0	MIME::QuotedPrint
 OPTIONAL-Japanese Language Support	0.0.0	MeCab
 REQUIRED	0.0.0	POSIX
 REQUIRED	0.0.0	Sys::Hostname
 OPTIONAL-Japanese Language Support	0.0.0	Text::Kakasi
+REQUIRED	0.0.0	Win32::GUI
 OPTIONAL-XML-RPC Server Support	0.0.0	XMLRPC::Transport::HTTP

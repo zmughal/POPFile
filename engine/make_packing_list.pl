@@ -37,15 +37,17 @@ my %modules;
 # The explanations for optional modules
 
 my $japanese = 'Japanese Language Support';
-my %explain = ( 'Encode' => $japanese,
-                'Encode::Guess' => $japanese,
-                'BerkeleyDB' => 'Upgrades from v0.20.x',
-                'DBD::SQLite' => 'SQLite3 backend',
-                'File::Glob::Windows' => "$japanese (Windows only)",
-                'IO::Socket::SSL' => 'SSL Connection Support',
-                'IO::Socket::Socks' => 'Socks Proxy Support',
-                'MeCab' => $japanese,
-                'Text::Kakasi' => $japanese,
+my %explain = ( 'Encode'                  => $japanese,
+                'Encode::Guess'           => $japanese,
+                'BerkeleyDB'              => 'Upgrades from v0.20.x',
+                'DBD::SQLite'             => 'SQLite3 backend',
+                'File::Glob::Windows'     => "$japanese (Windows only)",
+                'IO::Socket::SSL'         => 'SSL Connection Support',
+                'IO::Socket::Socks'       => 'Socks Proxy Support',
+                'LWP::UserAgent'          => 'Windows Tray icon support',
+                'Win32::GUI'              => 'Windows Tray icon support',
+                'MeCab'                   => $japanese,
+                'Text::Kakasi'            => $japanese,
                 'XMLRPC::Transport::HTTP' => 'XML-RPC Server Support' );
 
 # ARGV should contain the name of the packing list to generate
