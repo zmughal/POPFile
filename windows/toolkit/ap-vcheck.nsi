@@ -8,7 +8,7 @@
 #                   at compile-time to ensure that the installer is built using a suitable
 #                   version of ActivePerl.
 #
-# Copyright (c) 2007-2012 John Graham-Cumming
+# Copyright (c) 2007-2013 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -32,6 +32,9 @@
 # AP-VCHECK Perl installation path
 #
 # where "Perl installation path" is the value defined as ${C_PERL_DIR} in 'installer.nsi'
+#
+# The utility reads the version information from perl58.dll, perl510.dll, perl512.dll,
+# perl514.dll, perl516.dll or perl518.dll to determine the ActivePerl version number.
 #
 #-------------------------------------------------------------------------------------------
 
@@ -72,7 +75,7 @@
   ; POPFile constants have been given names beginning with 'C_' (eg C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.0.8"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.1.0"     ; see 'VIProductVersion' comment below for format details
   !define C_OUTFILE   "ap-vcheck.exe"
 
   Name "ActivePerl Version Check ${C_VERSION}"
@@ -88,7 +91,7 @@
   SilentInstall silent
 
   ;--------------------------------------------------------------------------
-  ; Windows Vista expects to find a manifest specifying the execution level
+  ; Windows Vista (or later) expects to find a manifest specifying the execution level
   ;--------------------------------------------------------------------------
 
   RequestExecutionLevel   user
@@ -137,8 +140,10 @@ Section default
   !define C_DEF_AP_STATUS     "!define C_AP_STATUS   "
   !define C_DEF_AP_ERRMSG     "!define C_AP_ERRORMSG "
 
-  !define L_PERL_FOLDER   $R9     ; Location of ActivePerl installation (passed via the command-line)
-  !define L_RESULTS_FILE  $R8     ; File handle used to access the output file (ap-version.nsh)
+  !define L_PERL_DLL        $R9 ; Used to hold the filename of the Perl DLL
+  !define L_PERL_DLL_FOLDER $R8 ; Location of ActivePerl installation's Perl DLL file
+  !define L_PERL_FOLDER     $R7 ; Location of ActivePerl installation (passed via the command-line)
+  !define L_RESULTS_FILE    $R6 ; File handle used to access the output file (ap-version.nsh)
 
   StrCpy ${L_PERL_FOLDER} ""
 
@@ -155,20 +160,38 @@ Section default
   Goto exit
 
 look_for_Perl:
-  IfFileExists "${L_PERL_FOLDER}\bin\*.*" look_for_DLL
+  StrCpy ${L_PERL_DLL_FOLDER} "${L_PERL_FOLDER}\bin"
+  IfFileExists "${L_PERL_DLL_FOLDER}\*.*" look_for_DLL
   FileOpen ${L_RESULTS_FILE} "ap-version.nsh" w
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_STATUS} $\"failure$\"${MB_NL}${MB_NL}"
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_FOLDER} $\"${L_PERL_FOLDER}$\"${MB_NL}"
-  FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_ERRMSG} $\"'${L_PERL_FOLDER}\bin' folder not found$\"${MB_NL}"
+  FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_ERRMSG} $\"'${L_PERL_DLL_FOLDER}' folder not found$\"${MB_NL}"
   FileClose ${L_RESULTS_FILE}
   Goto exit
 
 look_for_DLL:
-  IfFileExists "${L_PERL_FOLDER}\bin\perl58.dll" check_Perl_version
+  StrCpy ${L_PERL_DLL} "perl518.dll"
+  IfFileExists "${L_PERL_DLL_FOLDER}\${L_PERL_DLL}" check_Perl_version
+
+  StrCpy ${L_PERL_DLL} "perl516.dll"
+  IfFileExists "${L_PERL_DLL_FOLDER}\${L_PERL_DLL}" check_Perl_version
+
+  StrCpy ${L_PERL_DLL} "perl514.dll"
+  IfFileExists "${L_PERL_DLL_FOLDER}\${L_PERL_DLL}" check_Perl_version
+
+  StrCpy ${L_PERL_DLL} "perl512.dll"
+  IfFileExists "${L_PERL_DLL_FOLDER}\${L_PERL_DLL}" check_Perl_version
+
+  StrCpy ${L_PERL_DLL} "perl510.dll"
+  IfFileExists "${L_PERL_DLL_FOLDER}\${L_PERL_DLL}" check_Perl_version
+
+  StrCpy ${L_PERL_DLL} "perl58.dll"
+  IfFileExists "${L_PERL_DLL_FOLDER}\${L_PERL_DLL}" check_Perl_version
+
   FileOpen ${L_RESULTS_FILE} "ap-version.nsh" w
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_STATUS} $\"failure$\"${MB_NL}${MB_NL}"
   FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_FOLDER} $\"${L_PERL_FOLDER}$\"${MB_NL}"
-  FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_ERRMSG} $\"perl58.dll not found in '${L_PERL_FOLDER}\bin' folder$\"${MB_NL}"
+  FileWrite ${L_RESULTS_FILE}  "${C_DEF_AP_ERRMSG} $\"perl5*.dll (where * is 8, 10, 12, 14, 16 or 18) not found in '${L_PERL_DLL_FOLDER}' folder$\"${MB_NL}"
   FileClose ${L_RESULTS_FILE}
   Goto exit
 
@@ -178,7 +201,7 @@ check_Perl_version:
   !define L_REVSN     $R3
   !define L_BUILD     $R4
 
-  GetDllVersion "${L_PERL_FOLDER}\bin\perl58.dll" ${L_MINOR} ${L_BUILD}
+  GetDllVersion "${L_PERL_DLL_FOLDER}\${L_PERL_DLL}" ${L_MINOR} ${L_BUILD}
   IntOp ${L_MAJOR} ${L_MINOR} / 0x00010000
   IntOp ${L_MINOR} ${L_MINOR} & 0x0000FFFF
   IntOp ${L_REVSN} ${L_BUILD} / 0x00010000
