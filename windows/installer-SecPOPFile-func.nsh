@@ -1,9 +1,10 @@
 #--------------------------------------------------------------------------
 #
-# installer-SecPOPFile-func.nsh --- This 'include' file contains the non-library functions
-#                                   used by the 'installer-SecPOPFile-body.nsh' file.
+# installer-SecPOPFile-func.nsh
+#   This 'include' file contains the non-library functions
+#   used by the 'installer-SecPOPFile-body.nsh' file.
 #
-# Copyright (c) 2005-2011 John Graham-Cumming
+# Copyright (c) 2005-2013 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -33,7 +34,7 @@
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
-# The following functions are only used by the 'installer-SecPOPFile-body.nsh' file:
+# The following functions are only used in 'installer-SecPOPFile-body.nsh'
 #
 #     CheckHostsFile
 #     MinPerlCleanup
@@ -41,7 +42,7 @@
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
-# The following functions are used by the 'installer-SecPOPFile-body.nsh' file
+# The following functions are used in 'installer-SecPOPFile-body.nsh'
 #
 #     MakeRootDirSafe
 #     un.MakeRootDirSafe
@@ -53,10 +54,11 @@
 #--------------------------------------------------------------------------
 # Installer Function: CheckHostsFile
 #
-# Starting with the 0.22.0 release the system tray icon uses 'http://localhost:port' to open
-# the User Interface (earlier versions used 'http://127.0.0.1:port' instead). The installer has
-# been updated to follow suit. Some Windows 9x systems may not have a HOSTS file which defines
-# 'localhost' so we ensure a suitable one exists
+# Since POPFile 0.22.0 the system tray icon uses 'http://localhost:port' to open
+# the User Interface (earlier versions used 'http://127.0.0.1:port' instead).
+# The Windows installer has been updated to follow suit. Some Windows 9x systems
+# may not have a HOSTS file which defines 'localhost' so we ensure a suitable
+# one exists.
 #--------------------------------------------------------------------------
 
 Function CheckHostsFile
@@ -129,18 +131,19 @@ FunctionEnd
 #--------------------------------------------------------------------------
 # Installer Function: MinPerlCleanup
 #
-# Before POPFile 0.21.0 was released in March 2004, the data files were stored in the
-# same folder as the POPFile program files and the minimal Perl files were intermingled
-# with the POPFile program files.
+# Before POPFile 0.21.0 was released in March 2004, the data files were stored
+# in the same folder as the POPFile program files and the minimal Perl files
+# were intermingled with the POPFile program files.
 #
-# POPFile 0.21.0 introduced some multi-user support which means that the location of the
-# configuration file is now supplied via an environment variable to allow POPFile to be
-# run from any folder. Some rearrangement of the minimal Perl files is required in order
-# to avoid Perl runtime errors when POPFile is started from a folder other than the one
+# Since POPFile 0.21.0 the location of the configuration file is supplied via
+# an environment variable to allow POPFile to be run from any folder. Some
+# rearrangement of the minimal Perl files is required in order to avoid Perl
+# runtime errors when POPFile is started from a folder other than the one
 # where POPFile is installed.
 #
-# Newer versions of the minimal Perl may not be binary-compatible with the minimal Perl
-# used by previous versions of POPFile so some cleanup work has to be performed.
+# POPFile 1.1.4 uses Perl 5.16 which is not binary-compatible with the Perl
+# used by any previous POPFile release therefore all trace of the existing
+# Perl is removed when upgrading an earlier version of POPFile.
 #
 # This function is based upon an analysis of the following POPFile releases:
 #   0.17.3, 0.17.4, 0.17.5, 0.17.6, 0.17.7, 0.17.8, 0.17.9a,
@@ -235,8 +238,11 @@ Function MinPerlCleanup
 
   DetailPrint "('intermingled' minimal Perl removal completed)"
 
-  ; POPFile 1.1.2 uses a new 'slimline' minimal Perl, unlike previous versions,
-  ; so to avoid possible problems the existing minimal Perl 'lib' folder is deleted.
+  ; POPFile 1.1.4 uses Perl 5.16 which is not binary-compatible with the Perl
+  ; used by any previous release so to avoid possible problems the existing
+  ; minimal Perl 'lib' folder is deleted.
+
+  Delete "$G_ROOTDIR\perl58.dll"          ; used by POPFile 0.18.0 to 1.1.3
 
   IfFileExists "$G_ROOTDIR\lib\*.*" 0 exit
   DetailPrint ""

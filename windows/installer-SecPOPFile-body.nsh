@@ -1,13 +1,14 @@
 #--------------------------------------------------------------------------
 #
-# installer-SecPOPFile-body.nsh --- This 'include' file contains the body of the "POPFile"
-#                                   Section of the main 'installer.nsi' NSIS script used to
-#                                   create the Windows installer for POPFile.
+# installer-SecPOPFile-body.nsh
+#   This 'include' file contains the body of the "POPFile" Section of the
+#   main 'installer.nsi' NSIS script used to create the Windows installer
+#   for POPFile.
 #
-#                                   The non-library functions used in this file are contained
-#                                   in a separate file (see 'installer-SecPOPFile-func.nsh')
+#   The non-library functions used in this file are contained in a
+#   separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005-2011 John Graham-Cumming
+# Copyright (c) 2005-2013 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -138,8 +139,10 @@ continue:
   GetFunctionAddress ${L_TEMP} MakeRootDirSafe
   UAC::ExecCodeSegment ${L_TEMP}
 
-  ; Starting with 0.21.0, a new structure is used for the minimal Perl (to enable POPFile to
-  ; be started from any folder, once POPFILE_ROOT and POPFILE_USER have been initialized)
+  ; Starting with POPFile 1.1.4 the minimal Perl is based upon Perl 5.16 which
+  ; is not binary-compatible with the Perl used for any previous POPFile release.
+  ; Therefore when upgrading an earlier version of POPFile all trace of the
+  ; existing minimal Perl is removed (to ensure only Perl 5.16 files are used).
 
   Call MinPerlCleanup
 
