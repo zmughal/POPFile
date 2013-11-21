@@ -1,25 +1,26 @@
 #--------------------------------------------------------------------------
 #
-# getparser.nsh --- Japanese (Nihongo) text does not use spaces between words so
-#                   POPFile uses a 'Nihongo Parser' to split the text into words
-#                   to allow the text to be analysed properly. POPFile 0.22.5
-#                   (and earlier) only supported the 'Kakasi' parser. Starting
-#                   with the 1.0.0 release POPFile offers a choice of 3 parsers
-#                   (Kakasi, MeCab and internal). To make it easier to change
-#                   the Nihongo Parser a "Change" option is created in the
-#                   "Add/Remove Programs" entry for POPFile. This new option
-#                   is handled by the POPFile uninstaller.
+# getparser.nsh
+#   Japanese (Nihongo) text does not use spaces between words so POPFile
+#   uses a 'Nihongo Parser' to split the text into words to allow the text
+#   to be analysed properly. POPFile 0.22.5 (and earlier) only supported
+#   the 'Kakasi' parser. Starting with the 1.0.0 release POPFile offers a
+#   choice of 3 parsers (Kakasi, MeCab and internal).
 #
-#                   The 'MeCab' parser is too big (about 13 MB) to include in the
-#                   installer so if necessary it is downloaded from the Internet
-#                   when the user selects the MeCab parser.
+#   To make it easier to change the Nihongo Parser a "Change" option is
+#   created in the "Add/Remove Programs" entry for POPFile. This new option
+#   is handled by the POPFile uninstaller.
 #
-#                   Since the installer and uninstaller both need to offer a choice
-#                   of Nihongo Parser and may need to download the MeCab files, this
-#                   INCLUDE file contains macro-based SECTION and FUNCTION definitions
-#                   to make future maintenance easier.
+#   The 'MeCab' parser is too big (about 13 MB) to include in the installer
+#   so if necessary it is downloaded from the Internet when the user selects
+#   the MeCab parser.
 #
-# Copyright (c) 2007-2012 John Graham-Cumming
+#   Since the installer and uninstaller both need to offer a choice of
+#   Nihongo Parser and may need to download the MeCab files, this INCLUDE
+#   file contains macro-based SECTION and FUNCTION definitions to make
+#   future maintenance easier.
+#
+# Copyright (c) 2007-2013 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -157,107 +158,52 @@
     !if '${UN}' != 'un.'
 
         ;--------------------------------------------------------------------------
-        ; Install Perl modules: base.pm, bytes.pm, the Encode collection and,
-        ; if relevant, Text::Kakasi (the requirement for bytes_heavy.pl was
-        ; added when the minimal Perl was updated to use ActivePerl 5.8.7)
-        ;--------------------------------------------------------------------------
-
-        SetOutPath "$G_MPLIBDIR"
-        File "${C_PERL_DIR}\site\lib\base.pm"
-        File "${C_PERL_DIR}\lib\bytes.pm"
-        File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-        File "${C_PERL_DIR}\site\lib\Encode.pm"
-
-        SetOutPath "$G_MPLIBDIR\Encode"
-        File "${C_PERL_DIR}\site\lib\Encode\Alias.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\Byte.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\CJKConstants.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\CN.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\Config.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\EBCDIC.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\Encoder.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\Encoding.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\GSM0338.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\Guess.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\JP.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\KR.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\Symbol.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\TW.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\Unicode.pm"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\Encode.dll"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode\Byte"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\Byte\Byte.dll"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode\CN"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\CN\CN.dll"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode\EBCDIC"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\EBCDIC\EBCDIC.dll"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode\JP"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\JP\JP.dll"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode\KR"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\KR\KR.dll"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode\Symbol"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\Symbol\Symbol.dll"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode\TW"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\TW\TW.dll"
-
-        SetOutPath "$G_MPLIBDIR\auto\Encode\Unicode"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\Unicode\Unicode.dll"
-
-        SetOutPath "$G_MPLIBDIR\Encode\CN"
-        File "${C_PERL_DIR}\site\lib\Encode\CN\HZ.pm"
-
-        SetOutPath "$G_MPLIBDIR\Encode\JP"
-        File "${C_PERL_DIR}\site\lib\Encode\JP\H2Z.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\JP\JIS7.pm"
-
-        SetOutPath "$G_MPLIBDIR\Encode\KR"
-        File "${C_PERL_DIR}\site\lib\Encode\KR\2022_KR.pm"
-
-        SetOutPath "$G_MPLIBDIR\Encode\MIME"
-        File "${C_PERL_DIR}\site\lib\Encode\MIME\Header.pm"
-        File "${C_PERL_DIR}\site\lib\Encode\MIME\Name.pm"
-
-        SetOutPath "$G_MPLIBDIR\Encode\MIME\Header"
-        File "${C_PERL_DIR}\site\lib\Encode\MIME\Header\ISO_2022_JP.pm"
-
-        SetOutPath "$G_MPLIBDIR\Encode\Unicode"
-        File "${C_PERL_DIR}\site\lib\Encode\Unicode\UTF7.pm"
-
-        ;--------------------------------------------------------------------------
-        ; For the 1.1.1 release File::Glob::Windows and the necessary support files
-        ; were added to solve problems when the 'User Data' is installed using
-        ; a path containing non-ASCII characters (e.g. when the Windows login
-        ; name is a Japanese name)
+        ; Install the extra Perl modules required to support the Nihongo parsers
+        ; (used the 'Kakasi' parser to determine what was required, assume the
+        ; 'internal' and 'MeCab' parsers do not have any extra requirements)
         ;--------------------------------------------------------------------------
 
         SetOutPath "$G_MPLIBDIR"
         File "${C_PERL_DIR}\lib\DirHandle.pm"
+        File "${C_PERL_DIR}\lib\utf8.pm"
+        File "${C_PERL_DIR}\lib\utf8_heavy.pl"
+
+        SetOutPath "$G_MPLIBDIR\Encode"
+        File "${C_PERL_DIR}\lib\Encode\CJKConstants.pm"
+        File "${C_PERL_DIR}\lib\Encode\Guess.pm"
+        File "${C_PERL_DIR}\lib\Encode\JP.pm"
+              SetOutPath "$G_MPLIBDIR\auto\Encode\JP"
+              File "${C_PERL_DIR}\lib\auto\Encode\JP\JP.dll"
+              SetOutPath "$G_MPLIBDIR\Encode"
+        File "${C_PERL_DIR}\lib\Encode\Unicode.pm"
+              SetOutPath "$G_MPLIBDIR\auto\Encode\Unicode"
+              File "${C_PERL_DIR}\lib\auto\Encode\Unicode\Unicode.dll"
+
+        SetOutPath "$G_MPLIBDIR\Encode\JP"
+        File "${C_PERL_DIR}\lib\Encode\JP\H2Z.pm"
+        File "${C_PERL_DIR}\lib\Encode\JP\JIS7.pm"
+
+        SetOutPath "$G_MPLIBDIR\Encode\MIME"
+        File "${C_PERL_DIR}\lib\Encode\MIME\Header.pm"
+        File "${C_PERL_DIR}\lib\Encode\MIME\Name.pm"
+
+        SetOutPath "$G_MPLIBDIR\Encode\MIME\Header"
+        File "${C_PERL_DIR}\lib\Encode\MIME\Header\ISO_2022_JP.pm"
+
+        SetOutPath "$G_MPLIBDIR\Encode\Unicode"
+        File "${C_PERL_DIR}\lib\Encode\Unicode\UTF7.pm"
 
         SetOutPath "$G_MPLIBDIR\File\Glob"
         File "${C_PERL_DIR}\site\lib\File\Glob\Windows.pm"
 
         SetOutPath "$G_MPLIBDIR\Win32\"
-        File "${C_PERL_DIR}\site\lib\Win32\API.pm"
+        File "${C_PERL_DIR}\lib\Win32\API.pm"
+              SetOutPath "$G_MPLIBDIR\auto\Win32\API"
+              File "${C_PERL_DIR}\lib\auto\Win32\API\API.dll"
 
         SetOutPath "$G_MPLIBDIR\Win32\API"
-        File "${C_PERL_DIR}\site\lib\Win32\API\Callback.pm"
-        File "${C_PERL_DIR}\site\lib\Win32\API\Struct.pm"
-        File "${C_PERL_DIR}\site\lib\Win32\API\Test.pm"
-        File "${C_PERL_DIR}\site\lib\Win32\API\Type.pm"
-              SetOutPath "$G_MPLIBDIR\auto\Win32\API"
-              File "${C_PERL_DIR}\site\lib\auto\Win32\API\API.dll"
-              SetOutPath "$G_MPLIBDIR\auto\Win32\API\Callback"
-              File "${C_PERL_DIR}\site\lib\auto\Win32\API\Callback\Callback.dll"
-              SetOutPath "$G_MPLIBDIR"
+        File "${C_PERL_DIR}\lib\Win32\API\Struct.pm"
+        File "${C_PERL_DIR}\lib\Win32\API\Type.pm"
 
     !endif
 
