@@ -1,31 +1,33 @@
 #--------------------------------------------------------------------------
 #
-# installer.nsi --- This is the NSIS script used to create the Windows installer
-#                   for POPFile. This script installs the PROGRAM files and creates
-#                   some registry entries, then calls the 'Add POPFile User' wizard
-#                   (adduser.exe) to install and configure the user data (including
-#                   the POPFILE_ROOT and POPFILE_USER environment variables) for the
-#                   user running the installer.
+# installer.nsi
+#   This is the NSIS script used to create the Windows installer for POPFile.
+#   It installs the PROGRAM files and creates some registry entries, then calls
+#   the 'Add POPFile User' wizard (adduser.exe) to install and configure the
+#   user data (including the POPFILE_ROOT & POPFILE_USER environment variables)
+#   for the user running the installer.
 #
-#                   (A) Uses the following programs at compile-time (built using NSIS):
+#  Notes:
 #
-#                       (1) ap-vcheck.exe     (NSIS script: toolkit/ap-vcheck.nsi)
-#                       (2) plugin-vcheck.exe (NSIS script: toolkit/plugin-vcheck.nsi)
+#   (A) Uses the following programs at compile-time (built using NSIS):
 #
-#                   (B) Requires the following programs (built using NSIS):
+#       (1) ap-vcheck.exe     (NSIS script: toolkit/ap-vcheck.nsi)
+#       (2) plugin-vcheck.exe (NSIS script: toolkit/plugin-vcheck.nsi)
 #
-#                       (1) adduser.exe       (NSIS script: adduser.nsi)
-#                       (2) msgcapture.exe    (NSIS script: msgcapture.nsi)
-#                       (3) runpopfile.exe    (NSIS script: runpopfile.nsi)
-#                       (4) runsqlite.exe     (NSIS script: runsqlite.nsi)
-#                       (5) stop_pf.exe       (NSIS script: stop_popfile.nsi)
+#   (B) Requires the following programs (built using NSIS):
 #
-#                   (C) The following programs (built using NSIS) are optional:
+#       (1) adduser.exe       (NSIS script: adduser.nsi)
+#       (2) msgcapture.exe    (NSIS script: msgcapture.nsi)
+#       (3) runpopfile.exe    (NSIS script: runpopfile.nsi)
+#       (4) runsqlite.exe     (NSIS script: runsqlite.nsi)
+#       (5) stop_pf.exe       (NSIS script: stop_popfile.nsi)
 #
-#                       (1) pfidbstatus.exe   (NSIS script: test\pfidbstatus.nsi)
-#                       (2) pfidiag.exe       (NSIS script: test\pfidiag.nsi)
+#   (C) The following programs (built using NSIS) are optional:
 #
-# Copyright (c) 2002-2012 John Graham-Cumming
+#       (1) pfidbstatus.exe   (NSIS script: test\pfidbstatus.nsi)
+#       (2) pfidiag.exe       (NSIS script: test\pfidiag.nsi)
+#
+# Copyright (c) 2002-2013 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -260,15 +262,15 @@
   ;----------------------------------------------------------------------
 
   !define C_PERL_DIR      "C:\Perl"
-  !define C_PERL_VERSION  "5.8.9"
-  !define C_PERL_BUILD    "829"
+  !define C_PERL_VERSION  "5.16.3"
+  !define C_PERL_BUILD    "1603"
 
   ;----------------------------------------------------------------------
-  ; Recently there have been some significant changes to the structure and
-  ; behaviour of ActivePerl. These changes have affected the way in which
-  ; the minimal Perl is assembled therefore a new compile-time check has
-  ; been introduced to ensure that a suitable ActivePerl installation is
-  ; available for use in preparing the minimal Perl used by POPFile.
+  ; An upgrade of ActivePerl may involve significant changes to its
+  ; structure and behaviour, including binary incompatability.
+  ; As these changes can affect the way in which the minimal Perl is
+  ; assembled a compile-time check is used to ensure that a suitable
+  ; ActivePerl installation is available.
   ;----------------------------------------------------------------------
 
   !system 'if exist ".\ap-version.nsh" del ".\ap-version.nsh"'
@@ -1423,13 +1425,7 @@ SectionEnd
 #--------------------------------------------------------------------------
 # Installer Section: SSL Support for POPFile (always installed)
 #
-# This section installs the extra Perl modules and the OpenSSL code library
-# required for SSL access to mail servers such as Gmail's POP3 & IMAP servers.
-#
-# Before the POPFile 1.1.2 release this used to be an optional section
-# which downloaded the SSL support files. Starting with the POPFile 1.1.2
-# release a more up-to-date (and much smaller) Perl package is used so all
-# of the SSL support files are now included in the installer.
+# Dummy section ~ the necessary files are included in the default minimal Perl
 #--------------------------------------------------------------------------
 
 Section "SSL Support" SecSSL
@@ -1438,103 +1434,27 @@ Section "SSL Support" SecSSL
 
   !insertmacro SECTIONLOG_ENTER "SSL Support"
 
-  SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\lib\bytes.pm"
-  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-
-  SetOutPath "$G_MPLIBDIR\IO\Socket"
-  File "${C_PERL_DIR}\site\lib\IO\Socket\SSL.pm"
-
-  SetOutPath "$G_MPLIBDIR\Net"
-  File "${C_PERL_DIR}\site\lib\Net\SSLeay.pm"
-
-  SetOutPath "$G_MPLIBDIR\Net\SSLeay"
-  File "${C_PERL_DIR}\site\lib\Net\SSLeay\Handle.pm"
-
-  SetOutPath "$G_MPLIBDIR\auto\Net\SSLeay"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\SSLeay.dll"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\autosplit.ix"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\debug_read.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\do_https.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\do_https2.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\do_https3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\do_https4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\do_httpx2.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\do_httpx3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\do_httpx4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\dump_peer_certificate.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_http.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_http3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_http4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_https.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_https3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_https4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_httpx.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_httpx3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\get_httpx4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_http.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_http3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_http4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_https.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_https3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_https4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_httpx.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_httpx3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\head_httpx4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\https_cat.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\httpx_cat.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\http_cat.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\initialize.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\make_form.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\make_headers.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\new_x_ctx.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\open_proxy_tcp_connection.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\open_tcp_connection.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_http.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_http3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_http4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_https.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_https3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_https4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_httpx.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_httpx3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\post_httpx4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_http.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_http3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_http4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_https.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_https3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_https4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_httpx.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_httpx3.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\put_httpx4.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\randomize.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\set_cert_and_key.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\set_proxy.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\set_server_cert_and_key.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\sslcat.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\ssl_read_all.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\ssl_read_CRLF.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\ssl_read_until.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\ssl_write_all.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\ssl_write_CRLF.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\tcpcat.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\tcpxcat.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\tcp_read_all.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\tcp_read_CRLF.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\tcp_read_until.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\tcp_write_all.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\tcp_write_CRLF.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\want_nothing.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\want_read.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\want_write.al"
-  File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\want_X509_lookup.al"
-
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
   SetDetailsPrint listonly
 
   !insertmacro SECTIONLOG_EXIT "SSL Support"
+
+SectionEnd
+
+#--------------------------------------------------------------------------
+# Installer Section: SOCKS V support for all of the POPFile proxies
+#
+# Dummy section ~ the necessary files are included in the default minimal Perl
+#--------------------------------------------------------------------------
+
+Section "SOCKS" SecSOCKS
+
+  SectionIn RO
+
+  !insertmacro SECTIONLOG_ENTER "SOCKS"
+
+  !insertmacro SECTIONLOG_EXIT "SOCKS"
 
 SectionEnd
 
@@ -1818,246 +1738,60 @@ Section /o "XMLRPC" SecXMLRPC
   SetOutPath "$G_ROOTDIR\POPFile"
   File "..\engine\POPFile\API.pm"
 
-  ; Perl modules required to support the POPFile XMLRPC component
+ ; Perl modules required to support the POPFile XMLRPC component
 
   SetOutPath "$G_MPLIBDIR"
-  File "${C_PERL_DIR}\lib\bytes.pm"
-  File "${C_PERL_DIR}\lib\bytes_heavy.pl"
-  File "${C_PERL_DIR}\site\lib\Encode.pm"
-  File "${C_PERL_DIR}\site\lib\LWP.pm"
+  File "${C_PERL_DIR}\lib\arybase.pm"
+        SetOutPath "$G_MPLIBDIR\auto\arybase"
+        File "${C_PERL_DIR}\lib\auto\arybase\arybase.dll"
+        SetOutPath "$G_MPLIBDIR"
+  File "${C_PERL_DIR}\lib\Dynaloader.pm"
   File "${C_PERL_DIR}\lib\re.pm"
-  File "${C_PERL_DIR}\site\lib\URI.pm"
-  File "${C_PERL_DIR}\lib\utf8.pm"
-  File "${C_PERL_DIR}\lib\utf8_heavy.pl"
+        SetOutPath "$G_MPLIBDIR\auto\re"
+        File "${C_PERL_DIR}\lib\auto\re\re.dll"
+        SetOutPath "$G_MPLIBDIR"
+  File "${C_PERL_DIR}\site\lib\XSLoader.pm"
 
   SetOutPath "$G_MPLIBDIR\Class"
   File "${C_PERL_DIR}\site\lib\Class\Inspector.pm"
 
-  SetOutPath "$G_MPLIBDIR\Encode"
-  File "${C_PERL_DIR}\site\lib\Encode\Alias.pm"
-  File "${C_PERL_DIR}\site\lib\Encode\Config.pm"
-  File "${C_PERL_DIR}\site\lib\Encode\Encoding.pm"
-        SetOutPath "$G_MPLIBDIR\auto\Encode"
-        File "${C_PERL_DIR}\site\lib\auto\Encode\Encode.dll"
-
   SetOutPath "$G_MPLIBDIR\HTTP"
-  File "${C_PERL_DIR}\site\lib\HTTP\Config.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Cookies.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Daemon.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Date.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Headers.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Message.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Negotiate.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Request.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Response.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Status.pm"
+  File "${C_PERL_DIR}\lib\HTTP\Daemon.pm"
 
-  SetOutPath "$G_MPLIBDIR\HTTP\Cookies"
-  File "${C_PERL_DIR}\site\lib\HTTP\Cookies\Microsoft.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Cookies\Netscape.pm"
-
-  SetOutPath "$G_MPLIBDIR\HTTP\Headers"
-  File "${C_PERL_DIR}\site\lib\HTTP\Headers\Auth.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Headers\ETag.pm"
-  File "${C_PERL_DIR}\site\lib\HTTP\Headers\Util.pm"
-
-  SetOutPath "$G_MPLIBDIR\HTTP\Request"
-  File "${C_PERL_DIR}\site\lib\HTTP\Request\Common.pm"
+  SetOutPath "$G_MPLIBDIR\List"
+  File "${C_PERL_DIR}\lib\List\Util.pm"
+        SetOutPath "$G_MPLIBDIR\auto\List\Util"
+        File "${C_PERL_DIR}\lib\auto\List\Util\Util.dll"
 
   SetOutPath "$G_MPLIBDIR\LWP"
-  File "${C_PERL_DIR}\site\lib\LWP\ConnCache.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\Debug.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\DebugFile.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\media.types"
-  File "${C_PERL_DIR}\site\lib\LWP\MediaTypes.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\MemberMixin.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\Protocol.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\RobotUA.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\Simple.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\UserAgent.pm"
-
-  SetOutPath "$G_MPLIBDIR\LWP\Authen"
-  File "${C_PERL_DIR}\site\lib\LWP\\Authen\Basic.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Authen\Digest.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Authen\Ntlm.pm"
-
-  SetOutPath "$G_MPLIBDIR\LWP\Protocol"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\cpan.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\data.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\file.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\ftp.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\GHTTP.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\gopher.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\http.pm"
-  File "${C_PERL_DIR}\lib\LWP\\Protocol\http10.pm"
-  File "${C_PERL_DIR}\lib\LWP\\Protocol\https.pm"
-  File "${C_PERL_DIR}\lib\LWP\\Protocol\https10.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\loopback.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\mailto.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\nntp.pm"
-  File "${C_PERL_DIR}\site\lib\LWP\\Protocol\nogo.pm"
-
-  SetOutPath "$G_MPLIBDIR\Net"
-  File "${C_PERL_DIR}\site\lib\Net\HTTP.pm"
-  File "${C_PERL_DIR}\site\lib\Net\HTTPS.pm"
-
-  SetOutPath "$G_MPLIBDIR\Net\HTTP"
-  File "${C_PERL_DIR}\site\lib\Net\HTTP\Methods.pm"
-  File "${C_PERL_DIR}\site\lib\Net\HTTP\NB.pm"
+  File "${C_PERL_DIR}\lib\LWP\MediaTypes.pm"
 
   SetOutPath "$G_MPLIBDIR\SOAP"
   File "${C_PERL_DIR}\site\lib\SOAP\Constants.pm"
   File "${C_PERL_DIR}\site\lib\SOAP\Lite.pm"
   File "${C_PERL_DIR}\site\lib\SOAP\Packager.pm"
-  File "${C_PERL_DIR}\site\lib\SOAP\Test.pm"
 
   SetOutPath "$G_MPLIBDIR\SOAP\Lite"
-  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Packager.pm"
   File "${C_PERL_DIR}\site\lib\SOAP\Lite\Utils.pm"
 
   SetOutPath "$G_MPLIBDIR\SOAP\Lite\Deserializer"
-  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Deserializer\XMLSchema1999.pm"
-  File "${C_PERL_DIR}\site\lib\SOAP\Lite\Deserializer\XMLSchema2001.pm"
   File "${C_PERL_DIR}\site\lib\SOAP\Lite\Deserializer\XMLSchemaSOAP1_1.pm"
   File "${C_PERL_DIR}\site\lib\SOAP\Lite\Deserializer\XMLSchemaSOAP1_2.pm"
 
   SetOutPath "$G_MPLIBDIR\SOAP\Transport"
   File "${C_PERL_DIR}\site\lib\SOAP\Transport\HTTP.pm"
-  File "${C_PERL_DIR}\site\lib\SOAP\Transport\IO.pm"
-  File "${C_PERL_DIR}\site\lib\SOAP\Transport\LOCAL.pm"
-  File "${C_PERL_DIR}\site\lib\SOAP\Transport\LOOPBACK.pm"
-  File "${C_PERL_DIR}\site\lib\SOAP\Transport\MAILTO.pm"
-  File "${C_PERL_DIR}\site\lib\SOAP\Transport\POP3.pm"
-
-  SetOutPath "$G_MPLIBDIR\Time"
-  File "${C_PERL_DIR}\lib\Time\gmtime.pm"
-  File "${C_PERL_DIR}\site\lib\Time\HiRes.pm"
-  File "${C_PERL_DIR}\lib\Time\Local.pm"
-  File "${C_PERL_DIR}\lib\Time\localtime.pm"
-  File "${C_PERL_DIR}\lib\Time\Piece.pm"
-  File "${C_PERL_DIR}\lib\Time\Seconds.pm"
-  File "${C_PERL_DIR}\lib\Time\tm.pm"
-
-  SetOutPath "$G_MPLIBDIR\unicore"
-  File "${C_PERL_DIR}\lib\unicore\Canonical.pl"
-  File "${C_PERL_DIR}\lib\unicore\Exact.pl"
-  File "${C_PERL_DIR}\lib\unicore\PVA.pl"
-
-  SetOutPath "$G_MPLIBDIR\unicore\lib\gc_sc"
-  File "${C_PERL_DIR}\lib\unicore\lib\gc_sc\Digit.pl"
-  File "${C_PERL_DIR}\lib\unicore\lib\gc_sc\SpacePer.pl"
-  File "${C_PERL_DIR}\lib\unicore\lib\gc_sc\Word.pl"
-
-  SetOutPath "$G_MPLIBDIR\unicore\To"
-  File "${C_PERL_DIR}\lib\unicore\To\Fold.pl"
-
-  SetOutPath "$G_MPLIBDIR\URI"
-  File "${C_PERL_DIR}\site\lib\URI\data.pm"
-  File "${C_PERL_DIR}\site\lib\URI\Escape.pm"
-  File "${C_PERL_DIR}\site\lib\URI\file.pm"
-  File "${C_PERL_DIR}\site\lib\URI\ftp.pm"
-  File "${C_PERL_DIR}\site\lib\URI\gopher.pm"
-  File "${C_PERL_DIR}\site\lib\URI\Heuristic.pm"
-  File "${C_PERL_DIR}\site\lib\URI\http.pm"
-  File "${C_PERL_DIR}\site\lib\URI\https.pm"
-  File "${C_PERL_DIR}\site\lib\URI\IRI.pm"
-  File "${C_PERL_DIR}\site\lib\URI\ldap.pm"
-  File "${C_PERL_DIR}\site\lib\URI\ldapi.pm"
-  File "${C_PERL_DIR}\site\lib\URI\ldaps.pm"
-  File "${C_PERL_DIR}\site\lib\URI\mailto.pm"
-  File "${C_PERL_DIR}\site\lib\URI\mms.pm"
-  File "${C_PERL_DIR}\site\lib\URI\news.pm"
-  File "${C_PERL_DIR}\site\lib\URI\nntp.pm"
-  File "${C_PERL_DIR}\site\lib\URI\pop.pm"
-  File "${C_PERL_DIR}\site\lib\URI\QueryParam.pm"
-  File "${C_PERL_DIR}\site\lib\URI\rlogin.pm"
-  File "${C_PERL_DIR}\site\lib\URI\rsync.pm"
-  File "${C_PERL_DIR}\site\lib\URI\rtsp.pm"
-  File "${C_PERL_DIR}\site\lib\URI\rtspu.pm"
-  File "${C_PERL_DIR}\site\lib\URI\sip.pm"
-  File "${C_PERL_DIR}\site\lib\URI\sips.pm"
-  File "${C_PERL_DIR}\site\lib\URI\snews.pm"
-  File "${C_PERL_DIR}\site\lib\URI\Split.pm"
-  File "${C_PERL_DIR}\site\lib\URI\ssh.pm"
-  File "${C_PERL_DIR}\site\lib\URI\telnet.pm"
-  File "${C_PERL_DIR}\site\lib\URI\tn3270.pm"
-  File "${C_PERL_DIR}\site\lib\URI\URL.pm"
-  File "${C_PERL_DIR}\site\lib\URI\urn.pm"
-  File "${C_PERL_DIR}\site\lib\URI\WithBase.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_foreign.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_generic.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_idna.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_ldap.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_login.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_punycode.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_query.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_segment.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_server.pm"
-  File "${C_PERL_DIR}\site\lib\URI\_userpass.pm"
-
-  SetOutPath "$G_MPLIBDIR\URI\file"
-  File "${C_PERL_DIR}\site\lib\URI\file\Base.pm"
-  File "${C_PERL_DIR}\site\lib\URI\file\FAT.pm"
-  File "${C_PERL_DIR}\site\lib\URI\file\Mac.pm"
-  File "${C_PERL_DIR}\site\lib\URI\file\OS2.pm"
-  File "${C_PERL_DIR}\site\lib\URI\file\QNX.pm"
-  File "${C_PERL_DIR}\site\lib\URI\file\Unix.pm"
-  File "${C_PERL_DIR}\site\lib\URI\file\Win32.pm"
-
-  SetOutPath "$G_MPLIBDIR\URI\urn"
-  File "${C_PERL_DIR}\site\lib\URI\urn\isbn.pm"
-  File "${C_PERL_DIR}\site\lib\URI\urn\oid.pm"
-
 
   SetOutPath "$G_MPLIBDIR\XML"
-  File "${C_PERL_DIR}\site\lib\XML\Parser.pm"
-  File "${C_PERL_DIR}\site\lib\XML\Simple.pm"
+  File "${C_PERL_DIR}\lib\XML\Parser.pm"
 
   SetOutPath "$G_MPLIBDIR\XML\Parser"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Expat.pm"
   File "${C_PERL_DIR}\site\lib\XML\Parser\Lite.pm"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\LWPExternEnt.pl"
-        SetOutPath "$G_MPLIBDIR\auto\XML\Parser\Expat"
-        File "${C_PERL_DIR}\site\lib\auto\XML\Parser\Expat\Expat.dll"
-
-  SetOutPath "$G_MPLIBDIR\XML\Parser\Encodings"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\big5.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\euc-kr.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\ibm866.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\iso-8859-2.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\iso-8859-3.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\iso-8859-4.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\iso-8859-5.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\iso-8859-7.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\iso-8859-8.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\iso-8859-9.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\koi8-r.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\windows-1250.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\windows-1251.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\windows-1252.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\windows-1255.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\x-euc-jp-jisx0221.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\x-euc-jp-unicode.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\x-sjis-cp932.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\x-sjis-jdk117.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\x-sjis-jisx0221.enc"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Encodings\x-sjis-unicode.enc"
-
-  SetOutPath "$G_MPLIBDIR\XML\Parser\Style"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Style\Debug.pm"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Style\Objects.pm"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Style\Stream.pm"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Style\Subs.pm"
-  File "${C_PERL_DIR}\site\lib\XML\Parser\Style\Tree.pm"
 
   SetOutPath "$G_MPLIBDIR\XMLRPC"
   File "${C_PERL_DIR}\site\lib\XMLRPC\Lite.pm"
-  File "${C_PERL_DIR}\site\lib\XMLRPC\Test.pm"
 
   SetOutPath "$G_MPLIBDIR\XMLRPC\Transport"
   File "${C_PERL_DIR}\site\lib\XMLRPC\Transport\HTTP.pm"
-  File "${C_PERL_DIR}\site\lib\XMLRPC\Transport\POP3.pm"
-  File "${C_PERL_DIR}\site\lib\XMLRPC\Transport\TCP.pm"
 
   SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_INST_PROG_ENDSEC)"
@@ -2103,24 +1837,6 @@ Section /o "IMAP" SecIMAP
 
 SectionEnd
 
-#--------------------------------------------------------------------------
-# Installer Section: (optional) Perl IO::Socket::Socks module (default = not selected)
-#
-# If this component is selected, the installer installs the Perl Socks module to provide
-# SOCKS V support for all of the POPFile proxies.
-#--------------------------------------------------------------------------
-
-Section /o "SOCKS" SecSOCKS
-
-  !insertmacro SECTIONLOG_ENTER "SOCKS"
-
-  SetOutPath "$G_MPLIBDIR\IO\Socket"
-  File "${C_PERL_DIR}\site\lib\IO\Socket\Socks.pm"
-
-  !insertmacro SECTIONLOG_EXIT "SOCKS"
-
-SectionEnd
-
 SubSectionEnd
 
 #--------------------------------------------------------------------------
@@ -2133,7 +1849,7 @@ SubSectionEnd
 #--------------------------------------------------------------------------
 
 Section "-StopLog"
-   SetDetailsPrint textonly
+  SetDetailsPrint textonly
   DetailPrint "$(PFI_LANG_PROG_SAVELOG)"
   SetDetailsPrint listonly
   Call PFI_GetDateTimeStamp
@@ -2413,9 +2129,14 @@ check_min_perl:
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_MINPERL)"
 
 check_ssl:
-  !insertmacro PFI_SectionNotSelected ${SecSSL} check_skins
+  !insertmacro PFI_SectionNotSelected ${SecSSL} check_socks
   StrCpy ${L_TEMP} ""
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SSL)"
+
+check_socks:
+  !insertmacro PFI_SectionNotSelected ${SecSOCKS} check_skins
+  StrCpy ${L_TEMP} ""
+  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SOCKS)"
 
 check_skins:
   !insertmacro PFI_SectionNotSelected ${SecSkins} check_langs
@@ -2460,14 +2181,9 @@ check_nntp:
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_NNTP)"
 
 check_smtp:
-  !insertmacro PFI_SectionNotSelected ${SecSMTP} check_socks
+  !insertmacro PFI_SectionNotSelected ${SecSMTP} check_xmlrpc
   StrCpy ${L_TEMP} ""
   StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SMTP)"
-
-check_socks:
-  !insertmacro PFI_SectionNotSelected ${SecSOCKS} check_xmlrpc
-  StrCpy ${L_TEMP} ""
-  StrCpy $G_PLS_FIELD_1 "$G_PLS_FIELD_1${C_NLT}$(PFI_LANG_SUMMARY_SOCKS)"
 
 check_xmlrpc:
   !insertmacro PFI_SectionNotSelected ${SecXMLRPC} end_optional
