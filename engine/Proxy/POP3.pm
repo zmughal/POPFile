@@ -256,11 +256,11 @@ sub child__
                 my $ssl = defined( $options ) && ( $options =~ /ssl/i );
 
                 # We cannot use the concurrent POP3 connections with SSL on
-                # Windows because one of SSL support modules (Net::SSLeay) is
-                # not thread-safe. ActivePerl for Windows emulates fork() by
-                # multiple threads.
+                # Windows because one of SSL support modules (Net::SSLeay) 
+                # version 1.42 or earlier are not thread-safe. ActivePerl
+                # for Windows emulates fork() by multiple threads.
 
-                if ( $ssl && ( $^O eq 'MSWin32' ) && $self->config_( 'force_fork' ) ) {
+                if ( $ssl && ( $^O eq 'MSWin32' ) && $self->config_( 'force_fork' ) && ( $Net::SSLeay::VERSION le '1.42' ) ) {
                     $self->tee_( $client, "-ERR On Windows, SSL support cannot be used with concurrent POP3 connections$eol" );
                     next;
                 }
