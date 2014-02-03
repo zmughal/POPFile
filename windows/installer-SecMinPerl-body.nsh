@@ -69,8 +69,8 @@
   ; POPFile 1.1.3 is the last release of POPFile which is able to update the
   ; database from ANY previous release of POPFile.
   ;
-  ; Extra Perl files are added by the optional "SOCKS" & "XMLRPC" sections
-  ; in 'installer.nsi' and also by the macro-based "Kakasi", "MeCab" and
+  ; Extra Perl files are added by the optional "XMLRPC" section in the main
+  ; 'installer.nsi' file and also by the macro-based "Kakasi", "MeCab" and
   ; "InternalParser" sections defined in 'getparser.nsh' (another 'include'
   ; file used by 'installer.nsi').
 
