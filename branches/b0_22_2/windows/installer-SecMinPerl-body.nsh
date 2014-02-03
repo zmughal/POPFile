@@ -10,7 +10,7 @@
 #   Perl components are required and these are installed at the same time
 #   as the optional POPFile component (see 'installer.nsi' & 'getparser.nsh').
 #
-# Copyright (c) 2005-2013 John Graham-Cumming
+# Copyright (c) 2005-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -69,8 +69,8 @@
   ; POPFile 1.1.3 is the last release of POPFile which is able to update the
   ; database from ANY previous release of POPFile.
   ;
-  ; Extra Perl files are added by the optional "XMLRPC" section in the main
-  ; 'installer.nsi' file and also by the macro-based "Kakasi", "MeCab" and
+  ; Extra Perl files are added by the optional "SOCKS" & "XMLRPC" sections
+  ; in 'installer.nsi' and also by the macro-based "Kakasi", "MeCab" and
   ; "InternalParser" sections defined in 'getparser.nsh' (another 'include'
   ; file used by 'installer.nsi').
 
@@ -205,6 +205,11 @@
   File "${C_PERL_DIR}\site\lib\IO\Socket\Socks.pm"
   File "${C_PERL_DIR}\site\lib\IO\Socket\SSL.pm"
 
+  SetOutPath "$G_MPLIBDIR\List"
+  File "${C_PERL_DIR}\site\lib\List\Util.pm"
+        SetOutPath "$G_MPLIBDIR\auto\List\Util"
+        File "${C_PERL_DIR}\site\lib\auto\List\Util\Util.dll"
+
   SetOutPath "$G_MPLIBDIR\LWP"
   File "${C_PERL_DIR}\lib\LWP\MemberMixin.pm"
   File "${C_PERL_DIR}\lib\LWP\Protocol.pm"
@@ -223,7 +228,9 @@
   File "${C_PERL_DIR}\site\lib\Net\HTTP.pm"
   File "${C_PERL_DIR}\site\lib\Net\SSLeay.pm"
         SetOutPath "$G_MPLIBDIR\auto\Net\SSLeay"
+        File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\libeay32.dll"
         File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\SSLeay.dll"
+        File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\ssleay32.dll"
         File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\autosplit.ix"
         File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\debug_read.al"
         File "${C_PERL_DIR}\site\lib\auto\Net\SSLeay\do_https.al"
