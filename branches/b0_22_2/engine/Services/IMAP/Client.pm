@@ -140,6 +140,11 @@ sub connect {
                                 Timeout  => $timeout,
                                 Domain   => AF_INET,
                                 SSL_verify_mode => 0x0,
+
+                                # TODO:
+                                #  We should set SSL_verify_mode to 
+                                #  SSL_VERIFY_PEER to verify the peer
+                                #  (server) certificate.
                     )
                     or $self->log_(0, "IO::Socket::SSL error: $@");
         }
