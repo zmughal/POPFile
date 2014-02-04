@@ -139,6 +139,7 @@ sub connect {
                                 PeerPort => $port,
                                 Timeout  => $timeout,
                                 Domain   => AF_INET,
+                                SSL_verify_mode => 0x0,
                     )
                     or $self->log_(0, "IO::Socket::SSL error: $@");
         }
