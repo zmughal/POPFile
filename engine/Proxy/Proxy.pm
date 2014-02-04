@@ -536,6 +536,10 @@ sub verify_connected_
                         Timeout  => $self->global_config_( 'timeout' ),
                         Domain   => AF_INET,
                         SSL_verify_mode => 0x0,
+
+                        # TODO:
+                        #  We should set SSL_verify_mode to  SSL_VERIFY_PEER
+                        #  to verify the peer (server) certificate.
             ); # PROFILE BLOCK STOP
 
         } else {
