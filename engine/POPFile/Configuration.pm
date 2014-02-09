@@ -125,6 +125,10 @@ sub initialize
 
     $self->global_config_( 'last_update_check', 0 );
 
+    # Verifying the peer (server) certificates is off by default
+
+    $self->global_config_( 'ssl_verify_peer_certs', 0 );
+
     # Register for the TICKD message which is sent hourly by the
     # Logger module.   We use this to hourly save the configuration file
     # so that POPFile's configuration is saved in case of a hard crash.

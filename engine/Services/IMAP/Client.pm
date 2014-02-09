@@ -133,18 +133,19 @@ sub connect {
 
         if ( $use_ssl ) {
             require IO::Socket::SSL;
+            require Mozilla::CA;
             $imap = IO::Socket::SSL->new (
                                 Proto    => "tcp",
                                 PeerAddr => $hostname,
                                 PeerPort => $port,
                                 Timeout  => $timeout,
                                 Domain   => AF_INET,
-                                SSL_verify_mode => 0x0,
-
-                                # TODO:
-                                #  We should set SSL_verify_mode to 
-                                #  SSL_VERIFY_PEER to verify the peer
-                                #  (server) certificate.
+                                ( $self->global_config_( 'ssl_verify_peer_certs' ) ? (
+                                    SSL_verify_mode => 0x2,
+                                    SSL_ca_file => Mozilla::CA::SSL_ca_file(),
+                                ) : (
+                                    SSL_verify_mode => 0x0,
+                                )),
                     )
                     or $self->log_(0, "IO::Socket::SSL error: $@");
         }
