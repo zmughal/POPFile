@@ -518,6 +518,9 @@ sub verify_connected_
         if ( $ssl ) {
             eval {
                 require IO::Socket::SSL;
+                if ( $self->global_config_( 'ssl_verify_peer_certs' ) ) {
+                    require Mozilla::CA;
+                }
             };
             if ( $@ ) {
                 # Cannot load IO::Socket::SSL
@@ -535,11 +538,12 @@ sub verify_connected_
                         PeerPort => $port,
                         Timeout  => $self->global_config_( 'timeout' ),
                         Domain   => AF_INET,
-                        SSL_verify_mode => 0x0,
-
-                        # TODO:
-                        #  We should set SSL_verify_mode to  SSL_VERIFY_PEER
-                        #  to verify the peer (server) certificate.
+                        ( $self->global_config_( 'ssl_verify_peer_certs' ) ? (
+                            SSL_verify_mode => 0x2,
+                            SSL_ca_file => Mozilla::CA::SSL_ca_file(),
+                        ) : (
+                            SSL_verify_mode => 0x0,
+                        )),
             ); # PROFILE BLOCK STOP
 
         } else {
