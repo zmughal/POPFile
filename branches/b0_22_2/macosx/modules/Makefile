@@ -35,41 +35,41 @@ FAKECONFIG = ExtUtils-FakeConfig-0.12
 FAKECONFIG_ARCHIVE = $(FAKECONFIG).zip
 FAKECONFIG_URL = http://search.cpan.org/CPAN/authors/id/M/MB/MBARBON/$(FAKECONFIG_ARCHIVE)
 
-DBI = DBI-1.616
+DBI = DBI-1.631
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.33
+SQLITE = DBD-SQLite-1.40
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
-SQLITE_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(SQLITE_ARCHIVE)
+SQLITE_URL = http://search.cpan.org/CPAN/authors/id/I/IS/ISHIGAKI/$(SQLITE_ARCHIVE)
 
-SQLITE2 = DBD-SQLite2-0.33
+SQLITE2 = DBD-SQLite2-0.36
 SQLITE2_ARCHIVE = $(SQLITE2).tar.gz
-SQLITE2_URL = http://search.cpan.org/CPAN/authors/id/M/MS/MSERGEANT/$(SQLITE2_ARCHIVE)
+SQLITE2_URL = http://search.cpan.org/CPAN/authors/id/R/RU/RURBAN/$(SQLITE2_ARCHIVE)
 
 TAGSET = HTML-Tagset-3.20
 TAGSET_ARCHIVE = $(TAGSET).tar.gz
 TAGSET_URL = http://search.cpan.org/CPAN/authors/id/P/PE/PETDANCE/$(TAGSET_ARCHIVE)
 
-TEMPLATE = HTML-Template-2.9
+TEMPLATE = HTML-Template-2.95
 TEMPLATE_ARCHIVE = $(TEMPLATE).tar.gz
-TEMPLATE_URL = http://search.cpan.org/CPAN/authors/id/S/SA/SAMTREGAR/$(TEMPLATE_ARCHIVE)
+TEMPLATE_URL = http://search.cpan.org/CPAN/authors/id/W/WO/WONKO/$(TEMPLATE_ARCHIVE)
 
-TIMEDATE = TimeDate-1.20
+TIMEDATE = TimeDate-2.30
 TIMEDATE_ARCHIVE = $(TIMEDATE).tar.gz
 TIMEDATE_URL = http://search.cpan.org/CPAN/authors/id/G/GB/GBARR/$(TIMEDATE_ARCHIVE)
 
 # XMLRCP Support
 
-SOAPLITE = SOAP-Lite-0.714
+SOAPLITE = SOAP-Lite-1.10
 SOAPLITE_ARCHIVE = $(SOAPLITE).tar.gz
-SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/M/MK/MKUTTER/$(SOAPLITE_ARCHIVE)
+SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/P/PH/PHRED/$(SOAPLITE_ARCHIVE)
 
-CLASS_INSPECTOR = Class-Inspector-1.25
+CLASS_INSPECTOR = Class-Inspector-1.28
 CLASS_INSPECTOR_ARCHIVE = $(CLASS_INSPECTOR).tar.gz
 CLASS_INSPECTOR_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(CLASS_INSPECTOR_ARCHIVE)
 
-VERSION_MODULE = version-0.94
+VERSION_MODULE = version-0.9908
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
 VERSION_URL = http://search.cpan.org/CPAN/authors/id/J/JP/JPEACOCK/$(VERSION_ARCHIVE)
 
@@ -85,17 +85,21 @@ TEXTKAKASI_URL = http://search.cpan.org/CPAN/authors/id/D/DA/DANKOGAI/$(TEXTKAKA
 
 # SSL support
 
-NETSSLEAY = Net-SSLeay-1.36
+NETSSLEAY = Net-SSLeay-1.58
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
-NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/F/FL/FLORA/$(NETSSLEAY_ARCHIVE)
+NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/M/MI/MIKEM/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-1.44
+IOSOCKETSSL = IO-Socket-SSL-1.967
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
+MOZILLA_CA = Mozilla-CA-20130114
+MOZILLA_CA_ARCHIVE = $(MOZILLA_CA).tar.gz
+MOZILLA_CA_URL = http://search.cpan.org/CPAN/authors/id/A/AB/ABH/$(MOZILLA_CA_ARCHIVE)
+
 # Socks support
 
-SOCKS = IO-Socket-Socks-0.5
+SOCKS = IO-Socket-Socks-0.63
 SOCKS_ARCHIVE = $(SOCKS).tar.gz
 SOCKS_URL = http://search.cpan.org/CPAN/authors/id/O/OL/OLEG/$(SOCKS_ARCHIVE)
 
@@ -109,8 +113,8 @@ JAPANESESUPPORT_MODULES = $(KAKASI) $(TEXTKAKASI)
 XMLRPC_ARCHIVES = $(SOAPLITE_ARCHIVE) $(VERSION_ARCHIVE) $(CLASS_INSPECTOR_ARCHIVE)
 XMLRPC_MODULES = $(SOAPLITE) $(VERSION_MODULE) $(CLASS_INSPECTOR)
 
-SSL_ARCHIVES = $(NETSSLEAY_ARCHIVE) $(IOSOCKETSSL_ARCHIVE)
-SSL_MODULES = $(NETSSLEAY) $(IOSOCKETSSL)
+SSL_ARCHIVES = $(NETSSLEAY_ARCHIVE) $(IOSOCKETSSL_ARCHIVE) $(MOZILLA_CA_ARCHIVE)
+SSL_MODULES = $(NETSSLEAY) $(IOSOCKETSSL) $(MOZILLA_CA)
 
 SOCKS_ARCHIVES = $(SOCKS_ARCHIVE)
 SOCKS_MODULES = $(SOCKS)
@@ -171,6 +175,9 @@ ssl_modules: ssl_modules_build
 
 	cp -rf $(IOSOCKETSSL)/blib/arch/auto $(LIB_ROOT)
 	cp -rf $(IOSOCKETSSL)/blib/lib/* $(LIB_ROOT)
+
+	cp -rf $(MOZILLA_CA)/blib/arch/auto $(LIB_ROOT)
+	cp -rf $(MOZILLA_CA)/blib/lib/* $(LIB_ROOT)
 
 socks_modules: socks_modules_build
 	cp -rf $(SOCKS)/blib/arch/auto $(LIB_ROOT)
@@ -234,8 +241,9 @@ japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
 	  PERL512=`perl -e 'print $$] ge qw{5.012000};'`; \
 	  if test "$$PERL512" == "1"; \
 	  then \
-		env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.7.sdk -arch i386 -arch x86_64" \
-		env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.7.sdk -arch i386 -arch x86_64 -mmacosx-version-min=10.7" \
+		SDKPATH=`xcodebuild -version -sdk macosx10.7 | grep ^Path: | awk '{print $$2}'`; \
+		env CPPFLAGS="-Os -g -isysroot $$SDKPATH -arch i386 -arch x86_64" \
+		env LDFLAGS="-Wl,-syslibroot,$$SDKPATH -arch i386 -arch x86_64 -mmacosx-version-min=10.7" \
 		./configure --disable-dependency-tracking --disable-shared ; \
 	  else \
 		if test "$$PERL510" == "1"; \
@@ -266,6 +274,11 @@ ssl_modules_build: $(SSL_ARCHIVES)
 	if test ! -d $(IOSOCKETSSL); then tar xzf $(IOSOCKETSSL_ARCHIVE); fi
 	cd $(IOSOCKETSSL); \
 	if test ! -e Makefile; then perl -I.. -I../$(NETSSLEAY)/blib/lib -MConfig_ub Makefile.PL ; fi ;\
+	make
+
+	if test ! -d $(MOZILLA_CA); then tar xzf $(MOZILLA_CA_ARCHIVE); fi
+	cd $(MOZILLA_CA); \
+	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL ; fi ;\
 	make
 
 socks_modules_build: $(SOCKS_ARCHIVES)
@@ -338,6 +351,11 @@ $(IOSOCKETSSL_ARCHIVE):
 	@if test ! -e $(IOSOCKETSSL_ARCHIVE); \
 	then \
 	  curl --output $(IOSOCKETSSL_ARCHIVE) --location --silent $(IOSOCKETSSL_URL); \
+	fi
+$(MOZILLA_CA_ARCHIVE):
+	@if test ! -e $(MOZILLA_CA_ARCHIVE); \
+	then \
+	  curl --output $(MOZILLA_CA_ARCHIVE) --location --silent $(MOZILLA_CA_URL); \
 	fi
 $(SOCKS_ARCHIVE):
 	@if test ! -e $(SOCKS_ARCHIVE); \
