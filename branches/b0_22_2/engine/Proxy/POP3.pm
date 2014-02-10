@@ -260,9 +260,12 @@ sub child__
                 # version 1.42 or earlier are not thread-safe. ActivePerl
                 # for Windows emulates fork() by multiple threads.
 
-                if ( $ssl && ( $^O eq 'MSWin32' ) && $self->config_( 'force_fork' ) && ( $Net::SSLeay::VERSION le '1.42' ) ) {
-                    $self->tee_( $client, "-ERR On Windows, SSL support cannot be used with concurrent POP3 connections$eol" );
-                    next;
+                if ( $ssl && ( $^O eq 'MSWin32' ) && $self->config_( 'force_fork' ) ) {
+                    require Net::SSLeay;
+                    if ( $Net::SSLeay::VERSION le '1.42' ) {
+                        $self->tee_( $client, "-ERR On Windows, SSL support cannot be used with concurrent POP3 connections$eol" );
+                        next;
+                    }
                 }
 
                 $port = $ssl?995:110 if ( !defined( $port ) );
