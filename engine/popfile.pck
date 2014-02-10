@@ -24,6 +24,7 @@ REQUIRED	0.0.0	LWP::UserAgent
 REQUIRED	0.0.0	MIME::Base64
 REQUIRED	0.0.0	MIME::QuotedPrint
 OPTIONAL-Japanese Language Support	0.0.0	MeCab
+OPTIONAL-SSL Verifying Peer Certificate	0.0.0	Mozilla::CA
 REQUIRED	0.0.0	POSIX
 REQUIRED	0.0.0	Sys::Hostname
 OPTIONAL-Japanese Language Support	0.0.0	Text::Kakasi
