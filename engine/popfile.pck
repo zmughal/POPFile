@@ -28,5 +28,5 @@ OPTIONAL-SSL Verifying Peer Certificate	0.0.0	Mozilla::CA
 REQUIRED	0.0.0	POSIX
 REQUIRED	0.0.0	Sys::Hostname
 OPTIONAL-Japanese Language Support	0.0.0	Text::Kakasi
-REQUIRED	0.0.0	Win32::GUI
+OPTIONAL-Windows Support	0.0.0	Win32::GUI
 OPTIONAL-XML-RPC Server Support	0.0.0	XMLRPC::Transport::HTTP
