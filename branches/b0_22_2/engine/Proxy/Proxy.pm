@@ -530,7 +530,10 @@ sub verify_connected_
             }
 
             $self->log_( 0, "Attempting to connect to SSL server at " # PROFILE BLOCK START
-                        . "$hostname:$port" );                        # PROFILE BLOCK STOP
+                        . "$hostname:$port "
+                        . ( $self->global_config_( 'ssl_verify_peer_certs' ) ?
+                            "with" : "without" )
+                        . " peer certificate verification" );         # PROFILE BLOCK STOP
 
             $mail = IO::Socket::SSL->new( # PROFILE BLOCK START
                         Proto    => "tcp",
