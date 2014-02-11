@@ -3,9 +3,9 @@
 # This Makefile is used for the creation of POPFile packages
 # and for testing
 #
-# Copyright (c) 2003-2011 John Graham-Cumming
+# Copyright (c) 2003-2014 John Graham-Cumming
 
-export POPFILE_BUILD_YEAR=2011
+export POPFILE_BUILD_YEAR=2014
 
 export POPFILE_MAJOR_VERSION=1
 export POPFILE_MINOR_VERSION=1
