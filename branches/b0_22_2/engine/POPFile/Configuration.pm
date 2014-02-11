@@ -117,7 +117,7 @@ sub initialize
 
     $self->global_config_( 'message_cutoff', 100000 );
 
-    # Checking for updates if off by default
+    # Checking for updates is off by default
 
     $self->global_config_( 'update_check', 0 );
 
