@@ -44,9 +44,11 @@ my %explain = ( 'Encode'                  => $japanese,
                 'File::Glob::Windows'     => "$japanese (Windows only)",
                 'IO::Socket::SSL'         => 'SSL Connection Support',
                 'IO::Socket::Socks'       => 'Socks Proxy Support',
-                'LWP::UserAgent'          => 'Windows Tray icon support',
-                'Win32::GUI'              => 'Windows Tray icon support',
+                'LWP::UserAgent'          => 'Windows Tray Icon Support',
+                'Win32::GUI'              => 'Windows Tray Icon Support',
                 'MeCab'                   => $japanese,
+                'Mozilla::CA'             => 'SSL Peer Certificate Verification',
+                'Net::SSLeay'             => 'SSL Connection Support',
                 'Text::Kakasi'            => $japanese,
                 'XMLRPC::Transport::HTTP' => 'XML-RPC Server Support' );
 
@@ -59,7 +61,7 @@ foreach my $file (@ARGV) {
     scan_file( $file );
 }
 
-open PACKAGE, ">$output";
+open PACKAGE, ">", $output;
 foreach my $module (sort keys %modules) {
     if ( $module !~ /^(Classifier|POPFile|Proxy|UI|Services)/ ) {
         print PACKAGE "$modules{$module}\t0.0.0\t$module\n";
@@ -79,14 +81,20 @@ sub scan_file
 {
     my ( $file ) = @_;
 
-    if ( open FILE, "<$file" ) {
+    if ( open FILE, "<", $file ) {
         while ( <FILE> ) {
             if ( /^[ \t]*require[ \t]+([A-Z][^ \t\r\n;]+)/ ) {
                 $modules{$1} = 'OPTIONAL-' . $explain{$1};
                 next;
             }
             if ( /^[ \t]*use[ \t]+([A-Z][^ \t\r\n;]+)/ ) {
-                $modules{$1} = 'REQUIRED';
+                my $module = $1;
+                if ( $file =~ m/^Platform\// ) {
+                    # Modules Used by Platform modules are always optional
+                    $modules{$module} = 'OPTIONAL-' . $explain{$module};
+                } else {
+                    $modules{$module} = 'REQUIRED';
+                }
                 next;
             }
         }
