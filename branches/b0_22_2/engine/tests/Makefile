@@ -3,7 +3,7 @@
 # This Makefile is used for the creation of POPFile packages
 # and for testing
 #
-# Copyright (c) 2001-2011 John Graham-Cumming
+# Copyright (c) 2001-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #

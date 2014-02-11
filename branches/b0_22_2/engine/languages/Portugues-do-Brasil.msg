@@ -1,4 +1,4 @@
-# Copyright (c) 2001-2011 John Graham-Cumming
+# Copyright (c) 2001-2014 John Graham-Cumming
 # Translated by Adriano Rafael Gomes <adrianorg@users.sourceforge.net>
 # Updated by Fernando de Alcantara Correia <facorreia@users.sourceforge.net> to v0.19.1
 #

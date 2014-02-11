@@ -6,7 +6,7 @@
 # file.  Run check.pl and it will report missing or extraneous
 # entries in all the MSG files present
 #
-# Copyright (c) 2001-2011 John Graham-Cumming
+# Copyright (c) 2001-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
