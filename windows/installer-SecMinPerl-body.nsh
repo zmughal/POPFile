@@ -205,6 +205,9 @@
   File "${C_PERL_DIR}\site\lib\IO\Socket\Socks.pm"
   File "${C_PERL_DIR}\site\lib\IO\Socket\SSL.pm"
 
+  SetOutPath "$G_MPLIBDIR\IO\Socket\SSL"
+  File "${C_PERL_DIR}\site\lib\IO\Socket\SSL\PublicSuffix.pm"
+
   SetOutPath "$G_MPLIBDIR\List"
   File "${C_PERL_DIR}\site\lib\List\Util.pm"
         SetOutPath "$G_MPLIBDIR\auto\List\Util"
@@ -338,6 +341,8 @@
   File "${C_PERL_DIR}\site\lib\URI\http.pm"
   File "${C_PERL_DIR}\site\lib\URI\_foreign.pm"
   File "${C_PERL_DIR}\site\lib\URI\_generic.pm"
+  File "${C_PERL_DIR}\site\lib\URI\_idna.pm"
+  File "${C_PERL_DIR}\site\lib\URI\_punycode.pm"
   File "${C_PERL_DIR}\site\lib\URI\_query.pm"
   File "${C_PERL_DIR}\site\lib\URI\_server.pm"
 
