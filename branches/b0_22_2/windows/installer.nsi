@@ -27,7 +27,7 @@
 #       (1) pfidbstatus.exe   (NSIS script: test\pfidbstatus.nsi)
 #       (2) pfidiag.exe       (NSIS script: test\pfidiag.nsi)
 #
-# Copyright (c) 2002-2013 John Graham-Cumming
+# Copyright (c) 2002-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -263,7 +263,7 @@
 
   !define C_PERL_DIR      "C:\Perl"
   !define C_PERL_VERSION  "5.16.3"
-  !define C_PERL_BUILD    "1603"
+  !define C_PERL_BUILD    "1604"
 
   ;----------------------------------------------------------------------
   ; An upgrade of ActivePerl may involve significant changes to its
@@ -1759,9 +1759,9 @@ Section /o "XMLRPC" SecXMLRPC
   File "${C_PERL_DIR}\lib\HTTP\Daemon.pm"
 
   SetOutPath "$G_MPLIBDIR\List"
-  File "${C_PERL_DIR}\lib\List\Util.pm"
+  File "${C_PERL_DIR}\site\lib\List\Util.pm"
         SetOutPath "$G_MPLIBDIR\auto\List\Util"
-        File "${C_PERL_DIR}\lib\auto\List\Util\Util.dll"
+        File "${C_PERL_DIR}\site\lib\auto\List\Util\Util.dll"
 
   SetOutPath "$G_MPLIBDIR\LWP"
   File "${C_PERL_DIR}\lib\LWP\MediaTypes.pm"
