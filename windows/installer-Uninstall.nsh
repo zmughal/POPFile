@@ -3,7 +3,7 @@
 # installer-Uninstall.nsh --- This 'include' file contains the 'Uninstall' part of the main
 #                             NSIS 'installer.nsi' script used to create the POPFile installer.
 #
-# Copyright (c) 2005-2011 John Graham-Cumming
+# Copyright (c) 2005-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -1331,6 +1331,10 @@ Section "-un.Minimal Perl" UnSecMinPerl
 
 skip_XMLRPC_support:
   IfFileExists "$G_MPLIBDIR\Net\SSLeay\*.*" 0 skip_SSL_support
+  Delete "$G_MPLIBDIR\Mozilla\CA.pm"
+  Delete "$G_MPLIBDIR\Mozilla\CA\cacert.pem"
+  RMDir  "$G_MPLIBDIR\Mozilla\CA"
+  RMDir  "$G_MPLIBDIR\Mozilla"
   RMDir /r "$G_MPLIBDIR\Net"
 
 skip_SSL_support:
