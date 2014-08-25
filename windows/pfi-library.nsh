@@ -4,7 +4,7 @@
 #                     definitions for inclusion in the NSIS scripts used
 #                     to create (and test) the POPFile Windows installer.
 #
-# Copyright (c) 2003-2011 John Graham-Cumming
+# Copyright (c) 2003-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -64,7 +64,7 @@
 # (by using this constant in the executable's "Version Information" data).
 #--------------------------------------------------------------------------
 
-  !define C_PFI_LIBRARY_VERSION     "0.6.3"
+  !define C_PFI_LIBRARY_VERSION     "0.6.4"
 
 #--------------------------------------------------------------------------
 # Symbols used to avoid confusion over where the line breaks occur.
@@ -3783,7 +3783,7 @@
     !define L_COMMAND     $R9   ; the command to be run by the SQLite command-line utility
     !define L_DATABASE    $R8   ; name of the SQLite database file
     !define L_RESULT      $R7   ; string returned on top of the stack
-    !define L_SQLITEPATH  $R6   ; path to sqlite.exe utility
+    !define L_SQLITEPATH  $R6   ; path to sqlite.exe/sqlite3.exe utility
     !define L_SQLITEUTIL  $R5   ; used to run relevant SQLite utility
     !define L_STATUS      $R4   ; status code returned by SQLite utility
     !define L_WORKINGDIR  $R3   ; current working directory
