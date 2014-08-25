@@ -8,7 +8,7 @@
 #   The non-library functions used in this file are contained in a
 #   separate file (see 'installer-SecPOPFile-func.nsh')
 #
-# Copyright (c) 2005-2013 John Graham-Cumming
+# Copyright (c) 2005-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -74,7 +74,7 @@
   ;
   ; (a) $INSTDIR         -  main POPFile installation folder, holds popfile.pl and several
   ;                         other *.pl scripts, runpopfile.exe, popfile*.exe plus three of the
-  ;                         minimal Perl files (perl.exe, wperl.exe and perl58.dll)
+  ;                         minimal Perl files (perl.exe, wperl.exe and perl516.dll)
   ;
   ; (b) $INSTDIR\kakasi  -  holds the Kakasi package used to process Japanese email
   ;                         (only installed when Japanese support is required and the Kakasi
