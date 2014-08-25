@@ -20,7 +20,7 @@
 #   file contains macro-based SECTION and FUNCTION definitions to make
 #   future maintenance easier.
 #
-# Copyright (c) 2007-2013 John Graham-Cumming
+# Copyright (c) 2007-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -169,29 +169,29 @@
         File "${C_PERL_DIR}\lib\utf8_heavy.pl"
 
         SetOutPath "$G_MPLIBDIR\Encode"
-        File "${C_PERL_DIR}\lib\Encode\CJKConstants.pm"
-        File "${C_PERL_DIR}\lib\Encode\Guess.pm"
-        File "${C_PERL_DIR}\lib\Encode\JP.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\CJKConstants.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Guess.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\JP.pm"
               SetOutPath "$G_MPLIBDIR\auto\Encode\JP"
-              File "${C_PERL_DIR}\lib\auto\Encode\JP\JP.dll"
+              File "${C_PERL_DIR}\site\lib\auto\Encode\JP\JP.dll"
               SetOutPath "$G_MPLIBDIR\Encode"
-        File "${C_PERL_DIR}\lib\Encode\Unicode.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Unicode.pm"
               SetOutPath "$G_MPLIBDIR\auto\Encode\Unicode"
-              File "${C_PERL_DIR}\lib\auto\Encode\Unicode\Unicode.dll"
+              File "${C_PERL_DIR}\site\lib\auto\Encode\Unicode\Unicode.dll"
 
         SetOutPath "$G_MPLIBDIR\Encode\JP"
-        File "${C_PERL_DIR}\lib\Encode\JP\H2Z.pm"
-        File "${C_PERL_DIR}\lib\Encode\JP\JIS7.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\JP\H2Z.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\JP\JIS7.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode\MIME"
-        File "${C_PERL_DIR}\lib\Encode\MIME\Header.pm"
-        File "${C_PERL_DIR}\lib\Encode\MIME\Name.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\MIME\Header.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\MIME\Name.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode\MIME\Header"
-        File "${C_PERL_DIR}\lib\Encode\MIME\Header\ISO_2022_JP.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\MIME\Header\ISO_2022_JP.pm"
 
         SetOutPath "$G_MPLIBDIR\Encode\Unicode"
-        File "${C_PERL_DIR}\lib\Encode\Unicode\UTF7.pm"
+        File "${C_PERL_DIR}\site\lib\Encode\Unicode\UTF7.pm"
 
         SetOutPath "$G_MPLIBDIR\File\Glob"
         File "${C_PERL_DIR}\site\lib\File\Glob\Windows.pm"
