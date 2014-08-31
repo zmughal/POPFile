@@ -403,6 +403,12 @@ sub connect_server__ {
             @{$self->{mailboxes__}} = $imap->get_mailbox_list();
         }
 
+        # Check if the specified folder exists
+        if ( ! $self->is_valid_folder( $folder ) ) {
+            # Just skip it
+            next;
+        }
+
         # Do a STATUS to check UIDVALIDITY and UIDNEXT
         my $info = $imap->status( $folder );
         my $uidnext = $info->{UIDNEXT};
@@ -505,6 +511,11 @@ sub scan_folder {
 
     my $imap = $self->{folders__}{$folder}{imap};
 
+    # Check if the specified folder exists
+    if ( ! $self->is_valid_folder( $folder ) ) {
+        return;
+    }
+
     # Do a NOOP first. Certain implementations won't tell us about
     # new messages while we are connected and selected otherwise:
     if ( ! $imap->noop() ) {
@@ -585,6 +596,36 @@ sub scan_folder {
     }
 }
 
+# ----------------------------------------------------------------------------
+#
+# is_valid_folder
+#
+#   This function checks a folder is available or not
+#
+# Arguments:
+#
+#   $folder: The folder to check
+#
+# ----------------------------------------------------------------------------
+sub is_valid_folder {
+    my $self = shift;
+    my $folder = shift;
+
+    # Check if the specified folder exists
+    my $found = 0;
+    foreach my $mailbox ( @{$self->{mailboxes__}} ) {
+        if ( $mailbox eq $folder ) {
+            $found = 1;
+            last;
+        }
+    }
+    if ( ! $found ) {
+        my $folder_list = join ",", @{$self->{mailboxes__}};
+        $self->log_( 0, "Detected an invalid folder \"$folder\" which does not exist in mailbox. Available mailbox list: $folder_list" );
+    }
+
+    return $found;
+}
 
 
 # ----------------------------------------------------------------------------
