@@ -223,7 +223,7 @@
     <tr>
         <td colspan="2" class="openMessageBody">
             <hr />
-            <a name="message_header" />
+            <a name="message_header"></a>
             <TMPL_VAR NAME="View_Message">
         </td>
     </tr>
