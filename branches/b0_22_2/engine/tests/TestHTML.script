@@ -346,7 +346,7 @@ MATCH <a class="messageLink" href="#message_header">Message Header</a>
 NOTMATCH | <a class="messageLink" href="#message_body">Message Body</a>
 NOTMATCH | <a class="messageLink" href="#quick_magnet">QuickMagnet</a>
 NOTMATCH | <a class="messageLink" href="#scores">Scores</a>
-MATCH <a name="message_header" />
+MATCH <a name="message_header"></a>
 
 # Check search
 
@@ -611,8 +611,8 @@ MATCH
 | <a class="messageLink" href="#quick_magnets">QuickMagnets</a>
 | <a class="messageLink" href="#scores">Scores</a>
 ENDMATCH
-MATCH <a name="message_header" />
-MATCH <a name="message_body" />
+MATCH <a name="message_header"></a>
+MATCH <a name="message_body"></a>
 MATCH
 <a name="quick_magnets">
 QuickMagnets
