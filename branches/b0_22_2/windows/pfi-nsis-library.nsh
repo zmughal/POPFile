@@ -24,7 +24,7 @@
 #                      Pop $R0
 #--------------------------------------------------------------------------
 
-  !define C_NSIS_LIBRARY_VERSION     "0.2.4"
+  !define C_NSIS_LIBRARY_VERSION     "0.2.5"
 
   ;----------------------------------------------
   ; Use the following standard NSIS header files:
@@ -228,7 +228,7 @@
 !macroend
 
 
-!ifdef ADDSSL | ADDUSER | BACKUP | CREATEUSER | DBSTATUS | INSTALLER | LFNFIXER | MONITORCC | ONDEMAND | PFIDIAG | PORTABLE | RESTORE | RUNPOPFILE | RUNSQLITE
+!ifdef ADDSSL | ADDUSER | BACKUP | CREATEUSER | DBANALYSER | DBSTATUS | INSTALLER | LFNFIXER | MONITORCC | ONDEMAND | PFIDIAG | PORTABLE | RESTORE | RUNPOPFILE | RUNSQLITE
     #--------------------------------------------------------------------------
     # Installer Function: NSIS_GetParent
     #

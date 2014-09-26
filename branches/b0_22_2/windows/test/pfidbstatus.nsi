@@ -1,17 +1,19 @@
-#-------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #
-# pfidbstatus.nsi --- A simple utility to check the status and integrity of POPFile's SQLite
-#                     database using the SQLite command-line utility.
+# pfidbstatus.nsi
 #
-#                     SQLite 2.x and 3.x database files are not compatible therefore separate
-#                     command-line utilities have to be used: sqlite.exe for 2.x format files
-#                     and sqlite3.exe for 3.x format files.
+#   A simple utility to check the status and integrity of POPFile's SQLite
+#   database using the SQLite command-line utility.
 #
-#                     NOTE: sqlite.exe v2.8.12 causes GPFs when called by the 'nsExec' plug-in
-#                           to execute SQL from the command-line so this utility checks the
-#                           sqlite.exe version number before trying to execute any SQL.
+#   SQLite 2.x and 3.x database files are not compatible therefore separate
+#   command-line utilities have to be used: sqlite.exe for 2.x format files
+#   and sqlite3.exe for 3.x format files.
 #
-# Copyright (c) 2005-2012 John Graham-Cumming
+#   NOTE: sqlite.exe v2.8.12 causes GPFs when called by the 'nsExec' plug-in
+#         to execute SQL from the command-line so this utility checks the
+#         sqlite.exe version number before trying to execute any SQL.
+#
+# Copyright (c) 2005-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -27,7 +29,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with POPFile; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-#-------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
   ; This version of the script has been tested with the "NSIS v2.46" compiler,
   ; released 6 December 2009. This particular compiler can be downloaded from
@@ -42,10 +44,13 @@
           "$\n\
           $\n***   NSIS COMPILER WARNING:\
           $\n***\
-          $\n***   This script has only been tested using the NSIS ${C_EXPECTED_VERSION} compiler\
-          $\n***   and may not work properly with this NSIS ${NSIS_VERSION} compiler\
+          $\n***   This script has only been tested \
+          using the NSIS ${C_EXPECTED_VERSION} compiler\
+          $\n***   and may not work properly with this \
+          NSIS ${NSIS_VERSION} compiler\
           $\n***\
-          $\n***   The resulting 'installer' program should be tested carefully!\
+          $\n***   The resulting 'installer' program \
+          should be tested carefully!\
           $\n$\n"
   !endif
 
@@ -65,61 +70,72 @@
 #
 # /DCTS_INTEGRATED
 #
-# This script can build either an 'integrated' version of the utility which will be included
-# in the main POPFile installer or a 'stand-alone' version of the utility which can be used
-# with POPFile 0.21.0 or a later version.
+# This script can build either an 'integrated' version of the utility which
+# will be included in the main POPFile installer or a 'stand-alone' version
+# of the utility which can be used with POPFile 0.21.0 or a later version.
 #
-# Since the 'integrated' version will be installed at the same time as a compatible version
-# of the SQLite utility there is no need to include a compatible SQLite utility. When the
-# '/DCTS_INTEGRATED' compile-time switch is supplied, the SQLite utility will not be included
-# so the resulting executable file will be smaller (typically 79 KB instead of 208 KB).
+# Since the 'integrated' version will be installed at the same time as a
+# compatible version of the SQLite utility there is no need to include
+# another copy of the SQLite utility when compiling this script.
+#
+# When the '/DCTS_INTEGRATED' compile-time switch is supplied, the SQLite
+# utility will not be included so the resulting executable file will be smaller
+# (typically 79 KB instead of 208 KB).
 #
 # By default the SQLite utility is included when this utility is built.
 #
 #--------------------------------------------------------------------------
 
-#-------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Usage (one optional parameter):
 #
 #        pfidbstatus
 #  or    pfidbstatus database_filename
 #
-# Normally 'database_filename' will simply be the default SQLite database filename, popfile.db.
+# Normally 'database_filename' will simply be the default SQLite database
+# filename, popfile.db.
 #
-# If this utility is used via a Start Menu shortcut created by the 'POPFile User Data' wizard
-# (setupuser.exe) then the parameter will be '/REGISTRY' which forces the utility to use the
-# registry data to find the database file (if the registry data does not exist, it exits).
+# If this utility is used via the Start Menu shortcut created by the
+# 'Add POPFile User' wizard (adduser.exe) then the parameter will be
+# '/REGISTRY' which forces the utility to use the registry data to find
+# the database file (if the registry data does not exist, it exits).
 #
-# If no parameter is given the utility makes several attempts to find the database file:
+# If no parameter is given the utility makes several attempts to find the
+# database file:
 #
-# (1) If the default SQLite database file (popfile.db) is found in the current folder then
-#     it is assumed that this is the database to be checked.
+# (1) If the default SQLite database file (popfile.db) is found in the current
+#     folder then it is assumed that this is the database to be checked.
 #
-# (2) If the default SQLite database file (popfile.db) is found in the same folder as the
-#     utility then it is assumed that this is the database to be checked.
+# (2) If the default SQLite database file (popfile.db) is found in the same
+#     folder as the utility then it is assumed that this is the database to
+#     be checked.
 #
-# (3) If the POPFILE_USER environment variable has been defined and the POPFile configuration
-#     file (popfile.cfg) is found in the specified folder then the name and location of the
-#     SQLite database file is extracted.
+# (3) If the POPFILE_USER environment variable has been defined and the POPFile
+#     configuration file (popfile.cfg) is found in the specified folder then
+#     the name and location of the SQLite database file is extracted.
 #
-# (4) If the POPFILE_USER environment variable has been defined and the specified folder exists
-#     but the name and location of the SQLite database file cannot be determined, the utility
-#     looks for the default SQLite database file (popfile.db) in that folder.
+# (4) If the POPFILE_USER environment variable has been defined and the
+#     specified folder exists but the name and location of the SQLite database
+#     file cannot be determined, the utility looks for the default SQLite
+#     database file (popfile.db) in that folder.
 #
-# (5) If the 'User Data' folder location is specified in the Registry, the folder exists and
-#     the POPFile configuration file (popfile.cfg) is found there then the name and location
-#     of the SQLite database file is extracted.
+# (5) If the 'User Data' folder location is specified in the Registry, the
+#     folder exists and the POPFile configuration file (popfile.cfg) is found
+#     there then the name and location of the SQLite database file is extracted.
 #
-# (6) If the 'User Data' folder location is specified in the Registry and the folder exists
-#     but the name and location of the SQLite database file cannot be determined, the utility
-#     looks for the default SQLite database file (popfile.db) in that folder.
+# (6) If the 'User Data' folder location is specified in the Registry and the
+#     folder exists but the name and location of the SQLite database file
+#     cannot be determined, the utility looks for the default SQLite database
+#     file (popfile.db) in that folder.
 #
-# (7) The search is abandoned if the above steps fail to find the database (the utility exits).
+# (7) The search is abandoned if the above steps fail to find the database
+#     (and the utility exits).
 #
-# NOTE: Priority is given to the current folder and the folder containing the utility to make
-#       it easy to use the utility (e.g. just put it in the same folder as the popfile.db file)
+# NOTE: Priority is given to the current folder and the folder containing the
+#       utility to make it easy to use the utility (e.g. just put the utility
+#       in the same folder as the popfile.db file)
 #
-#-------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
   ;--------------------------------------------------------------------------
   ; Select LZMA compression (to generate smallest EXE file)
@@ -133,17 +149,17 @@
   ; ${IO_NL} is used for InstallOptions-style 'new line' sequences.
   ; ${MB_NL} is used for MessageBox-style 'new line' sequences.
   ;
-  ; (these two constants do not follow the 'C_' naming convention described below)
+  ; (these 2 constants don't follow the 'C_' naming convention described below)
   ;--------------------------------------------------------------------------
 
   !define IO_NL   "\r\n"
   !define MB_NL   "$\r$\n"
 
   ;--------------------------------------------------------------------------
-  ; POPFile constants have been given names beginning with 'C_' (eg C_README)
+  ; POPFile constants have names beginning with 'C_' (e.g. C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.3.2"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION   "0.4.0"     ; see 'VIProductVersion' comment below
   !define C_OUTFILE   "pfidbstatus.exe"
 
   ; The default NSIS caption is "Name Setup" so we override it here
@@ -184,7 +200,7 @@
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
-  ; Avoid compiler warnings by disabling the functions and definitions we do not use
+  ; Avoid compiler warnings by disabling functions & definitions we do not use
 
   !define DBSTATUS
 
@@ -193,7 +209,7 @@
 
 #--------------------------------------------------------------------------
 
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; 'VIProductVersion' is X.X.X.X where X is a number in range 0 to 65535
   ; representing the following values: Major.Minor.Release.Build
 
   VIProductVersion                          "${C_VERSION}.0"
@@ -201,15 +217,21 @@
   !define /date C_BUILD_YEAR                "%Y"
 
   !ifdef CTS_INTEGRATED
-      VIAddVersionKey "ProductName"         "POPFile SQLite Database Status Check (integrated version)"
+      VIAddVersionKey "ProductName"         "POPFile SQLite Database Status \
+                                            Check (integrated version)"
   !else
-      VIAddVersionKey "ProductName"         "POPFile SQLite Database Status Check (stand-alone version)"
+      VIAddVersionKey "ProductName"         "POPFile SQLite Database Status \
+                                            Check (stand-alone version)"
   !endif
-  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
+  VIAddVersionKey "Comments"                "POPFile Homepage: \
+                                            http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of John Graham-Cumming"
-  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} John Graham-Cumming"
-  VIAddVersionKey "FileDescription"         "Check the status of POPFile's SQLite database"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark \
+                                            of John Graham-Cumming"
+  VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} \
+                                            John Graham-Cumming"
+  VIAddVersionKey "FileDescription"         "Check the status of \
+                                            POPFile's SQLite database"
   VIAddVersionKey "FileVersion"             "${C_VERSION}"
   VIAddVersionKey "OriginalFilename"        "${C_OUTFILE}"
 
@@ -221,25 +243,29 @@
   !ifdef C_NSIS_LIBRARY_VERSION
     VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
-  VIAddVersionKey "Build Script"            "${__FILE__}${MB_NL}(${__TIMESTAMP__})"
+  VIAddVersionKey "Build Script"            "${__FILE__}\
+                                             ${MB_NL}\
+                                             (${__TIMESTAMP__})"
 
-#----------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
 # User Variables (Global)
 #--------------------------------------------------------------------------
 
-  ; This script uses 'User Variables' (with names starting with 'G_') to hold GLOBAL data.
+  ; 'User Variables' (with names starting with 'G_') hold GLOBAL data.
 
   Var G_WINUSERNAME    ; current Windows user login name
 
-  Var G_DATADIR        ; folder path where we expect to find the SQLite database file
-  Var G_DATABASE       ; holds name (and possibly path) to the SQLite database
+  Var G_DATADIR        ; SQLite database folder path
+  Var G_DATABASE       ; SQLite database name (and possibly path)
 
   Var G_SQLITEUTIL     ; name of the appropriate SQLite command-line utility
 
-  Var G_DBFORMAT       ; SQLite database format ('2.x', '3.x' or an error string)
-  Var G_DBSCHEMA       ; SQLite database schema ( a number like '12' or an error string)
+  Var G_DBFORMAT       ; SQLite database format
+                       ; ('2.x', '3.x' or an error string)
+  Var G_DBSCHEMA       ; SQLite database schema
+                       ; (a number like '12' or an error string)
   Var G_DBSIZE         ; SQLite database file size (in KB)
 
   Var G_PLS_FIELD_1    ; used to customize language strings
@@ -265,15 +291,16 @@
   ; Interface Settings - Interface Resource Settings
   ;----------------------------------------------------------------
 
-  ; The banner provided by the default 'modern.exe' UI does not provide much room for the
-  ; two lines of text, e.g. the German version is truncated, so we use a custom UI which
-  ; provides slightly wider text areas. Each area is still limited to a single line of text.
+  ; The banner provided by the default 'modern.exe' UI does not provide much
+  ; room for the two lines of text, e.g. the German version is truncated, so
+  ; we use a custom UI which provides slightly wider text areas. Each area is
+  ; still limited to a single line of text.
 
   !define MUI_UI                              "..\UI\pfi_modern.exe"
 
-  ; The 'hdr-common.bmp' logo is only 90 x 57 pixels, much smaller than the 150 x 57 pixel
-  ; space provided by the default 'modern_headerbmpr.exe' UI, so we use a custom UI which
-  ; leaves more room for the TITLE and SUBTITLE text.
+  ; The 'hdr-common.bmp' logo is only 90 x 57 pixels, much smaller than the
+  ; 150 x 57 pixel space provided by the default 'modern_headerbmpr.exe' UI,
+  ; so we use a custom UI which leaves more room for the TITLE & SUBTITLE text.
 
   !define MUI_UI_HEADERIMAGE_RIGHT            "..\UI\pfi_headerbmpr.exe"
 
@@ -281,7 +308,7 @@
   ; Interface Settings - Installer Finish Page Interface Settings
   ;----------------------------------------------------------------
 
-  ; Show the installation log and leave the window open when utility has completed its work
+  ; Show the installation log and leave window open when utility has finished
 
   ShowInstDetails show
   !define MUI_FINISHPAGE_NOAUTOCLOSE
@@ -326,93 +353,181 @@
       LangString ${NAME} ${LANG_ENGLISH} "${VALUE}"
   !macroend
 
-  !insertmacro DBS_TEXT DBS_LANG_STD_HDR        "POPFile SQLite Database Status Check"
-  !insertmacro DBS_TEXT DBS_LANG_STD_SUBHDR     "Please wait while the database status is checked"
+  !insertmacro DBS_TEXT DBS_LANG_STD_HDR \
+               "POPFile SQLite Database Status Check"
+  !insertmacro DBS_TEXT DBS_LANG_STD_SUBHDR \
+               "Please wait while the database status is checked"
 
-  !insertmacro DBS_TEXT DBS_LANG_END_HDR        "POPFile SQLite Database Status Check"
-  !insertmacro DBS_TEXT DBS_LANG_END_SUBHDR     "To save the report, use right-click in the message window,${MB_NL}copy to the clipboard then paste the report into a text file"
+  !insertmacro DBS_TEXT DBS_LANG_END_HDR \
+               "POPFile SQLite Database Status Check"
+  !insertmacro DBS_TEXT DBS_LANG_END_SUBHDR \
+               "To save the report, use right-click in the message window,\
+               ${MB_NL}\
+               copy to the clipboard then paste the report into a text file"
 
-  !insertmacro DBS_TEXT DBS_LANG_ABORT_HDR      "POPFile SQLite Database Status Check Failed"
-  !insertmacro DBS_TEXT DBS_LANG_ABORT_SUBHDR   "Problem detected - see error report in window below"
+  !insertmacro DBS_TEXT DBS_LANG_ABORT_HDR \
+               "POPFile SQLite Database Status Check Failed"
+  !insertmacro DBS_TEXT DBS_LANG_ABORT_SUBHDR \
+               "Problem detected - see error report in window below"
 
-  !insertmacro DBS_TEXT DBS_LANG_RIGHTCLICK     "Right-click in the window below to copy the report to the clipboard"
+  !insertmacro DBS_TEXT DBS_LANG_RIGHTCLICK \
+               "Right-click in the window below to \
+               copy the report to the clipboard"
 
-  !insertmacro DBS_TEXT DBS_LANG_NOCONFIGDATA   "POPFile is not configured for the '$G_WINUSERNAME' user"
+  !insertmacro DBS_TEXT DBS_LANG_NOCONFIGDATA \
+              "POPFile is not configured for the '$G_WINUSERNAME' user"
 
-  !insertmacro DBS_TEXT DBS_LANG_DBNOTFOUND_1   "Unable to find the '$G_DATABASE' file (the SQLite database)"
-  !insertmacro DBS_TEXT DBS_LANG_DBNOTFOUND_2   "(looked in '$G_PLS_FIELD_1' folder)"
-  !insertmacro DBS_TEXT DBS_LANG_DBNOTFOUND     "$(DBS_LANG_DBNOTFOUND_1)${MB_NL}${MB_NL}$(DBS_LANG_DBNOTFOUND_2)"
+  !insertmacro DBS_TEXT DBS_LANG_DBNOTFOUND_1 \
+               "Unable to find the '$G_DATABASE' file (the SQLite database)"
+  !insertmacro DBS_TEXT DBS_LANG_DBNOTFOUND_2 \
+               "(looked in '$G_PLS_FIELD_1' folder)"
+  !insertmacro DBS_TEXT DBS_LANG_DBNOTFOUND \
+               "$(DBS_LANG_DBNOTFOUND_1)\
+               ${MB_NL}${MB_NL}\
+               $(DBS_LANG_DBNOTFOUND_2)"
 
-  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_1    "No SQLite database filename specified."
-  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_2    "Usage: $G_PLS_FIELD_1 <database>"
-  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_3    " e.g.  $G_PLS_FIELD_1 popfile.db"
-  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_4    " e.g.  $G_PLS_FIELD_1 C:\Program Files\POPFile\popfile.db"
-  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_5    " e.g.  $G_PLS_FIELD_1 /REGISTRY"
-  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM      "$(DBS_LANG_NODBPARAM_1)${MB_NL}${MB_NL}$(DBS_LANG_NODBPARAM_2)${MB_NL}$(DBS_LANG_NODBPARAM_3)${MB_NL}$(DBS_LANG_NODBPARAM_4)${MB_NL}$(DBS_LANG_NODBPARAM_5)"
+  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_1 \
+               "No SQLite database filename specified."
+  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_2 \
+               "Usage: $G_PLS_FIELD_1 <database>"
+  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_3 \
+               " e.g.  $G_PLS_FIELD_1 popfile.db"
+  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_4 \
+               " e.g.  $G_PLS_FIELD_1 C:\Program Files\POPFile\popfile.db"
+  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM_5 \
+               " e.g.  $G_PLS_FIELD_1 /REGISTRY"
+  !insertmacro DBS_TEXT DBS_LANG_NODBPARAM \
+               "$(DBS_LANG_NODBPARAM_1)\
+               ${MB_NL}${MB_NL}\
+               $(DBS_LANG_NODBPARAM_2)\
+               ${MB_NL}\
+               $(DBS_LANG_NODBPARAM_3)\
+               ${MB_NL}\
+               $(DBS_LANG_NODBPARAM_4)\
+               ${MB_NL}\
+               $(DBS_LANG_NODBPARAM_5)"
 
   !insertmacro DBS_TEXT DBS_LANG_OPENERR        "unable to open file"
 
-  !insertmacro DBS_TEXT DBS_LANG_DBIDENTIFIED   "The '$G_DATABASE' file is a SQLite $G_DBFORMAT database"
+  !insertmacro DBS_TEXT DBS_LANG_DBIDENTIFIED \
+               "The '$G_DATABASE' file is a SQLite $G_DBFORMAT database"
 
-  !insertmacro DBS_TEXT DBS_LANG_UTILNOTFOUND_1 "Unable to find the '$G_SQLITEUTIL' file (the SQLite $G_DBFORMAT utility)"
-  !insertmacro DBS_TEXT DBS_LANG_UTILNOTFOUND_2 "(looked in '$G_PLS_FIELD_1' folder, 'POPFILE_ROOT' and Registry)"
-  !insertmacro DBS_TEXT DBS_LANG_UTILNOTFOUND   "$(DBS_LANG_UTILNOTFOUND_1)${MB_NL}${MB_NL}$(DBS_LANG_UTILNOTFOUND_2)"
+  !insertmacro DBS_TEXT DBS_LANG_UTILNOTFOUND_1 \
+               "Unable to find the '$G_SQLITEUTIL' file \
+               (the SQLite $G_DBFORMAT utility)"
+  !insertmacro DBS_TEXT DBS_LANG_UTILNOTFOUND_2 \
+               "(looked in '$G_PLS_FIELD_1' folder, \
+               'POPFILE_ROOT' and Registry)"
+  !insertmacro DBS_TEXT DBS_LANG_UTILNOTFOUND \
+               "$(DBS_LANG_UTILNOTFOUND_1)\
+               ${MB_NL}${MB_NL}\
+               $(DBS_LANG_UTILNOTFOUND_2)"
 
-  !insertmacro DBS_TEXT DBS_LANG_STARTERROR     "Unable to start the '$G_SQLITEUTIL' utility"
-  !insertmacro DBS_TEXT DBS_LANG_VERSIONERROR   "Error: Unable to determine the '$G_SQLITEUTIL' utility's version number"
+  !insertmacro DBS_TEXT DBS_LANG_STARTERROR \
+               "Unable to start the '$G_SQLITEUTIL' utility"
+  !insertmacro DBS_TEXT DBS_LANG_VERSIONERROR \
+               "Error: Unable to determine the \
+               '$G_SQLITEUTIL' utility's version number"
 
-  !insertmacro DBS_TEXT DBS_LANG_UNKNOWNFMT_1   "Unable to tell if '$G_DATABASE' is a SQLite database file"
-  !insertmacro DBS_TEXT DBS_LANG_UNKNOWNFMT_2   "File format not known $G_DBFORMAT"
-  !insertmacro DBS_TEXT DBS_LANG_UNKNOWNFMT_3   "Please shutdown POPFile before using this utility"
-  !insertmacro DBS_TEXT DBS_LANG_UNKNOWNFORMAT  "$(DBS_LANG_UNKNOWNFMT_1)${MB_NL}${MB_NL}$(DBS_LANG_UNKNOWNFMT_2)${MB_NL}${MB_NL}$(DBS_LANG_UNKNOWNFMT_3)"
+  !insertmacro DBS_TEXT DBS_LANG_UNKNOWNFMT_1 \
+               "Unable to tell if '$G_DATABASE' is a SQLite database file"
+  !insertmacro DBS_TEXT DBS_LANG_UNKNOWNFMT_2 \
+               "File format not known $G_DBFORMAT"
+  !insertmacro DBS_TEXT DBS_LANG_UNKNOWNFMT_3 \
+               "Please shutdown POPFile before using this utility"
+  !insertmacro DBS_TEXT DBS_LANG_UNKNOWNFORMAT \
+               "$(DBS_LANG_UNKNOWNFMT_1)\
+               ${MB_NL}${MB_NL}\
+               $(DBS_LANG_UNKNOWNFMT_2)\
+               ${MB_NL}${MB_NL}\
+               $(DBS_LANG_UNKNOWNFMT_3)"
 
-  !insertmacro DBS_TEXT DBS_LANG_NOSQLITE_1     "Error: POPFile not configured to use SQLite"
-  !insertmacro DBS_TEXT DBS_LANG_NOSQLITE_2     "(see the configuration data in '$G_DATADIR')"
-  !insertmacro DBS_TEXT DBS_LANG_NOSQLITE       "$(DBS_LANG_NOSQLITE_1)${MB_NL}${MB_NL}$(DBS_LANG_NOSQLITE_2))"
+  !insertmacro DBS_TEXT DBS_LANG_NOSQLITE_1 \
+               "Error: POPFile not configured to use SQLite"
+  !insertmacro DBS_TEXT DBS_LANG_NOSQLITE_2 \
+               "(see the configuration data in '$G_DATADIR')"
+  !insertmacro DBS_TEXT DBS_LANG_NOSQLITE \
+               "$(DBS_LANG_NOSQLITE_1)\
+               ${MB_NL}${MB_NL}\
+               $(DBS_LANG_NOSQLITE_2))"
 
-  !insertmacro DBS_TEXT DBS_LANG_CURRENT_USER   "Current user  : $G_WINUSERNAME"
-  !insertmacro DBS_TEXT DBS_LANG_CURRENT_DIR    "Current folder: $INSTDIR"
-  !insertmacro DBS_TEXT DBS_LANG_UTILITY_DIR    "Utility folder: $EXEDIR"
+  !insertmacro DBS_TEXT DBS_LANG_CURRENT_USER \
+               "Current user  : $G_WINUSERNAME"
+  !insertmacro DBS_TEXT DBS_LANG_CURRENT_DIR \
+               "Current folder: $INSTDIR"
+  !insertmacro DBS_TEXT DBS_LANG_UTILITY_DIR \
+               "Utility folder: $EXEDIR"
 
-  !insertmacro DBS_TEXT DBS_LANG_COMMANDLINE    "Command line  : $G_DATABASE"
-  !insertmacro DBS_TEXT DBS_LANG_NOCOMMANDLINE  "Searching for database because no command-line parameter supplied"
+  !insertmacro DBS_TEXT DBS_LANG_COMMANDLINE \
+               "Command line  : $G_DATABASE"
+  !insertmacro DBS_TEXT DBS_LANG_NOCOMMANDLINE \
+               "Searching for database because \
+               no command-line parameter supplied"
 
-  !insertmacro DBS_TEXT DBS_LANG_TRY_ENV_VAR    "Trying to find database using POPFILE_USER environment variable"
-  !insertmacro DBS_TEXT DBS_LANG_ENV_VAR_VAL    "'User Data' folder (from POPFILE_USER) = $G_DATADIR"
-  !insertmacro DBS_TEXT DBS_LANG_NOT_ENV_VAR    "Unable to find database using POPFILE_USER environment variable"
+  !insertmacro DBS_TEXT DBS_LANG_TRY_ENV_VAR \
+               "Trying to find database using \
+               POPFILE_USER environment variable"
+  !insertmacro DBS_TEXT DBS_LANG_ENV_VAR_VAL \
+               "'User Data' folder (from POPFILE_USER) = $G_DATADIR"
+  !insertmacro DBS_TEXT DBS_LANG_NOT_ENV_VAR \
+               "Unable to find database using \
+               POPFILE_USER environment variable"
 
-  !insertmacro DBS_TEXT DBS_LANG_TRY_HKCU_REG   "Trying to find database using registry data (HKCU)"
-  !insertmacro DBS_TEXT DBS_LANG_HKCU_REG_VAL   "'User Data' folder (from HKCU entry) = $G_DATADIR"
-  !insertmacro DBS_TEXT DBS_LANG_NOT_HKCU_REG   "Unable to find database using registry data (HKCU)"
-  !insertmacro DBS_TEXT DBS_LANG_HKCU_INVALID   "Error: No POPFile registry data found for '$G_WINUSERNAME' user"
+  !insertmacro DBS_TEXT DBS_LANG_TRY_HKCU_REG \
+               "Trying to find database using registry data (HKCU)"
+  !insertmacro DBS_TEXT DBS_LANG_HKCU_REG_VAL \
+               "'User Data' folder (from HKCU entry) = $G_DATADIR"
+  !insertmacro DBS_TEXT DBS_LANG_NOT_HKCU_REG \
+               "Unable to find database using registry data (HKCU)"
+  !insertmacro DBS_TEXT DBS_LANG_HKCU_INVALID \
+                "Error: No POPFile registry data found \
+                for '$G_WINUSERNAME' user"
 
-  !insertmacro DBS_TEXT DBS_LANG_TRY_CURRENT    "Trying to find database (popfile.db) in current folder"
-  !insertmacro DBS_TEXT DBS_LANG_NOT_CURRENT    "Unable to find database (popfile.db) in current folder"
+  !insertmacro DBS_TEXT DBS_LANG_TRY_CURRENT \
+               "Trying to find database (popfile.db) in current folder"
+  !insertmacro DBS_TEXT DBS_LANG_NOT_CURRENT \
+               "Unable to find database (popfile.db) in current folder"
 
-  !insertmacro DBS_TEXT DBS_LANG_TRY_EXEDIR     "Trying to find database (popfile.db) in same folder as utility"
-  !insertmacro DBS_TEXT DBS_LANG_NOT_EXEDIR     "Unable to find database (popfile.db) in same folder as utility"
+  !insertmacro DBS_TEXT DBS_LANG_TRY_EXEDIR \
+               "Trying to find database (popfile.db) in same folder as utility"
+  !insertmacro DBS_TEXT DBS_LANG_NOT_EXEDIR \
+               "Unable to find database (popfile.db) in same folder as utility"
 
   !insertmacro DBS_TEXT DBS_LANG_SEARCHING      "..."
   !insertmacro DBS_TEXT DBS_LANG_FOUNDIT        "... found it!"
 
-  !insertmacro DBS_TEXT DBS_LANG_DIRNOTFILE     "Error: '$G_DATABASE' is a folder, not a database file"
-  !insertmacro DBS_TEXT DBS_LANG_CHECKTHISONE   "POPFile database found ($G_DATABASE)"
+  !insertmacro DBS_TEXT DBS_LANG_DIRNOTFILE \
+               "Error: '$G_DATABASE' is a folder, not a database file"
+  !insertmacro DBS_TEXT DBS_LANG_CHECKTHISONE \
+               "POPFile database found ($G_DATABASE)"
 
-  !insertmacro DBS_TEXT DBS_LANG_DBFORMAT       "Database is in SQLite $G_DBFORMAT format"
-  !insertmacro DBS_TEXT DBS_LANG_DBSCHEMA       ", uses schema version $G_DBSCHEMA"
-  !insertmacro DBS_TEXT DBS_LANG_DBSIZE         " and its size is $G_DBSIZE KB"
-  !insertmacro DBS_TEXT DBS_LANG_DBSCHEMAERROR  "SQLite error detected when extracting POPFile schema version:"
+  !insertmacro DBS_TEXT DBS_LANG_DBFORMAT \
+               "Database is in SQLite $G_DBFORMAT format"
+  !insertmacro DBS_TEXT DBS_LANG_DBSCHEMA \
+               ", uses schema version $G_DBSCHEMA"
+  !insertmacro DBS_TEXT DBS_LANG_DBSIZE \
+               " and its size is $G_DBSIZE KB"
+  !insertmacro DBS_TEXT DBS_LANG_DBSCHEMAERROR \
+               "SQLite error detected when extracting POPFile schema version:"
 
-  !insertmacro DBS_TEXT DBS_LANG_SQLITEUTIL     "SQLite $G_PLS_FIELD_2 utility found in $G_PLS_FIELD_1"
+  !insertmacro DBS_TEXT DBS_LANG_SQLITEUTIL \
+               "SQLite $G_PLS_FIELD_2 utility found in $G_PLS_FIELD_1"
   !ifdef CTS_INTEGRATED
-      !insertmacro DBS_TEXT DBS_LANG_BUILTINUTIL    "not compatible with this 'integrated' version (use 'stand-alone' version or newer sqlite.exe)"
+      !insertmacro DBS_TEXT DBS_LANG_BUILTINUTIL \
+                   "not compatible with this 'integrated' version \
+                   (use 'stand-alone' version or newer sqlite.exe)"
   !else
-      !insertmacro DBS_TEXT DBS_LANG_BUILTINUTIL    "not compatible with this utility (using 'built-in' SQLite $G_PLS_FIELD_2 instead)"
+      !insertmacro DBS_TEXT DBS_LANG_BUILTINUTIL \
+                   "not compatible with this utility \
+                   (using 'built-in' SQLite $G_PLS_FIELD_2 instead)"
   !endif
-  !insertmacro DBS_TEXT DBS_LANG_SQLITECOMMAND  "Result of running the 'pragma integrity_check;' command:"
-  !insertmacro DBS_TEXT DBS_LANG_SQLITEDBISOK   "The POPFile database has passed the SQLite integrity check!"
+  !insertmacro DBS_TEXT DBS_LANG_SQLITECOMMAND \
+               "Result of running the 'pragma integrity_check;' command:"
+  !insertmacro DBS_TEXT DBS_LANG_SQLITEDBISOK \
+               "The POPFile database has passed the SQLite integrity check!"
 
-  !insertmacro DBS_TEXT DBS_LANG_SQLITEFAIL     "Error: The SQLite utility returned error code $G_PLS_FIELD_1"
+  !insertmacro DBS_TEXT DBS_LANG_SQLITEFAIL \
+               "Error: The SQLite utility returned error code $G_PLS_FIELD_1"
 
   ;------------------------------------------------------------------------
   ; Macro to make it easy to delete the last row in the details window
@@ -422,7 +537,7 @@
       Push $0
       Call GetDetailViewItemCount
       Pop $0
-      IntOp $0 $0 - 1                       ; decrement to get the right index of last entry
+      IntOp $0 $0 - 1        ; decrement to get the correct index of last entry
       Push $0
       Call DeleteDetailViewItem
       Pop $0
@@ -462,7 +577,8 @@ default_name:
 
 check_input:
 
-  ; Set OutPath to the working directory (to cope with cases where no database path is supplied)
+  ; Set OutPath to the working directory
+  ; (to cope with cases where no database path is supplied)
 
   GetFullPathName $INSTDIR ".\"
 
@@ -477,9 +593,10 @@ check_input:
 
 check_command_line:
 
-  ; The command-line can be used to supply the name of a database file in the current folder
-  ; (e.g. mydata.db), a relative filename for the database file (e.g. ..\data\mydata.db) or
-  ; the full pathname for the database file (D:\Application Data\POPFile\popfile.db).
+  ; The command-line can be used to supply the name of a database file in the
+  ; current folder (e.g. mydata.db), a relative filename for the database file
+  ; (e.g. ..\data\mydata.db) or the full pathname for the database file
+  ; (e.g. D:\Application Data\POPFile\popfile.db).
 
   Call NSIS_GetParameters
   Pop $G_DATABASE
@@ -546,7 +663,8 @@ no_reg_data:
   Goto usage_msg
 
 same_owner:
-  ReadRegStr $G_DATADIR HKCU "Software\POPFile Project\POPFile\MRI" "UserDir_LFN"
+  ReadRegStr $G_DATADIR \
+             HKCU "Software\POPFile Project\POPFile\MRI" "UserDir_LFN"
   StrCmp $G_DATADIR "" abandon_search
   !insertmacro DELETE_LAST_ENTRY
   DetailPrint "$(DBS_LANG_HKCU_REG_VAL)"
@@ -610,7 +728,8 @@ give_up:
 
 usage_msg:
 
-  ; Ensure the correct program name appears in the 'usage' message added to the log.
+  ; Ensure the correct program name appears in the 'usage' message added
+  ; to the log (e.g.the executable file could have been renamed by user).
 
   StrCpy $G_PLS_FIELD_1 $EXEFILE
 
@@ -705,13 +824,20 @@ run_it:
   StrCmp ${L_TEMP} "error" start_error
   StrCmp ${L_TEMP} "timeout" start_error
 
-  ; As of 15 June 2009:
-  ;
   ; v2.8.17 is the most recent version of the SQLite 2.x command-line utility
-  ; The current DBD::SQLite module (v1.25) is based upon the SQLite 3.6.13 library
   ;
-  ; sqlite.exe  v2.8.17 returns "1" in ${L_TEMP} after a successful version check
-  ; sqlite3.exe v3.6.13 returns "0" in ${L_TEMP} after a successful version check
+  ; DBD::SQLite module (v1.42) is based upon the SQLite 3.8.4.1 library
+  ;
+  ; The SQLite 2.x and 3.x command-line utilities behave differently:
+  ;
+  ; (a) sqlite.exe returns "1" in ${L_TEMP} after a successful version check
+  ;    while sqlite3.exe returns "0" after a successful version check
+  ;
+  ; (b) The command 'sqlite.exe -version' returns a short string, e.g.
+  ;     2.8.17
+  ;
+  ; (c) The command 'sqlite3.exe -version' returns a very long string, e.g.
+  ;     3.8.4.1 2014-03-11 15:27:36 018d317b1257ce68a92908b05c9c7cf1494050d0
 
   IntCmp ${L_TEMP} 2 version_error 0 version_error
   IntCmp ${L_TEMP} 0 0 version_error
@@ -720,6 +846,15 @@ run_it:
   StrCmp ${L_TEMP} "${C_BOOKMARK}" 0 unexpected_version_error
   Call NSIS_TrimNewlines
   Pop $G_PLS_FIELD_2
+  Push $G_PLS_FIELD_2
+  Push " "
+  Call PFI_StrStr
+  Pop ${L_TEMP}
+  StrLen ${L_TEMP} ${L_TEMP}
+  StrCmp ${L_TEMP} 0 version_number_extracted
+  StrCpy $G_PLS_FIELD_2 $G_PLS_FIELD_2 -${L_TEMP}
+
+version_number_extracted:
   StrCpy $G_PLS_FIELD_2 "v$G_PLS_FIELD_2"
   DetailPrint ""
   DetailPrint "$(DBS_LANG_SQLITEUTIL)"
@@ -729,10 +864,12 @@ run_it:
       DetailPrint "$(DBS_LANG_BUILTINUTIL)"
       Goto error_exit
   !else
-      ; sqlite.exe 2.8.12 causes a GPF when the 'nsExec' plugin uses it to execute a SQL command
-      ; from the command-line so we have to use a more recent sqlite.exe utility if we detect the
-      ; target system uses sqlite.exe 2.8.12 (sqlite.exe 2.8.13, 2.8.15 & 2.8.16 (the most recent
-      ; version available as of 12 July 2005) are all safe to use here)
+      ; sqlite.exe 2.8.12 causes a GPF when the 'nsExec' plugin uses it
+      ; to execute a SQL command from the command-line so we have to use
+      ; a more recent sqlite.exe utility if we detect the target system
+      ; uses sqlite.exe 2.8.12 (sqlite.exe 2.8.13, 2.8.15 & 2.8.16 (the
+      ; most recent version available as of 12 July 2005) are all safe
+      ; to use here)
 
       SetDetailsPrint none
       File "/oname=$PLUGINSDIR\sqlite.exe" "sqlite_clu\sqlite.exe"
@@ -755,11 +892,12 @@ use_it:
   Pop ${L_PATH}
   StrCmp ${L_PATH} "" run_it_now
 
-  ; The SQLite command-line utility does not handle paths containing non-ASCII characters
-  ; properly. An example where this will cause a problem is when the POPFile 'User Data'
-  ; has been installed in the default location for a user with a Japanese login name.
-  ; As a workaround we change the current working directory to the folder containing the
-  ; database and supply only the database's filename when calling the command-line utility.
+  ; The SQLite command-line utility does not handle paths containing non-ASCII
+  ; characters properly. An example where this will cause a problem is when the
+  ; POPFile 'User Data' has been installed in the default location for a user
+  ; with a Japanese login name. As a workaround we change the current working
+  ; directory to the folder containing the database and supply only the
+  ; database's filename when calling the command-line utility.
 
   StrLen ${L_TEMP} ${L_PATH}
   IntOp ${L_TEMP} ${L_TEMP} + 1
@@ -769,7 +907,8 @@ use_it:
   SetDetailsPrint listonly
 
 run_it_now:
-  nsExec::ExecToStack '"$G_PLS_FIELD_1\$G_SQLITEUTIL" "$G_DATABASE" "select version from popfile;"'
+  nsExec::ExecToStack \
+  '"$G_PLS_FIELD_1\$G_SQLITEUTIL" "$G_DATABASE" "select version from popfile;"'
   Pop ${L_TEMP}
   Call NSIS_TrimNewlines
   Pop $G_DBSCHEMA
@@ -789,7 +928,8 @@ schema_ok:
 check_integrity:
   DetailPrint ""
   DetailPrint "$(DBS_LANG_SQLITECOMMAND)"
-  nsExec::ExecToLog '"$G_PLS_FIELD_1\$G_SQLITEUTIL" "$G_DATABASE" "pragma integrity_check;"'
+  nsExec::ExecToLog \
+  '"$G_PLS_FIELD_1\$G_SQLITEUTIL" "$G_DATABASE" "pragma integrity_check;"'
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "error" start_error
   StrCmp ${L_TEMP} "timeout" start_error
@@ -847,9 +987,10 @@ exit:
   DetailPrint "------------------------------------------------------------"
   SetDetailsPrint none
 
-  ; Provide an instant snapshot summary by scrolling up to display the name and location
-  ; of the POPFile SQLite database file we have just checked (the "report finished" block
-  ; makes the database information scroll off the top of the list).
+  ; Provide an instant snapshot summary by scrolling up to display the name
+  ; and location of the POPFile SQLite database file we have just checked
+  ; (the "report finished" block makes the database information scroll off
+  ; the top of the list).
 
   Call HideFinalTimestamp
 
@@ -864,31 +1005,36 @@ SectionEnd
 #--------------------------------------------------------------------------
 # Installer Function: InsertThousandSeparators
 #
-# When large integers are displayed they can be hard to read (eg 1234567). This function
-# inserts one or more "thousand" separators to make large integers easier to read
-# (eg 1,234,567).
+# When large integers are displayed they can be hard to read (e.g. 1234567).
+# This function inserts one or more "thousand" separators to make large
+# integers easier to read (e.g. 1,234,567).
 #
-# If the input value isn't an unsigned decimal integer then the output string equals the input.
+# If the input value isn't an unsigned decimal integer then the output string
+# equals the input string.
 #
-# This function uses the target system's OS setting for the "thousand" separator. This is the
-# character (or characters) used to separate groups of digits to the left of the decimal point.
+# This function uses the target system's OS setting for the "thousand"
+# separator. This is the character (or characters) used to separate groups
+# of digits to the left of the decimal point.
 #
 # Input:
 #       (top of stack)          - input
 #
 # Output:
-#       (top of stack)          - input value with separators inserted if appropriate
+#       (top of stack)          - input value with separators inserted
+#                                 if appropriate
 #
 # Usage:
 #       Push "1234567"
 #       Call InsertThousandSeparators
 #       Pop $R0                 ; $R0 will be "1,234,567"
-#                               ; (assuming the 'English' setting for the "thousand" separator)
+#                               ; (assuming the 'English' setting for
+#                               ; the "thousand" separator)
 #
 #       Push "1234.567"
 #       Call InsertThousandSeparators
 #       Pop $R0                 ; $R0 will be "1234.567"
-#                               ; (no changes made because input contains a decimal point)
+#                               ; (no changes made because input contains
+#                               ; a decimal point)
 #--------------------------------------------------------------------------
 
 Function InsertThousandSeparators
@@ -897,7 +1043,8 @@ Function InsertThousandSeparators
   !define L_RESULT  $R8   ; the output string
 
   !define L_TEMP    $1    ; temp variable (also used as .r1 in 'system' call)
-  !define L_COMMA   $0    ; target system's "thousand" separator (used as .r0 in 'system' call)
+  !define L_COMMA   $0    ; target system's "thousand" separator
+                          ; (used as .r0 in 'system' call)
 
   Exch ${L_INPUT}
   Push ${L_RESULT}
@@ -909,25 +1056,30 @@ Function InsertThousandSeparators
   Pop ${L_TEMP}
   StrCmp ${L_TEMP} "" no_commas
 
-  ; Use the target system's "thousand" separator (this is ',' when 'English' locale selected)
+  ; Use the target system's "thousand" separator
+  ; (this is ',' when 'English' locale selected)
 
   !define LOCALE_SYSTEM_DEFAULT   0x400
   !define LOCALE_STHOUSAND        0xF
-  !define MAX_PATH                260       ; upper limit for the length of the separator
+  !define MAX_PATH                260    ; upper limit for length of separator
 
   StrCpy ${L_COMMA} ""
 
-  System::Call "kernel32::GetLocaleInfoA(i ${LOCALE_SYSTEM_DEFAULT}, i ${LOCALE_STHOUSAND}, t .r0, i ${MAX_PATH}) i r1"
+  System::Call "kernel32::GetLocaleInfoA\
+  (i ${LOCALE_SYSTEM_DEFAULT}, i ${LOCALE_STHOUSAND}, t .r0, i ${MAX_PATH}) \
+  i r1"
 
-  ; If the 'system' call returns an empty string use the default English separator
-  ; (or should we just use the empty string in case that is what is really required here?)
+  ; If the 'system' call returns an empty string use the default English
+  ; separator (or should we just use the empty string in case that is what
+  ; is really required here?)
 
   StrCmp ${L_COMMA} "" 0 got_separator
   StrCpy ${L_COMMA} ","
 
 got_separator:
 
-  ; Input is an unsigned decimal integer (i.e. it contains only the characters 0 to 9)
+  ; Input is an unsigned decimal integer
+  ; (i.e. it contains only the characters 0 to 9)
 
   StrCpy ${L_RESULT} ""
 
@@ -1001,7 +1153,7 @@ FunctionEnd
 Function GetDetailViewItemCount
   Push $1
   FindWindow $1 "#32770" "" $HWNDPARENT
-  GetDlgItem $1 $1 0x3F8                  ; This is the Control ID of the details view
+  GetDlgItem $1 $1 0x3F8                  ; the Control ID of the details view
   SendMessage $1 ${C_LVM_GETITEMCOUNT} 0 0 $1
   Exch $1
 FunctionEnd
@@ -1028,7 +1180,7 @@ Function DeleteDetailViewItem
   Exch $0
   Push $1
   FindWindow $1 "#32770" "" $HWNDPARENT
-  GetDlgItem $1 $1 0x3F8                  ; This is the Control ID of the details view
+  GetDlgItem $1 $1 0x3F8                  ; the Control ID of the details view
   SendMessage $1 ${C_LVM_DELETEITEM} $0 0
   Pop $1
   Pop $0
@@ -1039,9 +1191,9 @@ FunctionEnd
 #
 # Scrolls the details view up a little to provide an 'instant' summary.
 #
-# After a successful integrity check, the "report finished" timestamp causes the
-# location of the POPFile database file to scroll off the top of the details list
-# so we in effect scroll up a few lines to bring it back into view.
+# After a successful integrity check, the "report finished" timestamp causes
+# the location of the POPFile database file to scroll off the top of the
+# details list so we in effect scroll up a few lines to bring it back into view.
 #
 # The "report finished" timestamp can still be seen by scrolling down or saving
 # the entire report to a file via the clipboard.
@@ -1069,22 +1221,24 @@ Function HideFinalTimestamp
   Push ${L_TEMP}
   Push ${L_TOPROW}
 
-  ; The final timestamp block uses several lines so we scroll up a few lines to bring
-  ; more important lines back into view at the top of the list. The LVM_SCROLL message
-  ; uses a pixel-based vertical scroll value instead of an item-based value so we take
-  ; an easier approach: find the item index of the currently visible top row and then
-  ; make visible the item which is a few rows before that.
+  ; The final timestamp block uses several lines so we scroll up a few lines
+  ; to bring more important lines back into view at the top of the list. The
+  ; LVM_SCROLL message uses a pixel-based vertical scroll value instead of an
+  ; item-based value so we take an easier approach: find the item index of the
+  ; currently visible top row and then make visible the item which is a few
+  ; rows before that.
 
   FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x3F8      ; This is the Control ID of the details view
+  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x3F8     ; Control ID of details view
 
   ; Check how many lines can be shown in the details view
 
   SendMessage ${L_DLG_ITEM} ${C_LVM_COUNTPERPAGE} 0 0 ${L_TEMP}
 
-  StrCpy ${L_SCROLLUP} 4   ; hide the three-line timestamp plus the blank line before it
+  StrCpy ${L_SCROLLUP} 4  ; hide 3-line timestamp plus the blank line before it
   IntCmp ${L_TEMP} 10 findtop findtop
-  StrCpy ${L_SCROLLUP} 3   ; hide the timestamp, leaving a blank line before & after the important lines
+  StrCpy ${L_SCROLLUP} 3  ; hide the timestamp, leaving a blank line before
+                          ; and after the important lines
 
 findtop:
 
@@ -1094,7 +1248,7 @@ findtop:
 
   IntOp ${L_TOPROW} ${L_TOPROW} - ${L_SCROLLUP}
 
-   ; The item index is zero based so we must ensure we never supply a negative item index
+   ; The item index is zero based so ensure we never supply a negative index
 
   IntCmp ${L_TOPROW} 0 scrollup 0 scrollup
   StrCpy ${L_TOPROW} 0
