@@ -1746,6 +1746,7 @@ Section /o "XMLRPC" SecXMLRPC
         File "${C_PERL_DIR}\lib\auto\arybase\arybase.dll"
         SetOutPath "$G_MPLIBDIR"
   File "${C_PERL_DIR}\lib\Dynaloader.pm"
+  File "${C_PERL_DIR}\lib\parent.pm"
   File "${C_PERL_DIR}\lib\re.pm"
         SetOutPath "$G_MPLIBDIR\auto\re"
         File "${C_PERL_DIR}\lib\auto\re\re.dll"
