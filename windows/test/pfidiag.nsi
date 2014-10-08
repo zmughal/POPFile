@@ -1,10 +1,12 @@
 #--------------------------------------------------------------------------
 #
-# pfidiag.nsi --- This NSIS script is used to create a diagnostic utility
-#                 to assist in solving problems with the Windows version
-#                 of POPFile, especially POPFile version 0.21.0 or later.
+# pfidiag.nsi
 #
-# Copyright (c) 2004-2012 John Graham-Cumming
+#   This NSIS script is used to create a diagnostic utility to assist in
+#   solving problems with the Windows version of POPFile, especially
+#   POPFile version 0.21.0 or later.
+#
+# Copyright (c) 2004-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -36,12 +38,13 @@
           "$\n\
           $\n***   NSIS COMPILER WARNING:\
           $\n***\
-          $\n***   This script has only been tested using the \
-          NSIS ${C_EXPECTED_VERSION} compiler\
+          $\n***   This script has only been tested \
+          using the NSIS ${C_EXPECTED_VERSION} compiler\
           $\n***   and may not work properly with this \
           NSIS ${NSIS_VERSION} compiler\
           $\n***\
-          $\n***   The resulting 'installer' program should be tested carefully!\
+          $\n***   The resulting 'installer' program \
+          should be tested carefully!\
           $\n$\n"
   !endif
 
@@ -63,26 +66,28 @@
 #
 # (If no command-line switch is supplied then this mode is selected)
 #
-# This command-line switch selects the default mode which displays a few key values.
-# The display window is automatically scrolled to display the POPFile program and
-# 'User Data' locations since these are likely to be of most interest to the user.
+# This command-line switch selects the default mode which displays a few key
+# values. The display window is automatically scrolled to display the POPFile
+# program and 'User Data' locations as these are likely to be of most interest
+# to the user.
 #
 # /FULL
 #
-# By default (i.e. when no parameters are supplied) the utility displays enough
-# information to identify the location of the 'User Data' files. If the /FULL
-# command-line switch is supplied, the utility displays much more information
-# (which might help debug strange behaviour, for example).
+# By default (i.e. when no parameters are supplied) the utility displays
+# enough information to identify the location of the 'User Data' files.
+# If the /FULL command-line switch is supplied, the utility displays much
+# more information (which might help debug strange behaviour, for example).
 #
 # /SHORTCUT
 #
-# This command-line switch creates a 'Start Menu' shortcut to the 'User Data' folder,
-# accessed via Start -> Programs -> POPFile -> Support -> User Data (<username>)
+# This command-line switch creates a 'Start Menu' shortcut to the 'User Data'
+# folder, accessed via
+# Start -> Programs -> POPFile -> Support -> User Data (<username>)
 #
 # /MENU
 #
-# This command-line switch displays a page with a drop-down list allowing the required
-# mode to be selected.
+# This command-line switch displays a page with a drop-down list allowing the
+# required mode to be selected.
 #
 # /HELP
 #
@@ -93,9 +98,9 @@
 #
 # (1)  Uppercase or lowercase may be used for the command-line switches.
 #
-# (2)  If no command-line switch is supplied then the utility assumes '/SIMPLE' was
-#      entered since a 'simple' report is likely to contain sufficient information
-#      for the user.
+# (2)  If no command-line switch is supplied then the utility behaves as if
+#      '/SIMPLE' has been entered since a 'simple' report is likely to contain
+#      sufficient information for the user.
 #
 # (3)  It is assumed that only one command-line option will be supplied. If an
 #      invalid option or a combination of options is supplied then the /HELP
@@ -108,7 +113,7 @@
   ; POPFile constants have names beginning with 'C_' (e.g. C_README)
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION   "0.5.0"
+  !define C_VERSION   "0.6.0"
 
   !define C_OUTFILE   "pfidiag.exe"
 
@@ -123,13 +128,25 @@
   ; its 'Add POPFile User' wizard (adduser.exe)
 
   !define C_PFI_PRODUCT                 "POPFile"
-  !define C_PFI_PRODUCT_REGISTRY_ENTRY  "Software\POPFile Project\${C_PFI_PRODUCT}\MRI"
+  !define C_PFI_PRODUCT_REGISTRY_ENTRY \
+          "Software\POPFile Project\${C_PFI_PRODUCT}\MRI"
 
   ;--------------------------------------------------------------------------
-  ; Windows Vista & Windows 7 expect to find a manifest specifying the execution level
+  ; Since the release of 'Vista' Windows expects to find a manifest specifying
+  ; the required execution level for a program. The 'RequestExecutionLevel'
+  ; command in NSIS is used to create a suitable manifest.
+  ;
+  ; NSIS 2.46 creates "Windows 7"-compatible manifests. Windows 8 (or later)
+  ; uses a different manifest specification. Use the '!packhdr' compile-time
+  ; directive to modify the manifest to make it compatible with newer versions
+  ; of Windows. See the following page in the NSIS wiki for instructions and
+  ; download links:
+  ;
+  ; http://nsis.sourceforge.net/Using_!packhdr
   ;--------------------------------------------------------------------------
 
-  RequestExecutionLevel   user
+  !define RequestExecutionLevel user
+  !include Packhdr.nsh
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"
@@ -141,7 +158,7 @@
 # Include private library functions and macro definitions
 #--------------------------------------------------------------------------
 
-  ; Avoid compiler warnings by disabling the functions and definitions we do not use
+  ; Avoid compiler warnings by disabling functions & definitions we do not use
 
   !define PFIDIAG
 
@@ -152,7 +169,7 @@
 # Version Information settings (for the utility's EXE file)
 #--------------------------------------------------------------------------
 
-  ; 'VIProductVersion' format is X.X.X.X where X is a number in range 0 to 65535
+  ; 'VIProductVersion' is X.X.X.X where X is a number in range 0 to 65535
   ; representing the following values: Major.Minor.Release.Build
 
   VIProductVersion                          "${C_VERSION}.0"
@@ -160,10 +177,11 @@
   !define /date C_BUILD_YEAR                "%Y"
 
   VIAddVersionKey "ProductName"             "PFI Diagnostic Utility"
-  VIAddVersionKey "Comments"                "POPFile Homepage: http://getpopfile.org/"
+  VIAddVersionKey "Comments"                "POPFile Homepage: \
+                                            http://getpopfile.org/"
   VIAddVersionKey "CompanyName"             "The POPFile Project"
-  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark of \
-                                            John Graham-Cumming"
+  VIAddVersionKey "LegalTrademarks"         "POPFile is a registered trademark \
+                                            of John Graham-Cumming"
   VIAddVersionKey "LegalCopyright"          "Copyright (c) ${C_BUILD_YEAR} \
                                             John Graham-Cumming"
   VIAddVersionKey "FileDescription"         "PFI Diagnostic Utility"
@@ -178,24 +196,26 @@
   !ifdef C_NSIS_LIBRARY_VERSION
     VIAddVersionKey "NSIS Library Version"  "${C_NSIS_LIBRARY_VERSION}"
   !endif
-  VIAddVersionKey "Build Script"            "${__FILE__}$\r$\n(${__TIMESTAMP__})"
+  VIAddVersionKey "Build Script"            "${__FILE__}\
+                                            $\r$\n\
+                                            (${__TIMESTAMP__})"
 
 #--------------------------------------------------------------------------
 # User Variables (Global)
 #--------------------------------------------------------------------------
 
-  ; 'User Variables' (with names starting with 'G_') are used to hold GLOBAL data.
+  ; 'User Variables' (with names starting with 'G_') hold GLOBAL data.
 
   Var G_WINUSERNAME       ; current Windows user login name
 
   Var G_WIN_OS_TYPE       ; 0 = Win9x, 1 = more modern version of Windows
 
-  Var G_EXPECTED_ROOT     ; expected POPFILE_ROOT value (POPFile program location)
-  Var G_EXPECTED_USER     ; expected POPFILE_USER value (User Data' location)
+  Var G_EXPECTED_ROOT     ; expected POPFILE_ROOT value (the program location)
+  Var G_EXPECTED_USER     ; expected POPFILE_USER value ('User Data' location)
 
-  Var G_POPFILE_USER      ; used to pass 'User Data' path to various internal functions
-  Var G_POPFILE_USER_ENV  ; path to the 'User Data' location (from environment variable)
-  Var G_POPFILE_USER_REG  ; path to the 'User Data' location (from HKCU registry data)
+  Var G_POPFILE_USER      ; 'User Data' path used by various internal functions
+  Var G_POPFILE_USER_ENV  ; 'User Data' location (from environment variable)
+  Var G_POPFILE_USER_REG  ; 'User Data' location (from HKCU registry data)
 
   Var G_REPORT_MODE       ; used to check for 'simple' or 'full' report mode
 
@@ -246,7 +266,7 @@
   !macroend
 
   ;---------------------------------------------------------------------
-  ; Check registry strings used for the "real" POPFile installer (0.21.0 or later)
+  ; Check registry strings used for "real" POPFile installer (0.21.0 or later)
   ;---------------------------------------------------------------------
 
   !macro CHECK_MRI_ENTRY VALUE ROOT_KEY NAME MESSAGE
@@ -257,8 +277,8 @@
 
   ;---------------------------------------------------------------------------
   ; Differentiate between non-existent and empty POPFile environment variables
-  ; (on Win9x systems it is quite normal for these variables to be undefined, as
-  ; the 'runpopfile.exe' program creates them 'on the fly' when it runs POPFile)
+  ; (on Win9x systems it is quite normal for these variables to be undefined,
+  ; as 'runpopfile.exe' creates them 'on the fly' when it runs POPFile)
   ;---------------------------------------------------------------------------
 
   !macro CHECK_ENVIRONMENT REGISTER ENV_VARIABLE MESSAGE
@@ -285,8 +305,8 @@
 
   ;---------------------------------------------------------------------------
   ; Differentiate between non-existent and empty Kakasi environment variables
-  ; (these variables are only defined if the Kakasi software, one of the Nihongo
-  ; (Japanese) parsers, has been installed)
+  ; (these variables are only defined if the Kakasi software, one of the
+  ; Nihongo (Japanese) parsers, has been installed)
   ;---------------------------------------------------------------------------
 
   !macro CHECK_KAKASI REGISTER ENV_VARIABLE MESSAGE
@@ -312,7 +332,7 @@
   !macroend
 
   ;---------------------------------------------------------------------------
-  ; Differentiate between a non-existent and an empty MeCab environment variable
+  ; Differentiate between a non-existent & an empty MeCab environment variable
   ; (this variable is only defined if the MeCab software, one of the Nihongo
   ; (Japanese) parsers, has been installed)
   ;---------------------------------------------------------------------------
@@ -364,32 +384,32 @@
 
   ; The icon file for the utility
 
-  !define MUI_ICON                            "pfinfo.ico"
+  !define MUI_ICON                       "pfinfo.ico"
 
   !define MUI_HEADERIMAGE
-  !define MUI_HEADERIMAGE_BITMAP              "..\hdr-common.bmp"
+  !define MUI_HEADERIMAGE_BITMAP         "..\hdr-common.bmp"
   !define MUI_HEADERIMAGE_RIGHT
 
   ; If the /MENU command-line option is used then the COMPONENTS page will
   ; be shown to allow the user to select the required mode from a drop-down
   ; list. Override the text shown on the COMPONENT page's "Install" button.
 
-  InstallButtonText                           "$(PFI_LANG_DIAG_INSTALLBUTTON_TEXT)"
+  InstallButtonText                      "$(PFI_LANG_DIAG_INSTALLBUTTON_TEXT)"
 
   ;----------------------------------------------------------------
   ;  Interface Settings - Interface Resource Settings
   ;----------------------------------------------------------------
 
-  ; The banner provided by the default 'modern.exe' UI does not provide much room
-  ; for the two lines of text, e.g. the German version is truncated, so we use a
-  ; custom UI which provides slightly wider text areas. Each area is still limited
-  ; to a single line of text.
+  ; The banner provided by the default 'modern.exe' UI does not provide much
+  ; room for the two lines of text, e.g. the German version is truncated, so
+  ; we use a custom UI which provides slightly wider text areas. Each area is
+  ; still limited to a single line of text.
 
   !define MUI_UI                              "..\UI\pfi_modern.exe"
 
   ; The 'hdr-common.bmp' logo is only 90 x 57 pixels, much smaller than the
   ; 150 x 57 pixel space provided by the default 'modern_headerbmpr.exe' UI,
-  ; so we use a custom UI which leaves more room for the TITLE and SUBTITLE text.
+  ; so we use a custom UI which leaves more room for the TITLE & SUBTITLE text.
 
   !define MUI_UI_HEADERIMAGE_RIGHT            "..\UI\pfi_headerbmpr.exe"
 
@@ -397,7 +417,7 @@
   ;  Interface Settings - Installer Finish Page Interface Settings
   ;----------------------------------------------------------------
 
-  ; Show the installation log and leave the window open when this utility has finished.
+  ; Show the installation log and leave window open when utility has finished
 
   ShowInstDetails show
 
@@ -411,22 +431,22 @@
   ; Installer Page - Select diagnostic mode (optional)
   ;---------------------------------------------------
 
-  ; Use a "pre" function to determine whether or not the COMPONENTS page is shown
-  ; (the COMPONENTS page displays a dropdown list of program modes or options)
+  ; Use a "pre" function to determine whether or not the COMPONENTS page is
+  ; shown (the COMPONENTS page displays a dropdown list of modes or options)
 
   !define MUI_PAGE_CUSTOMFUNCTION_PRE CheckIfMenuPageRequired
 
   ; Override the standard "Choose Components" page header
 
-  !define MUI_PAGE_HEADER_TEXT                      "$(PFI_LANG_DIAG_COMP_HDR)"
-  !define MUI_PAGE_HEADER_SUBTEXT                   "$(PFI_LANG_DIAG_COMP_SUBHDR)"
+  !define MUI_PAGE_HEADER_TEXT                 "$(PFI_LANG_DIAG_COMP_HDR)"
+  !define MUI_PAGE_HEADER_SUBTEXT              "$(PFI_LANG_DIAG_COMP_SUBHDR)"
 
   ; Override the standard "Choose installation..." text and
   ; disable the display of the components list and space requirements
 
-  !define MUI_COMPONENTSPAGE_TEXT_TOP               "$(PFI_LANG_DIAG_COMP_TEXT_TOP)"
-  !define MUI_COMPONENTSPAGE_TEXT_INSTTYPE          \
-      "$(PFI_LANG_DIAG_COMP_TEXT_INSTTYPE)"
+  !define MUI_COMPONENTSPAGE_TEXT_TOP          "$(PFI_LANG_DIAG_COMP_TEXT_TOP)"
+  !define MUI_COMPONENTSPAGE_TEXT_INSTTYPE \
+                                          "$(PFI_LANG_DIAG_COMP_TEXT_INSTTYPE)"
 
   !define MUI_COMPONENTSPAGE_NODESC
 
@@ -440,13 +460,13 @@
 
   ; Override the standard "Installing..." page header
 
-  !define MUI_PAGE_HEADER_TEXT                      "$(PFI_LANG_DIAG_STD_HDR)"
-  !define MUI_PAGE_HEADER_SUBTEXT                   "$(PFI_LANG_DIAG_STD_SUBHDR)"
+  !define MUI_PAGE_HEADER_TEXT                    "$(PFI_LANG_DIAG_STD_HDR)"
+  !define MUI_PAGE_HEADER_SUBTEXT                 "$(PFI_LANG_DIAG_STD_SUBHDR)"
 
   ; Override the standard "Installation complete..." page header
 
-  !define MUI_INSTFILESPAGE_FINISHHEADER_TEXT       "$(PFI_LANG_DIAG_END_HDR)"
-  !define MUI_INSTFILESPAGE_FINISHHEADER_SUBTEXT    "$(PFI_LANG_DIAG_END_SUBHDR)"
+  !define MUI_INSTFILESPAGE_FINISHHEADER_TEXT     "$(PFI_LANG_DIAG_END_HDR)"
+  !define MUI_INSTFILESPAGE_FINISHHEADER_SUBTEXT  "$(PFI_LANG_DIAG_END_SUBHDR)"
 
   !insertmacro MUI_PAGE_INSTFILES
 
@@ -469,8 +489,7 @@
   ; COMPONENTS page: Text for the "Install" button
   ;--------------------------------------------------------------------------
 
-  !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_INSTALLBUTTON_TEXT" \
-         "Start"
+  !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_INSTALLBUTTON_TEXT" "Start"
 
   ;--------------------------------------------------------------------------
   ; COMPONENTS page: MUI Header text strings
@@ -479,16 +498,18 @@
   !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_COMP_HDR" \
          "Select required diagnostic action"
   !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_COMP_SUBHDR" \
-        "Prepare simple or full diagnostic reports, create a 'UserData' shortcut, \
+        "Prepare simple or full diagnostic reports, \
+        create a 'UserData' shortcut, \
         or show help"
 
   ;--------------------------------------------------------------------------
-  ; COMPONENTS page: Text strings used above and to the left of the drop-down list
+  ; COMPONENTS page: Text strings used above & to left of the drop-down list
   ;--------------------------------------------------------------------------
 
   !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_COMP_TEXT_TOP" \
          "Select the required action from the list below. \
-         Click '$(PFI_LANG_DIAG_INSTALLBUTTON_TEXT)' to perform the selected action."
+         Click '$(PFI_LANG_DIAG_INSTALLBUTTON_TEXT)' \
+         to perform the selected action."
   !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_COMP_TEXT_INSTTYPE" \
         "Select the diagnostic action:"
 
@@ -512,7 +533,8 @@
   !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_STD_HDR" \
          "Generating the PFI Diagnostic report..."
   !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_STD_SUBHDR" \
-        "Searching for POPFile registry entries and the POPFile environment variables"
+        "Searching for POPFile registry entries and \
+        the POPFile environment variables"
 
   ;--------------------------------------------------------------------------
   ; INSTFILES page: : Final MUI Header text strings
@@ -521,7 +543,8 @@
   !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_END_HDR" \
         "POPFile Installer Diagnostic Utility"
   !insertmacro PFI_DIAG_TEXT "PFI_LANG_DIAG_END_SUBHDR" \
-        "Use 'PFIDIAG /MENU' to get a menu or 'PFIDIAG /HELP' to show help screen"
+        "Use 'PFIDIAG /MENU' to get a menu or \
+        'PFIDIAG /HELP' to show help screen"
 
   ;--------------------------------------------------------------------------
   ; INSTFILES page: Text string shown above the progress bar when finished
@@ -553,12 +576,12 @@
   ; are used instead of hard coded numbers because it is easier to maintain
   ; code like
   ;
-  ;     SectionIn ${C_INST_TYPE_SIMPLE} ${C_INST_TYPE_FULL} ${C_INST_TYPE_SHORTCUT} RO
+  ;     SectionIn ${C_INST_TYPE_SIMPLE} ${C_INST_TYPE_FULL} RO
   ;     StrCmp ${L_TEMP} "${C_INST_TYPE_INDEX_SIMPLE}" simple
   ;
   ; than it is to maintain code like
   ;
-  ;     SectionIn 1 2 4 RO
+  ;     SectionIn 1 2 RO
   ;     StrCmp $R9 0 simple
   ;
 
@@ -637,7 +660,8 @@ SectionEnd
 ;--------------------------------------------------------------------------
 
 Section "User Name And Type"
-  SectionIn ${C_INST_TYPE_SIMPLE} ${C_INST_TYPE_FULL} ${C_INST_TYPE_SHORTCUT} RO
+  SectionIn \
+        ${C_INST_TYPE_SIMPLE} ${C_INST_TYPE_FULL} ${C_INST_TYPE_SHORTCUT} RO
 
   !define L_WINUSERTYPE    $R9     ; user's rights
 
@@ -705,7 +729,8 @@ Section "OS Type and IE Version"
   Pop ${L_OSTYPE}
   GetVersion::WindowsPlatformArchitecture
   Pop ${L_OSARCH}
-  DetailPrint "Operating System  = Windows ${L_OSNAME} ${L_OSTYPE} (${L_OSARCH}-bit)"
+  DetailPrint "Operating System  = \
+        Windows ${L_OSNAME} ${L_OSTYPE} (${L_OSARCH}-bit)"
   DetailPrint "IsNT return code  = $G_WIN_OS_TYPE"
 
   Call PFI_GetIEVersion
@@ -751,8 +776,8 @@ SectionEnd
 Section "Start Menu and Shortcuts"
   SectionIn ${C_INST_TYPE_FULL} RO
 
-  !define L_ALL_USERS       $R9   ; count of 'all users' StartUp POPFile shortcuts
-  !define L_CURRENT_USER    $R8   ; count of 'current user' StartUp POPFile shortcuts
+  !define L_ALL_USERS       $R9   ; 'all users' StartUp POPFile shortcuts
+  !define L_CURRENT_USER    $R8   ; 'current user' StartUp POPFile shortcuts
   !define L_TEMP            $R7
 
   Push ${L_ALL_USERS}
@@ -784,7 +809,8 @@ Section "Start Menu and Shortcuts"
 
   StrCmp ${L_TEMP} "$SMSTARTUP" 0 check_CU_shortcuts
   DetailPrint ""
-  DetailPrint "($\"CU: $$SMSTARTUP$\" folder is same as $\"AU: $$SMSTARTUP$\" folder)"
+  DetailPrint \
+      "($\"CU: $$SMSTARTUP$\" folder is same as $\"AU: $$SMSTARTUP$\" folder)"
   Goto section_end
 
 check_CU_shortcuts:
@@ -798,7 +824,8 @@ check_CU_shortcuts:
   IntCmp ${L_TEMP} 1 section_end section_end
   DetailPrint ""
   DetailPrint "'POPFile' total   = ${L_TEMP}"
-  DetailPrint "^^^^ Warning ^^^^   The $\"'POPFile' total$\" is greater than one"
+  DetailPrint \
+      "^^^^ Warning ^^^^   The $\"'POPFile' total$\" is greater than one"
 
 section_end:
   Pop ${L_TEMP}
@@ -881,8 +908,8 @@ Section "POPFile Registry Data"
   SectionIn ${C_INST_TYPE_FULL} RO
 
   !define L_REGDATA         $R9   ; data read from registry
-  !define L_STATUS_ROOT     $R8   ; used to report whether or not 'popfile.pl' exists
-  !define L_STATUS_USER     $R7   ; used to report whether or not 'popfile.cfg' exists
+  !define L_STATUS_ROOT     $R8   ; report whether or not 'popfile.pl' exists
+  !define L_STATUS_USER     $R7   ; report whether or not 'popfile.cfg' exists
   !define L_TEMP            $R6
 
   Push ${L_REGDATA}
@@ -898,19 +925,24 @@ Section "POPFile Registry Data"
   ; Check NTFS Short File Name support
 
   ReadRegDWORD ${L_REGDATA} \
-      HKLM "System\CurrentControlSet\Control\FileSystem" "NtfsDisable8dot3NameCreation"
+      HKLM "System\CurrentControlSet\Control\FileSystem" \
+      "NtfsDisable8dot3NameCreation"
   DetailPrint "NTFS SFN Disabled = < ${L_REGDATA} >"
   DetailPrint ""
 
   ; Check HKLM data
 
-  ReadRegStr ${L_TEMP} HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Major Version"
+  ReadRegStr ${L_TEMP} \
+      HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Major Version"
   StrCpy ${L_REGDATA} ${L_TEMP}
-  ReadRegStr ${L_TEMP} HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Minor Version"
+  ReadRegStr ${L_TEMP} \
+      HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Minor Version"
   StrCpy ${L_REGDATA} ${L_REGDATA}.${L_TEMP}
-  ReadRegStr ${L_TEMP} HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Revision"
+  ReadRegStr ${L_TEMP} \
+      HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Revision"
   StrCpy ${L_REGDATA} ${L_REGDATA}.${L_TEMP}
-  ReadRegStr ${L_TEMP} HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile RevStatus"
+  ReadRegStr ${L_TEMP} \
+      HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile RevStatus"
   StrCpy ${L_REGDATA} ${L_REGDATA}${L_TEMP}
   DetailPrint "HKLM: MRI Version = < ${L_REGDATA} >"
 
@@ -926,7 +958,7 @@ Section "POPFile Registry Data"
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_ROOT ${L_REGDATA}
-  StrCpy $INSTDIR ${L_REGDATA}          ; search path for EXE files (no trailing slash)
+  StrCpy $INSTDIR ${L_REGDATA}         ; path for EXE files (no trailing slash)
   ClearErrors
   ReadRegStr ${L_REGDATA} HKLM "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "RootDir_SFN"
   IfErrors 0 check_HKLM_root_data
@@ -964,22 +996,28 @@ end_HKLM_root:
 
   ; Check HKCU data
 
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKCU" "Owner" "HKCU: Data Owner  "
-  ReadRegStr ${L_TEMP} HKCU "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Major Version"
+  !insertmacro CHECK_MRI_ENTRY \
+      "${L_REGDATA}" "HKCU" "Owner" "HKCU: Data Owner  "
+  ReadRegStr ${L_TEMP} \
+      HKCU "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Major Version"
   StrCpy ${L_REGDATA} ${L_TEMP}
-  ReadRegStr ${L_TEMP} HKCU "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Minor Version"
+  ReadRegStr ${L_TEMP} \
+      HKCU "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Minor Version"
   StrCpy ${L_REGDATA} ${L_REGDATA}.${L_TEMP}
-  ReadRegStr ${L_TEMP} HKCU "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Revision"
+  ReadRegStr ${L_TEMP} \
+      HKCU "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile Revision"
   StrCpy ${L_REGDATA} ${L_REGDATA}.${L_TEMP}
-  ReadRegStr ${L_TEMP} HKCU "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile RevStatus"
+  ReadRegStr ${L_TEMP} \
+      HKCU "${C_PFI_PRODUCT_REGISTRY_ENTRY}" "POPFile RevStatus"
   StrCpy ${L_REGDATA} ${L_REGDATA}${L_TEMP}
   DetailPrint "HKCU: MRI Version = < ${L_REGDATA} >"
 
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKCU" "RootDir_LFN" "HKCU: RootDir_LFN "
+  !insertmacro CHECK_MRI_ENTRY \
+      "${L_REGDATA}" "HKCU" "RootDir_LFN" "HKCU: RootDir_LFN "
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_ROOT ${L_REGDATA}
-  StrCpy $INSTDIR ${L_REGDATA}          ; search path for EXE files (no trailing slash)
+  StrCpy $INSTDIR ${L_REGDATA}         ; path for EXE files (no trailing slash)
   StrCpy ${L_STATUS_ROOT} ""
   IfFileExists "${L_REGDATA}\popfile.pl" root_sfn
   StrCpy ${L_STATUS_ROOT} "not "
@@ -1018,7 +1056,8 @@ compare_HKCU_root_lfn_sfn:
 end_HKCU_root:
   DetailPrint ""
 
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKCU" "UserDir_LFN" "HKCU: UserDir_LFN "
+  !insertmacro CHECK_MRI_ENTRY \
+      "${L_REGDATA}" "HKCU" "UserDir_LFN" "HKCU: UserDir_LFN "
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_POPFILE_USER_REG ${L_REGDATA}
@@ -1086,7 +1125,7 @@ SectionEnd
 Section "Corpus/Database Backup Data"
   SectionIn ${C_INST_TYPE_FULL} RO
 
-  !define L_STATUS_USER     $R9   ; used to report whether or not 'popfile.cfg' exists
+  !define L_STATUS_USER     $R9   ; report whether or not 'popfile.cfg' exists
   !define L_TEMP            $R8
 
   Push ${L_STATUS_USER}
@@ -1109,7 +1148,8 @@ Section "Corpus/Database Backup Data"
 ini_status:
   DetailPrint "backup.ini file   = ${L_STATUS_USER}found"
 
-  ReadINIStr ${L_TEMP} "$G_POPFILE_USER_REG\backup\backup.ini" "FlatFileCorpus" "Corpus"
+  ReadINIStr ${L_TEMP} \
+      "$G_POPFILE_USER_REG\backup\backup.ini" "FlatFileCorpus" "Corpus"
   StrCmp ${L_TEMP} "" no_flat_folder
   StrCpy ${L_STATUS_USER} ""
   IfFileExists "$G_POPFILE_USER_REG\backup\${L_TEMP}\*.*" flat_status
@@ -1120,7 +1160,8 @@ no_flat_folder:
 flat_status:
   DetailPrint "Flat-file  folder = ${L_STATUS_USER}found"
 
-  ReadINIStr ${L_TEMP} "$G_POPFILE_USER_REG\backup\backup.ini" "NonSQLCorpus" "Corpus"
+  ReadINIStr ${L_TEMP} \
+      "$G_POPFILE_USER_REG\backup\backup.ini" "NonSQLCorpus" "Corpus"
   StrCmp ${L_TEMP} "" no_nonsql_folder
   StrCpy ${L_STATUS_USER} ""
   IfFileExists "$G_POPFILE_USER_REG\backup\nonsql\${L_TEMP}\*.*" nonsql_status
@@ -1131,7 +1172,8 @@ no_nonsql_folder:
 nonsql_status:
   DetailPrint "Flat / BDB folder = ${L_STATUS_USER}found"
 
-  ReadINIStr ${L_TEMP} "$G_POPFILE_USER_REG\backup\backup.ini" "OldSQLdatabase" "Database"
+  ReadINIStr ${L_TEMP} \
+      "$G_POPFILE_USER_REG\backup\backup.ini" "OldSQLdatabase" "Database"
   StrCmp ${L_TEMP} "" no_sql_backup
   StrCpy ${L_STATUS_USER} ""
   IfFileExists "$G_POPFILE_USER_REG\backup\oldsql\${L_TEMP}" sql_backup_status
@@ -1161,8 +1203,8 @@ Section "User-Friendly Program/User Data Locations"
   SectionIn ${C_INST_TYPE_SIMPLE} RO
 
   !define L_REGDATA         $R9   ; data read from registry
-  !define L_STATUS_ROOT     $R8   ; used to report whether or not 'popfile.pl' exists
-  !define L_STATUS_USER     $R7   ; used to report whether or not 'popfile.cfg' exists
+  !define L_STATUS_ROOT     $R8   ; report whether or not 'popfile.pl' exists
+  !define L_STATUS_USER     $R7   ; report whether or not 'popfile.cfg' exists
   !define L_TEMP            $R6
 
   Push ${L_REGDATA}
@@ -1170,7 +1212,8 @@ Section "User-Friendly Program/User Data Locations"
   Push ${L_STATUS_USER}
   Push ${L_TEMP}
 
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKCU" "RootDir_LFN" "Program folder    "
+  !insertmacro CHECK_MRI_ENTRY \
+      "${L_REGDATA}" "HKCU" "RootDir_LFN" "Program folder    "
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_ROOT ${L_REGDATA}
@@ -1213,7 +1256,8 @@ compare_root_lfn_sfn:
 end_simple_root:
   DetailPrint ""
 
-  !insertmacro CHECK_MRI_ENTRY "${L_REGDATA}" "HKCU" "UserDir_LFN" "User Data folder  "
+  !insertmacro CHECK_MRI_ENTRY \
+      "${L_REGDATA}" "HKCU" "UserDir_LFN" "User Data folder  "
   Push ${L_REGDATA}
   Call CheckForTrailingSlash
   StrCpy $G_EXPECTED_USER ${L_REGDATA}
@@ -1282,10 +1326,10 @@ SectionEnd
 Section "Environment Variables"
   SectionIn ${C_INST_TYPE_SIMPLE} ${C_INST_TYPE_FULL} RO
 
-  !define L_ITAIJIDICTPATH  $R9   ; value of one of the Kakasi variables
-  !define L_KANWADICTPATH   $R8   ; value of one of the Kakasi variables
+  !define L_ITAIJIDICTPATH  $R9   ; one of the Kakasi variables
+  !define L_KANWADICTPATH   $R8   ; one of the Kakasi variables
   !define L_MECABRC         $R7   ; current MeCab environment variable
-  !define L_POPFILE_ROOT    $R6   ; current value of POPFILE_ROOT environment variable
+  !define L_POPFILE_ROOT    $R6   ; current POPFILE_ROOT environment variable
   !define L_TEMP            $R5
 
   Push ${L_ITAIJIDICTPATH}
@@ -1299,7 +1343,8 @@ Section "Environment Variables"
   DetailPrint "------------------------------------------------------------"
   DetailPrint ""
 
-  !insertmacro CHECK_ENVIRONMENT "${L_POPFILE_ROOT}" "POPFILE_ROOT" "'POPFILE_ROOT'    "
+  !insertmacro CHECK_ENVIRONMENT \
+      "${L_POPFILE_ROOT}" "POPFILE_ROOT" "'POPFILE_ROOT'    "
   StrCmp $G_WIN_OS_TYPE "1" compare_root_var
   StrCmp ${L_POPFILE_ROOT} "" check_user
 
@@ -1319,7 +1364,8 @@ compare_root_var:
   DetailPrint ""
 
 check_user:
-  !insertmacro CHECK_ENVIRONMENT "$G_POPFILE_USER_ENV" "POPFILE_USER" "'POPFILE_USER'    "
+  !insertmacro CHECK_ENVIRONMENT \
+      "$G_POPFILE_USER_ENV" "POPFILE_USER" "'POPFILE_USER'    "
   StrCmp $G_WIN_OS_TYPE "1" compare_user_var
   StrCmp $G_POPFILE_USER_ENV "" check_vars
 
@@ -1380,8 +1426,10 @@ file_check:
   Call CheckExeFilesExist
 
 check_kakasi:
-  !insertmacro CHECK_KAKASI "${L_ITAIJIDICTPATH}" "ITAIJIDICTPATH" "'ITAIJIDICTPATH'  "
-  !insertmacro CHECK_KAKASI "${L_KANWADICTPATH}"  "KANWADICTPATH"  "'KANWADICTPATH'   "
+  !insertmacro CHECK_KAKASI \
+      "${L_ITAIJIDICTPATH}" "ITAIJIDICTPATH" "'ITAIJIDICTPATH'  "
+  !insertmacro CHECK_KAKASI \
+      "${L_KANWADICTPATH}"  "KANWADICTPATH"  "'KANWADICTPATH'   "
   DetailPrint ""
 
   StrCmp $G_REPORT_MODE "${C_INST_TYPE_INDEX_SIMPLE}" check_mecab
@@ -1473,7 +1521,7 @@ SectionEnd
 ; Installer Function: POPFileConfigurationSettings
 ;
 ; Inputs:
-;         $G_POPFILE_USER  - global variable holding path to 'User Data' folder
+;         $G_POPFILE_USER  - global variable holds path to 'User Data' folder
 ;         (top of stack)   - string indicating source of the 'User Data' path
 ;--------------------------------------------------------------------------
 
@@ -1534,7 +1582,7 @@ FunctionEnd
 ; Installer Function: CheckLoggerSettings
 ;
 ; Inputs:
-;         $G_POPFILE_USER  - global variable holding path to 'User Data' folder
+;         $G_POPFILE_USER  - global variable holds path to 'User Data' folder
 ;--------------------------------------------------------------------------
 
 Function CheckLoggerSettings
@@ -1669,7 +1717,8 @@ no_reg_data:
   DetailPrint "Unable to create the POPFile 'User Data' shortcut for \
               '$G_WINUSERNAME' user"
   DetailPrint ""
-  DetailPrint "(registry entry missing or invalid - run 'adduser.exe' to repair)"
+  DetailPrint \
+      "(registry entry missing or invalid - run 'adduser.exe' to repair)"
   DetailPrint ""
   Goto section_end
 
@@ -1681,8 +1730,8 @@ folder_found:
   CreateShortCut "$SMPROGRAMS\${C_PFI_PRODUCT}\Support\User Data \
       ($G_WINUSERNAME).lnk" "${L_REGDATA}"
   SetDetailsPrint listonly
-  DetailPrint "For easy access to the POPFile 'User Data' for '$G_WINUSERNAME' \
-              use the shortcut:"
+  DetailPrint "For easy access to the POPFile 'User Data' \
+              for '$G_WINUSERNAME' use the shortcut:"
   DetailPrint ""
   DetailPrint "Start --> Programs --> POPFile --> Support --> \
               User Data ($G_WINUSERNAME)"
@@ -1707,19 +1756,20 @@ Section "Help Screen"
 
   DetailPrint "POPFile $(^Name) v${C_VERSION}"
   DetailPrint ""
-  DetailPrint "pfidiag            --- displays location of POPFile program and \
-                                      the 'User Data' files"
+  DetailPrint "pfidiag            --- displays location of POPFile program \
+                                      and the 'User Data' files"
   DetailPrint ""
-  DetailPrint "pfidiag /simple    --- displays location of POPFile program and \
-                                      the 'User Data' files"
+  DetailPrint "pfidiag /simple    --- displays location of POPFile program \
+                                      and the 'User Data' files"
   DetailPrint ""
-  DetailPrint "pfidiag /full      --- displays a more detailed report than /simple"
+  DetailPrint "pfidiag /full      --- displays a more detailed report than \
+                                      /simple"
   DetailPrint ""
   DetailPrint "pfidiag /shortcut  --- creates a Start Menu shortcut to the \
                                       'User Data' folder"
   DetailPrint ""
-  DetailPrint "pfidiag /menu      --- displays a drop-down list of the available \
-                                      options"
+  DetailPrint "pfidiag /menu      --- displays a drop-down list of the \
+                                      available options"
   DetailPrint ""
   DetailPrint "pfidiag /help      --- displays this help screen"
 
@@ -1745,13 +1795,15 @@ SectionEnd
 ; Installer Function: CheckIfMenuPageRequired
 ; (this is the 'pre' function for the standard MUI COMPONENTS page)
 ;
-; The OS type (0 = Win9x, 1 = non-Win9x) is checked more than once in this utility
-; so we detect it here and store the result in a global variable for later use.
+; The OS type (0 = Win9x, 1 = non-Win9x) is checked more than once in this
+; utility so we detect it here and store the result in a global variable for
+; later use.
 ;
-; Get the optional diagnostic mode from command-line and select the appropriate
-; mode (i.e. the installation type) for the utility. The command-line options all
-; start with a '/' character. If no option is supplied assume '/simple' instead.
-; If an invalid option was supplied then display the help page.
+; Get the optional diagnostic mode from command-line and select the
+; appropriate mode (i.e. the installation type) for the utility. The
+; command-line options all start with a '/' character. If no option is
+; supplied assume '/simple' instead. If an invalid option was supplied
+; then display the help page.
 ;--------------------------------------------------------------------------
 
 Function CheckIfMenuPageRequired
@@ -1775,7 +1827,7 @@ Function CheckIfMenuPageRequired
   Call NSIS_GetParameters
   Pop ${L_DIAG_MODE}
 
-  StrCmp ${L_DIAG_MODE} "" set_simple_mode      ; default is equivalent to '/simple'
+  StrCmp ${L_DIAG_MODE} "" set_simple_mode      ; default is same as '/simple'
   StrCpy ${L_TEMP} ${L_DIAG_MODE} 1
   StrCmp ${L_TEMP} "/" 0 set_help_mode
 
@@ -1829,12 +1881,13 @@ FunctionEnd
 #--------------------------------------------------------------------------
 # Installer Function: AnalyseShortcuts
 #
-# The Windows installer (setup.exe) and the "Add POPFile User" wizard (adduser.exe)
-# only check for specific StartUp shortcut names so if the user has renamed a POPFile
-# StartUp shortcut created during a previous installation or has created their own
-# shortcut then there may be more than one StartUp shortcut for POPFile. This function
-# analyses all shortcuts in the specified folder and lists those that appear to start
-# POPFile.
+# The Windows installer (setup.exe) and the "Add POPFile User" wizard
+# (adduser.exe) only check for specific StartUp shortcut names so if the
+# user has renamed a POPFile StartUp shortcut created during a previous
+# installation or has created their own shortcut then there may be more
+# than one StartUp shortcut for POPFile. This function analyses all of
+# the shortcuts in the specified folder and lists those that appear to
+# start POPFile.
 #
 # POPFile shortcuts are expected to use command-lines which include
 # one of the following:
@@ -1851,14 +1904,15 @@ FunctionEnd
 # Additional command-line options may be supplied
 # (to override some configuration settings).
 #
-# For simplicity this version of the function merely looks for the string "POPFile"
-# in the shortcut's "target" command-line using a case-insensitive search.
+# For simplicity this version of the function merely looks for the string
+# "POPFile" in the shortcut's "target" command-line using a case-insensitive
+# search.
 #
 # Inputs:
-#         (top of stack)   - path of the folder containing the shortcuts to be analysed
+#         (top of stack)   - path of the folder containing the shortcuts
 #
 # Outputs:
-#         (top of stack)   - number of shortcuts found which appear to start POPFile
+#         (top of stack)   - number of shortcuts which appear to start POPFile
 #
 # Usage:
 #
@@ -1872,11 +1926,11 @@ FunctionEnd
 
 Function AnalyseShortcuts
 
-  !define L_LNK_FOLDER         $R9   ; folder where the shortcuts (if any) are stored
-  !define L_LNK_HANDLE         $R8   ; file handle used in search for shortcut files
+  !define L_LNK_FOLDER         $R9   ; path where shortcuts (if any) are stored
+  !define L_LNK_HANDLE         $R8   ; file handle used in the shortcut search
   !define L_LNK_NAME           $R7   ; name of a shortcut file
   !define L_LNK_TOTAL          $R6   ; counts the number of shortcuts we find
-  !define L_POPFILE_TOTAL      $R5   ; number of shortcuts which appear to start POPFile
+  !define L_POPFILE_TOTAL      $R5   ; shortcuts which appear to start POPFile
   !define L_SHORTCUT_ARGS      $R4
   !define L_SHORTCUT_START_IN  $R3
   !define L_SHORTCUT_TARGET    $R2
@@ -1956,8 +2010,8 @@ exit:
   DetailPrint "*.lnk files found = ${L_LNK_TOTAL}"
   DetailPrint "POPFile shortcuts = ${L_POPFILE_TOTAL}"
   IntCmp ${L_POPFILE_TOTAL} 1 restore_regs restore_regs
-  DetailPrint "^^^^ Warning ^^^^   More than one POPFile StartUp shortcut found \
-              in this folder"
+  DetailPrint "^^^^ Warning ^^^^   More than one POPFile StartUp shortcut \
+              found in this folder"
 
 restore_regs:
   StrCpy ${L_LNK_FOLDER} ${L_POPFILE_TOTAL}
@@ -1970,7 +2024,7 @@ restore_regs:
   Pop ${L_LNK_TOTAL}
   Pop ${L_LNK_NAME}
   Pop ${L_LNK_HANDLE}
-  Exch ${L_LNK_FOLDER}          ; return number of POPFile startup shortcuts found
+  Exch ${L_LNK_FOLDER}       ; return number of POPFile startup shortcuts found
 
   !undef L_LNK_FOLDER
   !undef L_LNK_HANDLE
@@ -1988,7 +2042,7 @@ FunctionEnd
 #--------------------------------------------------------------------------
 # Installer Function: CheckForSpaces
 #
-# This function logs an error message if there are any spaces in the input string
+# This function logs an error if there are any spaces in the input string
 #
 # Inputs:
 #         (top of stack)   - input string
@@ -2028,7 +2082,7 @@ FunctionEnd
 #--------------------------------------------------------------------------
 # Installer Function: CheckForTrailingSlash
 #
-# This function logs an error message if there is a trailing slash in the input string
+# This function logs an error if there is a trailing slash in the input string
 #
 # Inputs:
 #         (top of stack)   - input string
@@ -2055,7 +2109,8 @@ Function CheckForTrailingSlash
 
   StrCpy ${L_TEMP} ${L_STRING} 1 -1
   StrCmp ${L_TEMP} "\" 0 exit
-  DetailPrint "^^^^^ Error ^^^^^   The above value should not end with '\' character"
+  DetailPrint "^^^^^ Error ^^^^^   The above value should not \
+              end with '\' character"
 
 exit:
   Pop ${L_TEMP}
@@ -2070,10 +2125,11 @@ FunctionEnd
 #--------------------------------------------------------------------------
 # Installer Function: CheckExeFilesExist
 #
-# This function checks that some important POPFile programs exist in the $INSTDIR folder
+# This function checks that some important POPFile programs exist
+# in the $INSTDIR folder
 #
 # Inputs:
-#         (top of stack)   - source of the search path ("HKLM", HKCU" or "ROOT")
+#         (top of stack)   - source of search path ("HKLM", HKCU" or "ROOT")
 #
 # Outputs:
 #         (none)
@@ -2089,11 +2145,11 @@ FunctionEnd
 
 Function CheckExeFilesExist
 
-  !define C_EXPECTED_COUNT  6        ; at present we only check the popfile*.exe files
+  !define C_EXPECTED_COUNT  6       ; at present only check popfile*.exe files
 
-  !define L_COUNT       $R9          ; keeps track of the number of files found
+  !define L_COUNT       $R9         ; keeps track of the number of files found
   !define L_DIAG_MODE   $R8
-  !define L_SOURCE      $R7          ; a four-character string: HKLM, HKCU or ROOT
+  !define L_SOURCE      $R7         ; a 4-character string: HKLM, HKCU or ROOT
 
   Exch ${L_SOURCE}
   Push ${L_COUNT}
@@ -2105,7 +2161,8 @@ Function CheckExeFilesExist
   !macro CHECK_EXE_EXISTS FILENAME
         !insertmacro PFI_UNIQUE_ID
         IfFileExists "$INSTDIR\${FILENAME}" lbl_b_${PFI_UNIQUE_ID}
-        StrCmp ${L_DIAG_MODE} "${C_INST_TYPE_INDEX_SIMPLE}" lbl_a_${PFI_UNIQUE_ID}
+        StrCmp ${L_DIAG_MODE} \
+               "${C_INST_TYPE_INDEX_SIMPLE}" lbl_a_${PFI_UNIQUE_ID}
         DetailPrint "${L_SOURCE}: missing EXE = *** ${FILENAME} ***"
 
       lbl_a_${PFI_UNIQUE_ID}:
@@ -2141,7 +2198,8 @@ continue:
 errors_found:
   DetailPrint ""
   DetailPrint "${L_SOURCE}: *.exe count = ${L_COUNT}"
-  DetailPrint "^^^^^ Error ^^^^^   The *.exe count should be ${C_EXPECTED_COUNT}"
+  DetailPrint "^^^^^ Error ^^^^^   The *.exe count should be \
+              ${C_EXPECTED_COUNT}"
 
 done:
   DetailPrint ""
@@ -2190,27 +2248,27 @@ Function ScrollToShowPaths
 
   !define L_DLG_ITEM    $R9   ; the dialog item we are going to manipulate
   !define L_TEMP        $R8
-  !define L_TOPROW      $R7   ; item index of the line we want at the top of the window
+  !define L_TOPROW      $R7   ; item index of line we want at top of the window
 
   Push ${L_DLG_ITEM}
   Push ${L_TEMP}
   Push ${L_TOPROW}
 
-  ; Even the 'simple' report is too long to fit in the details view window so we
-  ; automatically scroll the view to make it display the LFN and SFN versions of
-  ; the POPFile program and 'User Data' folder locations (on the assumption that
-  ; this is the information most users will want to find first).
+  ; Even the 'simple' report is too long to fit in the details view window so
+  ; we automatically scroll the view to make it display the LFN & SFN versions
+  ; of the POPFile program and 'User Data' folder locations (on the assumption
+  ; that this is the information most users will want to find first).
 
   FindWindow ${L_DLG_ITEM} "#32770" "" $HWNDPARENT
-  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x3F8      ; Control ID of the details view
+  GetDlgItem ${L_DLG_ITEM} ${L_DLG_ITEM} 0x3F8     ; Control ID of details view
 
   ; Check how many lines can be shown in the details view
 
   SendMessage ${L_DLG_ITEM} ${C_LVM_COUNTPERPAGE} 0 0 ${L_TEMP}
 
-  ; The important data in a simple report is held in rows 10 to 19 (starting from 0)
+  ; The important data in a simple report is in rows 10 to 19 (starting from 0)
 
-  StrCpy ${L_TOPROW} 10   ; index of the "Current UserName" row in the simple report
+  StrCpy ${L_TOPROW} 10   ; index of "Current UserName" row in simple report
   IntCmp ${L_TEMP} 10 getrowcount getrowcount
   StrCpy ${L_TOPROW} 9    ; index of the blank line before "Current UserName"
 
@@ -2224,7 +2282,8 @@ getrowcount:
 
   IntCmp ${L_TEMP} ${L_TOPROW} exit exit
 
-  ; Scroll up (in effect) to show the Current UserName, Program & User Data folder info
+  ; Scroll up (in effect) to show the Current UserName, Program and
+  ; User Data folder information
 
   SendMessage ${L_DLG_ITEM} ${C_LVM_ENSUREVISIBLE} ${L_TOPROW} 0
 
