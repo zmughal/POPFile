@@ -2,7 +2,7 @@
 #
 # stop_popfile.nsi --- A simple 'command-line' utility to shutdown POPFile silently.
 #
-# Copyright (c) 2003-2012 John Graham-Cumming
+# Copyright (c) 2003-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -132,7 +132,7 @@
   Name    "POPFile Silent Shutdown Utility"
   Caption "POPFile Silent Shutdown Utility"
 
-  !define C_VERSION     "0.8.2"     ; see 'VIProductVersion' comment below for format details
+  !define C_VERSION     "0.9.0"     ; see 'VIProductVersion' comment below for format details
 
   !define C_OUTFILE     "stop_pf.exe"
 
@@ -147,10 +147,21 @@
   SilentInstall silent
 
   ;--------------------------------------------------------------------------
-  ; Windows Vista expects to find a manifest specifying the execution level
+  ; Since the release of 'Vista' Windows expects to find a manifest specifying
+  ; the required execution level for a program. The 'RequestExecutionLevel'
+  ; command in NSIS is used to create a suitable manifest.
+  ;
+  ; NSIS 2.46 creates "Windows 7"-compatible manifests. Windows 8 (or later)
+  ; uses a different manifest specification. Use the '!packhdr' compile-time
+  ; directive to modify the manifest to make it compatible with newer versions
+  ; of Windows. See the following page in the NSIS wiki for instructions and
+  ; download links:
+  ;
+  ; http://nsis.sourceforge.net/Using_!packhdr
   ;--------------------------------------------------------------------------
 
-  RequestExecutionLevel   user
+  !define RequestExecutionLevel user
+  !include Packhdr.nsh
 
   ;-------------------------------------------------------------------------------
   ; Time delay constants used in conjunction with the inetc plugin (replaces NSISdl)

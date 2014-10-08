@@ -235,7 +235,17 @@
   !define C_JAPANESE_RELEASE_NOTES "${C_RELEASE_NOTES}.nihongo"
 
   ;--------------------------------------------------------------------------
-  ; Windows Vista & Windows 7 expect to find a manifest specifying the execution level
+  ; Since the release of 'Vista' Windows expects to find a manifest specifying
+  ; the required execution level for a program. The 'RequestExecutionLevel'
+  ; command in NSIS is used to create a suitable manifest.
+  ;
+  ; NSIS 2.46 creates "Windows 7"-compatible manifests. Windows 8 (or later)
+  ; uses a different manifest specification. Use the '!packhdr' compile-time
+  ; directive to modify the manifest to make it compatible with newer versions
+  ; of Windows. See the following page in the NSIS wiki for instructions and
+  ; download links:
+  ;
+  ; http://nsis.sourceforge.net/Using_!packhdr
   ;
   ; The POPFile installer has two stages; the first stage (setup.exe) installs the
   ; POPFile program and then calls the second stage (adduser.exe) to configure POPFile
@@ -254,7 +264,8 @@
   ; when requesting the execution level.
   ;--------------------------------------------------------------------------
 
-  RequestExecutionLevel   user
+  !define RequestExecutionLevel user
+  !include Packhdr.nsh
 
   ;----------------------------------------------------------------------
   ; Root directory for the Perl files (used when building the installer)

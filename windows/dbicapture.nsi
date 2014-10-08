@@ -5,7 +5,7 @@
 #                    DBI trace feature which generates extra console messages that
 #                    may assist in debugging database problems.
 #
-# Copyright (c) 2008-2012 John Graham-Cumming
+# Copyright (c) 2008-2014 John Graham-Cumming
 #
 #   This file is part of POPFile
 #
@@ -95,7 +95,7 @@
   ; (two commonly used exceptions to this rule are 'IO_NL' and 'MB_NL')
   ;--------------------------------------------------------------------------
 
-  !define C_VERSION             "0.2.2"
+  !define C_VERSION             "0.3.0"
 
   !define C_OUTFILE             "dbicapture.exe"
 
@@ -107,10 +107,21 @@
   Caption "$(^Name) v${C_VERSION}"
 
   ;--------------------------------------------------------------------------
-  ; Windows Vista expects to find a manifest specifying the execution level
+  ; Since the release of 'Vista' Windows expects to find a manifest specifying
+  ; the required execution level for a program. The 'RequestExecutionLevel'
+  ; command in NSIS is used to create a suitable manifest.
+  ;
+  ; NSIS 2.46 creates "Windows 7"-compatible manifests. Windows 8 (or later)
+  ; uses a different manifest specification. Use the '!packhdr' compile-time
+  ; directive to modify the manifest to make it compatible with newer versions
+  ; of Windows. See the following page in the NSIS wiki for instructions and
+  ; download links:
+  ;
+  ; http://nsis.sourceforge.net/Using_!packhdr
   ;--------------------------------------------------------------------------
 
-  RequestExecutionLevel   user
+  !define RequestExecutionLevel user
+  !include Packhdr.nsh
 
 #--------------------------------------------------------------------------
 # Use the "Modern User Interface"
