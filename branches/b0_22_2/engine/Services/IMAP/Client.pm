@@ -886,8 +886,8 @@ sub uid_validity {
     if ( defined $uidval ) {
         $hash{$folder} = $uidval;
         $all = '';
-        while ( my ( $key, $value ) = each %hash ) {
-            $all .= "$key$cfg_separator$value$cfg_separator";
+        for my $key ( sort keys %hash ) {
+            $all .= "$key$cfg_separator$hash{$key}$cfg_separator";
         }
         $self->config_( 'uidvalidities', $all );
         $self->log_( 1, "Updated UIDVALIDITY value for folder $folder to $uidval." );
@@ -931,8 +931,8 @@ sub uid_next {
     if ( defined $uidnext ) {
         $hash{$folder} = $uidnext;
         $all = '';
-        while ( my ( $key, $value ) = each %hash ) {
-            $all .= "$key$cfg_separator$value$cfg_separator";
+        for my $key ( sort keys %hash ) {
+            $all .= "$key$cfg_separator$hash{$key}$cfg_separator";
         }
         $self->config_( 'uidnexts', $all );
         $self->log_( 1, "Updated UIDNEXT value for folder $folder to $uidnext." );
