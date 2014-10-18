@@ -307,17 +307,19 @@ if ( $pid == 0 ) {
         -> result;
 
     test_assert_equal( scalar @{$word_list}, 3 );
-    test_assert_equal( @$word_list[0], 'foo' );
-    test_assert_equal( @$word_list[1], 'bar' );
-    test_assert_equal( @$word_list[2], 'baz' );
+    my @sorted_word_list = sort @{$word_list};
+    test_assert_equal( $sorted_word_list[0], 'bar' );
+    test_assert_equal( $sorted_word_list[1], 'baz' );
+    test_assert_equal( $sorted_word_list[2], 'foo' );
 
     $word_list = $xml
         -> call( 'POPFile/API.get_bucket_word_list', $session, 'personal', 'b' )
         -> result;
 
     test_assert_equal( scalar @{$word_list}, 2 );
-    test_assert_equal( @$word_list[0], 'bar' );
-    test_assert_equal( @$word_list[1], 'baz' );
+    @sorted_word_list = sort @{$word_list};
+    test_assert_equal( $sorted_word_list[0], 'bar' );
+    test_assert_equal( $sorted_word_list[1], 'baz' );
 
     $word_list = $xml
         -> call( 'POPFile/API.get_bucket_word_list', $session, 'badbucket' )
@@ -726,7 +728,8 @@ if ( $pid == 0 ) {
         -> result;
 
     test_assert_equal( scalar @{$stopwords}, 193 );
-    test_assert_equal( @{$stopwords}[0], 'strike' );
+    my @sorted_stopwords = sort @{$stopwords};
+    test_assert_equal( $sorted_stopwords[0], 'abbrev' );
 
     # API.add_stopword
 

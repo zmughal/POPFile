@@ -138,6 +138,7 @@ my @expected_config = (
  'GLOBAL_last_update_check 0',
  'GLOBAL_message_cutoff 100000',
  'GLOBAL_msgdir messages/',
+ 'GLOBAL_ssl_verify_peer_certs 0',
  'GLOBAL_timeout 60',
  'GLOBAL_update_check 0',
  'config_pidcheck_interval 5',
