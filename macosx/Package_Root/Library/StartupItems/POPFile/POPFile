@@ -26,7 +26,13 @@
 
 POPFILEDIR="/Library/POPFile"
 
-export VERSIONER_PERL_VERSION="5.12"
+MAJOR=`sw_vers -productVersion | awk -F "." '{print $2}'`
+if [ "${MAJOR}" = "10" ];
+then
+    export VERSIONER_PERL_VERSION="5.18"
+else
+    export VERSIONER_PERL_VERSION="5.12"
+fi
 
 export POPFILE_ROOT="$POPFILEDIR"
 export POPFILE_USER="$POPFILEDIR"

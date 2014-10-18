@@ -134,15 +134,21 @@ installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Lion.txt
 
 	PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
 	PERL512=`perl -e 'print $$] ge qw{5.012000};'`; \
-	if test "$$PERL512" == "1"; \
+	PERL518=`perl -e 'print $$] ge qw{5.018000};'`; \
+	if test "$$PERL518" == "1"; \
 	then \
-		cp ./Readme-Lion.txt $(PACKAGE_DIST); \
+		cp ./Readme-Yosemite.txt $(PACKAGE_DIST); \
 	else \
-		if test "$$PERL510" == "1"; \
+		if test "$$PERL512" == "1"; \
 		then \
-			cp ./Readme-SnowLeopard.txt $(PACKAGE_DIST); \
+			cp ./Readme-Lion.txt $(PACKAGE_DIST); \
 		else \
-			cp ./Readme.txt $(PACKAGE_DIST); \
+			if test "$$PERL512" == "1"; \
+			then \
+				cp ./Readme-SnowLeopard.txt $(PACKAGE_DIST); \
+			else \
+				cp ./Readme.txt $(PACKAGE_DIST); \
+			fi; \
 		fi; \
 	fi;
 
@@ -176,8 +182,14 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 			perl -MEncode -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;Encode::from_to($$_,"shift_jis","utf8");print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 			cp InstallationCheck-Lion $(RESOURCES)/InstallationCheck; \
 		else \
-			perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
-			cp InstallationCheck $(RESOURCES)/InstallationCheck; \
+		if test "$$SWVER" == "10"; \
+			then \
+				perl -MEncode -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;Encode::from_to($$_,"shift_jis","utf8");print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
+				cp InstallationCheck-Yosemite $(RESOURCES)/InstallationCheck; \
+			else \
+				perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
+				cp InstallationCheck $(RESOURCES)/InstallationCheck; \
+			fi; \
 		fi; \
 	fi;
 
