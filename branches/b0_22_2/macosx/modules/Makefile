@@ -39,7 +39,7 @@ DBI = DBI-1.631
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.40
+SQLITE = DBD-SQLite-1.42
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
 SQLITE_URL = http://search.cpan.org/CPAN/authors/id/I/IS/ISHIGAKI/$(SQLITE_ARCHIVE)
 
@@ -61,7 +61,7 @@ TIMEDATE_URL = http://search.cpan.org/CPAN/authors/id/G/GB/GBARR/$(TIMEDATE_ARCH
 
 # XMLRCP Support
 
-SOAPLITE = SOAP-Lite-1.10
+SOAPLITE = SOAP-Lite-0.716
 SOAPLITE_ARCHIVE = $(SOAPLITE).tar.gz
 SOAPLITE_URL = http://search.cpan.org/CPAN/authors/id/P/PH/PHRED/$(SOAPLITE_ARCHIVE)
 
@@ -69,7 +69,7 @@ CLASS_INSPECTOR = Class-Inspector-1.28
 CLASS_INSPECTOR_ARCHIVE = $(CLASS_INSPECTOR).tar.gz
 CLASS_INSPECTOR_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(CLASS_INSPECTOR_ARCHIVE)
 
-VERSION_MODULE = version-0.9908
+VERSION_MODULE = version-0.9909
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
 VERSION_URL = http://search.cpan.org/CPAN/authors/id/J/JP/JPEACOCK/$(VERSION_ARCHIVE)
 
@@ -85,11 +85,11 @@ TEXTKAKASI_URL = http://search.cpan.org/CPAN/authors/id/D/DA/DANKOGAI/$(TEXTKAKA
 
 # SSL support
 
-NETSSLEAY = Net-SSLeay-1.58
+NETSSLEAY = Net-SSLeay-1.66
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
 NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/M/MI/MIKEM/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-1.967
+IOSOCKETSSL = IO-Socket-SSL-2.000
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
@@ -99,7 +99,7 @@ MOZILLA_CA_URL = http://search.cpan.org/CPAN/authors/id/A/AB/ABH/$(MOZILLA_CA_AR
 
 # Socks support
 
-SOCKS = IO-Socket-Socks-0.63
+SOCKS = IO-Socket-Socks-0.65
 SOCKS_ARCHIVE = $(SOCKS).tar.gz
 SOCKS_URL = http://search.cpan.org/CPAN/authors/id/O/OL/OLEG/$(SOCKS_ARCHIVE)
 
