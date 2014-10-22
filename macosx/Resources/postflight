@@ -38,8 +38,16 @@ rm $KANWADICT_PATH/kanwadict-head_ppc
 rm $KANWADICT_PATH/kanwadict-head_i386
 rm $KANWADICT_PATH/kanwadict-body
 
-POPFILE_STARTUP=/Library/StartupItems/POPFile/POPFile
+POPFILE_PLIST=/Library/LaunchDaemons/popfile.plist
+POPFILE_LABEL=org.getpopfile.popfile
+POPFILE_LOGDIR=/Library/Logs/POPFile/
 
-"$POPFILE_STARTUP" restart
+if [ ! -e "$POPFILE_LOGDIR" ]; then
+	mkdir "$POPFILE_LOGDIR"
+	chmod +x "$POPFILE_LOGDIR"
+fi
+
+launchctl load "$POPFILE_PLIST"
+launchctl start "$POPFILE_LABEL"
 
 exit 0

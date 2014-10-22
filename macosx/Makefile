@@ -98,10 +98,7 @@ installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Lion.txt
 
 	@echo "Applying recommended permissions..."
 
-	chmod 744 $(PACKAGE_ROOT)/Library/StartupItems/POPFile/POPFile
-	chmod 644 $(PACKAGE_ROOT)/Library/StartupItems/POPFile/StartupParameters.plist
-
-	sudo chown -R root:wheel $(PACKAGE_ROOT)/Library/StartupItems
+	sudo chown -R root:wheel $(PACKAGE_ROOT)/Library/LaunchDaemons
 	#sudo chown -R root:admin $(PACKAGE_ROOT)/Library/POPFile
 
 	@echo "...done"
