@@ -28,5 +28,5 @@ else
 
     -- Start POPFile by using startup-script
 
-    do shell script "/Library/StartupItems/POPFile/POPFile start" with administrator privileges
+    do shell script "launchctl load /Library/LaunchDaemons/popfile.plist; launchctl start org.getpopfile.popfile" with administrator privileges
 end if

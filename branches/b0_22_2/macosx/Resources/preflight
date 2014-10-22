@@ -20,14 +20,22 @@
 
 # Constants
 POPFILE_STARTUP=/Library/StartupItems/POPFile/POPFile
+POPFILE_PLIST=/Library/LaunchDaemons/popfile.plist
+POPFILE_LABEL=org.getpopfile.popfile
 POPFILE_DIR=/Library/POPFile
 STOPWORDS_PATH="$POPFILE_DIR"/stopwords
 POPFILE_DB_PATH="$POPFILE_DIR"/popfile.db
 POPFILE_CFG_PATH="$POPFILE_DIR"/popfile.cfg
 
-# Stop POPFile
+# Stop POPFile (StartupItems)
 if [ -e "$POPFILE_STARTUP" ]; then
 	"$POPFILE_STARTUP" stop
+fi
+
+# Stop POPFile (launchd)
+if [ -e "$POPFILE_PLIST" ]; then
+	launchctl unload "$POPFILE_PLIST"
+	launchctl stop "$POPFILE_LABEL"
 fi
 
 # Back up stopwords
@@ -71,5 +79,8 @@ fi
 
 # Remove skins folder
 rm -rf "$POPFILE_DIR"/skins
+
+# Remove startup script
+rm -rf /Library/StartupItems/POPFile
 
 exit 0
