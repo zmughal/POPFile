@@ -19,14 +19,16 @@
 		<key>VERSIONER_PERL_VERSION</key>
 		<string>5.18</string>
 	</dict>
-        <key>StandardErrorPath</key>
-        <string>/Library/Logs/POPFile/error.log</string>
-        <key>StandardOutPath</key>
-        <string>/Library/Logs/POPFile/console.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Library/Logs/POPFile/error.log</string>
+	<key>StandardOutPath</key>
+	<string>/Library/Logs/POPFile/console.log</string>
 	<key>Label</key>
 	<string>org.getpopfile.popfile</string>
 	<key>KeepAlive</key>
 	<false />
+	<key>RunAtLoad</key>
+	<true />
 	<key>ProgramArguments</key>
 	<array>
 		<string>/usr/bin/perl</string>

@@ -38,6 +38,13 @@ if [ -e "$POPFILE_PLIST" ]; then
 	launchctl stop "$POPFILE_LABEL"
 fi
 
+# Stop POPFile (manually)
+pid=$( ps -axww | grep popfile.pl | grep -v grep | awk '{ print $1 }' )
+if [ "" != "$pid" ]; then
+	kill -6 $pid
+	rm -f "$POPFILE_DIR"/popfile.pid
+fi
+
 # Back up stopwords
 if [ -e "$STOPWORDS_PATH" ]; then
 	rm "$STOPWORDS_PATH".old
