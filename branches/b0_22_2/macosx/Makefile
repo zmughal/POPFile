@@ -87,7 +87,7 @@ clean:
 engine = $(ENGINE)/*.pl $(ENGINE)/POPFile/*.pm $(ENGINE)/Classifier/*.pm $(ENGINE)/Proxy/*.pm $(ENGINE)/UI/*.pm $(ENGINE)/Services/IMAP.pm $(ENGINE)/Services/IMAP/Client.pm $(ENGINE)/skins/*/*.css $(ENGINE)/skins/*/*.gif $(ENGINE)/skins/*/*.thtml $(ENGINE)/stopwords $(ENGINE)/license $(ENGINE)/favicon.ico $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo
 
 installer: documents engine build_modules
-installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Lion.txt
+installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Lion.txt ./Readme-Yosemite.txt
 	rm -rf $(PACKAGE_DIST)
 	mkdir $(PACKAGE_DIST)
 
@@ -99,6 +99,7 @@ installer: $(engine) ./Readme.txt ./Readme-SnowLeopard.txt ./Readme-Lion.txt
 	@echo "Applying recommended permissions..."
 
 	sudo chown -R root:wheel $(PACKAGE_ROOT)/Library/LaunchDaemons
+	sudo chmod 644 $(PACKAGE_ROOT)/Library/LaunchDaemons/popfile.plist
 	#sudo chown -R root:admin $(PACKAGE_ROOT)/Library/POPFile
 
 	@echo "...done"
@@ -163,7 +164,7 @@ mecab:
 build_modules:
 	$(MAKE) -C ./modules
 
-documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo InstallationCheck InstallationCheck-SnowLeopard InstallationCheck-Lion
+documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(POPFILE_VERSION).change.nihongo InstallationCheck InstallationCheck-SnowLeopard InstallationCheck-Lion InstallationCheck-Yosemite popfile.plist popfile-SnowLeopard.plist popfile-Lion.plist popfile-Yosemite.plist
 	cp $(ENGINE)/license $(RESOURCES)/License.txt
 	if test ! -d $(RESOURCES)/English.lproj; then mkdir $(RESOURCES)/English.lproj ; fi
 	if test ! -d $(RESOURCES)/Japanese.lproj; then mkdir $(RESOURCES)/Japanese.lproj ; fi
@@ -171,21 +172,25 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 	SWVER=`sw_vers -productVersion | awk -F "." '{print $$2}'`; \
 	if test "$$SWVER" == "6"; \
 	then \
-		cp InstallationCheck-SnowLeopard $(RESOURCES)/InstallationCheck; \
 		perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
+		cp InstallationCheck-SnowLeopard $(RESOURCES)/InstallationCheck; \
+		cp popfile-SnowLeopard.plist $(PACKAGE_ROOT)/Library/LaunchDaemons/popfile.plist; \
 	else \
 		if test "$$SWVER" == "7" -o "$$SWVER" == "8" -o "$$SWVER" == "9"; \
 		then \
 			perl -MEncode -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;Encode::from_to($$_,"shift_jis","utf8");print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 			cp InstallationCheck-Lion $(RESOURCES)/InstallationCheck; \
+			cp popfile-Lion.plist $(PACKAGE_ROOT)/Library/LaunchDaemons/popfile.plist; \
 		else \
 		if test "$$SWVER" == "10"; \
 			then \
 				perl -MEncode -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;Encode::from_to($$_,"shift_jis","utf8");print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 				cp InstallationCheck-Yosemite $(RESOURCES)/InstallationCheck; \
+				cp popfile-Yosemite.plist $(PACKAGE_ROOT)/Library/LaunchDaemons/popfile.plist; \
 			else \
 				perl -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 				cp InstallationCheck $(RESOURCES)/InstallationCheck; \
+				cp popfile.plist $(PACKAGE_ROOT)/Library/LaunchDaemons/popfile.plist; \
 			fi; \
 		fi; \
 	fi;
