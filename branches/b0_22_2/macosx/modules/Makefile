@@ -83,6 +83,10 @@ TEXTKAKASI = Text-Kakasi-2.04
 TEXTKAKASI_ARCHIVE = $(TEXTKAKASI).tar.gz
 TEXTKAKASI_URL = http://search.cpan.org/CPAN/authors/id/D/DA/DANKOGAI/$(TEXTKAKASI_ARCHIVE)
 
+ENCODE_IMAPUTF7 = Encode-IMAPUTF7-1.05
+ENCODE_IMAPUTF7_ARCHIVE = $(ENCODE_IMAPUTF7).tar.gz
+ENCODE_IMAPUTF7_URL = http://search.cpan.org/CPAN/authors/id/P/PM/PMAKHOLM/$(ENCODE_IMAPUTF7_ARCHIVE)
+
 # SSL support
 
 NETSSLEAY = Net-SSLeay-1.66
@@ -107,8 +111,8 @@ SOCKS_URL = http://search.cpan.org/CPAN/authors/id/O/OL/OLEG/$(SOCKS_ARCHIVE)
 CORE_ARCHIVES = $(DBI_ARCHIVE) $(SQLITE_ARCHIVE) $(SQLITE2_ARCHIVE) $(TAGSET_ARCHIVE) $(TEMPLATE_ARCHIVE) $(TIMEDATE_ARCHIVE)
 CORE_MODULES = $(DBI) $(SQLITE) $(SQLITE2) $(TAGSET) $(TEMPLATE) $(TIMEDATE)
 
-JAPANESESUPPORT_ARCHIVES = $(KAKASI_ARCHIVE) $(TEXTKAKASI_ARCHIVE)
-JAPANESESUPPORT_MODULES = $(KAKASI) $(TEXTKAKASI)
+JAPANESESUPPORT_ARCHIVES = $(KAKASI_ARCHIVE) $(TEXTKAKASI_ARCHIVE) $(ENCODE_IMAPUTF7_ARCHIVE)
+JAPANESESUPPORT_MODULES = $(KAKASI) $(TEXTKAKASI) $(ENCODE_IMAPUTF7)
 
 XMLRPC_ARCHIVES = $(SOAPLITE_ARCHIVE) $(VERSION_ARCHIVE) $(CLASS_INSPECTOR_ARCHIVE)
 XMLRPC_MODULES = $(SOAPLITE) $(VERSION_MODULE) $(CLASS_INSPECTOR)
@@ -168,6 +172,9 @@ japanese_modules: japanese_modules_build
 
 	cp -rf $(TEXTKAKASI)/blib/arch/auto $(LIB_ROOT)
 	cp -rf $(TEXTKAKASI)/blib/lib/* $(LIB_ROOT)
+
+	cp -rf $(ENCODE_IMAPUTF7)/blib/arch/auto $(LIB_ROOT)
+	cp -rf $(ENCODE_IMAPUTF7)/blib/lib/* $(LIB_ROOT)
 
 ssl_modules: ssl_modules_build
 	cp -rf $(NETSSLEAY)/blib/arch/auto $(LIB_ROOT)
@@ -265,6 +272,11 @@ japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
 	if test ! -e Makefile; then perl -I.. -MConfig_kakasi Makefile.PL ; fi ;\
 	make
 
+	if test ! -d $(ENCODE_IMAPUTF7); then tar xzf $(ENCODE_IMAPUTF7_ARCHIVE); fi
+	cd $(ENCODE_IMAPUTF7); \
+	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL ; fi ;\
+	make
+
 ssl_modules_build: $(SSL_ARCHIVES)
 	if test ! -d $(NETSSLEAY); then tar xzf $(NETSSLEAY_ARCHIVE); fi
 	cd $(NETSSLEAY); \
@@ -343,6 +355,11 @@ $(TEXTKAKASI_ARCHIVE):
 	@if test ! -e $(TEXTKAKASI_ARCHIVE); \
 	then \
 	  curl --output $(TEXTKAKASI_ARCHIVE) --location --silent $(TEXTKAKASI_URL); \
+	fi
+$(ENCODE_IMAPUTF7_ARCHIVE):
+	@if test ! -e $(ENCODE_IMAPUTF7_ARCHIVE); \
+	then \
+	  curl --output $(ENCODE_IMAPUTF7_ARCHIVE) --location --silent $(ENCODE_IMAPUTF7_URL); \
 	fi
 $(NETSSLEAY_ARCHIVE):
 	@if test ! -e $(NETSSLEAY_ARCHIVE); \
