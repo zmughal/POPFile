@@ -14,9 +14,9 @@
 
     <TMPL_LOOP NAME="IMAP_loop_mailboxes">
 
-        <option value="<TMPL_VAR NAME="IMAP_mailbox">" <TMPL_VAR NAME="IMAP_selected">>
+        <option value="<TMPL_VAR NAME="IMAP_mailbox" ESCAPE=HTML>" <TMPL_VAR NAME="IMAP_selected">>
 
-        <TMPL_VAR NAME="IMAP_mailbox">
+        <TMPL_VAR NAME="IMAP_mailbox_decoded" ESCAPE=HTML>
 
         </option>
 
