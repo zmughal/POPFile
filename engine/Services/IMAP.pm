@@ -1188,6 +1188,9 @@ sub configure_item {
 
                     $data_mailboxes{IMAP_mailbox} = $mailbox;
 
+                    my $decoded_mailbox = $self->decode_imap_folder_name__( $mailbox, $language );
+                    $data_mailboxes{IMAP_mailbox_decoded} = $decoded_mailbox;
+
                     # Is it currently selected?
                     if ( $folder eq $mailbox ) {
                         $data_mailboxes{IMAP_selected} = 'selected="selected"';
@@ -1246,6 +1249,9 @@ sub configure_item {
 
                     $inner_data{IMAP_mailbox} = $mailbox;
 
+                    my $decoded_mailbox = $self->decode_imap_folder_name__( $mailbox, $language );
+                    $inner_data{IMAP_mailbox_decoded} = $decoded_mailbox;
+
                     if ( defined $output && $output eq $mailbox ) {
                         $inner_data{IMAP_selected} = 'selected="selected"';
                     }
@@ -1285,6 +1291,32 @@ sub configure_item {
     }
 }
 
+
+
+# ----------------------------------------------------------------------------
+#
+# decode_imap_folder_name__
+#
+#    $name            A folder name to decode
+#    $language        The language currently in use
+#
+# ----------------------------------------------------------------------------
+
+sub decode_imap_folder_name__ {
+    my $self     = shift;
+    my $name     = shift;
+    my $language = shift;
+
+    # IMAP server encodes non-ascii folder name in IMAP-UTF-7.
+    my $decoded_name = $name;
+
+    require Encode;
+    require Encode::IMAPUTF7;
+
+    Encode::from_to( $decoded_name, 'IMAP-UTF-7', $$language{LanguageCharset} );
+
+    return $decoded_name;
+}
 
 
 # ----------------------------------------------------------------------------
