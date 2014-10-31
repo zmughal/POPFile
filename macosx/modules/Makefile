@@ -93,7 +93,7 @@ NETSSLEAY = Net-SSLeay-1.66
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
 NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/M/MI/MIKEM/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-2.000
+IOSOCKETSSL = IO-Socket-SSL-2.002
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
@@ -291,7 +291,7 @@ ssl_modules_build: $(SSL_ARCHIVES)
 	if test ! -d $(MOZILLA_CA); then tar xzf $(MOZILLA_CA_ARCHIVE); fi
 	cd $(MOZILLA_CA); \
 	curl --output mk-ca-bundle.pl --location --silent https://github.com/bagder/curl/raw/master/lib/mk-ca-bundle.pl; \
-	perl mk-ca-bundle.pl -q lib/Mozilla/CA/cacert.pem; \
+	perl mk-ca-bundle.pl -p EMAIL_PROTECTION:TRUSTED_DELEGATOR -q lib/Mozilla/CA/cacert.pem; \
 	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL ; fi ;\
 	make
 
