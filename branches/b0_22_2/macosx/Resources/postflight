@@ -47,6 +47,7 @@ if [ ! -e "$POPFILE_LOGDIR" ]; then
 	chmod +x "$POPFILE_LOGDIR"
 fi
 
+chmod 644 "$POPFILE_PLIST"
 launchctl load "$POPFILE_PLIST"
 launchctl start "$POPFILE_LABEL"
 
