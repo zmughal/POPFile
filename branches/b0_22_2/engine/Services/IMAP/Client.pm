@@ -141,10 +141,10 @@ sub connect {
                                 Timeout  => $timeout,
                                 Domain   => AF_INET,
                                 ( $self->global_config_( 'ssl_verify_peer_certs' ) ? (
-                                    SSL_verify_mode => 0x2,
+                                    SSL_verify_mode => 0x1, # SSL_VERIFY_PEER
                                     SSL_ca_file => Mozilla::CA::SSL_ca_file(),
                                 ) : (
-                                    SSL_verify_mode => 0x0,
+                                    SSL_verify_mode => 0x0, # SSL_VERIFY_NONE
                                 )),
                     )
                     or $self->log_(0, "IO::Socket::SSL error: $@");
