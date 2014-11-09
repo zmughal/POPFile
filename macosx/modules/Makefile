@@ -291,7 +291,7 @@ ssl_modules_build: $(SSL_ARCHIVES)
 	if test ! -d $(MOZILLA_CA); then tar xzf $(MOZILLA_CA_ARCHIVE); fi
 	cd $(MOZILLA_CA); \
 	curl --output mk-ca-bundle.pl --location --silent https://github.com/bagder/curl/raw/master/lib/mk-ca-bundle.pl; \
-	perl mk-ca-bundle.pl -p EMAIL_PROTECTION:TRUSTED_DELEGATOR -q lib/Mozilla/CA/cacert.pem; \
+	perl mk-ca-bundle.pl -d nss -q lib/Mozilla/CA/cacert.pem; \
 	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL ; fi ;\
 	make
 
