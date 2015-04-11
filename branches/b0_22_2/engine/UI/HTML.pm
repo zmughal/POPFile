@@ -857,7 +857,7 @@ sub configuration_page
         my @columns = split(',', $self->config_( 'columns' ));
         my $new_columns = '';
         foreach my $column (@columns) {
-            $column =~ s/^(\+|\-)//;
+            $column =~ s/^[-+] ?//;
             if ( defined($self->{form_}{$column})) {
                 $new_columns .= '+';
             } else {
@@ -911,9 +911,8 @@ sub configuration_page
     my @column_data;
     foreach my $column (@columns) {
         my %row;
-        $column =~ /(\+|\-)/;
+        $column =~ s/^([-+]) ?//;
         my $selected = ($1 eq '+')?'checked':'';
-        $column =~ s/^.//;
         $row{Configuration_Field_Name} = $column;
         $row{Configuration_Localized_Field_Name} =        # PROFILE BLOCK START
             $self->{language__}{$headers_table{$column}}; # PROFILE BLOCK STOP
@@ -2475,9 +2474,8 @@ sub history_page
 
         foreach my $header (@columns) {
             my %row_data;
-            $header =~ /^(.)/;
+            $header =~ s/^(.) ?//;
             next if ( $1 eq '-' );
-            $header =~ s/^.//;
             $colspan++;
             $row_data{History_Fields} =                      # PROFILE BLOCK START
                 $self->print_form_fields_(1,1,
