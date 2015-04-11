@@ -998,6 +998,44 @@ SETSUBMIT history_days 0
 MATCH The number of days in the history must be a number between 1 and 366
 INPUTIS   history_days 3
 
+# Check history columns change
+
+CONFIGIS  html_columns +inserted,+from,+to,-cc,+subject,-date,-size,+bucket
+INPUTIS   inserted on
+INPUTIS   from on
+INPUTIS   to on
+INPUTIS   cc
+INPUTIS   subject on
+INPUTIS   date
+INPUTIS   size
+INPUTIS   bucket on
+SETINPUT  cc on
+CLICK     update_fields
+CONFIGIS  html_columns +inserted,+from,+to,+cc,+subject,-date,-size,+bucket,
+INPUTIS   cc on
+SETINPUT  from off
+CLICK     update_fields
+CONFIGIS  html_columns +inserted,-from,+to,+cc,+subject,-date,-size,+bucket,
+
+# TODO: Check history tabs
+
+# GET /history
+
+# MATCH setsort=cc
+# NOTMATCH setsort=from
+
+# Check if there are unexpected spaces
+
+SETCONFIG html_columns +inserted,- from,+to,+cc,+subject,- date,-size,+bucket
+
+GET /configuration
+
+INPUTIS   from
+INPUTIS   date
+SETINPUT  from on
+CLICK     update_fields
+CONFIGIS  html_columns +inserted,+from,+to,+cc,+subject,-date,-size,+bucket,
+
 # Check change timeout
 
 INPUTIS   timeout 60
