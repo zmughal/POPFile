@@ -35,11 +35,11 @@ FAKECONFIG = ExtUtils-FakeConfig-0.12
 FAKECONFIG_ARCHIVE = $(FAKECONFIG).zip
 FAKECONFIG_URL = http://search.cpan.org/CPAN/authors/id/M/MB/MBARBON/$(FAKECONFIG_ARCHIVE)
 
-DBI = DBI-1.631
+DBI = DBI-1.634
 DBI_ARCHIVE = $(DBI).tar.gz
 DBI_URL = http://search.cpan.org/CPAN/authors/id/T/TI/TIMB/$(DBI_ARCHIVE)
 
-SQLITE = DBD-SQLite-1.42
+SQLITE = DBD-SQLite-1.48
 SQLITE_ARCHIVE = $(SQLITE).tar.gz
 SQLITE_URL = http://search.cpan.org/CPAN/authors/id/I/IS/ISHIGAKI/$(SQLITE_ARCHIVE)
 
@@ -69,7 +69,7 @@ CLASS_INSPECTOR = Class-Inspector-1.28
 CLASS_INSPECTOR_ARCHIVE = $(CLASS_INSPECTOR).tar.gz
 CLASS_INSPECTOR_URL = http://search.cpan.org/CPAN/authors/id/A/AD/ADAMK/$(CLASS_INSPECTOR_ARCHIVE)
 
-VERSION_MODULE = version-0.9909
+VERSION_MODULE = version-0.9912
 VERSION_ARCHIVE = $(VERSION_MODULE).tar.gz
 VERSION_URL = http://search.cpan.org/CPAN/authors/id/J/JP/JPEACOCK/$(VERSION_ARCHIVE)
 
@@ -89,21 +89,21 @@ ENCODE_IMAPUTF7_URL = http://search.cpan.org/CPAN/authors/id/P/PM/PMAKHOLM/$(ENC
 
 # SSL support
 
-NETSSLEAY = Net-SSLeay-1.66
+NETSSLEAY = Net-SSLeay-1.72
 NETSSLEAY_ARCHIVE = $(NETSSLEAY).tar.gz
 NETSSLEAY_URL = http://search.cpan.org/CPAN/authors/id/M/MI/MIKEM/$(NETSSLEAY_ARCHIVE)
 
-IOSOCKETSSL = IO-Socket-SSL-2.002
+IOSOCKETSSL = IO-Socket-SSL-2.020
 IOSOCKETSSL_ARCHIVE = $(IOSOCKETSSL).tar.gz
 IOSOCKETSSL_URL = http://search.cpan.org/CPAN/authors/id/S/SU/SULLR/$(IOSOCKETSSL_ARCHIVE)
 
-MOZILLA_CA = Mozilla-CA-20130114
+MOZILLA_CA = Mozilla-CA-20150826
 MOZILLA_CA_ARCHIVE = $(MOZILLA_CA).tar.gz
 MOZILLA_CA_URL = http://search.cpan.org/CPAN/authors/id/A/AB/ABH/$(MOZILLA_CA_ARCHIVE)
 
 # Socks support
 
-SOCKS = IO-Socket-Socks-0.65
+SOCKS = IO-Socket-Socks-0.67
 SOCKS_ARCHIVE = $(SOCKS).tar.gz
 SOCKS_URL = http://search.cpan.org/CPAN/authors/id/O/OL/OLEG/$(SOCKS_ARCHIVE)
 
@@ -246,22 +246,31 @@ japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
 	then \
 	  PERL510=`perl -e 'print $$] ge qw{5.010000};'`; \
 	  PERL512=`perl -e 'print $$] ge qw{5.012000};'`; \
-	  if test "$$PERL512" == "1"; \
+	  PERL518=`perl -e 'print $$] ge qw{5.018000};'`; \
+	  if test "$$PERL518" == "1"; \
 	  then \
-		SDKPATH=`xcodebuild -version -sdk macosx10.7 | grep ^Path: | awk '{print $$2}'`; \
+		SDKPATH=`xcodebuild -version -sdk macosx10.10 | grep ^Path: | awk '{print $$2}'`; \
 		env CPPFLAGS="-Os -g -isysroot $$SDKPATH -arch i386 -arch x86_64" \
-		env LDFLAGS="-Wl,-syslibroot,$$SDKPATH -arch i386 -arch x86_64 -mmacosx-version-min=10.7" \
+		env LDFLAGS="-Wl,-syslibroot,$$SDKPATH -arch i386 -arch x86_64 -mmacosx-version-min=10.10" \
 		./configure --disable-dependency-tracking --disable-shared ; \
 	  else \
-		if test "$$PERL510" == "1"; \
+		if test "$$PERL512" == "1"; \
 		then \
-		  env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64" \
-		  env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64 -mmacosx-version-min=10.6" \
+		  SDKPATH=`xcodebuild -version -sdk macosx10.7 | grep ^Path: | awk '{print $$2}'`; \
+		  env CPPFLAGS="-Os -g -isysroot $$SDKPATH -arch i386 -arch x86_64" \
+		  env LDFLAGS="-Wl,-syslibroot,$$SDKPATH -arch i386 -arch x86_64 -mmacosx-version-min=10.7" \
 		  ./configure --disable-dependency-tracking --disable-shared ; \
 		else \
-		  env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64" \
-		  env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -mmacosx-version-min=10.3" \
-		  ./configure --disable-dependency-tracking --disable-shared ; \
+		  if test "$$PERL510" == "1"; \
+		  then \
+			env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64" \
+			env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.6.sdk -arch i386 -arch ppc7400 -arch x86_64 -mmacosx-version-min=10.6" \
+			./configure --disable-dependency-tracking --disable-shared ; \
+		  else \
+			env CPPFLAGS="-Os -g -isysroot /Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64" \
+			env LDFLAGS="-Wl,-syslibroot,/Developer/SDKs/MacOSX10.4u.sdk -arch i386 -arch ppc750 -arch ppc7400 -arch ppc64 -mmacosx-version-min=10.3" \
+			./configure --disable-dependency-tracking --disable-shared ; \
+		  fi ; \
 		fi ; \
 	  fi ; \
 	fi ; \
@@ -280,7 +289,7 @@ japanese_modules_build: $(JAPANESESUPPORT_ARCHIVES)
 ssl_modules_build: $(SSL_ARCHIVES)
 	if test ! -d $(NETSSLEAY); then tar xzf $(NETSSLEAY_ARCHIVE); fi
 	cd $(NETSSLEAY); \
-	if test ! -e Makefile; then perl -I.. -MConfig_ub Makefile.PL ; fi ;\
+	if test ! -e Makefile; then PERL_MM_USE_DEFAULT=1 perl -I.. -MConfig_ub Makefile.PL ; fi ;\
 	make
 
 	if test ! -d $(IOSOCKETSSL); then tar xzf $(IOSOCKETSSL_ARCHIVE); fi
