@@ -1,7 +1,7 @@
 #!/bin/sh
 
-MAJOR=`sw_vers -productVersion | awk -F "." '{print $2}'`
-if [ "${MAJOR}" = "10" ];
+PERL518=`/usr/bin/perl -e 'print $] =~ m/^5.018/;'`
+if [ "${PERL518}" = "1" ];
 then
     exit 0
 else

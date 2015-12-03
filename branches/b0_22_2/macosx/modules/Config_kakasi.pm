@@ -26,12 +26,21 @@ my ( $SDK, $MIN_VERSION, $ARCH );
 
 if ( $PERL_VERSION ge '5.010000' ) {
     if ( $PERL_VERSION ge '5.012000' ) {
-        # Mac OS X 10.7 or later
+        if ( $PERL_VERSION ge '5.018000' ) {
+            # Mac OS X 10.10 or later
 
-        $SDK = `xcodebuild -version -sdk macosx10.7 | grep ^Path: | awk '{print \$2}'`;
-        chomp $SDK;
-        $MIN_VERSION = '-mmacosx-version-min=10.7';
-        $ARCH = '-arch i386 -arch x86_64';
+            $SDK = `xcodebuild -version -sdk macosx10.10 | grep ^Path: | awk '{print \$2}'`;
+            chomp $SDK;
+            $MIN_VERSION = '-mmacosx-version-min=10.10';
+            $ARCH = '-arch i386 -arch x86_64';
+        } else {
+            # Mac OS X 10.7 or later
+
+            $SDK = `xcodebuild -version -sdk macosx10.7 | grep ^Path: | awk '{print \$2}'`;
+            chomp $SDK;
+            $MIN_VERSION = '-mmacosx-version-min=10.7';
+            $ARCH = '-arch i386 -arch x86_64';
+        }
     } else {
         # Mac OS X 10.6 or later
 

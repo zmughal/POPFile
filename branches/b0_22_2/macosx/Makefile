@@ -182,7 +182,7 @@ documents: $(ENGINE)/license $(ENGINE)/v$(POPFILE_VERSION).change $(ENGINE)/v$(P
 			cp InstallationCheck-Lion $(RESOURCES)/InstallationCheck; \
 			cp popfile-Lion.plist $(PACKAGE_ROOT)/Library/LaunchDaemons/popfile.plist; \
 		else \
-		if test "$$SWVER" == "10"; \
+		if test "$$SWVER" == "10" -o "$$SWVER" == "11"; \
 			then \
 				perl -MEncode -e '$$_=join(qw(),<>);s/(?<!\n)\n(?![\n ])/ /g;Encode::from_to($$_,"shift_jis","utf8");print;' <  $(ENGINE)/v$(POPFILE_VERSION).change.nihongo > $(RESOURCES)/Japanese.lproj/ReadMe.txt; \
 				cp InstallationCheck-Yosemite $(RESOURCES)/InstallationCheck; \
